@@ -41,6 +41,12 @@ namespace TpsDungeon.Audio.Runtime
         /// <summary>今流れている BGM。何も流れていなければ null。</summary>
         public AudioClip CurrentBgm => bgmSources != null ? bgmSources[activeBgmIndex].clip : null;
 
+        /// <summary>
+        /// 最後に切り替えたスナップショット。設定画面が裏で切り替える分もここに入るので、
+        /// 「今どの状態か」を知りたい側はローカルに覚えずにこれを読むこと。
+        /// </summary>
+        public AudioSnapshotId CurrentSnapshot { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
@@ -221,6 +227,9 @@ namespace TpsDungeon.Audio.Runtime
                 return;
             }
 
+            // 実際に切り替えられたときだけ覚える。未設定のスナップショットを指定されたときに
+            // 表示だけ進んでミキサーの実態と食い違うのを避けるため、必ず null チェックの後で。
+            CurrentSnapshot = id;
             snapshot.TransitionTo(seconds >= 0f ? seconds : config.SnapshotTransitionSeconds);
         }
 

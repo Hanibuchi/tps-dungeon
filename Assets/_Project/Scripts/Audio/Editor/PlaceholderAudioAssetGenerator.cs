@@ -15,6 +15,12 @@ namespace TpsDungeon.Audio.Editor
         public const string OutputFolder = "Assets/_Project/Audio/Placeholder";
 
         public const string BgmPath = OutputFolder + "/BGM_Placeholder_Loop.wav";
+
+        /// <summary>
+        /// 2 本目の仮 BGM。PlayBgm は同じクリップを渡されると何もしないので、
+        /// 1 本だけだとクロスフェードの経路を一度も鳴らして確かめられない。
+        /// </summary>
+        public const string BgmBPath = OutputFolder + "/BGM_Placeholder_Loop_B.wav";
         public const string ClickPath = OutputFolder + "/SE_Click.wav";
         public const string HitPath = OutputFolder + "/SE_Hit.wav";
         public const string FootstepPath = OutputFolder + "/SE_Footstep.wav";
@@ -32,7 +38,8 @@ namespace TpsDungeon.Audio.Editor
         {
             Directory.CreateDirectory(OutputFolder);
 
-            WriteWav(BgmPath, BuildBgmLoop());
+            WriteWav(BgmPath, BuildBgmLoop(BgmNotesA, droneHz: 55f));
+            WriteWav(BgmBPath, BuildBgmLoop(BgmNotesB, droneHz: 65.41f));
             WriteWav(ClickPath, BuildClick());
             WriteWav(HitPath, BuildHit());
             WriteWav(FootstepPath, BuildFootstep());
@@ -40,27 +47,35 @@ namespace TpsDungeon.Audio.Editor
             AssetDatabase.Refresh();
 
             ApplyBgmImportSettings(BgmPath);
+            ApplyBgmImportSettings(BgmBPath);
             foreach (string path in new[] { ClickPath, HitPath, FootstepPath })
             {
                 ApplySeImportSettings(path);
             }
 
-            return "仮の音を生成した:\n  " + string.Join("\n  ", BgmPath, ClickPath, HitPath, FootstepPath);
+            return "仮の音を生成した:\n  " + string.Join("\n  ", BgmPath, BgmBPath, ClickPath, HitPath, FootstepPath);
         }
 
         // ---- 波形づくり ------------------------------------------------------
 
+        /// <summary>イ短調のアルペジオ。低い音域に寄せてダンジョンらしい重さを出す。</summary>
+        private static readonly float[] BgmNotesA =
+            { 110.00f, 130.81f, 164.81f, 220.00f, 164.81f, 130.81f, 110.00f, 98.00f };
+
         /// <summary>
-        /// 低めのアルペジオが 8 秒で一周するループ。
+        /// 2 本目。完全五度ほど上に寄せた別調で、切り替わったことが一聴して分かるようにする。
+        /// </summary>
+        private static readonly float[] BgmNotesB =
+            { 164.81f, 196.00f, 246.94f, 329.63f, 246.94f, 196.00f, 164.81f, 146.83f };
+
+        /// <summary>
+        /// 渡した音階のアルペジオが 8 秒で一周するループ。
         /// 端が無音になるようにして、繰り返してもブツッと鳴らないようにしてある。
         /// </summary>
-        private static float[] BuildBgmLoop()
+        private static float[] BuildBgmLoop(float[] notes, float droneHz)
         {
             const float seconds = 8f;
             const float noteSeconds = 0.5f;
-
-            // イ短調のアルペジオ。低い音域に寄せてダンジョンらしい重さを出す。
-            float[] notes = { 110.00f, 130.81f, 164.81f, 220.00f, 164.81f, 130.81f, 110.00f, 98.00f };
 
             int total = (int)(seconds * SampleRate);
             var samples = new float[total];
@@ -75,7 +90,7 @@ namespace TpsDungeon.Audio.Editor
                 float note = Mathf.Sin(2f * Mathf.PI * notes[noteIndex] * time) * envelope * 0.35f;
 
                 // 下に薄く敷くドローン。うねりを付けて単調さを消す。
-                float drone = Mathf.Sin(2f * Mathf.PI * 55f * time) * 0.12f
+                float drone = Mathf.Sin(2f * Mathf.PI * droneHz * time) * 0.12f
                               * (0.7f + 0.3f * Mathf.Sin(2f * Mathf.PI * 0.125f * time));
 
                 samples[i] = (note + drone) * LoopEdgeFade(time, seconds);
