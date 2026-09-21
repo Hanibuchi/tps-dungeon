@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2183d2e507b764909920713cd8406ad0, type: 3}
+  m_Name: Floor_L1_Config
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
+  widthInCells: 64
+  heightInCells: 64
+  cellSize: 5
+  roomCatalog: {fileID: 11400000, guid: dbadda85cad524f64b5184c262ad14ef, type: 2}
+  minRoomCount: 10
+  maxRoomCount: 20
+  maxPackAttempts: 6
+  startJitter: 4
+  includeShop: 1
+  extraDoorCount: 2
+  wallPrefab: {fileID: 1484306470306820924, guid: e14d51050d6ae4d5d84c3ab69d7f0c35, type: 3}
+  doorPrefab: {fileID: 7476416142435393144, guid: 52ecd5b36d6584ced8cc039925d7300c, type: 3}
+  stairUpPrefab: {fileID: 6897905109614482074, guid: 9e6c8bd3e34674ca3b4cbea28143cfda, type: 3}
+  stairDownPrefab: {fileID: 5910611291598227447, guid: bf72a56f8a78e4636a8b2b2522935ace, type: 3}
+  shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
