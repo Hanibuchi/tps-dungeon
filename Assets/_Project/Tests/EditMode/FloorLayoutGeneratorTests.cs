@@ -252,6 +252,53 @@ namespace TpsDungeon.Map.Tests
             }
         }
 
+        /// <summary>
+        /// 役割は、そのためのタグを持つテンプレートに載っているか。
+        /// 置けるタグしか quota に積まないので、Stair / Shop のテンプレートがある限り
+        /// 専用の部屋が出ないまま普通の部屋へフォールバックすることは無い。
+        /// </summary>
+        [Test]
+        public void SpecialRooms_LandOnTemplatesTaggedForThem()
+        {
+            var parameters = FloorGenerationFixture.Params();
+
+            foreach (int seed in FloorGenerationFixture.Seeds(SeedSweepCount))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+
+                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.StairUpRoom).Template.Tags & RoomTag.Stair,
+                    $"seed {seed}: 上り階段が Stair タグでない部屋に載っている");
+                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.StairDownRoom).Template.Tags & RoomTag.Stair,
+                    $"seed {seed}: 下り階段が Stair タグでない部屋に載っている");
+                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.ShopRoom).Template.Tags & RoomTag.Shop,
+                    $"seed {seed}: ショップが Shop タグでない部屋に載っている");
+            }
+        }
+
+        /// <summary>
+        /// 専用テンプレートが無い層でも、役割は必ず別々の部屋に割り当たる。
+        /// 階段はマーカーを部屋の中心に置くだけなので、普通の部屋で代用できる。
+        /// </summary>
+        [Test]
+        public void WithoutStairTemplates_SpecialRoomsAreStillAssigned()
+        {
+            var parameters = FloorGenerationFixture.Params();
+            parameters.Templates = parameters.Templates.Where(t => (t.Tags & RoomTag.Stair) == 0).ToList();
+
+            foreach (int seed in FloorGenerationFixture.Seeds(SeedSweepCount))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+
+                Assert.GreaterOrEqual(layout.StairUpRoom, 0, $"seed {seed}: 上り階段が無い");
+                Assert.GreaterOrEqual(layout.StairDownRoom, 0, $"seed {seed}: 下り階段が無い");
+                Assert.GreaterOrEqual(layout.ShopRoom, 0, $"seed {seed}: ショップが無い");
+
+                Assert.AreNotEqual(layout.StairUpRoom, layout.StairDownRoom, $"seed {seed}: 階段が同じ部屋にある");
+                Assert.AreNotEqual(layout.StairUpRoom, layout.ShopRoom);
+                Assert.AreNotEqual(layout.StairDownRoom, layout.ShopRoom);
+            }
+        }
+
         [Test]
         public void IncludeShopFalse_LeavesNoShop()
         {

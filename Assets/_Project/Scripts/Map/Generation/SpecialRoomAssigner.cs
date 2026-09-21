@@ -89,6 +89,19 @@ namespace TpsDungeon.Map.Generation
                     shop = i;
                 }
             }
+            // ショップを置ける部屋が階段に取られてしまうことがある（Shop タグの部屋が 1 つしか
+            // 出ず、それが階段に選ばれた場合など）。そのまま -1 で返すとショップが消えるので、
+            // 階段以外のどこかで妥協する。
+            if (shop < 0)
+            {
+                for (int i = 0; i < roomCount; i++)
+                {
+                    if (i == result.StairUpRoom || i == result.StairDownRoom) continue;
+                    shop = i;
+                    break;
+                }
+            }
+
             result.ShopRoom = shop;
 
             return result;

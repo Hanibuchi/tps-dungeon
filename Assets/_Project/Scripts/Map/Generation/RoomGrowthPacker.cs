@@ -129,15 +129,31 @@ namespace TpsDungeon.Map.Generation
             edges.Clear();
             frontier.Clear();
 
+            // 積むのは「実際に置けるタグ」だけ。持っているテンプレートが無いタグを積むと、
+            // ForcedTag が先頭のそれを返し続けて、後ろに並んだタグが一度も強制されなくなる。
             quota.Clear();
-            quota.Add(RoomTag.Stair);
-            quota.Add(RoomTag.Stair);
-            if (p.IncludeShop) quota.Add(RoomTag.Shop);
+            if (HasPlaceableTemplateWithTag(RoomTag.Stair))
+            {
+                quota.Add(RoomTag.Stair);
+                quota.Add(RoomTag.Stair);
+            }
+            if (p.IncludeShop && HasPlaceableTemplateWithTag(RoomTag.Shop)) quota.Add(RoomTag.Shop);
+        }
+
+        /// <summary>そのタグを持ち、かつ抽選対象になるテンプレートがあるか。</summary>
+        private bool HasPlaceableTemplateWithTag(RoomTag tag)
+        {
+            foreach (var template in p.Templates)
+            {
+                if (template.Weight > 0f && (template.Tags & tag) != 0) return true;
+            }
+            return false;
         }
 
         /// <summary>
-        /// 最初の部屋はフロア中心付近に置く。階段用テンプレートを優先するのは、
-        /// 上り階段をフロアの真ん中に持ってきたいのと、階段部屋が 1 つも出ないシードを避けるため。
+        /// 最初の部屋はフロア中心付近に置く。階段用テンプレートを優先するのは、階段部屋が
+        /// 1 つも出ないシードを避けるため。どの部屋が階段になるかは SpecialRoomAssigner が
+        /// グラフ距離で決めるので、この種部屋がそのまま階段になるわけではない。
         /// </summary>
         private bool PlaceSeedRoom()
         {
