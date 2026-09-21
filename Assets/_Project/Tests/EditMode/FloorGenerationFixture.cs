@@ -4,7 +4,7 @@ using TpsDungeon.Map.Generation;
 
 namespace TpsDungeon.Map.Tests
 {
-    /// <summary>テスト用の部屋テンプレートと生成パラメータ。第1層の想定ラインナップに合わせてある。</summary>
+    /// <summary>テスト用の部屋テンプレートと生成パラメータ。第1層の実際のラインナップに合わせてある。</summary>
     internal static class FloorGenerationFixture
     {
         public static RoomTemplateData Template(
@@ -21,14 +21,15 @@ namespace TpsDungeon.Map.Tests
             MaxPackAttempts = 6,
             StartJitter = 4,
             ExtraDoorCount = 2,
+            // Settings/Map/L1_RoomCatalog の登録内容と揃えてある。実際に出荷している構成を検証したいので、
+            // ここを変えるときはプレースホルダ Prefab 側（PlaceholderMapAssetGenerator.Rooms）も合わせること。
             Templates = new List<RoomTemplateData>
             {
-                Template("Hall_6x6", 6, 6, RoomTag.Normal, true, 1.0f),
-                Template("Guard_8x6", 8, 6, RoomTag.Normal, true, 1.0f),
-                Template("Chapel_10x8", 10, 8, RoomTag.Normal, true, 0.8f),
-                Template("Great_12x10", 12, 10, RoomTag.Normal, true, 0.5f),
-                Template("Shop_8x8", 8, 8, RoomTag.Shop, false, 1.0f),
-                Template("Stair_6x6", 6, 6, RoomTag.Stair, true, 1.0f),
+                Template("Room_1x1", 1, 1, RoomTag.Normal, true, 1.0f),
+                Template("Room_1x2", 1, 2, RoomTag.Normal, true, 0.8f),
+                Template("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f),
+                Template("Room_Shop", 1, 1, RoomTag.Shop, true, 0.2f),
+                Template("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f),
             },
         };
 

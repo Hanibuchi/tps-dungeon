@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 470251028426827045}
   - component: {fileID: 3694030786847144565}
   m_Layer: 0
-  m_Name: Socket_West_0_3
+  m_Name: Socket_West_0_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -108,7 +108,7 @@ GameObject:
   - component: {fileID: 991254405473955304}
   - component: {fileID: 8700536417758517707}
   m_Layer: 0
-  m_Name: Socket_North_4_9
+  m_Name: Socket_North_0_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -154,7 +154,7 @@ GameObject:
   - component: {fileID: 4686612327764805711}
   - component: {fileID: 188458420486176581}
   m_Layer: 0
-  m_Name: Socket_East_11_3
+  m_Name: Socket_East_1_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 894035934427580021}
   - component: {fileID: 3362433577308599799}
   m_Layer: 0
-  m_Name: Socket_North_8_9
+  m_Name: Socket_North_1_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -246,7 +246,7 @@ GameObject:
   - component: {fileID: 7548961498604830326}
   - component: {fileID: 7499940058068859655}
   m_Layer: 0
-  m_Name: Socket_East_11_6
+  m_Name: Socket_East_1_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -404,7 +404,7 @@ GameObject:
   - component: {fileID: 204543944529550972}
   - component: {fileID: 6959715808521460316}
   m_Layer: 0
-  m_Name: Socket_South_4_0
+  m_Name: Socket_South_0_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -450,7 +450,7 @@ GameObject:
   - component: {fileID: 4819248424694079378}
   - component: {fileID: 1536562089921475503}
   m_Layer: 0
-  m_Name: Socket_South_8_0
+  m_Name: Socket_South_1_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -535,7 +535,7 @@ GameObject:
   - component: {fileID: 6651770141844553373}
   - component: {fileID: 8129117386051519847}
   m_Layer: 0
-  m_Name: Socket_West_0_6
+  m_Name: Socket_West_0_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

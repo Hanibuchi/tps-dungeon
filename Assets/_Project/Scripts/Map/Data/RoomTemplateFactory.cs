@@ -8,37 +8,22 @@ namespace TpsDungeon.Map.Data
     /// </summary>
     public static class RoomTemplateFactory
     {
-        /// <summary>この長さを超える辺には 2 箇所ドア候補を置く。</summary>
-        private const int TwoSocketEdgeLength = 8;
-
-        /// <summary>四辺すべてにドア候補を打つ。長い辺は 2 箇所。</summary>
+        /// <summary>
+        /// 外周セル 1 つずつにドア候補を打つ。
+        /// 1x1〜2x2 のような小さい部屋では、辺の中央だけに打つと繋ぎ先が足りなくなって成長が止まるため、
+        /// 打てる場所には全部打っておいて、使うかどうかは生成時に選ばせる。
+        /// 並び順は RoomTemplate.CollectSockets の整列（方向 → x → y）と揃えてある。
+        /// </summary>
         public static List<DoorSocketData> CreateDefaultSockets(int width, int height)
         {
             var sockets = new List<DoorSocketData>();
 
-            foreach (int x in EdgePositions(width)) sockets.Add(new DoorSocketData(new GridPos(x, height - 1), Direction.North));
-            foreach (int y in EdgePositions(height)) sockets.Add(new DoorSocketData(new GridPos(width - 1, y), Direction.East));
-            foreach (int x in EdgePositions(width)) sockets.Add(new DoorSocketData(new GridPos(x, 0), Direction.South));
-            foreach (int y in EdgePositions(height)) sockets.Add(new DoorSocketData(new GridPos(0, y), Direction.West));
+            for (int x = 0; x < width; x++) sockets.Add(new DoorSocketData(new GridPos(x, height - 1), Direction.North));
+            for (int y = 0; y < height; y++) sockets.Add(new DoorSocketData(new GridPos(width - 1, y), Direction.East));
+            for (int x = 0; x < width; x++) sockets.Add(new DoorSocketData(new GridPos(x, 0), Direction.South));
+            for (int y = 0; y < height; y++) sockets.Add(new DoorSocketData(new GridPos(0, y), Direction.West));
 
             return sockets;
-        }
-
-        /// <summary>長さ length の辺に沿ったドア候補の位置。角は避ける。</summary>
-        private static IEnumerable<int> EdgePositions(int length)
-        {
-            if (length <= 2)
-            {
-                yield return length / 2;
-                yield break;
-            }
-            if (length < TwoSocketEdgeLength)
-            {
-                yield return length / 2;
-                yield break;
-            }
-            yield return length / 3;
-            yield return length * 2 / 3;
         }
     }
 }

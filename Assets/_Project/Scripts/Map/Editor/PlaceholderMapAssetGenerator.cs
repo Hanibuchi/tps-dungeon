@@ -19,7 +19,7 @@ namespace TpsDungeon.Map.Editor
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
         private const string SettingsFolder = "Assets/_Project/Settings/Map";
 
-        private const float CellSize = 3f;
+        private const float CellSize = 5f;
         private const float WallHeight = 3f;
         private const float WallThickness = 0.15f;
         private const float FloorThickness = 0.1f;
@@ -47,18 +47,18 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// 第1層「玄関」の部屋構成に名前を寄せたプレースホルダ。
-        /// 部屋は辺を共有して直接隣り合うので、サイズはフロアのグリッドに収まりさえすれば自由に決めてよい。
-        /// ただし大きい部屋ばかりだと隣に貼り付ける余地が減るので、小さいものを厚めに混ぜている。
+        /// 第1層のプレースホルダ部屋。1 セル 5m を 1 部屋の単位として、小さい部屋を組み合わせて
+        /// フロアを作る構成にしている。大きい部屋ばかりだと隣に貼り付ける余地が減るので、
+        /// 1x1 を厚めにして 2x2 までに抑えてある。
+        /// ここの並び順が RoomTemplateCatalog の登録順になる。
         /// </summary>
         private static readonly RoomSpec[] Rooms =
         {
-            new RoomSpec("Room_EntranceHall_12x10", 12, 10, RoomTag.Normal, true, 0.5f, "Floor"),
-            new RoomSpec("Room_Chapel_10x8", 10, 8, RoomTag.Normal, true, 0.8f, "Floor"),
-            new RoomSpec("Room_Guardpost_8x6", 8, 6, RoomTag.Normal, true, 1.0f, "Floor"),
-            new RoomSpec("Room_Antechamber_6x6", 6, 6, RoomTag.Normal, true, 1.0f, "Floor"),
-            new RoomSpec("Room_Shop_8x8", 8, 8, RoomTag.Shop, false, 1.0f, "Shop"),
-            new RoomSpec("Room_Stair_6x6", 6, 6, RoomTag.Stair, true, 1.0f, "Stair"),
+            new RoomSpec("Room_1x1", 1, 1, RoomTag.Normal, true, 1.0f, "Floor"),
+            new RoomSpec("Room_1x2", 1, 2, RoomTag.Normal, true, 0.8f, "Floor"),
+            new RoomSpec("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f, "Floor"),
+            new RoomSpec("Room_Shop", 1, 1, RoomTag.Shop, true, 0.2f, "Shop"),
+            new RoomSpec("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f, "Stair"),
         };
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダのマップ一式を生成")]
