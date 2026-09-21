@@ -20,7 +20,7 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("0 なら毎回ランダム。0 以外を入れるとその形が必ず再現される。")]
         private int seed;
 
-        [SerializeField]
+        [SerializeField, Tooltip("シーン再生と同時に生成するか。外したら他のスクリプトから Generate() を呼ぶ。")]
         private bool generateOnStart = true;
 
         private FloorBuilder builder;

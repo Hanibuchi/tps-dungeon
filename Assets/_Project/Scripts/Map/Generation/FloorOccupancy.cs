@@ -7,7 +7,6 @@ namespace TpsDungeon.Map.Generation
     {
         Empty = 0,
         Room = 1,
-        Corridor = 2,
     }
 
     /// <summary>
@@ -46,11 +45,6 @@ namespace TpsDungeon.Map.Generation
 
                 foreach (var socket in room.UsedSockets()) doors[(socket.Cell, socket.Facing)] = socket;
             }
-
-            foreach (var cell in layout.CorridorCells)
-            {
-                kinds[cell.Y * layout.Width + cell.X] = CellKind.Corridor;
-            }
         }
 
         public bool InsideGrid(GridPos p) => p.X >= 0 && p.Y >= 0 && p.X < layout.Width && p.Y < layout.Height;
@@ -75,15 +69,12 @@ namespace TpsDungeon.Map.Generation
             var neighborCell = cell + dir.Offset();
             var neighbor = KindAt(neighborCell);
 
+            // 同じ部屋の内側には何も建てない。別々の部屋が隣り合う境界は、ドアが無い限り壁になる。
             if (here == CellKind.Room && neighbor == CellKind.Room && RoomAt(cell) == RoomAt(neighborCell))
             {
                 return BoundaryKind.None;
             }
-            if (here == CellKind.Corridor && neighbor == CellKind.Corridor)
-            {
-                return BoundaryKind.None;
-            }
-            // ドアは部屋側のセルにしか登録されていないので、廊下側から問い合わせられた場合は隣を見る。
+            // ドアは両側の部屋にそれぞれ登録されるが、片側しか無い場合に備えて隣も見る。
             if (DoorAt(cell, dir) != null || DoorAt(neighborCell, dir.Opposite()) != null)
             {
                 return BoundaryKind.Door;

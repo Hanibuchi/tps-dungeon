@@ -3,22 +3,19 @@ using System.Text;
 
 namespace TpsDungeon.Map.Data
 {
-    /// <summary>部屋 2 つを結ぶ 1 本の廊下。</summary>
+    /// <summary>
+    /// 辺を共有して隣り合う部屋 2 つを結ぶ 1 枚のドア。
+    /// 廊下は無いので、辺そのものが「この壁にドアが開いている」という事実を表す。
+    /// </summary>
     public sealed class RoomEdge
     {
         public int Index { get; }
         public int RoomA { get; }
         public int RoomB { get; }
 
-        /// <summary>A 側 / B 側で実際に使われたソケット。カーブ前は null。</summary>
+        /// <summary>A 側 / B 側で向かい合っているソケット。2 つは必ず隣接セルで逆向き。</summary>
         public PlacedSocket SocketA { get; internal set; }
         public PlacedSocket SocketB { get; internal set; }
-
-        /// <summary>2 つのドアの間を埋める廊下セル列。ドアセル自体は含まない（隣接する部屋同士なら空になる）。</summary>
-        public List<GridPos> Path { get; } = new List<GridPos>();
-
-        /// <summary>廊下を通せたか。通せなかった辺は具現化もされない。</summary>
-        public bool IsCarved { get; internal set; }
 
         public RoomEdge(int index, int roomA, int roomB)
         {
@@ -29,7 +26,7 @@ namespace TpsDungeon.Map.Data
 
         public int Other(int room) => room == RoomA ? RoomB : RoomA;
 
-        public override string ToString() => $"Edge{Index}({RoomA}<->{RoomB}{(IsCarved ? $" len {Path.Count}" : " uncarved")})";
+        public override string ToString() => $"Edge{Index}({RoomA}<->{RoomB})";
     }
 
     /// <summary>1 フロア分の生成結果。Unity には一切依存しない。</summary>
@@ -42,13 +39,11 @@ namespace TpsDungeon.Map.Data
         public IReadOnlyList<RoomInstance> Rooms { get; }
         public IReadOnlyList<RoomEdge> Edges { get; }
 
-        /// <summary>廊下が占めるセルの集合。部屋の内部セルは含まない。</summary>
-        public IReadOnlyCollection<GridPos> CorridorCells => CorridorCellSet;
-
-        internal HashSet<GridPos> CorridorCellSet { get; }
-
-        /// <summary>BSP のリーフ矩形（デバッグ表示用）。</summary>
-        public IReadOnlyList<GridRect> LeafRects { get; }
+        /// <summary>
+        /// 実際に部屋が置かれている範囲の外接矩形。
+        /// 部屋はグリッド全体には広がらないので、俯瞰カメラの画角合わせにはこちらを使う。
+        /// </summary>
+        public GridRect RoomsBounds { get; }
 
         public int StairUpRoom { get; internal set; } = -1;
         public int StairDownRoom { get; internal set; } = -1;
@@ -59,17 +54,14 @@ namespace TpsDungeon.Map.Data
             int width,
             int height,
             IReadOnlyList<RoomInstance> rooms,
-            IReadOnlyList<RoomEdge> edges,
-            HashSet<GridPos> corridorCells,
-            IReadOnlyList<GridRect> leafRects)
+            IReadOnlyList<RoomEdge> edges)
         {
             Seed = seed;
             Width = width;
             Height = height;
             Rooms = rooms;
             Edges = edges;
-            CorridorCellSet = corridorCells;
-            LeafRects = leafRects;
+            RoomsBounds = ComputeRoomsBounds(rooms, width, height);
         }
 
         public RoomInstance RoomAt(int index) => index >= 0 && index < Rooms.Count ? Rooms[index] : null;
@@ -92,12 +84,27 @@ namespace TpsDungeon.Map.Data
             sb.Append('|');
             foreach (var edge in Edges)
             {
-                sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append(':');
-                foreach (var cell in edge.Path) sb.Append(cell);
-                sb.Append(';');
+                // B 側は A 側から一意に決まる（隣接セルで逆向き）ので A 側だけ出せば足りる。
+                sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append('@')
+                  .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing).Append(';');
             }
             sb.Append("|up=").Append(StairUpRoom).Append(",down=").Append(StairDownRoom).Append(",shop=").Append(ShopRoom);
             return sb.ToString();
+        }
+
+        private static GridRect ComputeRoomsBounds(IReadOnlyList<RoomInstance> rooms, int width, int height)
+        {
+            if (rooms == null || rooms.Count == 0) return new GridRect(0, 0, width, height);
+
+            int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+            foreach (var room in rooms)
+            {
+                if (room.Bounds.X < minX) minX = room.Bounds.X;
+                if (room.Bounds.Y < minY) minY = room.Bounds.Y;
+                if (room.Bounds.MaxX > maxX) maxX = room.Bounds.MaxX;
+                if (room.Bounds.MaxY > maxY) maxY = room.Bounds.MaxY;
+            }
+            return new GridRect(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
     }
 }

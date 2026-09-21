@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 2375209327434532623}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: -0.7071068}
-  m_LocalPosition: {x: 1.5, y: 0, z: 10.5}
+  m_LocalPosition: {x: 2.5, y: 0, z: 2.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 0, y: 3}
+  localCell: {x: 0, y: 0}
   facing: 3
 --- !u!1 &2577176910344405510
 GameObject:
@@ -57,7 +57,7 @@ GameObject:
   - component: {fileID: 3270871470902316112}
   - component: {fileID: 6714197185536789909}
   m_Layer: 0
-  m_Name: Room_EntranceHall_12x10
+  m_Name: Room_2x2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42f23bb48d20b4745a91dc5e3c0ab2c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.RoomTemplate
-  sizeInCells: {x: 12, y: 10}
-  cellSize: 3
+  sizeInCells: {x: 2, y: 2}
+  cellSize: 5
   tags: 1
   allowRotation: 1
   weight: 0.5
@@ -123,7 +123,7 @@ Transform:
   m_GameObject: {fileID: 2905402941219011670}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.5, y: 0, z: 28.5}
+  m_LocalPosition: {x: 2.5, y: 0, z: 7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -141,7 +141,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 4, y: 9}
+  localCell: {x: 0, y: 1}
   facing: 0
 --- !u!1 &4824071391573668698
 GameObject:
@@ -169,7 +169,7 @@ Transform:
   m_GameObject: {fileID: 4824071391573668698}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 34.5, y: 0, z: 10.5}
+  m_LocalPosition: {x: 7.5, y: 0, z: 2.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -187,7 +187,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 11, y: 3}
+  localCell: {x: 1, y: 0}
   facing: 1
 --- !u!1 &5169245328335197071
 GameObject:
@@ -215,7 +215,7 @@ Transform:
   m_GameObject: {fileID: 5169245328335197071}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 25.5, y: 0, z: 28.5}
+  m_LocalPosition: {x: 7.5, y: 0, z: 7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -233,7 +233,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 8, y: 9}
+  localCell: {x: 1, y: 1}
   facing: 0
 --- !u!1 &5228793243965030317
 GameObject:
@@ -261,7 +261,7 @@ Transform:
   m_GameObject: {fileID: 5228793243965030317}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 34.5, y: 0, z: 19.5}
+  m_LocalPosition: {x: 7.5, y: 0, z: 7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -279,7 +279,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 11, y: 6}
+  localCell: {x: 1, y: 1}
   facing: 1
 --- !u!1 &6733428978240553737
 GameObject:
@@ -309,8 +309,8 @@ Transform:
   m_GameObject: {fileID: 6733428978240553737}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18, y: -0.05, z: 15}
-  m_LocalScale: {x: 36, y: 0.1, z: 30}
+  m_LocalPosition: {x: 5, y: -0.05, z: 5}
+  m_LocalScale: {x: 10, y: 0.1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3270871470902316112}
@@ -419,7 +419,7 @@ Transform:
   m_GameObject: {fileID: 7473923051766113445}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
-  m_LocalPosition: {x: 13.5, y: 0, z: 1.5}
+  m_LocalPosition: {x: 2.5, y: 0, z: 2.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -437,7 +437,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 4, y: 0}
+  localCell: {x: 0, y: 0}
   facing: 2
 --- !u!1 &8037664553879613728
 GameObject:
@@ -465,7 +465,7 @@ Transform:
   m_GameObject: {fileID: 8037664553879613728}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
-  m_LocalPosition: {x: 25.5, y: 0, z: 1.5}
+  m_LocalPosition: {x: 7.5, y: 0, z: 2.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -483,7 +483,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 8, y: 0}
+  localCell: {x: 1, y: 0}
   facing: 2
 --- !u!1 &8208134717185579152
 GameObject:
@@ -550,7 +550,7 @@ Transform:
   m_GameObject: {fileID: 8395431442217864786}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: -0.7071068}
-  m_LocalPosition: {x: 1.5, y: 0, z: 19.5}
+  m_LocalPosition: {x: 2.5, y: 0, z: 7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -568,5 +568,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5c79043c816d4bfb8ab3a99cff783c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DoorSocket
-  localCell: {x: 0, y: 6}
+  localCell: {x: 0, y: 1}
   facing: 3

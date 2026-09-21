@@ -6,7 +6,7 @@ namespace TpsDungeon.Map.Generation
 {
     /// <summary>
     /// 1 フロア分のレイアウトを生成する入口。
-    /// BSP → 部屋グラフ → 役割割り当て → 部屋テンプレート配置 → 廊下カーブ の順に進む。
+    /// 成長パッキングで部屋と辺を同時に決め、そのあと階段とショップの役割を割り当てる。
     /// UnityEngine には依存しないので、EditMode テストからそのまま呼べる。
     /// </summary>
     public static class FloorLayoutGenerator
@@ -18,39 +18,45 @@ namespace TpsDungeon.Map.Generation
 
             var rng = new Random(seed);
 
-            var root = BspPartitioner.Partition(parameters, rng);
-            var leafRects = BspPartitioner.CollectLeafRects(root);
-            var edges = RoomGraphBuilder.Build(root, leafRects, parameters, rng);
-
-            var canHostStair = new bool[leafRects.Count];
-            var canHostShop = new bool[leafRects.Count];
-            for (int i = 0; i < leafRects.Count; i++)
+            // 成長がフロアの隅に突っ込んで早々に行き場を失うシードがあるので、部屋数が
+            // 下限に届かなければ作り直す。rng は使い回すため、シードが同じなら結果も同じ。
+            var packer = new RoomGrowthPacker(parameters, rng);
+            var best = packer.Run();
+            for (int attempt = 1; attempt < parameters.MaxPackAttempts && best.Rooms.Count < parameters.MinRoomCount; attempt++)
             {
-                canHostStair[i] = RoomPlacer.CanHost(leafRects[i], RoomTag.Stair, parameters);
-                canHostShop[i] = RoomPlacer.CanHost(leafRects[i], RoomTag.Shop, parameters);
+                var retry = packer.Run();
+                if (retry.Rooms.Count > best.Rooms.Count) best = retry;
             }
 
-            var assignment = SpecialRoomAssigner.Assign(leafRects.Count, edges, canHostStair, canHostShop, parameters, rng);
+            if (best.Rooms.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "部屋を 1 つも置けなかった。フロアサイズに対してテンプレートが大きすぎないか確認すること");
+            }
 
-            var roles = new RoomRole[leafRects.Count];
-            for (int i = 0; i < roles.Length; i++) roles[i] = RoomRole.Normal;
-            if (assignment.StairUpLeaf >= 0) roles[assignment.StairUpLeaf] = RoomRole.StairUp;
-            if (assignment.StairDownLeaf >= 0) roles[assignment.StairDownLeaf] = RoomRole.StairDown;
-            if (assignment.ShopLeaf >= 0) roles[assignment.ShopLeaf] = RoomRole.Shop;
+            var rooms = best.Rooms;
+            var edges = best.Edges;
 
-            var rooms = RoomPlacer.Place(leafRects, roles, parameters, rng);
+            var canHostStair = new bool[rooms.Count];
+            var canHostShop = new bool[rooms.Count];
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                canHostStair[i] = (rooms[i].Template.Tags & RoomTag.Stair) != 0;
+                canHostShop[i] = (rooms[i].Template.Tags & RoomTag.Shop) != 0;
+            }
 
-            var carver = new CorridorCarver(parameters.Width, parameters.Height, rooms, parameters);
-            var corridorCells = carver.CarveAll(edges, rooms);
+            // 階段とショップのマーカーは FloorBuilder が部屋の中心に独立して置くので、
+            // 専用テンプレートが足りなくても通常部屋で代用できる。足りないときは全部屋を候補に開放する。
+            if (CountTrue(canHostStair) < 2) Fill(canHostStair);
+            if (parameters.IncludeShop && CountTrue(canHostShop) < 1) Fill(canHostShop);
 
-            var layout = new FloorLayout(seed, parameters.Width, parameters.Height, rooms, edges, corridorCells, leafRects);
+            var assignment = SpecialRoomAssigner.Assign(rooms.Count, edges, canHostStair, canHostShop, parameters, rng);
 
-            // 専用テンプレートが収まらず RoomPlacer が役割を落とした場合でも、
-            // 階段とショップはフロアに必ず 1 つ要るので通常部屋のまま役割だけ戻す。
-            layout.StairUpRoom = ResolveRole(rooms, assignment.StairUpLeaf, RoomRole.StairUp);
-            layout.StairDownRoom = ResolveRole(rooms, assignment.StairDownLeaf, RoomRole.StairDown);
+            var layout = new FloorLayout(seed, parameters.Width, parameters.Height, rooms, edges);
+            layout.StairUpRoom = ResolveRole(rooms, assignment.StairUpRoom, RoomRole.StairUp);
+            layout.StairDownRoom = ResolveRole(rooms, assignment.StairDownRoom, RoomRole.StairDown);
             layout.ShopRoom = parameters.IncludeShop
-                ? ResolveRole(rooms, assignment.ShopLeaf, RoomRole.Shop)
+                ? ResolveRole(rooms, assignment.ShopRoom, RoomRole.Shop)
                 : -1;
 
             foreach (var room in rooms) room.FeatureCell = PickFeatureCell(room);
@@ -58,21 +64,36 @@ namespace TpsDungeon.Map.Generation
             return layout;
         }
 
-        private static int ResolveRole(IReadOnlyList<RoomInstance> rooms, int leafIndex, RoomRole role)
+        private static int ResolveRole(IReadOnlyList<RoomInstance> rooms, int roomIndex, RoomRole role)
         {
-            if (leafIndex < 0 || leafIndex >= rooms.Count) return -1;
-            rooms[leafIndex].Role = role;
-            return leafIndex;
+            if (roomIndex < 0 || roomIndex >= rooms.Count) return -1;
+            rooms[roomIndex].Role = role;
+            return roomIndex;
         }
 
         /// <summary>階段やショップのマーカーを置くセル。ドアの正面を塞がないよう中心を使う。</summary>
         private static GridPos PickFeatureCell(RoomInstance room) => room.Bounds.Center;
+
+        private static int CountTrue(bool[] flags)
+        {
+            int count = 0;
+            foreach (bool flag in flags)
+            {
+                if (flag) count++;
+            }
+            return count;
+        }
+
+        private static void Fill(bool[] flags)
+        {
+            for (int i = 0; i < flags.Length; i++) flags[i] = true;
+        }
     }
 
     /// <summary>生成結果を調べるためのヘルパー。テストとデバッグ表示から使う。</summary>
     public static class FloorLayoutAnalysis
     {
-        /// <summary>startRoom から廊下づたいに到達できる部屋のフラグ配列。</summary>
+        /// <summary>startRoom からドアづたいに到達できる部屋のフラグ配列。</summary>
         public static bool[] ReachableRooms(FloorLayout layout, int startRoom)
         {
             var reachable = new bool[layout.Rooms.Count];
@@ -82,7 +103,6 @@ namespace TpsDungeon.Map.Generation
             for (int i = 0; i < adjacency.Length; i++) adjacency[i] = new List<int>();
             foreach (var edge in layout.Edges)
             {
-                if (!edge.IsCarved) continue;
                 adjacency[edge.RoomA].Add(edge.RoomB);
                 adjacency[edge.RoomB].Add(edge.RoomA);
             }

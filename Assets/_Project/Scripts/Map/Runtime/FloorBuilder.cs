@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Runtime
 {
     /// <summary>
     /// FloorLayout をシーン上の実体に変換する。
-    /// 部屋は Prefab をそのまま置き、外周壁・ドア・廊下の床はセル境界の判定から組み立てる。
+    /// 部屋は Prefab をそのまま置き、壁とドアはセル境界の判定から組み立てる。
     /// 生成物はすべて 1 つのルート配下に入れるので、作り直すときはルートごと捨てればよい。
     /// </summary>
     [DisallowMultipleComponent]
@@ -44,12 +44,10 @@ namespace TpsDungeon.Map.Runtime
             root.SetParent(transform, false);
 
             var rooms = NewGroup(root, "Rooms");
-            var corridors = NewGroup(root, "Corridors");
             var boundaries = NewGroup(root, "Walls");
             var features = NewGroup(root, "Features");
 
             BuildRooms(layout, config, rooms);
-            BuildCorridorFloors(layout, config, corridors);
             BuildBoundaries(occupancy, config, boundaries);
             BuildFeatures(layout, config, features);
 
@@ -123,22 +121,6 @@ namespace TpsDungeon.Map.Runtime
             }
 
             return new Vector3(room.Bounds.X * cellSize, 0f, room.Bounds.Y * cellSize) + offset;
-        }
-
-        private void BuildCorridorFloors(FloorLayout layout, FloorConfig config, Transform parent)
-        {
-            if (config.corridorFloorPrefab == null)
-            {
-                Debug.LogWarning("corridorFloorPrefab が未設定なので廊下の床を省略した", this);
-                return;
-            }
-
-            foreach (var cell in layout.CorridorCells)
-            {
-                var tile = Instantiate(config.corridorFloorPrefab, parent);
-                tile.name = $"Corridor_{cell.X}_{cell.Y}";
-                tile.transform.SetLocalPositionAndRotation(CellCenter(cell), Quaternion.identity);
-            }
         }
 
         /// <summary>

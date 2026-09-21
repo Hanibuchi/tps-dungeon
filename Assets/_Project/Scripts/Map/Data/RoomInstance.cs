@@ -13,7 +13,7 @@ namespace TpsDungeon.Map.Data
 
         public bool IsUsed => UsedByEdge >= 0;
 
-        /// <summary>ソケットの外側、廊下が始まるセル。</summary>
+        /// <summary>ソケットの 1 つ外のセル。ドアとして使われている場合は隣の部屋のセルになる。</summary>
         public GridPos ExitCell => Cell + Facing.Offset();
 
         public PlacedSocket(GridPos cell, Direction facing)
@@ -37,9 +37,6 @@ namespace TpsDungeon.Map.Data
         /// <summary>回転を反映した後のフロア絶対矩形。</summary>
         public GridRect Bounds { get; }
 
-        /// <summary>この部屋を切り出した BSP リーフ矩形（デバッグ表示用）。</summary>
-        public GridRect LeafRect { get; }
-
         public RoomRole Role { get; internal set; }
         public IReadOnlyList<PlacedSocket> Sockets { get; }
 
@@ -51,14 +48,12 @@ namespace TpsDungeon.Map.Data
             RoomTemplateData template,
             int rotation,
             GridRect bounds,
-            GridRect leafRect,
             IReadOnlyList<PlacedSocket> sockets)
         {
             Index = index;
             Template = template;
             Rotation = rotation;
             Bounds = bounds;
-            LeafRect = leafRect;
             Sockets = sockets;
             Role = RoomRole.Normal;
             FeatureCell = bounds.Center;

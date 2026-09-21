@@ -15,19 +15,21 @@ namespace TpsDungeon.Map.DebugTools
     [AddComponentMenu("TPS Dungeon/Floor Debug View")]
     public sealed class FloorDebugView : MonoBehaviour
     {
-        [SerializeField] private FloorBootstrap bootstrap;
+        [SerializeField, Tooltip("監視する FloorBootstrap。未設定ならシーンから自動で探す。")]
+        private FloorBootstrap bootstrap;
         [SerializeField, Tooltip("フロア全体を映す俯瞰カメラ。未設定ならこの GameObject の Camera を使う。")]
         private Camera topDownCamera;
 
         [SerializeField, Tooltip("俯瞰カメラの周囲にとる余白（セル数）。")]
         private float marginInCells = 2f;
 
-        [SerializeField] private Key regenerateKey = Key.R;
-        [SerializeField] private bool showOverlay = true;
+        [SerializeField, Tooltip("別のシードで作り直すキー。")]
+        private Key regenerateKey = Key.R;
+
+        [SerializeField, Tooltip("画面左上にシードや部屋数の情報を表示する。")]
+        private bool showOverlay = true;
 
         [Header("Gizmo")]
-        [SerializeField, Tooltip("シーンビューに BSP のリーフ矩形を出す。")]
-        private bool drawLeafRects = true;
         [SerializeField, Tooltip("シーンビューに部屋同士の接続を出す。")]
         private bool drawRoomGraph = true;
 
@@ -71,14 +73,19 @@ namespace TpsDungeon.Map.DebugTools
             if (topDownCamera == null || bootstrap.Config == null) return;
 
             float cellSize = bootstrap.Config.cellSize;
-            float width = layout.Width * cellSize;
-            float depth = layout.Height * cellSize;
+
+            // 部屋はグリッド全体には広がらないので、実際に部屋がある範囲に寄せる。
+            var area = layout.RoomsBounds;
+            float width = area.Width * cellSize;
+            float depth = area.Height * cellSize;
             float margin = marginInCells * cellSize;
 
             topDownCamera.orthographic = true;
             topDownCamera.orthographicSize = Mathf.Max(depth, width / Mathf.Max(0.01f, topDownCamera.aspect)) * 0.5f + margin;
             topDownCamera.transform.SetPositionAndRotation(
-                new Vector3(width * 0.5f, Mathf.Max(width, depth), depth * 0.5f),
+                new Vector3((area.X + area.Width * 0.5f) * cellSize,
+                            Mathf.Max(width, depth),
+                            (area.Y + area.Height * 0.5f) * cellSize),
                 Quaternion.Euler(90f, 0f, 0f));
             topDownCamera.farClipPlane = Mathf.Max(topDownCamera.farClipPlane, Mathf.Max(width, depth) * 2f);
         }
@@ -97,14 +104,8 @@ namespace TpsDungeon.Map.DebugTools
             }
             else
             {
-                int carved = 0;
-                foreach (var edge in layout.Edges)
-                {
-                    if (edge.IsCarved) carved++;
-                }
-
                 GUILayout.Label($"seed: <b>{bootstrap.CurrentSeed}</b>", style);
-                GUILayout.Label($"部屋 {layout.Rooms.Count} / 廊下 {carved} 本 / 廊下セル {layout.CorridorCells.Count}", style);
+                GUILayout.Label($"部屋 {layout.Rooms.Count} / ドア {layout.Edges.Count} 枚", style);
                 GUILayout.Label($"上り階段 Room{layout.StairUpRoom} ・ 下り階段 Room{layout.StairDownRoom} ・ ショップ Room{layout.ShopRoom}", style);
                 GUILayout.Label($"[{regenerateKey}] 別のシードで作り直す", style);
             }
@@ -120,12 +121,6 @@ namespace TpsDungeon.Map.DebugTools
             if (layout == null) return;
 
             float cellSize = bootstrap.Config.cellSize;
-
-            if (drawLeafRects)
-            {
-                Gizmos.color = new Color(1f, 1f, 1f, 0.25f);
-                foreach (var leaf in layout.LeafRects) DrawRect(leaf, cellSize, 0.05f);
-            }
 
             foreach (var room in layout.Rooms)
             {
@@ -144,7 +139,6 @@ namespace TpsDungeon.Map.DebugTools
                 Gizmos.color = new Color(1f, 0.2f, 0.8f, 0.8f);
                 foreach (var edge in layout.Edges)
                 {
-                    if (!edge.IsCarved) continue;
                     Gizmos.DrawLine(
                         CenterOf(layout.Rooms[edge.RoomA].Bounds, cellSize),
                         CenterOf(layout.Rooms[edge.RoomB].Bounds, cellSize));

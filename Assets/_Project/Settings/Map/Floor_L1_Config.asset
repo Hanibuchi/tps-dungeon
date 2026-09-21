@@ -14,20 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
   widthInCells: 64
   heightInCells: 64
-  cellSize: 3
-  minLeafSize: 14
-  maxDepth: 4
-  splitRatioMin: 0.35
-  splitRatioMax: 0.65
-  leafPadding: 1
-  extraEdgeCount: 2
-  extraEdgeMaxDistance: 24
-  corridorTurnPenalty: 4
+  cellSize: 5
   roomCatalog: {fileID: 11400000, guid: dbadda85cad524f64b5184c262ad14ef, type: 2}
+  minRoomCount: 10
+  maxRoomCount: 20
+  maxPackAttempts: 6
+  startJitter: 4
   includeShop: 1
+  extraDoorCount: 2
   wallPrefab: {fileID: 1484306470306820924, guid: e14d51050d6ae4d5d84c3ab69d7f0c35, type: 3}
   doorPrefab: {fileID: 7476416142435393144, guid: 52ecd5b36d6584ced8cc039925d7300c, type: 3}
-  corridorFloorPrefab: {fileID: 7862939776586054338, guid: bda5a95365de548a980df761f6699c9a, type: 3}
   stairUpPrefab: {fileID: 6897905109614482074, guid: 9e6c8bd3e34674ca3b4cbea28143cfda, type: 3}
   stairDownPrefab: {fileID: 5910611291598227447, guid: bf72a56f8a78e4636a8b2b2522935ace, type: 3}
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}

@@ -22,7 +22,7 @@ namespace TpsDungeon.Map.Authoring
             public float weightOverride;
         }
 
-        [SerializeField]
+        [SerializeField, Tooltip("この層で使う部屋テンプレートの一覧。テンプレート ID は Prefab 名になる。")]
         private List<Entry> entries = new List<Entry>();
 
         public IReadOnlyList<Entry> Entries => entries;

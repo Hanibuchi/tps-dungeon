@@ -48,7 +48,8 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 第1層「玄関」の部屋構成に名前を寄せたプレースホルダ。
-        /// FloorConfig の minLeafSize(14) から leafPadding(1) を引いた 12x12 に収まるサイズにしてある。
+        /// 部屋は辺を共有して直接隣り合うので、サイズはフロアのグリッドに収まりさえすれば自由に決めてよい。
+        /// ただし大きい部屋ばかりだと隣に貼り付ける余地が減るので、小さいものを厚めに混ぜている。
         /// </summary>
         private static readonly RoomSpec[] Rooms =
         {
@@ -73,7 +74,6 @@ namespace TpsDungeon.Map.Editor
                 ["Floor"] = Material("Placeholder_Floor", new Color(0.55f, 0.53f, 0.50f)),
                 ["Wall"] = Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f)),
                 ["Door"] = Material("Placeholder_Door", new Color(0.65f, 0.35f, 0.15f)),
-                ["Corridor"] = Material("Placeholder_Corridor", new Color(0.42f, 0.41f, 0.40f)),
                 ["Shop"] = Material("Placeholder_Shop", new Color(0.85f, 0.72f, 0.18f)),
                 ["Stair"] = Material("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
                 ["StairUp"] = Material("Placeholder_StairUp", new Color(0.25f, 0.85f, 0.35f)),
@@ -100,7 +100,6 @@ namespace TpsDungeon.Map.Editor
                 // ルートは 1x1 の単位で作り、厚みだけ子の z スケールで持たせる。
                 ["Wall"] = BuildPanelPrefab("Wall_Basic", materials["Wall"]),
                 ["Door"] = BuildPanelPrefab("Door_Basic", materials["Door"]),
-                ["CorridorFloor"] = BuildTilePrefab("Corridor_Floor", materials["Corridor"]),
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
@@ -118,20 +117,6 @@ namespace TpsDungeon.Map.Editor
             // ルートの原点を床面に置きたいので、板は上方向に半分ずらす。
             mesh.transform.localPosition = new Vector3(0f, 0.5f, 0f);
             mesh.transform.localScale = new Vector3(1f, 1f, WallThickness);
-            Paint(mesh, material);
-
-            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
-        }
-
-        /// <summary>廊下の床タイル。FloorBuilder はスケールを触らないので実寸で作る。</summary>
-        private static GameObject BuildTilePrefab(string name, Material material)
-        {
-            var root = new GameObject(name);
-            var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mesh.name = "Mesh";
-            mesh.transform.SetParent(root.transform, false);
-            mesh.transform.localPosition = new Vector3(0f, -FloorThickness * 0.5f, 0f);
-            mesh.transform.localScale = new Vector3(CellSize, FloorThickness, CellSize);
             Paint(mesh, material);
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
@@ -215,16 +200,15 @@ namespace TpsDungeon.Map.Editor
             config.widthInCells = 64;
             config.heightInCells = 64;
             config.cellSize = CellSize;
-            config.minLeafSize = 14;
-            config.maxDepth = 4;
-            config.leafPadding = 1;
-            config.extraEdgeCount = 2;
-            config.corridorTurnPenalty = 4;
+            config.minRoomCount = 10;
+            config.maxRoomCount = 20;
+            config.maxPackAttempts = 6;
+            config.startJitter = 4;
+            config.extraDoorCount = 2;
             config.includeShop = true;
             config.roomCatalog = catalog;
             config.wallPrefab = parts["Wall"];
             config.doorPrefab = parts["Door"];
-            config.corridorFloorPrefab = parts["CorridorFloor"];
             config.stairUpPrefab = parts["StairUp"];
             config.stairDownPrefab = parts["StairDown"];
             config.shopMarkerPrefab = parts["ShopMarker"];

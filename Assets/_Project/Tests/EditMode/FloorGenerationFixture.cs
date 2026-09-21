@@ -16,8 +16,11 @@ namespace TpsDungeon.Map.Tests
         {
             Width = 64,
             Height = 64,
-            MinLeafSize = 14,
-            MaxDepth = 4,
+            MinRoomCount = 10,
+            MaxRoomCount = 20,
+            MaxPackAttempts = 6,
+            StartJitter = 4,
+            ExtraDoorCount = 2,
             Templates = new List<RoomTemplateData>
             {
                 Template("Hall_6x6", 6, 6, RoomTag.Normal, true, 1.0f),

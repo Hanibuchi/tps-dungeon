@@ -43,7 +43,10 @@ namespace TpsDungeon.Map.Data
 
         public override string ToString() => $"[{X},{Y} {Width}x{Height}]";
 
-        /// <summary>2 矩形の最短距離（軸ごとの隙間の合計）。接している場合は 0。</summary>
+        /// <summary>
+        /// 2 矩形の最短距離（軸ごとのセル数の差の合計）。
+        /// 重なっていれば 0、辺を共有して隣り合っていれば 1、角だけ触れていれば 2 になる。
+        /// </summary>
         public static int Distance(GridRect a, GridRect b)
         {
             int dx = Math.Max(0, Math.Max(a.X - b.MaxX, b.X - a.MaxX));

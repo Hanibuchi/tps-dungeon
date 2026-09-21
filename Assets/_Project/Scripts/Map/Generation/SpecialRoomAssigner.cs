@@ -4,20 +4,20 @@ using TpsDungeon.Map.Data;
 
 namespace TpsDungeon.Map.Generation
 {
-    /// <summary>上り階段・下り階段・ショップをどのリーフに置くかを決める。</summary>
+    /// <summary>上り階段・下り階段・ショップをどの部屋に置くかを決める。</summary>
     public static class SpecialRoomAssigner
     {
         public sealed class Assignment
         {
-            public int StairUpLeaf = -1;
-            public int StairDownLeaf = -1;
-            public int ShopLeaf = -1;
+            public int StairUpRoom = -1;
+            public int StairDownRoom = -1;
+            public int ShopRoom = -1;
         }
 
-        /// <param name="canHostStair">そのリーフに階段部屋テンプレートが収まるか。</param>
-        /// <param name="canHostShop">そのリーフにショップ部屋テンプレートが収まるか。</param>
+        /// <param name="canHostStair">その部屋が階段を置けるテンプレートか。</param>
+        /// <param name="canHostShop">その部屋がショップを置けるテンプレートか。</param>
         public static Assignment Assign(
-            int leafCount,
+            int roomCount,
             IReadOnlyList<RoomEdge> edges,
             bool[] canHostStair,
             bool[] canHostShop,
@@ -25,18 +25,18 @@ namespace TpsDungeon.Map.Generation
             Random rng)
         {
             var result = new Assignment();
-            if (leafCount == 0) return result;
+            if (roomCount == 0) return result;
 
-            var adjacency = BuildAdjacency(leafCount, edges);
+            var adjacency = BuildAdjacency(roomCount, edges);
 
             // 階段はグラフ距離が最も離れた 2 部屋に置き、フロアを端から端まで歩かせる。
             int bestA = -1, bestB = -1, bestDistance = -1;
-            var distanceBuffer = new int[leafCount];
-            for (int a = 0; a < leafCount; a++)
+            var distanceBuffer = new int[roomCount];
+            for (int a = 0; a < roomCount; a++)
             {
                 if (!canHostStair[a]) continue;
                 BreadthFirst(a, adjacency, distanceBuffer);
-                for (int b = 0; b < leafCount; b++)
+                for (int b = 0; b < roomCount; b++)
                 {
                     if (b == a || !canHostStair[b]) continue;
                     int distance = distanceBuffer[b];
@@ -52,34 +52,34 @@ namespace TpsDungeon.Map.Generation
 
             if (bestA < 0)
             {
-                // 階段を置けるリーフが足りない場合は先頭 2 つで妥協する。
+                // 階段を置ける部屋が足りない場合は先頭 2 つで妥協する。
                 bestA = 0;
-                bestB = leafCount > 1 ? 1 : -1;
+                bestB = roomCount > 1 ? 1 : -1;
                 bestDistance = 1;
             }
 
             // どちらを上りにするかはシードで入れ替える。
             if (rng.Next(2) == 0)
             {
-                result.StairUpLeaf = bestA;
-                result.StairDownLeaf = bestB;
+                result.StairUpRoom = bestA;
+                result.StairDownRoom = bestB;
             }
             else
             {
-                result.StairUpLeaf = bestB;
-                result.StairDownLeaf = bestA;
+                result.StairUpRoom = bestB;
+                result.StairDownRoom = bestA;
             }
 
             if (!p.IncludeShop) return result;
 
             // ショップは入口と出口のちょうど中間あたりに置く。
-            BreadthFirst(result.StairUpLeaf, adjacency, distanceBuffer);
+            BreadthFirst(result.StairUpRoom, adjacency, distanceBuffer);
             double target = bestDistance / 2.0;
             int shop = -1;
             double shopScore = double.MaxValue;
-            for (int i = 0; i < leafCount; i++)
+            for (int i = 0; i < roomCount; i++)
             {
-                if (i == result.StairUpLeaf || i == result.StairDownLeaf) continue;
+                if (i == result.StairUpRoom || i == result.StairDownRoom) continue;
                 if (!canHostShop[i]) continue;
                 if (distanceBuffer[i] < 0) continue;
                 double score = Math.Abs(distanceBuffer[i] - target);
@@ -89,15 +89,15 @@ namespace TpsDungeon.Map.Generation
                     shop = i;
                 }
             }
-            result.ShopLeaf = shop;
+            result.ShopRoom = shop;
 
             return result;
         }
 
-        private static List<int>[] BuildAdjacency(int leafCount, IReadOnlyList<RoomEdge> edges)
+        private static List<int>[] BuildAdjacency(int roomCount, IReadOnlyList<RoomEdge> edges)
         {
-            var adjacency = new List<int>[leafCount];
-            for (int i = 0; i < leafCount; i++) adjacency[i] = new List<int>();
+            var adjacency = new List<int>[roomCount];
+            for (int i = 0; i < roomCount; i++) adjacency[i] = new List<int>();
             foreach (var edge in edges)
             {
                 adjacency[edge.RoomA].Add(edge.RoomB);
