@@ -115,3 +115,7 @@ InitTestScene*.unity*
 
 # macOS が勝手に作るもの
 .DS_Store
+
+# ThirdParty（Asset Store / Starter Assets など外部素材）は管理しない
+/[Aa]ssets/[Tt]hird[Pp]arty/
+/[Aa]ssets/[Tt]hird[Pp]arty.meta
