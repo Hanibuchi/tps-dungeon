@@ -24,6 +24,10 @@ namespace TpsDungeon.Map.Editor
         private const float WallThickness = 0.15f;
         private const float FloorThickness = 0.1f;
 
+        // ドアの開口。セル幅と壁高に対する比で持つので、CellSize を変えても通れる幅のまま追従する。
+        private const float DoorOpeningWidth = 0.4f;
+        private const float DoorOpeningHeight = 0.75f;
+
         private readonly struct RoomSpec
         {
             public readonly string Name;
@@ -99,7 +103,7 @@ namespace TpsDungeon.Map.Editor
                 // 壁とドアは FloorBuilder が localScale の x と y を (cellSize, wallHeight) に上書きするので、
                 // ルートは 1x1 の単位で作り、厚みだけ子の z スケールで持たせる。
                 ["Wall"] = BuildPanelPrefab("Wall_Basic", materials["Wall"]),
-                ["Door"] = BuildPanelPrefab("Door_Basic", materials["Door"]),
+                ["Door"] = BuildDoorFramePrefab("Door_Basic", materials["Door"]),
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
@@ -120,6 +124,41 @@ namespace TpsDungeon.Map.Editor
             Paint(mesh, material);
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// ドア用。壁と同じく (cellSize, wallHeight, 1) にスケールされる前提で、
+        /// 左右の柱と鴨居だけを建てて真ん中を開ける。板を張ると人が通れないので開口は塞がない。
+        /// 扉を開閉させたくなったら、この開口に板の子を足すこと。
+        /// </summary>
+        private static GameObject BuildDoorFramePrefab(string name, Material material)
+        {
+            var root = new GameObject(name);
+
+            float pillarWidth = (1f - DoorOpeningWidth) * 0.5f;
+            float pillarOffsetX = (DoorOpeningWidth + pillarWidth) * 0.5f;
+            float lintelHeight = 1f - DoorOpeningHeight;
+
+            AddDoorPiece(root, "Pillar_L", material,
+                new Vector3(-pillarOffsetX, 0.5f, 0f), new Vector3(pillarWidth, 1f, WallThickness));
+            AddDoorPiece(root, "Pillar_R", material,
+                new Vector3(pillarOffsetX, 0.5f, 0f), new Vector3(pillarWidth, 1f, WallThickness));
+            AddDoorPiece(root, "Lintel", material,
+                new Vector3(0f, DoorOpeningHeight + lintelHeight * 0.5f, 0f),
+                new Vector3(DoorOpeningWidth, lintelHeight, WallThickness));
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        private static void AddDoorPiece(
+            GameObject root, string name, Material material, Vector3 localPosition, Vector3 localScale)
+        {
+            var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            piece.name = name;
+            piece.transform.SetParent(root.transform, false);
+            piece.transform.localPosition = localPosition;
+            piece.transform.localScale = localScale;
+            Paint(piece, material);
         }
 
         private static GameObject BuildMarkerPrefab(string name, Material material, PrimitiveType primitive)
