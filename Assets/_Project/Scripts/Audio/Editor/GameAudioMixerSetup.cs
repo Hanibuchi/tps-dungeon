@@ -81,6 +81,9 @@ namespace TpsDungeon.Audio.Editor
             object controller = CreateMixerControllerAtPath.Invoke(null, new object[] { MixerPath });
             if (controller == null) throw new InvalidOperationException("AudioMixerController を作れなかった。");
 
+            // ポーズ中は timeScale が 0 になる。ゲーム時間で進めるとこもる演出への遷移が止まってしまう。
+            ((AudioMixer)controller).updateMode = AudioMixerUpdateMode.UnscaledTime;
+
             object master = MasterGroupProp.GetValue(controller);
             ((UnityEngine.Object)master).name = MasterGroupName;
 
