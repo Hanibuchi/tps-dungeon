@@ -557,6 +557,32 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
+--- !u!1 &1378611703 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+  m_PrefabInstance: {fileID: 5508518673633225154}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1378611704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378611703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d98ed8bb4234439b543cdcc331548c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Player.Debug::TpsDungeon.Player.DebugTools.CharacterAttackDebugInput
+  animator: {fileID: 1378611710}
+  attackKeys: 290000002a0000002b0000002c0000002d000000
+  equipOnlyModifier: 51
+  showOverlay: 1
+--- !u!95 &1378611710 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 7309302257321726661, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+  m_PrefabInstance: {fileID: 5508518673633225154}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1427654687
 GameObject:
   m_ObjectHideFlags: 0
@@ -759,7 +785,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1378611704}
   m_SourcePrefab: {fileID: 100100000, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
