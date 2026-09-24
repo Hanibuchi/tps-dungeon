@@ -8,7 +8,7 @@ namespace TpsDungeon.Hud.Editor
 {
     /// <summary>
     /// プレイヤーのプレハブに常時表示の HUD（HP・ホットバー・マップ）と、その出どころの
-    /// PlayerHealth / PlayerHotbar を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// PlayerHealth / PlayerHotbar / PlayerMapToggle を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
     public static class PlayerHudSetup
     {
@@ -40,9 +40,12 @@ namespace TpsDungeon.Hud.Editor
                 var hotbar = root.GetComponent<PlayerHotbar>();
                 if (hotbar == null) hotbar = root.AddComponent<PlayerHotbar>();
 
-                var serializedHotbar = new SerializedObject(hotbar);
-                serializedHotbar.FindProperty("playerInput").objectReferenceValue = root.GetComponent<PlayerInput>();
-                serializedHotbar.ApplyModifiedPropertiesWithoutUndo();
+                var mapToggle = root.GetComponent<PlayerMapToggle>();
+                if (mapToggle == null) mapToggle = root.AddComponent<PlayerMapToggle>();
+
+                var playerInput = root.GetComponent<PlayerInput>();
+                SetReference(hotbar, "playerInput", playerInput);
+                SetReference(mapToggle, "playerInput", playerInput);
 
                 var hud = root.transform.Find(HudName);
                 if (hud == null)
@@ -63,6 +66,7 @@ namespace TpsDungeon.Hud.Editor
                 var serializedView = new SerializedObject(view);
                 serializedView.FindProperty("health").objectReferenceValue = health;
                 serializedView.FindProperty("hotbar").objectReferenceValue = hotbar;
+                serializedView.FindProperty("mapToggle").objectReferenceValue = mapToggle;
                 serializedView.FindProperty("player").objectReferenceValue = root.transform;
                 serializedView.ApplyModifiedPropertiesWithoutUndo();
 
@@ -73,6 +77,13 @@ namespace TpsDungeon.Hud.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static void SetReference(Object target, string propertyName, Object value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(propertyName).objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }

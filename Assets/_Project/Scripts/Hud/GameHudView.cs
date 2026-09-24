@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud
 {
     /// <summary>
-    /// 常時表示の HUD（左下 HP・下中央ホットバー・右下マップ）。
+    /// 常時表示の HUD（左下 HP・下中央ホットバー・右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
-    /// 表示は PlayerHealth / PlayerHotbar / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 表示は PlayerHealth / PlayerHotbar / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -28,6 +28,9 @@ namespace TpsDungeon.Hud
         [SerializeField, Tooltip("ホットバーの選択の出どころ。未設定なら親から探す。")]
         private PlayerHotbar hotbar;
 
+        [SerializeField, Tooltip("大きな地図を開いているかの出どころ。未設定なら親から探す。")]
+        private PlayerMapToggle mapToggle;
+
         [SerializeField, Tooltip("マップ上の現在地と向きに使う Transform。未設定なら PlayerHealth の GameObject。")]
         private Transform player;
 
@@ -36,7 +39,11 @@ namespace TpsDungeon.Hud
         private VisualElement hpFill;
         private Label hpValue;
         private VisualElement[] slots;
-        private MinimapElement minimap;
+        private VisualElement minimapFrame;
+        private VisualElement mapOverlay;
+
+        // 右下の小さい地図と、開いたときの大きな地図。同じ内容を縮尺（USS の --map-pixels-per-cell）だけ変えて描く。
+        private MinimapElement[] maps;
 
         private FloorBuilder floorBuilder;
         private FloorExploration exploration;
@@ -46,6 +53,7 @@ namespace TpsDungeon.Hud
         {
             health = GetComponentInParent<PlayerHealth>();
             hotbar = GetComponentInParent<PlayerHotbar>();
+            mapToggle = GetComponentInParent<PlayerMapToggle>();
         }
 
         private void Awake()
@@ -53,6 +61,7 @@ namespace TpsDungeon.Hud
             document = GetComponent<UIDocument>();
             if (health == null) health = GetComponentInParent<PlayerHealth>();
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
+            if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
             if (player == null && health != null) player = health.transform;
         }
 
@@ -66,19 +75,24 @@ namespace TpsDungeon.Hud
             hpRoot = root.Q<VisualElement>("hp");
             hpFill = root.Q<VisualElement>("hp-fill");
             hpValue = root.Q<Label>("hp-value");
-            minimap = root.Q<MinimapElement>("minimap-canvas");
+            minimapFrame = root.Q<VisualElement>("minimap");
+            mapOverlay = root.Q<VisualElement>("map-overlay");
+            maps = root.Query<MinimapElement>().ToList().ToArray();
             slots = BuildSlots(root.Q<VisualElement>("hotbar"));
 
             if (health != null) health.Changed += OnHealthChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
             RefreshHealth();
             RefreshHotbar();
+            RefreshMapOverlay();
         }
 
         private void OnDisable()
         {
             if (health != null) health.Changed -= OnHealthChanged;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
+            if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
             UnbindFloor();
         }
 
@@ -122,6 +136,16 @@ namespace TpsDungeon.Hud
 
         private void OnHotbarChanged(PlayerHotbar _) => RefreshHotbar();
 
+        private void OnMapToggleChanged(PlayerMapToggle _) => RefreshMapOverlay();
+
+        /// <summary>大きな地図を開いている間は、同じものを描いている右下の小さい地図を隠す。</summary>
+        private void RefreshMapOverlay()
+        {
+            bool open = mapToggle != null && mapToggle.IsOpen;
+            if (mapOverlay != null) mapOverlay.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+            if (minimapFrame != null) minimapFrame.style.display = open ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
         private void RefreshHealth()
         {
             if (hpRoot == null) return;
@@ -160,40 +184,46 @@ namespace TpsDungeon.Hud
             if (floorBuilder != null) floorBuilder.Built -= OnFloorBuilt;
             floorBuilder = null;
             exploration = null;
-            if (minimap != null) minimap.SetExploration(null);
+            if (maps == null) return;
+            foreach (var m in maps) m.SetExploration(null);
         }
 
         /// <summary>作り直されたら探索状況も白紙に戻す。</summary>
         private void OnFloorBuilt(FloorLayout layout)
         {
             exploration = layout != null ? new FloorExploration(layout) : null;
-            if (minimap != null) minimap.SetExploration(exploration);
+            if (maps == null) return;
+            foreach (var m in maps) m.SetExploration(exploration);
         }
 
         private void UpdateMinimap()
         {
-            if (minimap == null) return;
+            if (maps == null) return;
             if (player == null)
             {
-                minimap.ClearPlayer();
+                foreach (var m in maps) m.ClearPlayer();
                 return;
             }
 
             if (floorBuilder == null || exploration == null)
             {
                 // フロアが無いシーンでは向きだけ出す。
-                minimap.SetPlayer(Vector2.zero, player.eulerAngles.y);
+                foreach (var m in maps) m.SetPlayer(Vector2.zero, player.eulerAngles.y);
                 return;
             }
 
             int previousRoom = exploration.CurrentRoom;
             bool firstVisit = exploration.Visit(floorBuilder.WorldToCell(player.position));
-            if (firstVisit || exploration.CurrentRoom != previousRoom) minimap.MarkDirtyRepaint();
+            if (firstVisit || exploration.CurrentRoom != previousRoom)
+            {
+                foreach (var m in maps) m.MarkDirtyRepaint();
+            }
 
             var local = floorBuilder.transform.InverseTransformPoint(player.position);
             float cellSize = floorBuilder.CellSize;
+            var cell = new Vector2(local.x / cellSize, local.z / cellSize);
             float yaw = player.eulerAngles.y - floorBuilder.transform.eulerAngles.y;
-            minimap.SetPlayer(new Vector2(local.x / cellSize, local.z / cellSize), yaw);
+            foreach (var m in maps) m.SetPlayer(cell, yaw);
         }
 
         public static string HpText(int current, int max) => $"{current} / {max}";

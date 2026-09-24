@@ -163,3 +163,34 @@
     --map-player: rgb(214, 158, 74);
     --map-pixels-per-cell: 32;
 }
+
+/* ---- マップキーで開く大きな地図 ---- */
+
+/* 画面いっぱいに薄く暗くして、真ん中に大きな枠を置く。閉じているときは GameHudView が隠す。 */
+.map-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+/* 正方形。PanelSettings が画面の大きさに合わせて拡縮するので、1080p 基準の固定サイズでよい。 */
+.map-large {
+    width: 760px;
+    height: 760px;
+    /* 大きいぶん背後の景色が透けると部屋が読みにくいので、小さい地図より濃くする。 */
+    background-color: rgba(28, 26, 24, 0.96);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 小さい地図と同じ要素を、寄って大きく描く。 */
+.map-large__canvas {
+    --map-pixels-per-cell: 64;
+}

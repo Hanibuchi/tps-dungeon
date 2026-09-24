@@ -14,5 +14,10 @@
         <ui:VisualElement name="minimap" class="minimap" picking-mode="Ignore">
             <hud:MinimapElement name="minimap-canvas" class="minimap__canvas" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="map-overlay" class="map-overlay" picking-mode="Ignore">
+            <ui:VisualElement class="map-large" picking-mode="Ignore">
+                <hud:MinimapElement name="map-large-canvas" class="minimap__canvas map-large__canvas" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

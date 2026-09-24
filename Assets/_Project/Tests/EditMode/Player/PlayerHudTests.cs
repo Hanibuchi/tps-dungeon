@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TpsDungeon.Player.Tests
 {
-    /// <summary>HP の増減とホットバーの選択、HUD に出す文字。</summary>
+    /// <summary>HP の増減、ホットバーの選択、地図の開け閉め、HUD に出す文字。</summary>
     public sealed class PlayerHudTests
     {
         private GameObject go;
@@ -98,6 +98,24 @@ namespace TpsDungeon.Player.Tests
         public void Hotbar_ScrollValueBecomesOneStep(float value, int expected)
         {
             Assert.AreEqual(expected, PlayerHotbar.ScrollStep(value));
+        }
+
+        [Test]
+        public void MapToggle_OpensAndClosesAndNotifiesOnlyOnChange()
+        {
+            var toggle = go.AddComponent<PlayerMapToggle>();
+            int changes = 0;
+            toggle.Changed += _ => changes++;
+
+            Assert.IsFalse(toggle.IsOpen, "最初は閉じている");
+
+            toggle.Toggle();
+            Assert.IsTrue(toggle.IsOpen);
+
+            toggle.SetOpen(true);
+            toggle.Toggle();
+            Assert.IsFalse(toggle.IsOpen);
+            Assert.AreEqual(2, changes, "開いたままの SetOpen(true) では知らせない");
         }
 
         [Test]
