@@ -32,6 +32,9 @@ namespace TpsDungeon.Map.Editor
         // 扉板の見た目。厚み（メートル）は Door の既定値と揃えて枠より薄くしてある。
         private const float DoorLeafThickness = 0.08f;
 
+        // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
+        private const float DoorInteractVolumeDepth = 0.3f;
+
         private readonly struct RoomSpec
         {
             public readonly string Name;
@@ -151,6 +154,15 @@ namespace TpsDungeon.Map.Editor
             AddDoorPiece(root, "Lintel", material,
                 new Vector3(0f, DoorOpeningHeight + lintelHeight * 0.5f, 0f),
                 new Vector3(DoorOpeningWidth, lintelHeight, WallThickness));
+
+            // 開けた後に開口を覗いても「閉める」が出るよう、開口いっぱいに照準用のトリガーを張る。
+            // 当たり判定は持たないので通行の邪魔はしない。
+            var volume = new GameObject("InteractVolume");
+            volume.transform.SetParent(root.transform, false);
+            volume.transform.localPosition = new Vector3(0f, DoorOpeningHeight * 0.5f, 0f);
+            var trigger = volume.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(DoorOpeningWidth, DoorOpeningHeight, DoorInteractVolumeDepth);
 
             var hinge = new GameObject("Hinge");
             hinge.transform.SetParent(root.transform, false);

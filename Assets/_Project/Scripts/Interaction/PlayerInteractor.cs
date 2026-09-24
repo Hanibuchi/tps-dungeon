@@ -8,6 +8,7 @@ namespace TpsDungeon.Interaction
     /// 画面中央の照準の先にある IInteractable を探し、インタラクトキーで触る。
     /// カーソルはロックされているので「カーソルを合わせる」は画面中央からのレイで判定する。
     /// 壁越しに拾わないよう、自分以外で最初に当たったものしか見ない。
+    /// トリガーは IInteractable に属するもの（開いた扉の開口に張った判定など）だけを的にし、それ以外は素通しする。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -101,7 +102,7 @@ namespace TpsDungeon.Interaction
             if (cam == null) return null;
 
             var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            int count = Physics.RaycastNonAlloc(ray, hits, maxAimDistance, aimMask, QueryTriggerInteraction.Ignore);
+            int count = Physics.RaycastNonAlloc(ray, hits, maxAimDistance, aimMask, QueryTriggerInteraction.Collide);
             Array.Sort(hits, 0, count, HitDistanceComparer.Instance);
 
             for (int i = 0; i < count; i++)
@@ -111,7 +112,12 @@ namespace TpsDungeon.Interaction
                 if (hitTransform.IsChildOf(transform)) continue;
 
                 var interactable = hitTransform.GetComponentInParent<IInteractable>();
-                if (interactable == null) return null;
+                if (interactable == null)
+                {
+                    // 関係ないトリガー（範囲判定など）で照準を遮らない。実体に当たったらそこで打ち切る。
+                    if (hits[i].collider.isTrigger) continue;
+                    return null;
+                }
 
                 var reachOrigin = transform.position + Vector3.up * reachOriginHeight;
                 if (!IsWithinReach(reachOrigin, hits[i].point, interactRange)) return null;
