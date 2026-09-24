@@ -1,9 +1,8 @@
 {
-    "name": "TpsDungeon.Map",
-    "rootNamespace": "TpsDungeon.Map",
+    "name": "TpsDungeon.Interaction",
+    "rootNamespace": "TpsDungeon.Interaction",
     "references": [
-        "Unity.InputSystem",
-        "TpsDungeon.Interaction"
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,10 +1,9 @@
 {
-    "name": "TpsDungeon.Map.Tests",
-    "rootNamespace": "TpsDungeon.Map.Tests",
+    "name": "TpsDungeon.Interaction.Tests",
+    "rootNamespace": "TpsDungeon.Interaction.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "TpsDungeon.Map",
         "TpsDungeon.Interaction"
     ],
     "includePlatforms": [

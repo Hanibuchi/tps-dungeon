@@ -1,11 +1,13 @@
 {
-    "name": "TpsDungeon.Map",
-    "rootNamespace": "TpsDungeon.Map",
+    "name": "TpsDungeon.Interaction.Editor",
+    "rootNamespace": "TpsDungeon.Interaction.Editor",
     "references": [
-        "Unity.InputSystem",
-        "TpsDungeon.Interaction"
+        "TpsDungeon.Interaction",
+        "Unity.InputSystem"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

@@ -2,7 +2,8 @@
     "name": "TpsDungeon.Map.Editor",
     "rootNamespace": "TpsDungeon.Map.Editor",
     "references": [
-        "TpsDungeon.Map"
+        "TpsDungeon.Map",
+        "TpsDungeon.Interaction"
     ],
     "includePlatforms": [
         "Editor"

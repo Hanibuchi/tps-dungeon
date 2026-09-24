@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
+using TpsDungeon.Map.Runtime;
 
 namespace TpsDungeon.Map.Editor
 {
@@ -27,6 +28,9 @@ namespace TpsDungeon.Map.Editor
         // ドアの開口。セル幅と壁高に対する比で持つので、CellSize を変えても通れる幅のまま追従する。
         private const float DoorOpeningWidth = 0.4f;
         private const float DoorOpeningHeight = 0.75f;
+
+        // 扉板の見た目。厚み（メートル）は Door の既定値と揃えて枠より薄くしてある。
+        private const float DoorLeafThickness = 0.08f;
 
         private readonly struct RoomSpec
         {
@@ -78,6 +82,7 @@ namespace TpsDungeon.Map.Editor
                 ["Floor"] = Material("Placeholder_Floor", new Color(0.55f, 0.53f, 0.50f)),
                 ["Wall"] = Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f)),
                 ["Door"] = Material("Placeholder_Door", new Color(0.65f, 0.35f, 0.15f)),
+                ["DoorLeaf"] = Material("Placeholder_DoorLeaf", new Color(0.42f, 0.24f, 0.12f)),
                 ["Shop"] = Material("Placeholder_Shop", new Color(0.85f, 0.72f, 0.18f)),
                 ["Stair"] = Material("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
                 ["StairUp"] = Material("Placeholder_StairUp", new Color(0.25f, 0.85f, 0.35f)),
@@ -103,7 +108,7 @@ namespace TpsDungeon.Map.Editor
                 // 壁とドアは FloorBuilder が localScale の x と y を (cellSize, wallHeight) に上書きするので、
                 // ルートは 1x1 の単位で作り、厚みだけ子の z スケールで持たせる。
                 ["Wall"] = BuildPanelPrefab("Wall_Basic", materials["Wall"]),
-                ["Door"] = BuildDoorFramePrefab("Door_Basic", materials["Door"]),
+                ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"]),
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
@@ -128,10 +133,10 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// ドア用。壁と同じく (cellSize, wallHeight, 1) にスケールされる前提で、
-        /// 左右の柱と鴨居だけを建てて真ん中を開ける。板を張ると人が通れないので開口は塞がない。
-        /// 扉を開閉させたくなったら、この開口に板の子を足すこと。
+        /// 左右の柱と鴨居を建てて真ん中を開け、その開口に Door が開け閉めする扉板を吊る。
+        /// 扉板は Hinge の子で、Hinge のスケールは Door が実行時にルートのスケールの逆数へ合わせる。
         /// </summary>
-        private static GameObject BuildDoorFramePrefab(string name, Material material)
+        private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial)
         {
             var root = new GameObject(name);
 
@@ -146,6 +151,26 @@ namespace TpsDungeon.Map.Editor
             AddDoorPiece(root, "Lintel", material,
                 new Vector3(0f, DoorOpeningHeight + lintelHeight * 0.5f, 0f),
                 new Vector3(DoorOpeningWidth, lintelHeight, WallThickness));
+
+            var hinge = new GameObject("Hinge");
+            hinge.transform.SetParent(root.transform, false);
+
+            var leaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            leaf.name = "Leaf";
+            leaf.transform.SetParent(hinge.transform, false);
+            Paint(leaf, leafMaterial);
+
+            var door = root.AddComponent<Door>();
+            var serialized = new SerializedObject(door);
+            serialized.FindProperty("hinge").objectReferenceValue = hinge.transform;
+            serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
+            serialized.FindProperty("openingWidth").floatValue = DoorOpeningWidth;
+            serialized.FindProperty("openingHeight").floatValue = DoorOpeningHeight;
+            serialized.FindProperty("leafThickness").floatValue = DoorLeafThickness;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // プレハブ上（スケール 1）でも閉じた扉が開口に収まって見えるように置いておく。
+            door.FitLeafToOpening();
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
         }
