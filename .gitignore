@@ -119,3 +119,6 @@ InitTestScene*.unity*
 # ThirdParty（Asset Store / Starter Assets など外部素材）は管理しない
 /[Aa]ssets/[Tt]hird[Pp]arty/
 /[Aa]ssets/[Tt]hird[Pp]arty.meta
+
+# Claude Code が作業用に作るワークツリー（中身は別ブランチのチェックアウト）
+/.claude/worktrees/
