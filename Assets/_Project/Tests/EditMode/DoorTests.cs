@@ -6,42 +6,18 @@ using UnityEngine;
 namespace TpsDungeon.Map.Tests
 {
     /// <summary>
-    /// 扉が相手と反対側へ開くことと、ドアを壁の大きさに合わせても扉板が開口に収まり、回しても歪まないことを確かめる。
+    /// 扉板が閉じきったときだけ当たることと、ドアを壁の大きさに合わせても扉板が開口に収まり、回しても歪まないことを確かめる。
     /// </summary>
     public sealed class DoorTests
     {
-        private const float OpenAngle = 100f;
-
-        [Test]
-        public void OpenAngle_FromFront_SwingsToBack()
+        [TestCase(0f, 0f, true, TestName = "閉じきっている → 当たる")]
+        [TestCase(100f, 100f, false, TestName = "開いている → 当たらない")]
+        [TestCase(40f, 100f, false, TestName = "開いている途中 → 当たらない")]
+        [TestCase(40f, 0f, false, TestName = "閉じている途中 → 当たらない")]
+        [TestCase(0f, 100f, false, TestName = "開け始めた瞬間 → 当たらない")]
+        public void LeafIsSolidOnlyWhenFullyClosed(float currentAngle, float targetAngle, bool expected)
         {
-            float angle = Door.OpenAngleAwayFrom(Vector3.zero, Vector3.forward, new Vector3(0.3f, 0f, 1.5f), OpenAngle);
-            Assert.AreEqual(OpenAngle, angle, "表（forward 側）から開けたら +Y 回転で裏へ開く");
-        }
-
-        [Test]
-        public void OpenAngle_FromBack_SwingsToFront()
-        {
-            float angle = Door.OpenAngleAwayFrom(Vector3.zero, Vector3.forward, new Vector3(-0.3f, 0f, -1.5f), OpenAngle);
-            Assert.AreEqual(-OpenAngle, angle, "裏から開けたら -Y 回転で表へ開く");
-        }
-
-        [Test]
-        public void OpenAngle_FollowsDoorRotation()
-        {
-            // 東向きに置いたドア（FloorBuilder は 90 度単位で回す）の、東側から開ける。
-            var forward = Quaternion.Euler(0f, 90f, 0f) * Vector3.forward;
-            float angle = Door.OpenAngleAwayFrom(new Vector3(10f, 0f, 5f), forward, new Vector3(11.5f, 0f, 5f), OpenAngle);
-            Assert.AreEqual(OpenAngle, angle);
-        }
-
-        [Test]
-        public void OpenedLeaf_LandsOnTheFarSide()
-        {
-            // 符号の取り違えを実際の回転で確かめる。表から開けた扉板の先端は裏（-z）にあるはず。
-            float angle = Door.OpenAngleAwayFrom(Vector3.zero, Vector3.forward, Vector3.forward * 2f, OpenAngle);
-            Vector3 tip = Quaternion.Euler(0f, angle, 0f) * Vector3.right;
-            Assert.Less(tip.z, 0f);
+            Assert.AreEqual(expected, Door.IsLeafSolid(currentAngle, targetAngle));
         }
 
         [Test]
