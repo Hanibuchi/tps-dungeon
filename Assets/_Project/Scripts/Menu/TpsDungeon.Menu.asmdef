@@ -1,0 +1,18 @@
+{
+    "name": "TpsDungeon.Menu",
+    "rootNamespace": "TpsDungeon.Menu",
+    "references": [
+        "Unity.InputSystem",
+        "TpsDungeon.Audio",
+        "TpsDungeon.Player"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,69 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:Template name="AudioVolumeRows" src="project://database/Assets/_Project/UI/Audio/AudioVolumeRows.uxml" />
+    <Style src="project://database/Assets/_Project/UI/Audio/AudioSettingsPanel.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/PauseMenu.uss" />
+    <ui:VisualElement name="scrim" class="scrim">
+
+        <!-- Esc で開くメニュー -->
+        <ui:VisualElement name="menu-panel" class="panel panel--menu">
+            <ui:Label text="PAUSE" class="panel__title" />
+            <ui:VisualElement class="panel__rule" />
+            <ui:Button name="resume-button" text="再開" class="button menu-button" />
+            <ui:Button name="settings-button" text="設定" class="button button--ghost menu-button" />
+            <ui:Button name="quit-button" text="ゲーム終了" class="button button--ghost menu-button" />
+        </ui:VisualElement>
+
+        <!-- メニューの「設定」から開く画面 -->
+        <ui:VisualElement name="settings-panel" class="panel panel--settings">
+            <ui:Label text="SETTINGS" class="panel__title" />
+            <ui:VisualElement class="tabs">
+                <ui:Button name="tab-sound" text="サウンド" class="tab" />
+                <ui:Button name="tab-controls" text="操作" class="tab" />
+                <ui:Button name="tab-keys" text="キー設定" class="tab" />
+            </ui:VisualElement>
+            <ui:VisualElement class="panel__rule" />
+
+            <ui:VisualElement name="page-sound" class="page">
+                <ui:Instance template="AudioVolumeRows" name="volume-rows" />
+                <ui:VisualElement class="page__spacer" />
+                <ui:VisualElement class="actions">
+                    <ui:Button name="sound-reset" text="既定に戻す" class="button button--ghost" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="page-controls" class="page">
+                <ui:VisualElement class="row">
+                    <ui:Label text="マウス感度" class="row__label row__label--wide" />
+                    <ui:Slider name="mouse-sensitivity" low-value="0.1" high-value="3" value="1" class="row__slider" />
+                    <ui:Label name="mouse-sensitivity-value" text="1.00" class="row__value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="row">
+                    <ui:Label text="上下反転" class="row__label row__label--wide" />
+                    <ui:Toggle name="invert-y" class="row__toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement class="page__spacer" />
+                <ui:VisualElement class="actions">
+                    <ui:Button name="controls-reset" text="既定に戻す" class="button button--ghost" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="page-keys" class="page">
+                <ui:VisualElement class="key-row key-row--header">
+                    <ui:Label text="操作" class="key-row__label" />
+                    <ui:Label text="キー 1" class="key-row__heading" />
+                    <ui:Label text="キー 2" class="key-row__heading" />
+                    <ui:VisualElement class="key-row__reset-space" />
+                </ui:VisualElement>
+                <ui:ScrollView name="key-list" class="key-list" />
+                <ui:Label name="key-hint" text="クリックで変更（Esc で取り消し）・右クリックで解除" class="hint" />
+                <ui:VisualElement class="actions">
+                    <ui:Button name="keys-reset" text="すべて既定に戻す" class="button button--ghost" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="actions actions--footer">
+                <ui:Button name="back-button" text="戻る" class="button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

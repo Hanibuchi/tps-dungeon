@@ -1,0 +1,162 @@
+/* ポーズメニューと設定画面。色と基本の部品（.panel / .row / .button）は AudioSettingsPanel.uss のものを使う。 */
+
+.panel--menu {
+    width: 300px;
+}
+
+.panel--settings {
+    width: 620px;
+    height: 560px;
+    max-height: 94%;
+}
+
+.menu-button {
+    height: 40px;
+    margin-left: 0;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+/* ---- タブ ---- */
+
+.tabs {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.tab {
+    height: 30px;
+    margin: 0 6px 0 0;
+    padding: 0 16px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0 0 2px 0;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+}
+
+.tab:hover {
+    color: var(--ink);
+}
+
+.tab--selected {
+    color: var(--torch);
+    border-color: var(--torch);
+}
+
+.page {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.page__spacer {
+    flex-grow: 1;
+}
+
+.actions--footer {
+    border-top-width: 1px;
+    border-color: var(--edge);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+/* ---- 操作 ---- */
+
+.row__label--wide {
+    width: 120px;
+}
+
+.row__toggle {
+    margin: 0;
+}
+
+.row__toggle .unity-toggle__checkmark {
+    width: 18px;
+    height: 18px;
+    background-color: var(--stone-raised);
+    border-color: var(--edge);
+    border-radius: 3px;
+}
+
+.row__toggle:checked .unity-toggle__checkmark {
+    background-color: var(--torch);
+    -unity-background-image-tint-color: var(--stone);
+}
+
+/* ---- キー設定 ---- */
+
+.key-list {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.key-row {
+    flex-direction: row;
+    align-items: center;
+    height: 34px;
+    margin-bottom: 4px;
+}
+
+.key-row--header {
+    height: 22px;
+    margin-bottom: 6px;
+}
+
+.key-row__label {
+    width: 150px;
+    color: var(--ink-dim);
+    font-size: 13px;
+}
+
+.key-row__heading {
+    width: 150px;
+    margin-right: 8px;
+    color: var(--ink-dim);
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+}
+
+.key-slot {
+    width: 150px;
+    height: 30px;
+    margin: 0 8px 0 0;
+    font-size: 13px;
+    color: var(--ink);
+    background-color: var(--stone-raised);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 3px;
+}
+
+.key-slot:hover {
+    border-color: var(--torch);
+}
+
+.key-slot--empty {
+    color: var(--ink-dim);
+}
+
+.key-slot--listening {
+    color: var(--stone);
+    background-color: var(--torch);
+    border-color: var(--torch);
+}
+
+.key-row__reset {
+    height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    font-size: 11px;
+}
+
+.key-row__reset-space {
+    width: 60px;
+}
+
+.hint {
+    margin-top: 8px;
+    color: var(--ink-dim);
+    font-size: 11px;
+}

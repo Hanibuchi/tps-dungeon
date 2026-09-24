@@ -75,12 +75,14 @@ namespace TpsDungeon.Interaction
             }
 
             playerInput.onControlsChanged += OnControlsChanged;
+            InputSystem.onActionChange += OnActionChange;
             RefreshBindingDisplay();
         }
 
         private void OnDisable()
         {
             if (playerInput != null) playerInput.onControlsChanged -= OnControlsChanged;
+            InputSystem.onActionChange -= OnActionChange;
             interactAction = null;
             SetTarget(null);
         }
@@ -145,6 +147,12 @@ namespace TpsDungeon.Interaction
             RefreshBindingDisplay();
         }
 
+        // キー設定でインタラクトのキーが変わったら、案内に出すキーも変える。
+        private void OnActionChange(object _, InputActionChange change)
+        {
+            if (change == InputActionChange.BoundControlsChanged && interactAction != null) RefreshBindingDisplay();
+        }
+
         private void RefreshBindingDisplay()
         {
             InteractBindingDisplay = interactAction != null
@@ -152,16 +160,51 @@ namespace TpsDungeon.Interaction
                 : string.Empty;
         }
 
-        private static string BindingDisplay(InputAction action, string controlScheme)
+        /// <summary>
+        /// アクションに割り当たっているキーの表示。複数あれば " / " でつなぐ。
+        /// キー設定の空き枠（パスが空のバインド）は飛ばす。GetBindingDisplayString に任せると "E | " のように空き枠まで数えてしまう。
+        /// </summary>
+        public static string BindingDisplay(InputAction action, string controlScheme)
         {
-            // スキームが決まる前（デバイス未ペア）はマスクを掛けると空になるので、全バインドから拾う。
+            // スキームが決まる前（デバイス未ペア）はスキームで絞ると空になるので、全バインドから拾う。
             if (!string.IsNullOrEmpty(controlScheme))
             {
-                string display = action.GetBindingDisplayString(InputBinding.MaskByGroup(controlScheme));
+                string display = JoinBindingDisplay(action, controlScheme);
                 if (!string.IsNullOrEmpty(display)) return display;
             }
 
-            return action.GetBindingDisplayString();
+            return JoinBindingDisplay(action, null);
+        }
+
+        private static string JoinBindingDisplay(InputAction action, string controlScheme)
+        {
+            var result = new System.Text.StringBuilder();
+            var bindings = action.bindings;
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                InputBinding binding = bindings[i];
+                if (binding.isComposite || binding.isPartOfComposite) continue;
+                if (string.IsNullOrEmpty(binding.effectivePath)) continue;
+                if (controlScheme != null && !InGroup(binding, controlScheme)) continue;
+
+                string text = action.GetBindingDisplayString(i);
+                if (string.IsNullOrEmpty(text)) continue;
+                if (result.Length > 0) result.Append(" / ");
+                result.Append(text);
+            }
+
+            return result.ToString();
+        }
+
+        private static bool InGroup(InputBinding binding, string group)
+        {
+            if (string.IsNullOrEmpty(binding.groups)) return false;
+            foreach (string g in binding.groups.Split(InputBinding.Separator))
+            {
+                if (string.Equals(g, group, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+
+            return false;
         }
 
         /// <summary>origin から point までが range 以内か。</summary>
