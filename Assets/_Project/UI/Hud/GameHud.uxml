@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hud="TpsDungeon.Hud" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Hud/GameHud.uss" />
+    <ui:VisualElement name="game-hud" class="game-hud" picking-mode="Ignore">
+        <ui:VisualElement name="hp" class="hp" picking-mode="Ignore">
+            <ui:VisualElement class="hp__header" picking-mode="Ignore">
+                <ui:Label text="HP" class="hp__caption" picking-mode="Ignore" />
+                <ui:Label name="hp-value" text="100 / 100" class="hp__value" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement class="hp__track" picking-mode="Ignore">
+                <ui:VisualElement name="hp-fill" class="hp__fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="hotbar" class="hotbar" picking-mode="Ignore" />
+        <ui:VisualElement name="minimap" class="minimap" picking-mode="Ignore">
+            <hud:MinimapElement name="minimap-canvas" class="minimap__canvas" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
