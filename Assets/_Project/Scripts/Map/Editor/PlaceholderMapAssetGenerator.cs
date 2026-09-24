@@ -138,7 +138,8 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// ドア用。ルートはスケールせず、枠は子の Frame に 1x1 単位で建て、FloorBuilder が Door.Fit で
         /// Frame だけを (cellSize, wallHeight, 1) にスケールする。左右の柱と鴨居で真ん中を開け、
-        /// その開口に Door が開け閉めする扉板（Hinge の子）を吊る。
+        /// その開口に Door が開け閉めする扉板（Hinge の子）を吊る。開閉の動きはルートの Animator が
+        /// DoorAnimatorBuilder の作るクリップで Hinge を回す。
         /// </summary>
         private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial)
         {
@@ -176,8 +177,12 @@ namespace TpsDungeon.Map.Editor
             leaf.transform.SetParent(hinge.transform, false);
             Paint(leaf, leafMaterial);
 
+            var animator = root.AddComponent<Animator>();
+            animator.runtimeAnimatorController = DoorAnimatorBuilder.Build();
+
             var door = root.AddComponent<Door>();
             var serialized = new SerializedObject(door);
+            serialized.FindProperty("animator").objectReferenceValue = animator;
             serialized.FindProperty("frame").objectReferenceValue = frame.transform;
             serialized.FindProperty("hinge").objectReferenceValue = hinge.transform;
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;

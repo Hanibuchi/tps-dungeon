@@ -10,14 +10,13 @@ namespace TpsDungeon.Map.Tests
     /// </summary>
     public sealed class DoorTests
     {
-        [TestCase(0f, 0f, true, TestName = "閉じきっている → 当たる")]
-        [TestCase(100f, 100f, false, TestName = "開いている → 当たらない")]
-        [TestCase(40f, 100f, false, TestName = "開いている途中 → 当たらない")]
-        [TestCase(40f, 0f, false, TestName = "閉じている途中 → 当たらない")]
-        [TestCase(0f, 100f, false, TestName = "開け始めた瞬間 → 当たらない")]
-        public void LeafIsSolidOnlyWhenFullyClosed(float currentAngle, float targetAngle, bool expected)
+        [TestCase(false, false, true, TestName = "閉じきっている → 当たる")]
+        [TestCase(true, false, false, TestName = "開ききっている → 当たらない")]
+        [TestCase(true, true, false, TestName = "開いている途中 → 当たらない")]
+        [TestCase(false, true, false, TestName = "閉じている途中 → 当たらない")]
+        public void LeafIsSolidOnlyWhenFullyClosed(bool isOpen, bool isSwinging, bool expected)
         {
-            Assert.AreEqual(expected, Door.IsLeafSolid(currentAngle, targetAngle));
+            Assert.AreEqual(expected, Door.IsLeafSolid(isOpen, isSwinging));
         }
 
         [Test]
