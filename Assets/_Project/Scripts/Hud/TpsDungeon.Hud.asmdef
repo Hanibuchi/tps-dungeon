@@ -1,0 +1,17 @@
+{
+    "name": "TpsDungeon.Hud",
+    "rootNamespace": "TpsDungeon.Hud",
+    "references": [
+        "TpsDungeon.Player",
+        "TpsDungeon.Map"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

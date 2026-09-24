@@ -1,0 +1,196 @@
+/* 常時表示の HUD。左下 HP・下中央ホットバー・右下マップ。照準（InteractionHud.uss）と同じ石と松明の色味。 */
+:root {
+    --ink: rgb(236, 228, 214);
+    --ink-dim: rgb(150, 141, 127);
+    --stone: rgba(28, 26, 24, 0.82);
+    --edge: rgb(72, 66, 58);
+    --torch: rgb(214, 158, 74);
+    --blood: rgb(168, 52, 42);
+    --blood-low: rgb(212, 64, 48);
+}
+
+/* 画面いっぱいに広げ、子は四隅・下辺に絶対配置する。 */
+.game-hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ---- 左下: HP ---- */
+
+.hp {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    width: 280px;
+    padding: 8px 12px 10px 12px;
+    background-color: var(--stone);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 4px;
+}
+
+.hp__header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 6px;
+}
+
+.hp__caption {
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: var(--torch);
+}
+
+.hp__value {
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    color: var(--ink);
+}
+
+.hp__track {
+    height: 12px;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.hp__fill {
+    width: 100%;
+    height: 100%;
+    background-color: var(--blood);
+    transition-property: width;
+    transition-duration: 0.15s;
+}
+
+.hp--low .hp__fill {
+    background-color: var(--blood-low);
+}
+
+.hp--low .hp__value {
+    color: var(--blood-low);
+}
+
+/* ---- 下中央: ホットバー ---- */
+
+/* 左右 0 で横いっぱいに広げ、中身を中央に寄せる。 */
+.hotbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 24px;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.slot {
+    width: 64px;
+    height: 64px;
+    margin: 0 4px;
+    background-color: var(--stone);
+    border-width: 2px;
+    border-color: var(--edge);
+    border-radius: 4px;
+}
+
+.slot--selected {
+    border-color: var(--torch);
+    background-color: rgba(52, 44, 34, 0.9);
+}
+
+.slot__number {
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    color: var(--ink-dim);
+}
+
+.slot--selected .slot__number {
+    color: var(--torch);
+}
+
+/* アイテムの絵が入る場所。今は空。 */
+.slot__icon {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ---- 右下: マップ ---- */
+
+/* 枠。描画ははみ出すので、ここで切り取る。 */
+.minimap {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    width: 200px;
+    height: 200px;
+    background-color: var(--stone);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.minimap__canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    /* MinimapElement が customStyle で読む描画色。要素自身のルールに書かないと拾えない。 */
+    --map-room: rgb(74, 68, 60);
+    --map-room-current: rgb(112, 102, 88);
+    --map-room-edge: rgb(150, 141, 127);
+    --map-door: rgb(214, 158, 74);
+    --map-feature: rgb(236, 228, 214);
+    --map-player: rgb(214, 158, 74);
+    --map-pixels-per-cell: 32;
+}
+
+/* ---- マップキーで開く大きな地図 ---- */
+
+/* 画面いっぱいに薄く暗くして、真ん中に大きな枠を置く。閉じているときは GameHudView が隠す。 */
+.map-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+/* 正方形。PanelSettings が画面の大きさに合わせて拡縮するので、1080p 基準の固定サイズでよい。 */
+.map-large {
+    width: 760px;
+    height: 760px;
+    /* 大きいぶん背後の景色が透けると部屋が読みにくいので、小さい地図より濃くする。 */
+    background-color: rgba(28, 26, 24, 0.96);
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 小さい地図と同じ要素を、寄って大きく描く。 */
+.map-large__canvas {
+    --map-pixels-per-cell: 64;
+}

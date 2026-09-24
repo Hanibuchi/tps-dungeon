@@ -189,6 +189,16 @@ namespace TpsDungeon.Map.Runtime
             }
         }
 
+        /// <summary>1 セルの一辺（メートル）。最後に Build したときの FloorConfig の値。</summary>
+        public float CellSize => cellSize;
+
+        /// <summary>ワールド座標が乗っているセル。生成物はこの GameObject のローカル空間に並べているので、そこへ戻して割る。</summary>
+        public GridPos WorldToCell(Vector3 worldPosition)
+        {
+            var local = transform.InverseTransformPoint(worldPosition);
+            return new GridPos(Mathf.FloorToInt(local.x / cellSize), Mathf.FloorToInt(local.z / cellSize));
+        }
+
         public Vector3 CellCenter(GridPos cell) =>
             new Vector3((cell.X + 0.5f) * cellSize, 0f, (cell.Y + 0.5f) * cellSize);
 
