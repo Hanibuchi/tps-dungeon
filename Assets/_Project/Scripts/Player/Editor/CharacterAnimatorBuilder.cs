@@ -266,6 +266,8 @@ namespace TpsDungeon.Player.Editor
             // 溶け込み時間を短くしないと、弦を放すはずの瞬間がブレンドでぼやける。
             t = Transition(aim, release, 0.03f, offset: BowReleaseStart);
             t.AddCondition(AnimatorConditionMode.If, 0, AttackParam);
+            // 持ち替えと攻撃が同じフレームに来たとき、弓で放たずに持ち替え先の攻撃へトリガーを譲る。
+            t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.Bow, WeaponTypeParam);
 
             // クリップ末尾は 0F と同じ「つがえただけ」の姿勢なので、Draw の頭へ段差なく繋がる。
             Transition(release, draw, 0.05f, exitTime: 0.97f);
