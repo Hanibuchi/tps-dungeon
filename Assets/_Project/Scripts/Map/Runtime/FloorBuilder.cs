@@ -162,7 +162,9 @@ namespace TpsDungeon.Map.Runtime
                         piece.name = $"{kind}_{x}_{y}_{dir}";
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
-                        piece.transform.localScale = new Vector3(cellSize, wallHeight, piece.transform.localScale.z);
+                        // ドアは中で扉板を回すので、ルートを非一様スケールすると歪む。枠だけを合わせてもらう。
+                        if (piece.TryGetComponent<Door>(out var door)) door.Fit(cellSize, wallHeight);
+                        else piece.transform.localScale = new Vector3(cellSize, wallHeight, piece.transform.localScale.z);
                     }
                 }
             }

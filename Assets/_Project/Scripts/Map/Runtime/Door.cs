@@ -7,24 +7,29 @@ namespace TpsDungeon.Map.Runtime
     /// インタラクトで開け閉めする扉。開口の片端にある Hinge を Y 軸で回し、その子の Leaf（扉板）を振る。
     /// 開けるときは触った相手と反対側へ開くので、自分に扉がぶつからない。
     ///
-    /// FloorBuilder はドアのルートを (cellSize, wallHeight, 1) に非一様スケールする。
-    /// そのまま子を回すと扉板が歪むので、Start で Hinge にスケールの逆数を掛けて世界スケールを 1 に戻し、
-    /// 扉板の大きさはメートルで入れ直す。開口の寸法はルートの 1x1 単位（枠を作る生成器と同じ比）で持つ。
+    /// 壁は FloorBuilder がルートを (cellSize, wallHeight, 1) に非一様スケールして大きさを合わせるが、
+    /// ドアのルートをそうすると、その下で回す扉板が歪む（親の非一様スケールは子の回転の後に掛かるので、
+    /// 子側で逆数を掛けても角度 0 のときしか打ち消せない）。
+    /// そこでドアはルートをスケールせず、FloorBuilder が Fit を呼ぶ。枠（Frame）だけを 1x1 単位のまま
+    /// スケールし、Hinge と扉板はスケールの掛からないところにメートルで置く。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Door")]
     public sealed class Door : MonoBehaviour, IInteractable
     {
-        [SerializeField, Tooltip("回す軸。開口の左端に置く。")]
+        [SerializeField, Tooltip("柱・鴨居・照準用トリガーをまとめた子。1x1 単位で作ってあり、Fit で (幅, 高さ, 1) にスケールする。")]
+        private Transform frame;
+
+        [SerializeField, Tooltip("回す軸。開口の左端に置く。スケールしない。")]
         private Transform hinge;
 
         [SerializeField, Tooltip("扉板。Hinge の子。")]
         private Transform leaf;
 
-        [SerializeField, Tooltip("開口の幅。ルートの x スケールに対する比。")]
+        [SerializeField, Tooltip("開口の幅。ドア全体の幅に対する比（枠と同じ比）。")]
         private float openingWidth = 0.4f;
 
-        [SerializeField, Tooltip("開口の高さ。ルートの y スケールに対する比。")]
+        [SerializeField, Tooltip("開口の高さ。ドア全体の高さに対する比（枠と同じ比）。")]
         private float openingHeight = 0.75f;
 
         [SerializeField, Tooltip("扉板の厚み（メートル）。枠より薄くして、閉めたときに枠と重ならないようにする。")]
@@ -55,9 +60,6 @@ namespace TpsDungeon.Map.Runtime
 
         private void Start()
         {
-            // FloorBuilder は Instantiate の後でスケールを入れるので、Awake ではなくここで合わせる。
-            FitLeafToOpening();
-
             targetAngle = startOpen ? openAngle : 0f;
             currentAngle = targetAngle;
             ApplyAngle();
@@ -81,28 +83,25 @@ namespace TpsDungeon.Map.Runtime
         }
 
         /// <summary>
-        /// ルートの今のスケールに合わせて Hinge と扉板を置き直す。
-        /// 生成器がプレハブを作るとき（スケール 1）にも呼んで、エディタ上の見た目を揃える。
+        /// ドア全体を幅 width・高さ height（メートル）に合わせる。FloorBuilder が置いた直後に呼ぶ。
+        /// 生成器がプレハブを作るときにも呼んで、エディタ上の見た目を揃える。
         /// </summary>
-        public void FitLeafToOpening()
+        public void Fit(float width, float height)
         {
+            if (frame != null) frame.localScale = new Vector3(width, height, 1f);
             if (hinge == null || leaf == null) return;
 
-            Vector3 scale = transform.lossyScale;
-            if (Mathf.Approximately(scale.x, 0f) || Mathf.Approximately(scale.y, 0f) || Mathf.Approximately(scale.z, 0f)) return;
+            float leafWidth = openingWidth * width;
+            float leafHeight = openingHeight * height;
 
-            hinge.localPosition = new Vector3(-openingWidth * 0.5f, 0f, 0f);
-            hinge.localRotation = Quaternion.identity;
-            hinge.localScale = new Vector3(1f / scale.x, 1f / scale.y, 1f / scale.z);
+            hinge.localPosition = new Vector3(-leafWidth * 0.5f, 0f, 0f);
+            hinge.localScale = Vector3.one;
 
-            // ここから下は Hinge の中＝メートル単位。
-            float width = openingWidth * scale.x;
-            float height = openingHeight * scale.y;
-            leaf.localPosition = new Vector3(width * 0.5f, height * 0.5f, 0f);
+            leaf.localPosition = new Vector3(leafWidth * 0.5f, leafHeight * 0.5f, 0f);
             leaf.localRotation = Quaternion.identity;
             leaf.localScale = new Vector3(
-                Mathf.Max(0.01f, width - leafGap * 2f),
-                Mathf.Max(0.01f, height - leafGap),
+                Mathf.Max(0.01f, leafWidth - leafGap * 2f),
+                Mathf.Max(0.01f, leafHeight - leafGap),
                 leafThickness);
         }
 
