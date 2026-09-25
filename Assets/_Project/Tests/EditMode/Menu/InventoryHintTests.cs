@@ -9,8 +9,8 @@ namespace TpsDungeon.Menu.Tests
         [Test]
         public void 通常の案内は割り当てたキーを出す()
         {
-            Assert.AreEqual("ドラッグで移動　Left Shift＋クリックで移動　O で捨てる　Tab で閉じる",
-                InventoryScreen.HintText("Left Shift", "O", "Tab"));
+            Assert.AreEqual("ドラッグで移動　Left Shift＋クリックで移動　Q で捨てる　Tab で閉じる",
+                InventoryScreen.HintText("Left Shift", "Q", "Tab"));
         }
 
         [Test]
