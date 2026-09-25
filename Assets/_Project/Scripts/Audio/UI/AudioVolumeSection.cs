@@ -1,6 +1,7 @@
 using System;
 using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -56,7 +57,12 @@ namespace TpsDungeon.Audio.UI
             {
                 float value = volumes.GetVolume(channel);
                 Slider slider = sliders[(int)channel];
-                if (slider != null) slider.SetValueWithoutNotify(value);
+                if (slider != null)
+                {
+                    slider.SetValueWithoutNotify(value);
+                    SliderDecor.Refresh(slider);
+                }
+
                 Show(channel, value);
             }
         }
@@ -68,10 +74,12 @@ namespace TpsDungeon.Audio.UI
             values[(int)channel] = root.Q<Label>(valueName);
             if (slider == null) return;
 
+            SliderDecor.Attach(slider);
             slider.RegisterValueChangedCallback(evt =>
             {
                 GameAudio.Instance?.Volumes?.SetVolume(channel, evt.newValue);
                 Show(channel, evt.newValue);
+                UiTransitions.Flash(values[(int)channel], "is-flash", 90);
                 if (channel == AudioChannel.Se) PlayPreview();
             });
         }
@@ -79,14 +87,19 @@ namespace TpsDungeon.Audio.UI
         private void OnVolumeChanged(AudioChannel channel, float value)
         {
             Slider slider = sliders[(int)channel];
-            if (slider != null) slider.SetValueWithoutNotify(value);
+            if (slider != null)
+            {
+                slider.SetValueWithoutNotify(value);
+                SliderDecor.Refresh(slider);
+            }
+
             Show(channel, value);
         }
 
         private void Show(AudioChannel channel, float value)
         {
             Label label = values[(int)channel];
-            if (label != null) label.text = Mathf.RoundToInt(value * 100f) + "%";
+            if (label != null) label.text = Mathf.RoundToInt(value * 100f).ToString();
         }
 
         /// <summary>SE を触っている間、音量が分かるように短い音を鳴らす。鳴らしすぎないよう間引く。</summary>

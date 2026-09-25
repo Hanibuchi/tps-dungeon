@@ -4,7 +4,8 @@
     "references": [
         "Unity.InputSystem",
         "TpsDungeon.Audio",
-        "TpsDungeon.Player"
+        "TpsDungeon.Player",
+        "TpsDungeon.UiKit"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,19 +1,19 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <ui:VisualElement name="master-row" class="row">
-        <ui:Label text="MASTER" class="row__label" />
-        <ui:Slider name="master-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-        <ui:Label name="master-value" text="100%" class="row__value" />
+    <ui:VisualElement name="master-row" class="rpg-row">
+        <ui:Label text="全体" class="rpg-row__label" />
+        <ui:Slider name="master-volume" low-value="0" high-value="1" value="1" class="rpg-slider" />
+        <ui:Label name="master-value" text="100" class="rpg-row__value rpg-deco" />
     </ui:VisualElement>
 
-    <ui:VisualElement name="bgm-row" class="row">
-        <ui:Label text="BGM" class="row__label" />
-        <ui:Slider name="bgm-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-        <ui:Label name="bgm-value" text="100%" class="row__value" />
+    <ui:VisualElement name="bgm-row" class="rpg-row">
+        <ui:Label text="音楽" class="rpg-row__label" />
+        <ui:Slider name="bgm-volume" low-value="0" high-value="1" value="1" class="rpg-slider" />
+        <ui:Label name="bgm-value" text="100" class="rpg-row__value rpg-deco" />
     </ui:VisualElement>
 
-    <ui:VisualElement name="se-row" class="row">
-        <ui:Label text="SE" class="row__label" />
-        <ui:Slider name="se-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-        <ui:Label name="se-value" text="100%" class="row__value" />
+    <ui:VisualElement name="se-row" class="rpg-row">
+        <ui:Label text="効果音" class="rpg-row__label" />
+        <ui:Slider name="se-volume" low-value="0" high-value="1" value="1" class="rpg-slider" />
+        <ui:Label name="se-value" text="100" class="rpg-row__value rpg-deco" />
     </ui:VisualElement>
 </ui:UXML>

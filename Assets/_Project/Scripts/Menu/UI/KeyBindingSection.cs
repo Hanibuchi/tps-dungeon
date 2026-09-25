@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TpsDungeon.UiKit;
 using UnityEngine.UIElements;
 
 namespace TpsDungeon.Menu.UI
@@ -14,6 +15,11 @@ namespace TpsDungeon.Menu.UI
     internal sealed class KeyBindingSection : IDisposable
     {
         private const string ListeningText = "キーを押す…";
+
+        // 見た目は PauseMenu.uss。キー待ちの明滅・決まった瞬間の光・空にしたときの沈み。
+        private const string PulseClass = "is-pulse";
+        private const string FlashClass = "is-flash";
+        private const string SinkClass = "is-sink";
 
         private readonly PlayerControlSettings controls;
         private readonly List<Button[]> slotButtons = new List<Button[]>();
@@ -81,6 +87,8 @@ namespace TpsDungeon.Menu.UI
                 KeyBindingEntry entry = KeyBindings.Entries[row];
                 var line = new VisualElement();
                 line.AddToClassList("key-row");
+                // 行はページが開くときに一つずつ現れる（Theme.uss の .rpg-row）。
+                line.AddToClassList("rpg-row");
 
                 var label = new Label(entry.Label);
                 label.AddToClassList("key-row__label");
@@ -108,8 +116,8 @@ namespace TpsDungeon.Menu.UI
 
                 int resetRow = row;
                 var reset = new Button(() => ResetRow(resetRow)) { text = "既定" };
-                reset.AddToClassList("button");
-                reset.AddToClassList("button--ghost");
+                reset.AddToClassList("rpg-button");
+                reset.AddToClassList("rpg-button--small");
                 reset.AddToClassList("key-row__reset");
                 line.Add(reset);
 
@@ -135,6 +143,7 @@ namespace TpsDungeon.Menu.UI
             button.text = ListeningText;
             button.RemoveFromClassList("key-slot--empty");
             button.AddToClassList("key-slot--listening");
+            UiTransitions.Pulse(button, PulseClass, 450);
 
             operation = action.PerformInteractiveRebinding(index)
                 .WithExpectedControlType("Button")
@@ -148,12 +157,12 @@ namespace TpsDungeon.Menu.UI
                 .OnMatchWaitForAnother(0.1f)
                 // 既定と同じキーなら上書きを消す、という扱いを KeyBindings 側に揃える。
                 .OnApplyBinding((_, path) => KeyBindings.Assign(action, index, path))
-                .OnComplete(_ => Finish(action, wasEnabled, true))
-                .OnCancel(_ => Finish(action, wasEnabled, false))
+                .OnComplete(_ => Finish(action, wasEnabled, true, button))
+                .OnCancel(_ => Finish(action, wasEnabled, false, button))
                 .Start();
         }
 
-        private void Finish(InputAction action, bool wasEnabled, bool changed)
+        private void Finish(InputAction action, bool wasEnabled, bool changed, Button button)
         {
             operation?.Dispose();
             operation = null;
@@ -161,7 +170,12 @@ namespace TpsDungeon.Menu.UI
 
             if (wasEnabled) action.Enable();
             if (changed) controls.SaveBindings();
+
+            UiTransitions.StopPulse(button, PulseClass);
             Refresh();
+
+            // 決まった枠を一瞬金に光らせる。
+            if (changed) UiTransitions.Flash(button, FlashClass, 140);
         }
 
         private void ClearSlot(int row, int slot)
@@ -173,6 +187,7 @@ namespace TpsDungeon.Menu.UI
             KeyBindings.Clear(action, KeyBindings.FindBindingIndex(action, entry.Part, slot));
             controls.SaveBindings();
             Refresh();
+            UiTransitions.Flash(slotButtons[row][slot], SinkClass, 110);
         }
 
         private void ResetRow(int row)
@@ -182,6 +197,7 @@ namespace TpsDungeon.Menu.UI
             KeyBindings.ResetEntry(controls.Actions, KeyBindings.Entries[row]);
             controls.SaveBindings();
             Refresh();
+            foreach (Button button in slotButtons[row]) UiTransitions.Flash(button, FlashClass, 140);
         }
 
         private void ResetAll()

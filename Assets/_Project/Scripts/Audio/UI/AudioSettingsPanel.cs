@@ -1,5 +1,6 @@
 using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -33,6 +34,8 @@ namespace TpsDungeon.Audio.UI
 
         private UIDocument document;
         private VisualElement scrim;
+        private VisualElement panel;
+        private VisualElement page;
         private AudioVolumeSection volumes;
 
         /// <summary>開いているかどうか。</summary>
@@ -49,6 +52,8 @@ namespace TpsDungeon.Audio.UI
             if (root == null) return;
 
             scrim = root.Q<VisualElement>("scrim") ?? root;
+            panel = root.Q<VisualElement>("panel");
+            page = root.Q<VisualElement>("page");
             volumes = new AudioVolumeSection(root, previewClip);
 
             root.Q<Button>("close-button")?.RegisterCallback<ClickEvent>(_ => Close());
@@ -88,13 +93,23 @@ namespace TpsDungeon.Audio.UI
 
         private void SetOpen(bool open, bool applySnapshot = true)
         {
+            bool wasOpen = IsOpen;
             IsOpen = open;
-            if (scrim != null)
+
+            // 幕・パネル・行の順に、USS のトランジションで開け閉めする。初期化で閉じるときだけは一瞬で。
+            VisualElement[] parts = { scrim, panel, page };
+            foreach (VisualElement part in parts)
             {
-                scrim.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+                if (open) UiTransitions.Show(part);
+                else if (wasOpen) UiTransitions.Hide(part);
+                else UiTransitions.HideImmediately(part);
             }
 
-            if (open) volumes?.Pull();
+            if (open)
+            {
+                volumes?.Pull();
+                UiTransitions.Stagger(page?.Q<TemplateContainer>(), 50, 150);
+            }
 
             GameAudio audio = GameAudio.Instance;
             if (audio == null || !applySnapshot) return;

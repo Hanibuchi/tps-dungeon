@@ -2,6 +2,7 @@ using System;
 using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Player;
+using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -60,6 +61,7 @@ namespace TpsDungeon.Menu.UI
         private VisualElement scrim;
         private VisualElement menuPanel;
         private VisualElement settingsPanel;
+        private VisualElement menuItems;
         private Button resumeButton;
         private SettingsScreen settings;
         private InputAction pauseAction;
@@ -99,6 +101,7 @@ namespace TpsDungeon.Menu.UI
             scrim = root.Q<VisualElement>("scrim");
             menuPanel = root.Q<VisualElement>("menu-panel");
             settingsPanel = root.Q<VisualElement>("settings-panel");
+            menuItems = root.Q<VisualElement>("menu-items");
             resumeButton = root.Q<Button>("resume-button");
 
             if (resumeButton != null) resumeButton.clicked += Resume;
@@ -110,7 +113,7 @@ namespace TpsDungeon.Menu.UI
             settings = new SettingsScreen(settingsPanel ?? root, controls, previewClip);
             settings.BackRequested += ShowMenu;
 
-            ShowPage(Page.Closed);
+            ShowPage(Page.Closed, animate: false);
         }
 
         private void OnDisable()
@@ -222,24 +225,70 @@ namespace TpsDungeon.Menu.UI
             if (IsPaused) ShowPage(Page.Settings);
         }
 
-        private void ShowPage(Page next)
+        /// <summary>
+        /// ページを切り替える。見た目の動きは USS（Theme.uss / PauseMenu.uss）のトランジションで、ここでは向きだけ決める。
+        /// - 開く・閉じる: パネルが下からせり上がる / 沈む
+        /// - メニュー → 設定: メニューが左へ抜け、設定が右から入る（戻るときは逆）
+        /// </summary>
+        private void ShowPage(Page next, bool animate = true)
         {
-            if (page == Page.Settings && next != Page.Settings) settings?.Hide();
-
+            Page previous = page;
+            if (previous == Page.Settings && next != Page.Settings) settings?.Hide();
             page = next;
-            SetVisible(scrim, next != Page.Closed);
-            SetVisible(menuPanel, next == Page.Menu);
-            SetVisible(settingsPanel, next == Page.Settings);
 
-            if (next == Page.Settings) settings?.Show();
-            if (next == Page.Menu) resumeButton?.Focus();
+            if (!animate)
+            {
+                UiTransitions.HideImmediately(scrim);
+                UiTransitions.HideImmediately(menuPanel);
+                UiTransitions.HideImmediately(settingsPanel);
+                Changed?.Invoke(this);
+                return;
+            }
+
+            switch (next)
+            {
+                case Page.Closed:
+                    // 閉じるときは横へ抜けず、その場で沈む。
+                    SetDirection(menuPanel, null);
+                    SetDirection(settingsPanel, null);
+                    UiTransitions.ClearStagger(menuItems);
+                    UiTransitions.Hide(menuPanel);
+                    UiTransitions.Hide(settingsPanel);
+                    UiTransitions.Hide(scrim);
+                    break;
+
+                case Page.Menu:
+                    UiTransitions.Show(scrim);
+                    SetDirection(menuPanel, previous == Page.Settings ? FromLeftClass : null);
+                    SetDirection(settingsPanel, FromRightClass);
+                    UiTransitions.Hide(settingsPanel);
+                    UiTransitions.Show(menuPanel);
+                    // 項目を一つずつ滑り込ませる。最初に開くときはパネルが上がりきるのを少し待つ。
+                    UiTransitions.Stagger(menuItems, 70, previous == Page.Closed ? 160 : 60);
+                    resumeButton?.Focus();
+                    break;
+
+                case Page.Settings:
+                    UiTransitions.ClearStagger(menuItems);
+                    SetDirection(menuPanel, FromLeftClass);
+                    SetDirection(settingsPanel, FromRightClass);
+                    UiTransitions.Hide(menuPanel);
+                    UiTransitions.Show(settingsPanel);
+                    settings?.Show();
+                    break;
+            }
 
             Changed?.Invoke(this);
         }
 
-        private static void SetVisible(VisualElement element, bool visible)
+        private const string FromLeftClass = "rpg-panel--from-left";
+        private const string FromRightClass = "rpg-panel--from-right";
+
+        private static void SetDirection(VisualElement panel, string directionClass)
         {
-            if (element != null) element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (panel == null) return;
+            panel.EnableInClassList(FromLeftClass, directionClass == FromLeftClass);
+            panel.EnableInClassList(FromRightClass, directionClass == FromRightClass);
         }
 
         /// <summary>

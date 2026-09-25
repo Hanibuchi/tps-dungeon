@@ -1,87 +1,218 @@
-/* ポーズメニューと設定画面。色と基本の部品（.panel / .row / .button）は AudioSettingsPanel.uss のものを使う。 */
+/* ポーズメニューと設定画面。色・書体・枠・ボタン・行などの共通部品は Theme.uss。 */
 
-.panel--menu {
-    width: 300px;
+/* ================================================================
+ * ポーズメニュー
+ * ================================================================ */
+
+.pause-menu {
+    width: 360px;
+    padding-bottom: 30px;
 }
 
-.panel--settings {
-    width: 620px;
-    height: 560px;
-    max-height: 94%;
+.menu-items {
+    align-items: stretch;
 }
 
-.menu-button {
-    height: 40px;
-    margin-left: 0;
-    margin-bottom: 10px;
-    font-size: 15px;
+/* 一項目。左に菱形のカーソル、下に中央から伸びる金線。 */
+.menu-item {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin: 0;
+    padding: 0 0 0 52px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    opacity: 0;
+    translate: -22px 0;
+    transition-property: opacity, translate, scale, background-color;
+    transition-duration: 0.3s, 0.45s, 0.12s, 0.25s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-cubic, ease-out-cubic;
+}
+
+/* パネルが開くと、PauseMenu が付ける時間差で一つずつ滑り込む。 */
+.rpg-panel.is-shown .menu-item {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* 選んだ項目は、薄い金の地と左端の金線だけで示す。塗りを濃くすると石板から浮く。 */
+.menu-item {
+    border-left-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.menu-item:hover,
+.menu-item:hover:enabled,
+.menu-item:focus,
+.menu-item:focus:enabled {
+    background-color: rgb(30, 25, 19);
+    border-color: var(--gold);
+}
+
+.menu-item:active,
+.menu-item:active:enabled {
+    scale: 0.97 0.97;
+}
+
+.menu-item__label {
+    font-size: 19px;
+    letter-spacing: 4px;
+    color: var(--ink-dim);
+    margin: 0;
+    padding: 0;
+    transition-property: color, translate, letter-spacing;
+    transition-duration: 0.25s, 0.3s, 0.3s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-cubic;
+}
+
+.menu-item:hover .menu-item__label,
+.menu-item:focus .menu-item__label {
+    color: var(--gold-bright);
+    translate: 8px 0;
+    letter-spacing: 6px;
+}
+
+.menu-item__cursor {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin-top: -5px;
+    background-color: var(--gold);
+    border-width: 1px;
+    border-color: var(--gold-bright);
+    opacity: 0;
+    translate: -14px 0;
+    rotate: -45deg;
+    scale: 0.4 0.4;
+    transition-property: opacity, translate, rotate, scale;
+    transition-duration: 0.2s, 0.3s, 0.4s, 0.3s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-back, ease-out-back;
+}
+
+.menu-item:hover .menu-item__cursor,
+.menu-item:focus .menu-item__cursor {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 45deg;
+    scale: 1 1;
+}
+
+.menu-item__underline {
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    bottom: 6px;
+    height: 1px;
+    background-color: var(--gold);
+    scale: 0 1;
+    transition-property: scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.menu-item:hover .menu-item__underline,
+.menu-item:focus .menu-item__underline {
+    scale: 1 1;
+}
+
+/* ================================================================
+ * 設定画面
+ * ================================================================ */
+
+.settings {
+    width: 700px;
+    max-width: 94%;
 }
 
 /* ---- タブ ---- */
 
 .tabs {
     flex-direction: row;
-    margin-bottom: 8px;
+    justify-content: center;
+    border-bottom-width: 1px;
+    border-color: var(--brass-dim);
+    margin-bottom: 18px;
 }
 
 .tab {
-    height: 30px;
-    margin: 0 6px 0 0;
-    padding: 0 16px;
-    font-size: 13px;
-    color: var(--ink-dim);
+    height: 36px;
+    margin: 0 4px;
+    padding: 0 22px;
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: var(--ink-faint);
     background-color: rgba(0, 0, 0, 0);
-    border-width: 0 0 2px 0;
-    border-color: rgba(0, 0, 0, 0);
+    border-width: 0;
     border-radius: 0;
+    transition-property: color, translate;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-cubic;
 }
 
-.tab:hover {
+.tab:hover,
+.tab:hover:enabled {
     color: var(--ink);
+    translate: 0 -1px;
 }
 
 .tab--selected {
-    color: var(--torch);
-    border-color: var(--torch);
+    color: var(--gold-bright);
 }
 
-.page {
-    flex-grow: 1;
-    flex-shrink: 1;
+/* 選んだタブの下を滑って移る金の帯。位置と幅は SettingsScreen が合わせる。 */
+.tabs__indicator {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--gold);
+    transition-property: left, width;
+    transition-duration: 0.4s;
+    transition-timing-function: ease-out-back;
+}
+
+.tabs__indicator-gem {
+    position: absolute;
+    left: 50%;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    background-color: var(--gold-bright);
+    rotate: 45deg;
+}
+
+/* ---- ページ ---- */
+
+.pages {
+    height: 360px;
+}
+
+.rpg-page {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.page__rows {
+    flex-shrink: 0;
 }
 
 .page__spacer {
     flex-grow: 1;
 }
 
-.actions--footer {
+.settings__footer {
     border-top-width: 1px;
-    border-color: var(--edge);
-    padding-top: 12px;
-    margin-top: 12px;
-}
-
-/* ---- 操作 ---- */
-
-.row__label--wide {
-    width: 120px;
-}
-
-.row__toggle {
-    margin: 0;
-}
-
-.row__toggle .unity-toggle__checkmark {
-    width: 18px;
-    height: 18px;
-    background-color: var(--stone-raised);
-    border-color: var(--edge);
-    border-radius: 3px;
-}
-
-.row__toggle:checked .unity-toggle__checkmark {
-    background-color: var(--torch);
-    -unity-background-image-tint-color: var(--stone);
+    border-color: var(--brass-dim);
+    padding-top: 14px;
+    margin-top: 16px;
 }
 
 /* ---- キー設定 ---- */
@@ -91,72 +222,115 @@
     flex-shrink: 1;
 }
 
+.key-list .unity-scroller--vertical {
+    width: 8px;
+}
+
+.key-list .unity-scroller--vertical .unity-base-slider__tracker {
+    background-color: var(--stone-2);
+    border-width: 0;
+}
+
+.key-list .unity-scroller--vertical .unity-base-slider__dragger {
+    background-color: var(--brass);
+    border-width: 0;
+}
+
+.key-list .unity-scroller__low-button,
+.key-list .unity-scroller__high-button {
+    display: none;
+}
+
 .key-row {
     flex-direction: row;
     align-items: center;
-    height: 34px;
+    min-height: 36px;
     margin-bottom: 4px;
 }
 
 .key-row--header {
-    height: 22px;
+    min-height: 24px;
     margin-bottom: 6px;
+    opacity: 1;
+    translate: 0 0;
+}
+
+.key-row--header .key-row__label {
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--brass);
 }
 
 .key-row__label {
     width: 150px;
+    font-size: 15px;
+    letter-spacing: 2px;
     color: var(--ink-dim);
-    font-size: 13px;
 }
 
 .key-row__heading {
-    width: 150px;
-    margin-right: 8px;
-    color: var(--ink-dim);
-    font-size: 11px;
-    letter-spacing: 1px;
+    width: 160px;
+    margin-right: 10px;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--brass);
     -unity-text-align: middle-center;
 }
 
+/* 真鍮の銘板のようなキーの枠。 */
 .key-slot {
-    width: 150px;
-    height: 30px;
-    margin: 0 8px 0 0;
-    font-size: 13px;
+    width: 160px;
+    height: 32px;
+    margin: 0 10px 0 0;
+    font-size: 14px;
+    letter-spacing: 1px;
     color: var(--ink);
-    background-color: var(--stone-raised);
+    background-color: var(--stone-2);
     border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 3px;
+    border-color: var(--brass-dim);
+    border-radius: 0;
+    transition-property: color, background-color, border-color, translate, scale, opacity;
+    transition-duration: 0.2s, 0.25s, 0.2s, 0.2s, 0.2s, 0.2s;
+    transition-timing-function: ease-out-cubic, ease-out-cubic, ease-out-cubic, ease-out-cubic, ease-out-back, ease-out-cubic;
 }
 
-.key-slot:hover {
-    border-color: var(--torch);
+.key-slot:hover,
+.key-slot:hover:enabled {
+    border-color: var(--gold);
+    background-color: var(--stone-3);
+    translate: 0 -1px;
 }
 
 .key-slot--empty {
-    color: var(--ink-dim);
+    color: var(--ink-faint);
 }
 
+/* キー待ち。PauseMenu 側で .is-pulse を付け外しして縁を明滅させる。 */
 .key-slot--listening {
+    color: var(--gold-bright);
+    background-color: var(--gold-glow);
+    border-color: var(--gold);
+    scale: 1.04 1.04;
+}
+
+.key-slot--listening.is-pulse {
+    border-color: var(--ember);
+    background-color: var(--stone-2);
+    transition-duration: 0.45s;
+}
+
+/* 決まった瞬間、金に光ってから元に戻る。 */
+.key-slot.is-flash {
     color: var(--stone);
-    background-color: var(--torch);
-    border-color: var(--torch);
+    background-color: var(--gold-bright);
+    border-color: var(--gold-bright);
+    scale: 1.08 1.08;
+    transition-duration: 0.04s;
 }
 
-.key-row__reset {
-    height: 30px;
-    margin: 0;
-    padding: 0 10px;
-    font-size: 11px;
-}
-
-.key-row__reset-space {
-    width: 60px;
-}
-
-.hint {
-    margin-top: 8px;
-    color: var(--ink-dim);
-    font-size: 11px;
+/* 空にしたとき、一瞬沈む。 */
+.key-slot.is-sink {
+    translate: 0 3px;
+    opacity: 0.5;
+    transition-duration: 0.06s;
 }
