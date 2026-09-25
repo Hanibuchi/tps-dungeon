@@ -242,10 +242,11 @@
     background-color: rgba(6, 4, 3, 0.5);
 }
 
-/* 正方形。PanelSettings が画面の大きさに合わせて拡縮するので、1080p 基準の固定サイズでよい。 */
+/* 正方形。PanelSettings が画面の大きさに合わせて拡縮するので、720p 基準の固定サイズでよい。
+ * UI を 1.5 倍にしても地図だけは画面に収まる大きさのままにしたいので、他と違って拡大しない。 */
 .map-large {
-    width: 760px;
-    height: 760px;
+    width: 504px;
+    height: 504px;
     /* 大きいぶん背後の景色が透けると部屋が読みにくいので、小さい地図より濃くする。 */
     background-color: rgba(20, 17, 15, 0.96);
     opacity: 0;
@@ -271,9 +272,9 @@
     overflow: hidden;
 }
 
-/* 小さい地図と同じ要素を、寄って大きく描く。 */
+/* 小さい地図と同じ要素を、寄って大きく描く。枠を縮めたぶん縮尺も合わせ、見える範囲を変えない。 */
 .map-large__canvas {
-    --map-pixels-per-cell: 64;
+    --map-pixels-per-cell: 42;
 }
 
 .map-large__caption {
