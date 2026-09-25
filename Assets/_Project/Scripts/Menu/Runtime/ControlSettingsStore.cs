@@ -3,13 +3,14 @@ using UnityEngine;
 namespace TpsDungeon.Menu
 {
     /// <summary>
-    /// 操作まわりの設定（マウス感度・上下反転・キー設定）の保存先。
+    /// 操作まわりの設定（マウス感度・上下反転・なめらかスクロールの無視・キー設定）の保存先。
     /// AudioSettingsStore と同じく、PlayerPrefs の利用をこのクラスに閉じ込めてある。
     /// </summary>
     public static class ControlSettingsStore
     {
         public const string MouseSensitivityKey = "Controls.MouseSensitivity";
         public const string InvertYKey = "Controls.InvertY";
+        public const string DiscreteScrollKey = "Controls.DiscreteScroll";
         public const string BindingOverridesKey = "Controls.BindingOverrides";
 
         public static float LoadMouseSensitivity()
@@ -30,6 +31,16 @@ namespace TpsDungeon.Menu
         public static void SaveInvertY(bool value)
         {
             PlayerPrefs.SetInt(InvertYKey, value ? 1 : 0);
+        }
+
+        public static bool LoadDiscreteScroll()
+        {
+            return PlayerPrefs.GetInt(DiscreteScrollKey, 0) != 0;
+        }
+
+        public static void SaveDiscreteScroll(bool value)
+        {
+            PlayerPrefs.SetInt(DiscreteScrollKey, value ? 1 : 0);
         }
 
         /// <summary>InputActionAsset.SaveBindingOverridesAsJson の結果。未保存なら空文字。</summary>
@@ -55,6 +66,7 @@ namespace TpsDungeon.Menu
         {
             PlayerPrefs.DeleteKey(MouseSensitivityKey);
             PlayerPrefs.DeleteKey(InvertYKey);
+            PlayerPrefs.DeleteKey(DiscreteScrollKey);
             PlayerPrefs.DeleteKey(BindingOverridesKey);
             Flush();
         }

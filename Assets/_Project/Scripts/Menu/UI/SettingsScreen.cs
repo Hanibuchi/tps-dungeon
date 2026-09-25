@@ -37,6 +37,7 @@ namespace TpsDungeon.Menu.UI
         private readonly Slider sensitivity;
         private readonly Label sensitivityValue;
         private readonly Toggle invertY;
+        private readonly Toggle discreteScroll;
         private Tab current;
 
         /// <summary>「戻る」が押された。</summary>
@@ -68,6 +69,7 @@ namespace TpsDungeon.Menu.UI
             sensitivity = root.Q<Slider>("mouse-sensitivity");
             sensitivityValue = root.Q<Label>("mouse-sensitivity-value");
             invertY = root.Q<Toggle>("invert-y");
+            discreteScroll = root.Q<Toggle>("discrete-scroll");
             if (sensitivity != null)
             {
                 sensitivity.lowValue = LookSettings.MinSensitivity;
@@ -82,9 +84,10 @@ namespace TpsDungeon.Menu.UI
             }
 
             invertY?.RegisterValueChangedCallback(evt => controls?.SetInvertY(evt.newValue));
+            discreteScroll?.RegisterValueChangedCallback(evt => controls?.SetDiscreteScroll(evt.newValue));
             Clicked(root, "controls-reset", () =>
             {
-                controls?.ResetLook();
+                controls?.ResetControls();
                 PullControls();
             });
             pages[(int)Tab.Controls]?.SetEnabled(controls != null);
@@ -205,6 +208,7 @@ namespace TpsDungeon.Menu.UI
 
             ShowSensitivity(controls.MouseSensitivity);
             invertY?.SetValueWithoutNotify(controls.InvertY);
+            discreteScroll?.SetValueWithoutNotify(controls.DiscreteScroll);
         }
 
         private void ShowSensitivity(float value)
