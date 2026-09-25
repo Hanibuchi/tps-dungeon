@@ -105,7 +105,7 @@
                             <ui:Label text="其の二" class="key-row__heading" />
                             <ui:VisualElement class="key-row__reset-space" />
                         </ui:VisualElement>
-                        <ui:ScrollView name="key-list" class="key-list" />
+                        <ui:ScrollView name="key-list" mode="Vertical" horizontal-scroller-visibility="Hidden" class="key-list" />
                         <ui:Label name="key-hint" text="左クリックで変更　右クリックで解除　Esc で取り消し" class="rpg-hint" />
                         <ui:VisualElement class="rpg-actions">
                             <ui:Button name="keys-reset" text="すべて既定に戻す" class="rpg-button rpg-button--small" />

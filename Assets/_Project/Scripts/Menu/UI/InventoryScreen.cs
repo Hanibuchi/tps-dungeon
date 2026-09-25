@@ -55,8 +55,8 @@ namespace TpsDungeon.Menu.UI
         [SerializeField, Tooltip("押しながらクリックでホットバーとバッグの間を移すアクション（UI マップ側）。")]
         private string quickMoveActionName = "UI/QuickMove";
 
-        [SerializeField, Tooltip("合わせている枠のものを捨てるアクション（UI マップ側）。")]
-        private string dropActionName = "UI/Drop";
+        [SerializeField, Tooltip("合わせている枠のものを捨てるアクション（ゲーム中のマップ側。ゲーム中は手に持っているものを捨てる）。開いている間もこれを効かせる。")]
+        private string dropActionName = "Player/Drop";
 
         [SerializeField, Tooltip("ゲーム中に使うアクションマップ。")]
         private string gameplayMapName = "Player";
@@ -215,8 +215,9 @@ namespace TpsDungeon.Menu.UI
             openedFrame = Time.frameCount;
             Pauser.Pause();
 
-            // UI マップに切り替えると開閉のアクションも止まるので、これだけ効かせ直す（閉じるキーもキー設定に従わせるため）。
+            // UI マップに切り替えると開閉と捨てるのアクションも止まるので、これだけ効かせ直す（キー設定に従わせるため）。
             toggleAction?.Enable();
+            dropAction?.Enable();
 
             RefreshSlots();
             RefreshHint(force: true);

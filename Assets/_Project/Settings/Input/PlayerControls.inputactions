@@ -110,6 +110,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Drop",
+                    "type": "Button",
+                    "id": "24b4e4d0-77be-491c-b118-5d78ad553e27",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Pause",
                     "type": "Button",
                     "id": "4b862b4b-c8e5-4ea8-b87c-290bf269799a",
@@ -562,6 +571,28 @@
                 },
                 {
                     "name": "",
+                    "id": "88b53f3d-54df-4987-a204-cdf01716cccc",
+                    "path": "<Keyboard>/o",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Drop",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9dbc04cb-9622-449a-b5d1-283cc7e9b5c9",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Drop",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "f9d5b3f6-e63a-44e1-b217-29968281c6cc",
                     "path": "<Keyboard>/escape",
                     "interactions": "",
@@ -601,15 +632,6 @@
                     "name": "QuickMove",
                     "type": "Button",
                     "id": "9185aada-6513-48b7-b601-ffc81c7d0ac2",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Drop",
-                    "type": "Button",
-                    "id": "24b4e4d0-77be-491c-b118-5d78ad553e27",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -669,28 +691,6 @@
                     "processors": "",
                     "groups": "KeyboardMouse",
                     "action": "QuickMove",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "88b53f3d-54df-4987-a204-cdf01716cccc",
-                    "path": "<Keyboard>/o",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "KeyboardMouse",
-                    "action": "Drop",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9dbc04cb-9622-449a-b5d1-283cc7e9b5c9",
-                    "path": "",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "KeyboardMouse",
-                    "action": "Drop",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
