@@ -1,10 +1,4 @@
-/* 照準とインタラクトのプロンプト。設定画面（AudioSettingsPanel.uss）と同じ石と松明の色味。 */
-:root {
-    --ink: rgb(236, 228, 214);
-    --stone: rgba(28, 26, 24, 0.82);
-    --edge: rgb(72, 66, 58);
-    --torch: rgb(214, 158, 74);
-}
+/* 照準とインタラクトの案内。色・書体は Theme.uss。 */
 
 /* 画面いっぱいに広げて、子を中央に寄せる。 */
 .hud {
@@ -17,47 +11,84 @@
     justify-content: center;
 }
 
-/* 画面中央の点。レイはここを通る。 */
+/* 画面中央の小さな菱形。レイはここを通る。触れるものに合わせると回って金に灯る。 */
 .reticle {
-    width: 6px;
-    height: 6px;
-    border-radius: 3px;
-    background-color: var(--ink);
+    width: 10px;
+    height: 10px;
     border-width: 1px;
-    border-color: rgba(0, 0, 0, 0.6);
-    opacity: 0.85;
+    border-color: rgba(236, 226, 206, 0.75);
+    background-color: rgba(0, 0, 0, 0.25);
+    rotate: 45deg;
+    scale: 1 1;
+    transition-property: rotate, scale, border-color;
+    transition-duration: 0.35s, 0.3s, 0.2s;
+    transition-timing-function: ease-out-back, ease-out-back, ease-out-cubic;
 }
 
-/* 照準のすぐ下に出す。中央からずらすため絶対配置にして、照準の位置を動かさない。 */
+.reticle__core {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 2px;
+    height: 2px;
+    background-color: var(--ink);
+    transition-property: background-color, scale;
+    transition-duration: 0.2s;
+}
+
+.reticle--aimed {
+    rotate: 135deg;
+    scale: 1.4 1.4;
+    border-color: var(--gold);
+}
+
+.reticle--aimed .reticle__core {
+    background-color: var(--gold-bright);
+    scale: 1.5 1.5;
+}
+
+/* 照準のすぐ下に出す案内。中央からずらすため絶対配置にして、照準の位置を動かさない。 */
 .prompt {
     position: absolute;
-    top: 54%;
+    top: 55%;
     flex-direction: row;
     align-items: center;
-    padding: 6px 12px 6px 6px;
-    background-color: var(--stone);
+    padding: 5px 16px 5px 5px;
+    background-color: rgba(20, 17, 15, 0.86);
     border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 4px;
+    border-color: var(--brass-dim);
+    opacity: 0;
+    translate: 0 14px;
+    scale: 0.92 0.92;
+    transition-property: opacity, translate, scale;
+    transition-duration: 0.2s, 0.35s, 0.3s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-back;
 }
 
+.prompt.is-shown {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1 1;
+}
+
+/* キーは真鍮の小さな銘板。 */
 .prompt__key {
-    min-width: 28px;
-    height: 28px;
-    padding: 0 6px;
-    margin: 0 10px 0 0;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    margin: 0 12px 0 0;
     -unity-text-align: middle-center;
-    -unity-font-style: bold;
     font-size: 15px;
     color: var(--stone);
-    background-color: var(--torch);
-    border-radius: 3px;
+    background-color: var(--gold);
+    border-width: 1px;
+    border-color: var(--gold-bright);
 }
 
 .prompt__action {
     padding: 0;
     margin: 0;
-    font-size: 16px;
-    letter-spacing: 1px;
+    font-size: 17px;
+    letter-spacing: 3px;
     color: var(--ink);
 }

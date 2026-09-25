@@ -3,7 +3,8 @@
     "rootNamespace": "TpsDungeon.Hud",
     "references": [
         "TpsDungeon.Player",
-        "TpsDungeon.Map"
+        "TpsDungeon.Map",
+        "TpsDungeon.UiKit"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

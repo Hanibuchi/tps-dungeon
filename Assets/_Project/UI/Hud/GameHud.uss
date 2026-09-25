@@ -1,13 +1,4 @@
-/* 常時表示の HUD。左下 HP・下中央ホットバー・右下マップ。照準（InteractionHud.uss）と同じ石と松明の色味。 */
-:root {
-    --ink: rgb(236, 228, 214);
-    --ink-dim: rgb(150, 141, 127);
-    --stone: rgba(28, 26, 24, 0.82);
-    --edge: rgb(72, 66, 58);
-    --torch: rgb(214, 158, 74);
-    --blood: rgb(168, 52, 42);
-    --blood-low: rgb(212, 64, 48);
-}
+/* 常時表示の HUD。左下 HP・下中央ホットバー・右下マップ。色・書体・飾り枠は Theme.uss。 */
 
 /* 画面いっぱいに広げ、子は四隅・下辺に絶対配置する。 */
 .game-hud {
@@ -18,66 +9,122 @@
     bottom: 0;
 }
 
+/* HUD の小さな枠は、内側の線を詰めて角の菱形も小さくする。 */
+.hud-frame {
+    --frame-inset: 4;
+    --frame-gap: 2;
+    --frame-corner-gap: 6;
+}
+
+.hud-frame .ornate-frame__corner {
+    width: 8px;
+    height: 8px;
+    border-width: 1px;
+}
+
+.hud-frame .ornate-frame__corner--tl { left: 0; top: 0; }
+.hud-frame .ornate-frame__corner--tr { right: 0; top: 0; }
+.hud-frame .ornate-frame__corner--bl { left: 0; bottom: 0; }
+.hud-frame .ornate-frame__corner--br { right: 0; bottom: 0; }
+
 /* ---- 左下: HP ---- */
 
 .hp {
     position: absolute;
-    left: 24px;
-    bottom: 24px;
-    width: 280px;
-    padding: 8px 12px 10px 12px;
-    background-color: var(--stone);
-    border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 4px;
+    left: 28px;
+    bottom: 28px;
+    width: 300px;
+    padding: 12px 18px 14px 18px;
+    background-color: rgba(20, 17, 15, 0.84);
+    transition-property: translate;
+    transition-duration: 0.08s;
+}
+
+/* 被弾した瞬間に小さく揺れる。 */
+.hp.hp--hit {
+    translate: 4px 0;
 }
 
 .hp__header {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 6px;
+    margin-bottom: 7px;
 }
 
 .hp__caption {
     padding: 0;
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     letter-spacing: 3px;
-    -unity-font-style: bold;
-    color: var(--torch);
+    color: var(--gold);
 }
 
 .hp__value {
     padding: 0;
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--ink);
+    transition-property: color;
+    transition-duration: 0.3s;
 }
 
 .hp__track {
     height: 12px;
-    background-color: rgba(0, 0, 0, 0.55);
+    background-color: rgba(0, 0, 0, 0.6);
     border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 2px;
+    border-color: var(--brass-dim);
     overflow: hidden;
 }
 
-.hp__fill {
+/* 削れ跡。本体より遅れて、ゆっくり追いつく。 */
+.hp__trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
     width: 100%;
-    height: 100%;
-    background-color: var(--blood);
+    background-color: rgb(236, 196, 140);
     transition-property: width;
-    transition-duration: 0.15s;
+    transition-duration: 0.55s;
+    transition-delay: 0.35s;
+    transition-timing-function: ease-in-out-cubic;
+}
+
+.hp__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--blood);
+    border-right-width: 1px;
+    border-color: rgba(255, 180, 150, 0.6);
+    transition-property: width, background-color;
+    transition-duration: 0.18s, 0.3s;
+    transition-timing-function: ease-out-cubic;
 }
 
 .hp--low .hp__fill {
-    background-color: var(--blood-low);
+    background-color: var(--blood-bright);
 }
 
 .hp--low .hp__value {
-    color: var(--blood-low);
+    color: var(--blood-bright);
+}
+
+/* 残りが少ないときの鼓動。GameHudView が .hp--beat を付け外しする。 */
+.hp--low.hp--beat .hp__fill {
+    background-color: rgb(250, 110, 80);
+}
+
+.hp--low .ornate-frame__corner {
+    background-color: var(--blood-bright);
+}
+
+.hp--low.hp--beat .ornate-frame__corner {
+    background-color: var(--ember);
+    scale: 1.3 1.3;
 }
 
 /* ---- 下中央: ホットバー ---- */
@@ -87,38 +134,85 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 24px;
+    bottom: 28px;
     flex-direction: row;
     justify-content: center;
+    align-items: flex-end;
 }
 
 .slot {
     width: 64px;
     height: 64px;
-    margin: 0 4px;
-    background-color: var(--stone);
-    border-width: 2px;
-    border-color: var(--edge);
-    border-radius: 4px;
+    margin: 0 5px;
+    background-color: rgba(20, 17, 15, 0.84);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    transition-property: translate, scale, border-color, background-color;
+    transition-duration: 0.3s, 0.3s, 0.2s, 0.2s;
+    transition-timing-function: ease-out-back, ease-out-back, ease-out-cubic, ease-out-cubic;
 }
 
 .slot--selected {
-    border-color: var(--torch);
-    background-color: rgba(52, 44, 34, 0.9);
+    translate: 0 -8px;
+    scale: 1.08 1.08;
+    border-color: var(--gold);
+    background-color: rgba(52, 42, 30, 0.92);
 }
 
 .slot__number {
     position: absolute;
-    left: 4px;
+    left: 5px;
     top: 2px;
     padding: 0;
     margin: 0;
     font-size: 12px;
-    color: var(--ink-dim);
+    color: var(--ink-faint);
+    transition-property: color;
+    transition-duration: 0.2s;
 }
 
 .slot--selected .slot__number {
-    color: var(--torch);
+    color: var(--gold-bright);
+}
+
+/* 選んだ枠の上に灯る宝石。 */
+.slot__gem {
+    position: absolute;
+    left: 50%;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    background-color: var(--gold-bright);
+    border-width: 2px;
+    border-color: var(--stone);
+    rotate: -45deg;
+    scale: 0 0;
+    transition-property: rotate, scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.slot--selected .slot__gem {
+    rotate: 45deg;
+    scale: 1 1;
+}
+
+/* 内側の細い線。ホットバーの枠も石板と揃える。 */
+.slot__inner {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    right: 3px;
+    bottom: 3px;
+    border-width: 1px;
+    border-color: rgba(140, 108, 60, 0.25);
+    transition-property: border-color;
+    transition-duration: 0.2s;
+}
+
+.slot--selected .slot__inner {
+    border-color: rgba(214, 170, 92, 0.55);
 }
 
 /* アイテムの絵が入る場所。今は空。 */
@@ -133,17 +227,32 @@
 
 /* ---- 右下: マップ ---- */
 
-/* 枠。描画ははみ出すので、ここで切り取る。 */
 .minimap {
     position: absolute;
-    right: 24px;
-    bottom: 24px;
+    right: 28px;
+    bottom: 28px;
     width: 200px;
     height: 200px;
-    background-color: var(--stone);
-    border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 4px;
+    background-color: rgba(20, 17, 15, 0.84);
+    opacity: 0;
+    scale: 0.94 0.94;
+    transition-property: opacity, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.minimap.is-shown {
+    opacity: 1;
+    scale: 1 1;
+}
+
+/* 描画ははみ出すので、枠の内側で切り取る。 */
+.minimap__clip {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
     overflow: hidden;
 }
 
@@ -155,18 +264,18 @@
     bottom: 0;
 
     /* MinimapElement が customStyle で読む描画色。要素自身のルールに書かないと拾えない。 */
-    --map-room: rgb(74, 68, 60);
-    --map-room-current: rgb(112, 102, 88);
-    --map-room-edge: rgb(150, 141, 127);
-    --map-door: rgb(214, 158, 74);
-    --map-feature: rgb(236, 228, 214);
-    --map-player: rgb(214, 158, 74);
+    --map-room: rgb(66, 58, 48);
+    --map-room-current: rgb(108, 92, 70);
+    --map-room-edge: rgb(150, 122, 82);
+    --map-door: rgb(214, 170, 92);
+    --map-feature: rgb(236, 226, 206);
+    --map-player: rgb(248, 220, 150);
     --map-pixels-per-cell: 32;
 }
 
 /* ---- マップキーで開く大きな地図 ---- */
 
-/* 画面いっぱいに薄く暗くして、真ん中に大きな枠を置く。閉じているときは GameHudView が隠す。 */
+/* 画面いっぱいに薄く暗くして、真ん中に大きな枠を置く。開閉は GameHudView が UiTransitions で行う。 */
 .map-overlay {
     position: absolute;
     left: 0;
@@ -175,7 +284,14 @@
     bottom: 0;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.45);
+    background-color: rgba(6, 4, 3, 0);
+    transition-property: background-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.map-overlay.is-shown {
+    background-color: rgba(6, 4, 3, 0.5);
 }
 
 /* 正方形。PanelSettings が画面の大きさに合わせて拡縮するので、1080p 基準の固定サイズでよい。 */
@@ -183,14 +299,42 @@
     width: 760px;
     height: 760px;
     /* 大きいぶん背後の景色が透けると部屋が読みにくいので、小さい地図より濃くする。 */
-    background-color: rgba(28, 26, 24, 0.96);
-    border-width: 1px;
-    border-color: var(--edge);
-    border-radius: 4px;
+    background-color: rgba(20, 17, 15, 0.96);
+    opacity: 0;
+    scale: 0.9 0.9;
+    rotate: -1.5deg;
+    transition-property: opacity, scale, rotate;
+    transition-duration: 0.25s, 0.4s, 0.4s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-back;
+}
+
+.map-overlay.is-shown .map-large {
+    opacity: 1;
+    scale: 1 1;
+    rotate: 0deg;
+}
+
+.map-large__clip {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
     overflow: hidden;
 }
 
 /* 小さい地図と同じ要素を、寄って大きく描く。 */
 .map-large__canvas {
     --map-pixels-per-cell: 64;
+}
+
+.map-large__caption {
+    position: absolute;
+    top: -34px;
+    left: 0;
+    right: 0;
+    font-size: 14px;
+    letter-spacing: 8px;
+    color: var(--gold);
+    -unity-text-align: middle-center;
 }

@@ -1,22 +1,32 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hud="TpsDungeon.Hud" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hud="TpsDungeon.Hud" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Hud/GameHud.uss" />
     <ui:VisualElement name="game-hud" class="game-hud" picking-mode="Ignore">
         <ui:VisualElement name="hp" class="hp" picking-mode="Ignore">
+            <kit:OrnateFrame class="hud-frame" />
             <ui:VisualElement class="hp__header" picking-mode="Ignore">
-                <ui:Label text="HP" class="hp__caption" picking-mode="Ignore" />
-                <ui:Label name="hp-value" text="100 / 100" class="hp__value" picking-mode="Ignore" />
+                <ui:Label text="HP" class="hp__caption rpg-deco-bold" picking-mode="Ignore" />
+                <ui:Label name="hp-value" text="100 / 100" class="hp__value rpg-deco" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:VisualElement class="hp__track" picking-mode="Ignore">
+                <ui:VisualElement name="hp-trail" class="hp__trail" picking-mode="Ignore" />
                 <ui:VisualElement name="hp-fill" class="hp__fill" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="hotbar" class="hotbar" picking-mode="Ignore" />
         <ui:VisualElement name="minimap" class="minimap" picking-mode="Ignore">
-            <hud:MinimapElement name="minimap-canvas" class="minimap__canvas" picking-mode="Ignore" />
+            <ui:VisualElement class="minimap__clip" picking-mode="Ignore">
+                <hud:MinimapElement name="minimap-canvas" class="minimap__canvas" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <kit:OrnateFrame class="hud-frame" />
         </ui:VisualElement>
         <ui:VisualElement name="map-overlay" class="map-overlay" picking-mode="Ignore">
             <ui:VisualElement class="map-large" picking-mode="Ignore">
-                <hud:MinimapElement name="map-large-canvas" class="minimap__canvas map-large__canvas" picking-mode="Ignore" />
+                <ui:VisualElement class="map-large__clip" picking-mode="Ignore">
+                    <hud:MinimapElement name="map-large-canvas" class="minimap__canvas map-large__canvas" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <kit:OrnateFrame crest="true" />
+                <ui:Label text="— MAP —" class="map-large__caption rpg-deco" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
