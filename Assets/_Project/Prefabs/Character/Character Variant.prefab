@@ -76,7 +76,7 @@ MonoBehaviour:
   toggleActionName: Player/Inventory
   cancelActionName: UI/Cancel
   quickMoveActionName: UI/QuickMove
-  dropActionName: UI/Drop
+  dropActionName: Player/Drop
   gameplayMapName: Player
   menuMapName: UI
 --- !u!1 &1605216043675353633

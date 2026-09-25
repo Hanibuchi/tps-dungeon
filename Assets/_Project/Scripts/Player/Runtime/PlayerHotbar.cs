@@ -9,6 +9,7 @@ namespace TpsDungeon.Player
     /// マウスホイール（ゲームパッドは LB/RB）で隣へ、数字キーで直接選ぶ。
     /// なめらかスクロールを無視する設定（<see cref="DiscreteScroll"/>）では、ホイール 1 ノッチで 1 枠送る。
     /// 枠の中身はインベントリの先頭の枠（PlayerInventory）が持ち、ここは選択位置だけを持つ。
+    /// 捨てるキーは選んでいる枠を捨ててほしいと <see cref="DropRequested"/> で知らせるだけで、捨てるのは PlayerInventory。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -26,10 +27,14 @@ namespace TpsDungeon.Player
         [SerializeField, Tooltip("枠を直接選ぶアクション名の頭。末尾に 1 から始まる枠番号が付く。")]
         private string slotActionPrefix = "HotbarSlot";
 
+        [SerializeField, Tooltip("選んでいる枠のものを捨てるアクション名。")]
+        private string dropActionName = "Player/Drop";
+
         [SerializeField, Min(0f), Tooltip("なめらかスクロールを無視するとき、ホイールの値がこれより長く途切れたら次の回しとみなす（秒）。")]
         private float scrollGestureGap = ScrollGesture.DefaultGap;
 
         private InputAction scrollAction;
+        private InputAction dropAction;
         private readonly InputAction[] slotActions = new InputAction[SlotCount];
         private ScrollGesture scrollGesture;
 
@@ -46,6 +51,9 @@ namespace TpsDungeon.Player
         public int SelectedIndex { get; private set; }
 
         public event Action<PlayerHotbar> Changed;
+
+        /// <summary>ゲーム中に捨てるキーが押された。引数は選んでいる枠。</summary>
+        public event Action<int> DropRequested;
 
         private void Reset()
         {
@@ -67,17 +75,23 @@ namespace TpsDungeon.Player
             }
 
             scrollAction = FindAction(scrollActionName);
+            dropAction = FindAction(dropActionName);
             for (int i = 0; i < SlotCount; i++) slotActions[i] = FindAction(slotActionPrefix + (i + 1));
         }
 
         private void OnDisable()
         {
             scrollAction = null;
+            dropAction = null;
             Array.Clear(slotActions, 0, slotActions.Length);
         }
 
         private void Update()
         {
+            // インベントリ画面も開いている間だけ同じアクションを効かせ直すので、ゲーム中のマップが有効なときだけ拾う。
+            if (dropAction != null && dropAction.WasPressedThisFrame() && dropAction.actionMap == playerInput.currentActionMap)
+                DropRequested?.Invoke(SelectedIndex);
+
             for (int i = 0; i < SlotCount; i++)
             {
                 if (slotActions[i] != null && slotActions[i].WasPressedThisFrame())

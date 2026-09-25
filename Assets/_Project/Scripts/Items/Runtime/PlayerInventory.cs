@@ -7,6 +7,7 @@ namespace TpsDungeon.Items
     /// <summary>
     /// プレイヤーの持ち物。<see cref="Inventory"/> を持ち、拾う・捨てるの出入り口になる。
     /// ホットバーの枠はインベントリの先頭の枠で、どれを選んでいるかは PlayerHotbar が持つ。
+    /// ゲーム中に捨てるキーを押すと、PlayerHotbar で選んでいる枠（手に持っているもの）を捨てる。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -26,6 +27,7 @@ namespace TpsDungeon.Items
         private LayerMask groundMask = ~0;
 
         private Inventory inventory;
+        private PlayerHotbar hotbar;
 
         /// <summary>持ち物の枠。先頭の PlayerHotbar.SlotCount 枠がホットバー。</summary>
         public Inventory Inventory
@@ -43,7 +45,20 @@ namespace TpsDungeon.Items
         private void Awake()
         {
             EnsureInventory();
+            hotbar = GetComponent<PlayerHotbar>();
         }
+
+        private void OnEnable()
+        {
+            if (hotbar != null) hotbar.DropRequested += OnDropRequested;
+        }
+
+        private void OnDisable()
+        {
+            if (hotbar != null) hotbar.DropRequested -= OnDropRequested;
+        }
+
+        private void OnDropRequested(int index) => Drop(index);
 
         private void EnsureInventory()
         {
