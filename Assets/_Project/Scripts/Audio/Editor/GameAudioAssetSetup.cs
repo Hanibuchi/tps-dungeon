@@ -110,7 +110,8 @@ namespace TpsDungeon.Audio.Editor
 
             panelSettings.themeStyleSheet = theme;
             panelSettings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            panelSettings.referenceResolution = new Vector2Int(1920, 1080);
+            // 1920x1080 だと文字も枠も小さすぎたので、基準を 2/3 にして UI 全体を 1.5 倍に見せる。
+            panelSettings.referenceResolution = new Vector2Int(1280, 720);
             panelSettings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
             panelSettings.match = 0.5f;
             EditorUtility.SetDirty(panelSettings);
