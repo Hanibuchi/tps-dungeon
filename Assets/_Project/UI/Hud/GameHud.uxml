@@ -13,6 +13,7 @@
                 <ui:VisualElement name="hp-fill" class="hp__fill" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:Label name="hotbar-name" class="hotbar-name rpg-deco" picking-mode="Ignore" />
         <ui:VisualElement name="hotbar" class="hotbar" picking-mode="Ignore" />
         <ui:VisualElement name="minimap" class="minimap" picking-mode="Ignore">
             <ui:VisualElement class="minimap__clip" picking-mode="Ignore">

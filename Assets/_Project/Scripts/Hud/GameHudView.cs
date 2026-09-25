@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud
 {
     /// <summary>
-    /// 常時表示の HUD（左下 HP・下中央ホットバー・右下マップ）と、マップキーで開く大きな地図。
+    /// 常時表示の HUD（左下 HP・下中央ホットバーと選んでいるアイテムの名前・右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
     /// 表示は PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
     /// </summary>
@@ -47,6 +47,10 @@ namespace TpsDungeon.Hud
         private bool beating;
         private Label hpValue;
         private VisualElement[] slots;
+        private Label itemName;
+
+        // 今出しているアイテム名。空の枠を選んでいる間は null。
+        private string shownItemName;
         private VisualElement minimapFrame;
         private VisualElement mapOverlay;
 
@@ -93,6 +97,9 @@ namespace TpsDungeon.Hud
             beating = false;
             maps = root.Query<MinimapElement>().ToList().ToArray();
             slots = BuildSlots(root.Q<VisualElement>("hotbar"));
+            itemName = root.Q<Label>("hotbar-name");
+            UiTransitions.HideImmediately(itemName);
+            shownItemName = null;
 
             if (health != null) health.Changed += OnHealthChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
@@ -196,6 +203,7 @@ namespace TpsDungeon.Hud
 
             int selected = hotbar != null ? hotbar.SelectedIndex : -1;
             for (int i = 0; i < slots.Length; i++) slots[i].EnableInClassList(ItemSlot.SelectedClass, i == selected);
+            RefreshItemName();
         }
 
         /// <summary>ホットバーの枠にアイテムの絵を入れる。ホットバーの枠はインベントリの先頭の枠。</summary>
@@ -208,6 +216,39 @@ namespace TpsDungeon.Hud
                 ItemDefinition item = inventory != null ? inventory.Inventory[i] : null;
                 ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
             }
+
+            RefreshItemName();
+        }
+
+        /// <summary>
+        /// 選んでいる枠のアイテム名をホットバーの上に出す。空の枠なら消す。
+        /// 選び直したり中身が入れ替わったりして名前が変わったときだけ、小さく沈んで浮き直す。
+        /// </summary>
+        private void RefreshItemName()
+        {
+            if (itemName == null) return;
+
+            string name = ItemNameText(SelectedItem());
+            if (name == shownItemName) return;
+
+            bool wasShown = shownItemName != null;
+            shownItemName = name;
+            if (name == null)
+            {
+                // 文字は消さずにおき、フェードアウトの間も前の名前を見せる。
+                UiTransitions.Hide(itemName);
+                return;
+            }
+
+            itemName.text = name;
+            UiTransitions.Show(itemName);
+            if (wasShown) UiTransitions.Flash(itemName, "hotbar-name--pop", 70);
+        }
+
+        private ItemDefinition SelectedItem()
+        {
+            if (hotbar == null || inventory == null) return null;
+            return inventory.Inventory[hotbar.SelectedIndex];
         }
 
         private void BindFloor(FloorBootstrap bootstrap)
@@ -269,5 +310,8 @@ namespace TpsDungeon.Hud
         }
 
         public static string HpText(int current, int max) => $"{current} / {max}";
+
+        /// <summary>ホットバーの上に出す名前。アイテムが無ければ null（何も出さない）。</summary>
+        public static string ItemNameText(ItemDefinition item) => item != null ? item.DisplayName : null;
     }
 }
