@@ -142,6 +142,37 @@
 
 /* 枠の見た目（.slot*）はインベントリ画面と共有するので Theme.uss にある。 */
 
+/* 選んでいる枠のアイテム名。選んだ枠（持ち上がって宝石が載る）の少し上に出す。 */
+.hotbar-name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 120px;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: var(--ink);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    opacity: 0;
+    translate: 0 6px;
+    transition-property: opacity, translate;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.hotbar-name.is-shown {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* 名前が変わった瞬間だけ沈んで浮き直す。GameHudView が一瞬だけ付ける。 */
+.hotbar-name.is-shown.hotbar-name--pop {
+    opacity: 0.35;
+    translate: 0 5px;
+}
+
 /* ---- 右下: マップ ---- */
 
 .minimap {

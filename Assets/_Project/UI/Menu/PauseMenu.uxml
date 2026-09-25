@@ -81,6 +81,16 @@
                                 <ui:Label text="上下反転" class="rpg-row__label" />
                                 <ui:Toggle name="invert-y" class="rpg-switch" />
                             </ui:VisualElement>
+                            <ui:VisualElement class="rpg-row">
+                                <ui:Label text="ホイール反転" class="rpg-row__label" />
+                                <ui:Toggle name="invert-scroll" class="rpg-switch" />
+                                <ui:Label text="ホットバーを送る向きを逆にする" class="rpg-row__note" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="rpg-row">
+                                <ui:Label text="離散ホイール" class="rpg-row__label" />
+                                <ui:Toggle name="discrete-scroll" class="rpg-switch" />
+                                <ui:Label text="オンでなめらかスクロールを無視し、1 ノッチで 1 枠送る" class="rpg-row__note" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                         <ui:VisualElement class="page__spacer" />
                         <ui:VisualElement class="rpg-actions">

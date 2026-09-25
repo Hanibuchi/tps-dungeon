@@ -360,6 +360,15 @@
     color: var(--ink-dim);
 }
 
+/* スイッチの横に添える短い説明。 */
+.rpg-row__note {
+    flex-shrink: 1;
+    margin-left: 14px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    white-space: normal;
+}
+
 .rpg-row__value {
     width: 56px;
     font-size: 14px;

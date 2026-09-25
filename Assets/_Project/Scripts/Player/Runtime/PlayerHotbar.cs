@@ -7,6 +7,7 @@ namespace TpsDungeon.Player
     /// <summary>
     /// 画面下のホットバー（アイテム欄）のどの枠を選んでいるか。
     /// マウスホイール（ゲームパッドは LB/RB）で隣へ、数字キーで直接選ぶ。
+    /// なめらかスクロールを無視する設定（<see cref="DiscreteScroll"/>）では、ホイール 1 ノッチで 1 枠送る。
     /// 枠の中身はインベントリの先頭の枠（PlayerInventory）が持ち、ここは選択位置だけを持つ。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
@@ -25,8 +26,21 @@ namespace TpsDungeon.Player
         [SerializeField, Tooltip("枠を直接選ぶアクション名の頭。末尾に 1 から始まる枠番号が付く。")]
         private string slotActionPrefix = "HotbarSlot";
 
+        [SerializeField, Min(0f), Tooltip("なめらかスクロールを無視するとき、ホイールの値がこれより長く途切れたら次の回しとみなす（秒）。")]
+        private float scrollGestureGap = ScrollGesture.DefaultGap;
+
         private InputAction scrollAction;
         private readonly InputAction[] slotActions = new InputAction[SlotCount];
+        private ScrollGesture scrollGesture;
+
+        /// <summary>
+        /// マウスホイールを 1 ノッチにつき 1 枠ずつ送るか（なめらかスクロールを無視する）。
+        /// オフなら値が来るたびに 1 枠送る。設定画面（PlayerControlSettings）が切り替える。
+        /// </summary>
+        public bool DiscreteScroll { get; set; }
+
+        /// <summary>マウスホイールの向きを逆にするか。ゲームパッドの LB/RB には効かない。設定画面が切り替える。</summary>
+        public bool InvertScroll { get; set; }
 
         /// <summary>選んでいる枠（0 始まり）。</summary>
         public int SelectedIndex { get; private set; }
@@ -41,6 +55,7 @@ namespace TpsDungeon.Player
         private void Awake()
         {
             if (playerInput == null) playerInput = GetComponent<PlayerInput>();
+            scrollGesture = new ScrollGesture(scrollGestureGap);
         }
 
         private void OnEnable()
@@ -72,10 +87,21 @@ namespace TpsDungeon.Player
                 }
             }
 
+            if (scrollAction == null) return;
+
             // ホイールは 1 ノッチで 120 などの大きな値が来るので、向きだけ見る。
-            if (scrollAction != null && scrollAction.WasPerformedThisFrame())
+            // なめらかスクロールを無視するときは、同じ値が続いて performed が来ないフレームも回しの続きなので毎フレーム読む。
+            float value = scrollAction.ReadValue<float>();
+            bool fromMouse = scrollAction.activeControl?.device is Mouse;
+            if (InvertScroll && fromMouse) value = -value;
+
+            if (DiscreteScroll && fromMouse)
             {
-                Cycle(ScrollStep(scrollAction.ReadValue<float>()));
+                Cycle(scrollGesture.Step(value, Time.unscaledTime));
+            }
+            else if (scrollAction.WasPerformedThisFrame())
+            {
+                Cycle(ScrollStep(value));
             }
         }
 
