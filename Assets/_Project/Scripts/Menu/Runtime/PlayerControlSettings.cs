@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Menu
 {
     /// <summary>
-    /// 保存してある操作の設定（マウス感度・上下反転・なめらかスクロールの無視・キー設定）をプレイヤーの入力に当てる窓口。
+    /// 保存してある操作の設定（マウス感度・上下反転・なめらかスクロールの無視・ホイール反転・キー設定）をプレイヤーの入力に当てる窓口。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。設定画面はここ経由で値を変える。
     /// </summary>
     [DisallowMultipleComponent]
@@ -18,7 +18,7 @@ namespace TpsDungeon.Menu
         [SerializeField, Tooltip("視点操作のアクション名。")]
         private string lookActionName = "Look";
 
-        [SerializeField, Tooltip("なめらかスクロールの無視を当てるホットバー。未設定ならこの GameObject から探す。")]
+        [SerializeField, Tooltip("なめらかスクロールの無視とホイール反転を当てるホットバー。未設定ならこの GameObject から探す。")]
         private PlayerHotbar hotbar;
 
         private bool loaded;
@@ -29,6 +29,9 @@ namespace TpsDungeon.Menu
 
         /// <summary>マウスホイールを 1 ノッチにつき 1 枠ずつ送るか（Mos などのなめらかスクロール向け）。</summary>
         public bool DiscreteScroll { get; private set; }
+
+        /// <summary>マウスホイールでホットバーを送る向きを逆にするか。</summary>
+        public bool InvertScroll { get; private set; }
 
         /// <summary>キー設定を書き換える対象。PlayerInput が無ければ null。</summary>
         public InputActionAsset Actions => playerInput != null ? playerInput.actions : null;
@@ -70,6 +73,7 @@ namespace TpsDungeon.Menu
             InvertY = ControlSettingsStore.LoadInvertY();
             ApplyLook();
             DiscreteScroll = ControlSettingsStore.LoadDiscreteScroll();
+            InvertScroll = ControlSettingsStore.LoadInvertScroll();
             ApplyScroll();
             loaded = true;
         }
@@ -95,12 +99,20 @@ namespace TpsDungeon.Menu
             ApplyScroll();
         }
 
-        /// <summary>操作タブの設定（感度・上下反転・なめらかスクロールの無視）を既定に戻す。</summary>
+        public void SetInvertScroll(bool value)
+        {
+            InvertScroll = value;
+            ControlSettingsStore.SaveInvertScroll(value);
+            ApplyScroll();
+        }
+
+        /// <summary>操作タブの設定（感度・上下反転・なめらかスクロールの無視・ホイール反転）を既定に戻す。</summary>
         public void ResetControls()
         {
             SetMouseSensitivity(LookSettings.DefaultSensitivity);
             SetInvertY(false);
             SetDiscreteScroll(false);
+            SetInvertScroll(false);
         }
 
         /// <summary>今のキー設定を覚える。ディスクへの書き出しは <see cref="Flush"/>。</summary>
@@ -119,7 +131,9 @@ namespace TpsDungeon.Menu
 
         private void ApplyScroll()
         {
-            if (hotbar != null) hotbar.DiscreteScroll = DiscreteScroll;
+            if (hotbar == null) return;
+            hotbar.DiscreteScroll = DiscreteScroll;
+            hotbar.InvertScroll = InvertScroll;
         }
 
         private void ApplyLook()

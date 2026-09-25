@@ -39,6 +39,9 @@ namespace TpsDungeon.Player
         /// </summary>
         public bool DiscreteScroll { get; set; }
 
+        /// <summary>マウスホイールの向きを逆にするか。ゲームパッドの LB/RB には効かない。設定画面が切り替える。</summary>
+        public bool InvertScroll { get; set; }
+
         /// <summary>選んでいる枠（0 始まり）。</summary>
         public int SelectedIndex { get; private set; }
 
@@ -89,7 +92,10 @@ namespace TpsDungeon.Player
             // ホイールは 1 ノッチで 120 などの大きな値が来るので、向きだけ見る。
             // なめらかスクロールを無視するときは、同じ値が続いて performed が来ないフレームも回しの続きなので毎フレーム読む。
             float value = scrollAction.ReadValue<float>();
-            if (DiscreteScroll && scrollAction.activeControl?.device is Mouse)
+            bool fromMouse = scrollAction.activeControl?.device is Mouse;
+            if (InvertScroll && fromMouse) value = -value;
+
+            if (DiscreteScroll && fromMouse)
             {
                 Cycle(scrollGesture.Step(value, Time.unscaledTime));
             }

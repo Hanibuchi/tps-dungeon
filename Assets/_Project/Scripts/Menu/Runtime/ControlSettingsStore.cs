@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TpsDungeon.Menu
 {
     /// <summary>
-    /// 操作まわりの設定（マウス感度・上下反転・なめらかスクロールの無視・キー設定）の保存先。
+    /// 操作まわりの設定（マウス感度・上下反転・なめらかスクロールの無視・ホイール反転・キー設定）の保存先。
     /// AudioSettingsStore と同じく、PlayerPrefs の利用をこのクラスに閉じ込めてある。
     /// </summary>
     public static class ControlSettingsStore
@@ -11,6 +11,7 @@ namespace TpsDungeon.Menu
         public const string MouseSensitivityKey = "Controls.MouseSensitivity";
         public const string InvertYKey = "Controls.InvertY";
         public const string DiscreteScrollKey = "Controls.DiscreteScroll";
+        public const string InvertScrollKey = "Controls.InvertScroll";
         public const string BindingOverridesKey = "Controls.BindingOverrides";
 
         public static float LoadMouseSensitivity()
@@ -43,6 +44,16 @@ namespace TpsDungeon.Menu
             PlayerPrefs.SetInt(DiscreteScrollKey, value ? 1 : 0);
         }
 
+        public static bool LoadInvertScroll()
+        {
+            return PlayerPrefs.GetInt(InvertScrollKey, 0) != 0;
+        }
+
+        public static void SaveInvertScroll(bool value)
+        {
+            PlayerPrefs.SetInt(InvertScrollKey, value ? 1 : 0);
+        }
+
         /// <summary>InputActionAsset.SaveBindingOverridesAsJson の結果。未保存なら空文字。</summary>
         public static string LoadBindingOverrides()
         {
@@ -67,6 +78,7 @@ namespace TpsDungeon.Menu
             PlayerPrefs.DeleteKey(MouseSensitivityKey);
             PlayerPrefs.DeleteKey(InvertYKey);
             PlayerPrefs.DeleteKey(DiscreteScrollKey);
+            PlayerPrefs.DeleteKey(InvertScrollKey);
             PlayerPrefs.DeleteKey(BindingOverridesKey);
             Flush();
         }
