@@ -10,10 +10,17 @@ namespace TpsDungeon.UiKit.Editor
     /// UI Toolkit 用のフォントアセット（TextCore の FontAsset）を TTF から作り直す。
     /// どれも Dynamic なので、必要な文字は実行時にアトラスへ足される。保存時にアトラスは空に戻す。
     /// 欧文の飾り書体（Cinzel Decorative）には、和文が来たときのフォールバックとして明朝体を付ける。
+    ///
+    /// フォントは外部素材なので Assets/ThirdParty/Fonts に置き、リポジトリには入れていない（ThirdParty は管理外）。
+    /// 新しい環境では、次の TTF と OFL.txt を google/fonts（ofl/shipporiminchob1、ofl/cinzeldecorative）から取ってきて置き、
+    /// このメニューを実行する。どちらも SIL Open Font License。
+    /// - ShipporiMinchoB1-Regular.ttf / ShipporiMinchoB1-Bold.ttf
+    ///   （そのままだと 1 ウェイト 15MB あるので、ASCII・かな・記号・JIS X 0208 の漢字に絞って使っている。fonttools の pyftsubset で絞れる）
+    /// - CinzelDecorative-Regular.ttf / CinzelDecorative-Bold.ttf
     /// </summary>
     public static class UiFontAssetBuilder
     {
-        private const string Folder = "Assets/_Project/UI/Fonts/";
+        private const string Folder = "Assets/ThirdParty/Fonts/";
 
         public const string MinchoRegular = Folder + "ShipporiMinchoB1-Regular SDF.asset";
         public const string MinchoBold = Folder + "ShipporiMinchoB1-Bold SDF.asset";

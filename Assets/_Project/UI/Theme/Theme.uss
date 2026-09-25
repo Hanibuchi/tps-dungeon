@@ -3,6 +3,7 @@
  *
  * - 色: 暗い石板の上に、くすんだ真鍮の線と、明るい金の飾り。文字は古い紙の色。
  * - 書体: 和文は明朝体（Shippori Mincho B1）、欧文の飾り見出しと数字は Cinzel Decorative。
+ *   フォントは Assets/ThirdParty/Fonts（リポジトリ管理外）。置き方は UiFontAssetBuilder のコメント。
  * - 動き: 開閉は UiTransitions が付け外しする .is-shown を境に、ここに書いたトランジションで動く。
  */
 
@@ -36,20 +37,20 @@
 /* ---- 書体 ---- */
 
 .unity-text-element {
-    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/ShipporiMinchoB1-Regular%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Regular%20SDF.asset");
     color: var(--ink);
 }
 
 .rpg-bold {
-    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/ShipporiMinchoB1-Bold%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Bold%20SDF.asset");
 }
 
 .rpg-deco {
-    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Regular%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Regular%20SDF.asset");
 }
 
 .rpg-deco-bold {
-    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Bold%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Bold%20SDF.asset");
 }
 
 /* ---- 飾り枠（OrnateFrame） ---- */
