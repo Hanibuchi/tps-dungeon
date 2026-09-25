@@ -62,7 +62,7 @@
     scale: 1.06 1.06;
 }
 
-/* 持ち替え先が埋まっていて動かせなかったとき、一瞬赤く灯る。 */
+/* 移動先が埋まっていて動かせなかったとき、一瞬赤く灯る。 */
 .inventory .slot.slot--denied {
     border-color: var(--blood-bright);
     translate: 3px 0;

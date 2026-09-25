@@ -61,6 +61,10 @@ namespace TpsDungeon.Menu.UI
         private InputAction cancelAction;
         private GamePauser pauser;
 
+        // 再生中にスクリプトを再コンパイルすると、シリアライズされないこのフィールドだけ消えて Awake も呼ばれ直さない。
+        // そのときも止まらないよう、使うときに作る。
+        private GamePauser Pauser => pauser ??= new GamePauser(playerInput, controls, mapToggle, gameplayMapName, menuMapName);
+
         private Page page = Page.Closed;
         private int pausedFrame = -1;
 
@@ -83,7 +87,6 @@ namespace TpsDungeon.Menu.UI
             if (playerInput == null) playerInput = GetComponentInParent<PlayerInput>();
             if (controls == null) controls = GetComponentInParent<PlayerControlSettings>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
-            pauser = new GamePauser(playerInput, controls, mapToggle, gameplayMapName, menuMapName);
         }
 
         private void OnEnable()
@@ -155,7 +158,7 @@ namespace TpsDungeon.Menu.UI
 
         private void LateUpdate()
         {
-            pauser.KeepCursorFree();
+            Pauser.KeepCursorFree();
         }
 
         /// <summary>ポーズしてメニューを出す。</summary>
@@ -164,7 +167,7 @@ namespace TpsDungeon.Menu.UI
             if (IsPaused) return;
 
             pausedFrame = Time.frameCount;
-            pauser.Pause();
+            Pauser.Pause();
             ShowPage(Page.Menu);
         }
 
@@ -174,7 +177,7 @@ namespace TpsDungeon.Menu.UI
             if (!IsPaused) return;
 
             ShowPage(Page.Closed);
-            pauser.Resume();
+            Pauser.Resume();
         }
 
         private void ShowMenu()

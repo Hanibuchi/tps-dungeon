@@ -607,7 +607,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "DropModifier",
+                    "name": "Drop",
                     "type": "Button",
                     "id": "24b4e4d0-77be-491c-b118-5d78ad553e27",
                     "expectedControlType": "Button",
@@ -679,7 +679,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "KeyboardMouse",
-                    "action": "DropModifier",
+                    "action": "Drop",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -690,7 +690,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "KeyboardMouse",
-                    "action": "DropModifier",
+                    "action": "Drop",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

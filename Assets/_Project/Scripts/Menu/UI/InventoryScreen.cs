@@ -15,10 +15,11 @@ namespace TpsDungeon.Menu.UI
     ///
     /// 操作（マウス）:
     /// - ドラッグで枠から枠へ移す（埋まっていれば入れ替え）。パネルの外で離すと足元に捨てる。
-    /// - 持ち替えキー（既定 Shift）＋クリックで、バッグ ⇔ ホットバーの空き枠へ移す。
-    /// - 捨てるキー（既定 O）＋クリックで、足元に捨てる。
+    /// - クイック移動キー（既定 Shift）＋クリックで、バッグ ⇔ ホットバーの空き枠へ移す。
+    /// - 枠に合わせて捨てるキー（既定 O）を押すと、足元に捨てる。
     /// - 枠に合わせると右の情報欄にそのアイテムの説明が出る。
     /// 開閉キー（Player/Inventory）か Esc（UI/Cancel）で閉じる。
+    /// 下の操作案内は、クイック移動キーを押している間だけ「クリックで移動」に変わる。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -51,11 +52,11 @@ namespace TpsDungeon.Menu.UI
         [SerializeField, Tooltip("閉じるアクション（UI マップ側）。")]
         private string cancelActionName = "UI/Cancel";
 
-        [SerializeField, Tooltip("押しながらクリックでホットバーとバッグの間を持ち替えるアクション（UI マップ側）。")]
+        [SerializeField, Tooltip("押しながらクリックでホットバーとバッグの間を移すアクション（UI マップ側）。")]
         private string quickMoveActionName = "UI/QuickMove";
 
-        [SerializeField, Tooltip("押しながらクリックで捨てるアクション（UI マップ側）。")]
-        private string dropActionName = "UI/DropModifier";
+        [SerializeField, Tooltip("合わせている枠のものを捨てるアクション（UI マップ側）。")]
+        private string dropActionName = "UI/Drop";
 
         [SerializeField, Tooltip("ゲーム中に使うアクションマップ。")]
         private string gameplayMapName = "Player";
@@ -63,8 +64,6 @@ namespace TpsDungeon.Menu.UI
         [SerializeField, Tooltip("開いている間に使うアクションマップ。")]
         private string menuMapName = "UI";
 
-        [SerializeField] private string emptyDetailsTitle = "—";
-        [SerializeField] private string emptyDetailsBody = "枠に合わせると、ここに詳しく出る。";
 
         private UIDocument document;
         private VisualElement root;
@@ -81,6 +80,10 @@ namespace TpsDungeon.Menu.UI
         private readonly List<VisualElement> slots = new List<VisualElement>();
 
         private GamePauser pauser;
+
+        // 再生中にスクリプトを再コンパイルすると、シリアライズされないこのフィールドだけ消えて Awake も呼ばれ直さない。
+        // そのときも止まらないよう、使うときに作る。
+        private GamePauser Pauser => pauser ??= new GamePauser(playerInput, controls, mapToggle, gameplayMapName, menuMapName);
         private InputAction toggleAction;
         private InputAction cancelAction;
         private InputAction quickMoveAction;
@@ -91,6 +94,8 @@ namespace TpsDungeon.Menu.UI
         private int dragFrom = -1;
         private int dragPointerId = -1;
         private int dropTarget = -1;
+
+        private bool quickMoveHintShown;
 
         /// <summary>開いているか。</summary>
         public bool IsOpen => pauser != null && pauser.IsPaused;
@@ -112,7 +117,6 @@ namespace TpsDungeon.Menu.UI
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
             if (controls == null) controls = GetComponentInParent<PlayerControlSettings>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
-            pauser = new GamePauser(playerInput, controls, mapToggle, gameplayMapName, menuMapName);
         }
 
         private void OnEnable()
@@ -188,12 +192,19 @@ namespace TpsDungeon.Menu.UI
 
             bool closePressed = (toggleAction != null && toggleAction.WasPressedThisFrame())
                                 || (cancelAction != null && cancelAction.WasPressedThisFrame());
-            if (closePressed) Close();
+            if (closePressed)
+            {
+                Close();
+                return;
+            }
+
+            if (dropAction != null && dropAction.WasPressedThisFrame()) DropHovered();
+            RefreshHint();
         }
 
         private void LateUpdate()
         {
-            pauser?.KeepCursorFree();
+            Pauser.KeepCursorFree();
         }
 
         /// <summary>インベントリを開いてゲームを止める。</summary>
@@ -202,13 +213,13 @@ namespace TpsDungeon.Menu.UI
             if (IsOpen || inventory == null) return;
 
             openedFrame = Time.frameCount;
-            pauser.Pause();
+            Pauser.Pause();
 
             // UI マップに切り替えると開閉のアクションも止まるので、これだけ効かせ直す（閉じるキーもキー設定に従わせるため）。
             toggleAction?.Enable();
 
             RefreshSlots();
-            RefreshHint();
+            RefreshHint(force: true);
             hoverIndex = -1;
             RefreshDetails();
 
@@ -225,7 +236,7 @@ namespace TpsDungeon.Menu.UI
             hoverIndex = -1;
             UiTransitions.Hide(panel);
             UiTransitions.Hide(scrim);
-            pauser.Resume();
+            Pauser.Resume();
         }
 
         // ---- 枠 ------------------------------------------------------------
@@ -290,12 +301,6 @@ namespace TpsDungeon.Menu.UI
             if (items[index] == null) return;
 
             e.StopPropagation();
-
-            if (IsHeld(dropAction))
-            {
-                inventory.Drop(index);
-                return;
-            }
 
             if (IsHeld(quickMoveAction))
             {
@@ -403,6 +408,13 @@ namespace TpsDungeon.Menu.UI
 
         private static bool IsHeld(InputAction action) => action != null && action.IsPressed();
 
+        /// <summary>合わせている枠のものを足元に捨てる（捨てるキー）。ドラッグ中は捨てない。</summary>
+        private void DropHovered()
+        {
+            if (dragFrom >= 0 || hoverIndex < 0 || inventory.Inventory[hoverIndex] == null) return;
+            inventory.Drop(hoverIndex);
+        }
+
         // ---- 情報欄 --------------------------------------------------------
 
         private void OnSlotHover(int index, bool entered)
@@ -420,9 +432,10 @@ namespace TpsDungeon.Menu.UI
             int index = dragFrom >= 0 ? dragFrom : hoverIndex;
             ItemDefinition item = inventory.Inventory[index];
 
+            // 何も合わせていないときは枠だけ残して文字は出さない。
             details.EnableInClassList(DetailsEmptyClass, item == null);
-            if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : emptyDetailsTitle;
-            if (detailsBody != null) detailsBody.text = item != null ? item.Description : emptyDetailsBody;
+            if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : string.Empty;
+            if (detailsBody != null) detailsBody.text = item != null ? item.Description : string.Empty;
             if (detailsIcon != null)
             {
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null
@@ -431,10 +444,23 @@ namespace TpsDungeon.Menu.UI
             }
         }
 
-        /// <summary>操作の案内。キー設定で変えたキーを出すので、開くたびに作り直す。</summary>
-        private void RefreshHint()
+        /// <summary>
+        /// 操作の案内。クイック移動キーを押している間は「クリックで移動」だけにする。
+        /// キー設定で変えたキーを出すので、開くとき（force）は必ず作り直す。
+        /// </summary>
+        private void RefreshHint(bool force = false)
         {
             if (hint == null) return;
+
+            bool quickMove = IsHeld(quickMoveAction);
+            if (!force && quickMove == quickMoveHintShown) return;
+            quickMoveHintShown = quickMove;
+
+            if (quickMove)
+            {
+                hint.text = QuickMoveHintText;
+                return;
+            }
 
             string scheme = playerInput != null ? playerInput.currentControlScheme : null;
             hint.text = HintText(Key(quickMoveAction, scheme), Key(dropAction, scheme), Key(toggleAction, scheme));
@@ -445,9 +471,11 @@ namespace TpsDungeon.Menu.UI
             return action != null ? InteractionPromptView.KeyCapText(PlayerInteractor.BindingDisplay(action, scheme)) : "?";
         }
 
+        public const string QuickMoveHintText = "クリックで移動";
+
         public static string HintText(string quickMoveKey, string dropKey, string closeKey)
         {
-            return $"ドラッグで移動　{quickMoveKey}＋クリックで持ち替え　{dropKey}＋クリックで捨てる　{closeKey} で閉じる";
+            return $"ドラッグで移動　{quickMoveKey}＋クリックで移動　{dropKey} で捨てる　{closeKey} で閉じる";
         }
 
         private InputAction FindAction(InputActionAsset actions, string actionName)

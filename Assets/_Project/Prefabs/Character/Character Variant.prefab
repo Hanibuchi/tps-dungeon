@@ -76,11 +76,9 @@ MonoBehaviour:
   toggleActionName: Player/Inventory
   cancelActionName: UI/Cancel
   quickMoveActionName: UI/QuickMove
-  dropActionName: UI/DropModifier
+  dropActionName: UI/Drop
   gameplayMapName: Player
   menuMapName: UI
-  emptyDetailsTitle: "\u2014"
-  emptyDetailsBody: "\u67A0\u306B\u5408\u308F\u305B\u308B\u3068\u3001\u3053\u3053\u306B\u8A73\u3057\u304F\u51FA\u308B\u3002"
 --- !u!1 &1605216043675353633
 GameObject:
   m_ObjectHideFlags: 0
