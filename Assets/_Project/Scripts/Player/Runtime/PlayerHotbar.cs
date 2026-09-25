@@ -7,7 +7,7 @@ namespace TpsDungeon.Player
     /// <summary>
     /// 画面下のホットバー（アイテム欄）のどの枠を選んでいるか。
     /// マウスホイール（ゲームパッドは LB/RB）で隣へ、数字キーで直接選ぶ。
-    /// アイテムの仕組みはまだ無いので、今は選択位置だけを持つ。
+    /// 枠の中身はインベントリの先頭の枠（PlayerInventory）が持ち、ここは選択位置だけを持つ。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]

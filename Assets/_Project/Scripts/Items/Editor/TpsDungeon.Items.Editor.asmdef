@@ -1,0 +1,18 @@
+{
+    "name": "TpsDungeon.Items.Editor",
+    "rootNamespace": "TpsDungeon.Items.Editor",
+    "references": [
+        "TpsDungeon.Items"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

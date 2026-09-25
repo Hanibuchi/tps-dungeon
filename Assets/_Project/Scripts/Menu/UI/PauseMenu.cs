@@ -1,12 +1,10 @@
 using System;
-using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Player;
 using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-using Cursor = UnityEngine.Cursor;
 
 namespace TpsDungeon.Menu.UI
 {
@@ -14,12 +12,7 @@ namespace TpsDungeon.Menu.UI
     /// Esc（ゲームパッドは Start）で開くポーズメニュー。メニューから設定画面へ進める。
     /// PauseMenu.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
     ///
-    /// ポーズ中は次のようにしてゲームを止める。
-    /// - timeScale を 0 にする
-    /// - PlayerInput を UI マップに切り替えて、移動・視点・ホットバーなどの入力を止める
-    ///   （マウスの視点移動は deltaTime を掛けないので、timeScale だけでは止まらない）
-    /// - カーソルの固定を外す
-    /// - 音を Paused スナップショットでこもらせる
+    /// ポーズ中の止め方（timeScale・入力・カーソル・音）は <see cref="GamePauser"/> にある。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -66,11 +59,10 @@ namespace TpsDungeon.Menu.UI
         private SettingsScreen settings;
         private InputAction pauseAction;
         private InputAction cancelAction;
+        private GamePauser pauser;
 
         private Page page = Page.Closed;
         private int pausedFrame = -1;
-        private float timeScaleBeforePause = 1f;
-        private AudioSnapshotId snapshotBeforePause = AudioSnapshotId.Dungeon;
 
         /// <summary>ポーズ中か（メニューでも設定画面でも）。</summary>
         public bool IsPaused => page != Page.Closed;
@@ -91,6 +83,7 @@ namespace TpsDungeon.Menu.UI
             if (playerInput == null) playerInput = GetComponentInParent<PlayerInput>();
             if (controls == null) controls = GetComponentInParent<PlayerControlSettings>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
+            pauser = new GamePauser(playerInput, controls, mapToggle, gameplayMapName, menuMapName);
         }
 
         private void OnEnable()
@@ -162,8 +155,7 @@ namespace TpsDungeon.Menu.UI
 
         private void LateUpdate()
         {
-            // Starter Assets はウィンドウにフォーカスが戻るとカーソルを固定し直すので、ポーズ中は外し続ける。
-            if (IsPaused && Cursor.lockState != CursorLockMode.None) UnlockCursor();
+            pauser.KeepCursorFree();
         }
 
         /// <summary>ポーズしてメニューを出す。</summary>
@@ -172,26 +164,7 @@ namespace TpsDungeon.Menu.UI
             if (IsPaused) return;
 
             pausedFrame = Time.frameCount;
-            timeScaleBeforePause = Time.timeScale;
-            Time.timeScale = 0f;
-
-            if (mapToggle != null) mapToggle.SetOpen(false);
-
-            if (playerInput != null)
-            {
-                playerInput.SwitchCurrentActionMap(menuMapName);
-                ReleaseCharacterInput();
-            }
-
-            UnlockCursor();
-
-            GameAudio audio = GameAudio.Instance;
-            if (audio != null)
-            {
-                snapshotBeforePause = audio.CurrentSnapshot;
-                audio.TransitionTo(AudioSnapshotId.Paused);
-            }
-
+            pauser.Pause();
             ShowPage(Page.Menu);
         }
 
@@ -201,18 +174,7 @@ namespace TpsDungeon.Menu.UI
             if (!IsPaused) return;
 
             ShowPage(Page.Closed);
-
-            controls?.Flush();
-            GameAudio audio = GameAudio.Instance;
-            if (audio != null)
-            {
-                audio.Volumes?.Flush();
-                audio.TransitionTo(snapshotBeforePause);
-            }
-
-            if (playerInput != null) playerInput.SwitchCurrentActionMap(gameplayMapName);
-            Time.timeScale = timeScaleBeforePause > 0f ? timeScaleBeforePause : 1f;
-            Cursor.lockState = CursorLockMode.Locked;
+            pauser.Resume();
         }
 
         private void ShowMenu()
@@ -289,26 +251,6 @@ namespace TpsDungeon.Menu.UI
             if (panel == null) return;
             panel.EnableInClassList(FromLeftClass, directionClass == FromLeftClass);
             panel.EnableInClassList(FromRightClass, directionClass == FromRightClass);
-        }
-
-        /// <summary>
-        /// キャラが握っている入力を離させる。マップを切り替えても、止める直前の移動や視点の値が残り、
-        /// ポーズを解いた瞬間に歩き出すことがあるため。
-        /// StarterAssetsInputs の公開メソッドを名前で呼ぶので、Starter Assets のアセンブリには依存しない。
-        /// </summary>
-        private void ReleaseCharacterInput()
-        {
-            GameObject target = playerInput.gameObject;
-            target.SendMessage("MoveInput", Vector2.zero, SendMessageOptions.DontRequireReceiver);
-            target.SendMessage("LookInput", Vector2.zero, SendMessageOptions.DontRequireReceiver);
-            target.SendMessage("JumpInput", false, SendMessageOptions.DontRequireReceiver);
-            target.SendMessage("SprintInput", false, SendMessageOptions.DontRequireReceiver);
-        }
-
-        private static void UnlockCursor()
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
         }
 
         private void Quit()

@@ -92,3 +92,20 @@
     letter-spacing: 3px;
     color: var(--ink);
 }
+
+/* 狙っているアイテムの情報欄。画面右側の縦中央に、右からすべり込む。中身の見た目は Theme.uss の .item-details。 */
+.details {
+    position: absolute;
+    right: 48px;
+    top: 50%;
+    translate: 40px -50%;
+    opacity: 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.2s, 0.35s;
+    transition-timing-function: ease-out-cubic, ease-out-back;
+}
+
+.details.is-shown {
+    opacity: 1;
+    translate: 0 -50%;
+}

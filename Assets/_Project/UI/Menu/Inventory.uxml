@@ -1,0 +1,44 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/Inventory.uss" />
+    <ui:VisualElement name="scrim" class="rpg-scrim">
+        <kit:Vignette />
+        <ui:VisualElement class="rpg-stage" picking-mode="Ignore">
+            <ui:VisualElement name="inventory-panel" class="rpg-panel inventory">
+                <kit:OrnateFrame crest="true" />
+                <ui:VisualElement class="rpg-heading">
+                    <ui:Label text="— INVENTORY —" class="rpg-heading__caption rpg-deco" />
+                    <ui:Label text="持 ち 物" class="rpg-heading__title rpg-bold" />
+                    <ui:VisualElement class="rpg-rule">
+                        <ui:VisualElement class="rpg-rule__line" />
+                        <ui:VisualElement class="rpg-rule__gem" />
+                        <ui:VisualElement class="rpg-rule__line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="inventory__body">
+                    <ui:VisualElement class="inventory__slots">
+                        <ui:Label text="背 嚢" class="inventory__caption rpg-bold" />
+                        <ui:VisualElement name="bag" class="inventory__bag" />
+                        <ui:VisualElement class="inventory__divider" />
+                        <ui:Label text="手 元" class="inventory__caption rpg-bold" />
+                        <ui:VisualElement name="hotbar" class="inventory__hotbar" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="details" class="item-details inventory__details">
+                        <kit:OrnateFrame />
+                        <ui:VisualElement class="item-details__well" picking-mode="Ignore">
+                            <ui:VisualElement name="details-icon" class="item-details__icon" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                        <ui:Label name="details-title" text="—" class="item-details__title rpg-bold" picking-mode="Ignore" />
+                        <ui:VisualElement class="item-details__rule" picking-mode="Ignore" />
+                        <ui:Label name="details-body" text="枠に合わせると、ここに詳しく出る。" class="item-details__body" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:Label name="hint" text="ドラッグで移動" class="rpg-hint" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="drag-ghost" class="inventory-ghost" picking-mode="Ignore" />
+</ui:UXML>

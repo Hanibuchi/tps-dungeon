@@ -4,7 +4,8 @@
     "references": [
         "TpsDungeon.Player",
         "TpsDungeon.Map",
-        "TpsDungeon.UiKit"
+        "TpsDungeon.UiKit",
+        "TpsDungeon.Items"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

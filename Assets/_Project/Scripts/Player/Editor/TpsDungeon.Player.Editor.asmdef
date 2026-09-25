@@ -3,7 +3,9 @@
     "rootNamespace": "TpsDungeon.Player.Editor",
     "references": [
         "TpsDungeon.Map",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "TpsDungeon.Items",
+        "TpsDungeon.Items.Editor"
     ],
     "includePlatforms": [
         "Editor"

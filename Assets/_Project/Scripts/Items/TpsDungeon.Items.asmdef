@@ -1,0 +1,17 @@
+{
+    "name": "TpsDungeon.Items",
+    "rootNamespace": "TpsDungeon.Items",
+    "references": [
+        "TpsDungeon.Interaction",
+        "TpsDungeon.Player"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

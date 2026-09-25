@@ -4,7 +4,8 @@
     "references": [
         "TpsDungeon.Hud",
         "TpsDungeon.Player",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "TpsDungeon.Items"
     ],
     "includePlatforms": [
         "Editor"

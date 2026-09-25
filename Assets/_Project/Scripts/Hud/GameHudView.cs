@@ -1,3 +1,4 @@
+using TpsDungeon.Items;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
@@ -10,7 +11,7 @@ namespace TpsDungeon.Hud
     /// <summary>
     /// 常時表示の HUD（左下 HP・下中央ホットバー・右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
-    /// 表示は PlayerHealth / PlayerHotbar / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 表示は PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -28,6 +29,9 @@ namespace TpsDungeon.Hud
 
         [SerializeField, Tooltip("ホットバーの選択の出どころ。未設定なら親から探す。")]
         private PlayerHotbar hotbar;
+
+        [SerializeField, Tooltip("ホットバーの枠に入っているアイテムの出どころ。未設定なら親から探す。")]
+        private PlayerInventory inventory;
 
         [SerializeField, Tooltip("大きな地図を開いているかの出どころ。未設定なら親から探す。")]
         private PlayerMapToggle mapToggle;
@@ -57,6 +61,7 @@ namespace TpsDungeon.Hud
         {
             health = GetComponentInParent<PlayerHealth>();
             hotbar = GetComponentInParent<PlayerHotbar>();
+            inventory = GetComponentInParent<PlayerInventory>();
             mapToggle = GetComponentInParent<PlayerMapToggle>();
         }
 
@@ -65,6 +70,7 @@ namespace TpsDungeon.Hud
             document = GetComponent<UIDocument>();
             if (health == null) health = GetComponentInParent<PlayerHealth>();
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
+            if (inventory == null) inventory = GetComponentInParent<PlayerInventory>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
             if (player == null && health != null) player = health.transform;
         }
@@ -90,9 +96,11 @@ namespace TpsDungeon.Hud
 
             if (health != null) health.Changed += OnHealthChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            if (inventory != null) inventory.Changed += OnInventoryChanged;
             if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
             RefreshHealth();
             RefreshHotbar();
+            RefreshHotbarItems();
             RefreshMapOverlay();
         }
 
@@ -100,6 +108,7 @@ namespace TpsDungeon.Hud
         {
             if (health != null) health.Changed -= OnHealthChanged;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
+            if (inventory != null) inventory.Changed -= OnInventoryChanged;
             if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
             UnbindFloor();
         }
@@ -123,26 +132,8 @@ namespace TpsDungeon.Hud
             var result = new VisualElement[PlayerHotbar.SlotCount];
             for (int i = 0; i < result.Length; i++)
             {
-                var slot = new VisualElement { name = $"slot-{i + 1}", pickingMode = PickingMode.Ignore };
-                slot.AddToClassList("slot");
-
-                var icon = new VisualElement { name = "slot-icon", pickingMode = PickingMode.Ignore };
-                icon.AddToClassList("slot__icon");
-                slot.Add(icon);
-
-                var number = new Label((i + 1).ToString()) { pickingMode = PickingMode.Ignore };
-                number.AddToClassList("slot__number");
-                slot.Add(number);
-
-                // 内側の細い線と、選んだときに上に灯る宝石。
-                var inner = new VisualElement { pickingMode = PickingMode.Ignore };
-                inner.AddToClassList("slot__inner");
-                slot.Insert(0, inner);
-
-                var gem = new VisualElement { pickingMode = PickingMode.Ignore };
-                gem.AddToClassList("slot__gem");
-                slot.Add(gem);
-
+                var slot = ItemSlot.Create($"slot-{i + 1}", (i + 1).ToString());
+                slot.pickingMode = PickingMode.Ignore;
                 container.Add(slot);
                 result[i] = slot;
             }
@@ -152,6 +143,8 @@ namespace TpsDungeon.Hud
         private void OnHealthChanged(PlayerHealth _) => RefreshHealth();
 
         private void OnHotbarChanged(PlayerHotbar _) => RefreshHotbar();
+
+        private void OnInventoryChanged(PlayerInventory _) => RefreshHotbarItems();
 
         private void OnMapToggleChanged(PlayerMapToggle _) => RefreshMapOverlay();
 
@@ -202,7 +195,19 @@ namespace TpsDungeon.Hud
             if (slots == null) return;
 
             int selected = hotbar != null ? hotbar.SelectedIndex : -1;
-            for (int i = 0; i < slots.Length; i++) slots[i].EnableInClassList("slot--selected", i == selected);
+            for (int i = 0; i < slots.Length; i++) slots[i].EnableInClassList(ItemSlot.SelectedClass, i == selected);
+        }
+
+        /// <summary>ホットバーの枠にアイテムの絵を入れる。ホットバーの枠はインベントリの先頭の枠。</summary>
+        private void RefreshHotbarItems()
+        {
+            if (slots == null) return;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                ItemDefinition item = inventory != null ? inventory.Inventory[i] : null;
+                ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
+            }
         }
 
         private void BindFloor(FloorBootstrap bootstrap)

@@ -4,7 +4,8 @@
     "references": [
         "TpsDungeon.Menu",
         "TpsDungeon.Player",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "TpsDungeon.Items"
     ],
     "includePlatforms": [
         "Editor"

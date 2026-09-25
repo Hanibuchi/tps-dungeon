@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 141f4c97b5fa44e81b67d22f9b76452f, type: 3}
+  m_Name: OldKey
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.ItemDefinition
+  id: OldKey
+  displayName: "\u53E4\u3073\u305F\u9375"
+  description: "\u9306\u306E\u6D6E\u3044\u305F\u771F\u936E\u306E\u9375\u3002\u3053\u306E\u8FF7\u5BAE\u306E\u3069\u3053\u304B\u306B\u3001\u3053\u308C\u3067\u958B\u304F\u6249\u304C\u3042\u308B\u306F\u305A\u3060\u3002"
+  icon: {fileID: 2800000, guid: 710a76572280c46a59e65507c17f1a55, type: 3}
+  worldPrefab: {fileID: 4484921814572586390, guid: 4a355392feceb47b6987d931e2433323, type: 3}

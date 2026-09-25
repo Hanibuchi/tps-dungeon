@@ -6,6 +6,7 @@ namespace TpsDungeon.Interaction
 {
     /// <summary>
     /// 画面中央の照準と、その下の「[E] 開ける」のようなプロンプト。
+    /// 狙っている相手が IInteractableDetails を実装していれば、画面右側に情報欄（絵・名前・説明）も出す。
     /// InteractionHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
     /// 表示は PlayerInteractor の状態を毎フレーム写すだけで、入力は扱わない。
     /// </summary>
@@ -22,7 +23,13 @@ namespace TpsDungeon.Interaction
         private Label keyLabel;
         private Label actionLabel;
         private VisualElement reticle;
+        private VisualElement details;
+        private VisualElement detailsIcon;
+        private Label detailsTitle;
+        private Label detailsBody;
         private bool shown;
+        private bool detailsShown;
+        private IInteractableDetails detailsSource;
 
         private void Reset()
         {
@@ -46,7 +53,12 @@ namespace TpsDungeon.Interaction
             keyLabel = root.Q<Label>("prompt-key");
             actionLabel = root.Q<Label>("prompt-action");
             reticle = root.Q<VisualElement>("reticle");
+            details = root.Q<VisualElement>("details");
+            detailsIcon = root.Q<VisualElement>("details-icon");
+            detailsTitle = root.Q<Label>("details-title");
+            detailsBody = root.Q<Label>("details-body");
             SetVisible(false, immediate: true);
+            SetDetails(null, immediate: true);
         }
 
         private void LateUpdate()
@@ -55,11 +67,45 @@ namespace TpsDungeon.Interaction
 
             var target = interactor != null ? interactor.CurrentTarget : null;
             SetVisible(target != null);
+            SetDetails(DetailsOf(target));
             if (target == null) return;
 
             SetText(keyLabel, KeyCapText(interactor.InteractBindingDisplay));
             SetText(actionLabel, target.PromptLabel);
         }
+
+        /// <summary>
+        /// 情報欄を出し入れする。右からすべり込み、右へ抜ける（InteractionHud.uss）。
+        /// 消えていく間は最後の中身を残したままにする。
+        /// </summary>
+        private void SetDetails(IInteractableDetails source, bool immediate = false)
+        {
+            if (details == null) return;
+
+            bool visible = source != null;
+            if (visible && !ReferenceEquals(source, detailsSource))
+            {
+                detailsSource = source;
+                SetText(detailsTitle, source.DetailTitle);
+                SetText(detailsBody, source.DetailBody);
+                if (detailsIcon != null)
+                {
+                    Texture2D icon = source.DetailIcon;
+                    detailsIcon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
+                    detailsIcon.style.display = icon != null ? DisplayStyle.Flex : DisplayStyle.None;
+                }
+            }
+
+            if (!immediate && visible == detailsShown) return;
+
+            detailsShown = visible;
+            if (!visible) detailsSource = null;
+            if (immediate && !visible) UiTransitions.HideImmediately(details);
+            else UiTransitions.SetShown(details, visible);
+        }
+
+        /// <summary>情報欄に出すものがあればそれを、無ければ null。</summary>
+        public static IInteractableDetails DetailsOf(IInteractable target) => target as IInteractableDetails;
 
         /// <summary>
         /// 案内を出し入れする。下からせり上がって現れ、沈んで消える（InteractionHud.uss）。

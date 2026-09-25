@@ -1,3 +1,4 @@
+using TpsDungeon.Items;
 using TpsDungeon.Player;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace TpsDungeon.Hud.Editor
 {
     /// <summary>
     /// プレイヤーのプレハブに常時表示の HUD（HP・ホットバー・マップ）と、その出どころの
-    /// PlayerHealth / PlayerHotbar / PlayerMapToggle を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
     public static class PlayerHudSetup
     {
@@ -40,6 +41,9 @@ namespace TpsDungeon.Hud.Editor
                 var hotbar = root.GetComponent<PlayerHotbar>();
                 if (hotbar == null) hotbar = root.AddComponent<PlayerHotbar>();
 
+                var inventory = root.GetComponent<PlayerInventory>();
+                if (inventory == null) inventory = root.AddComponent<PlayerInventory>();
+
                 var mapToggle = root.GetComponent<PlayerMapToggle>();
                 if (mapToggle == null) mapToggle = root.AddComponent<PlayerMapToggle>();
 
@@ -66,6 +70,7 @@ namespace TpsDungeon.Hud.Editor
                 var serializedView = new SerializedObject(view);
                 serializedView.FindProperty("health").objectReferenceValue = health;
                 serializedView.FindProperty("hotbar").objectReferenceValue = hotbar;
+                serializedView.FindProperty("inventory").objectReferenceValue = inventory;
                 serializedView.FindProperty("mapToggle").objectReferenceValue = mapToggle;
                 serializedView.FindProperty("player").objectReferenceValue = root.transform;
                 serializedView.ApplyModifiedPropertiesWithoutUndo();

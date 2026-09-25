@@ -1,4 +1,4 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
     <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Interaction/InteractionHud.uss" />
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
@@ -8,6 +8,15 @@
         <ui:VisualElement name="prompt" class="prompt" picking-mode="Ignore">
             <ui:Label name="prompt-key" text="E" class="prompt__key rpg-deco-bold" picking-mode="Ignore" />
             <ui:Label name="prompt-action" text="開ける" class="prompt__action rpg-bold" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="details" class="details item-details" picking-mode="Ignore">
+            <kit:OrnateFrame />
+            <ui:VisualElement class="item-details__well" picking-mode="Ignore">
+                <ui:VisualElement name="details-icon" class="item-details__icon" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="details-title" text="回復薬" class="item-details__title rpg-bold" picking-mode="Ignore" />
+            <ui:VisualElement class="item-details__rule" picking-mode="Ignore" />
+            <ui:Label name="details-body" text="説明" class="item-details__body" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

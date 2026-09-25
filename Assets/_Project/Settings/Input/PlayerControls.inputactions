@@ -101,6 +101,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Inventory",
+                    "type": "Button",
+                    "id": "4b304814-58c9-42bc-83c2-dbf543c2baa7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Pause",
                     "type": "Button",
                     "id": "4b862b4b-c8e5-4ea8-b87c-290bf269799a",
@@ -520,6 +529,39 @@
                 },
                 {
                     "name": "",
+                    "id": "99bfdd38-748a-45bf-be52-5a3a69fe8ae6",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b5f8d692-bdae-4c25-988e-0b34a69b789c",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c20810c7-4916-4838-a90f-59b5a4e4233a",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "f9d5b3f6-e63a-44e1-b217-29968281c6cc",
                     "path": "<Keyboard>/escape",
                     "interactions": "",
@@ -550,6 +592,24 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "a1ae4ddb-1ee3-4bd8-b999-0c33e4a9850c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "QuickMove",
+                    "type": "Button",
+                    "id": "9185aada-6513-48b7-b601-ffc81c7d0ac2",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "DropModifier",
+                    "type": "Button",
+                    "id": "24b4e4d0-77be-491c-b118-5d78ad553e27",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -587,6 +647,50 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f8072172-3c0a-40f6-aa1d-f46c4c4b5e55",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "QuickMove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "045e1098-8230-438a-8652-9b25e8e478ba",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "QuickMove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "88b53f3d-54df-4987-a204-cdf01716cccc",
+                    "path": "<Keyboard>/o",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "DropModifier",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9dbc04cb-9622-449a-b5d1-283cc7e9b5c9",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "DropModifier",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

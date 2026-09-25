@@ -21,7 +21,7 @@ namespace TpsDungeon.Player.Editor
     {
         public const string ScenePath = "Assets/_Project/Scenes/Player_Debug.unity";
 
-        private const string ConfigPath = "Assets/_Project/Settings/Map/Floor_L1_Config.asset";
+        internal const string ConfigPath = "Assets/_Project/Settings/Map/Floor_L1_Config.asset";
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
         private const string PlayerMaterialPath = MaterialsFolder + "/Placeholder_Player.mat";
 
@@ -93,12 +93,27 @@ namespace TpsDungeon.Player.Editor
         }
 
         /// <summary>
-        /// ランタイムと同じシードでレイアウトを先に計算し、上り階段の部屋にスポーン地点を取る。
-        /// マップの Data/Generation 層は UnityEngine に依存しないので、エディタ側でそのまま回せる。
+        /// 上り階段の部屋にスポーン地点を取る。
+        /// FeatureCell の中心には Stair_Up のマーカー（1.4 角のコライダー）が立つ。
+        /// マーカー半幅 0.7 + カプセル半径 0.35 より外、セル半幅より内に収まる位置へ横にずらす。
         /// </summary>
         private static bool TryFindSpawn(FloorConfig config, out Vector3 spawn, out string note)
         {
             spawn = Vector3.zero;
+            if (!TryFindEntrance(config, out Vector3 center, out note)) return false;
+
+            spawn = center + new Vector3(config.cellSize * 0.3f, SpawnLift, 0f);
+            return true;
+        }
+
+        /// <summary>
+        /// ランタイムと同じシードでレイアウトを先に計算し、階の入口（上り階段の部屋の FeatureCell）の中心を返す。
+        /// マップの Data/Generation 層は UnityEngine に依存しないので、エディタ側でそのまま回せる。
+        /// [Floor] を原点に置くので、返す座標はワールド座標と一致する。
+        /// </summary>
+        internal static bool TryFindEntrance(FloorConfig config, out Vector3 center, out string note)
+        {
+            center = Vector3.zero;
 
             FloorLayout layout = FloorLayoutGenerator.Generate(config.BuildParams(), FloorSeed);
             if (layout == null || layout.Rooms.Count == 0)
@@ -119,12 +134,8 @@ namespace TpsDungeon.Player.Editor
             GridPos cell = room.FeatureCell;
 
             // FloorBuilder.CellCenter と同じ式。[Floor] を原点に置くのでローカルとワールドが一致する。
-            var center = new Vector3(
+            center = new Vector3(
                 (cell.X + 0.5f) * config.cellSize, 0f, (cell.Y + 0.5f) * config.cellSize);
-
-            // FeatureCell の中心には Stair_Up のマーカー（1.4 角のコライダー）が立つ。
-            // マーカー半幅 0.7 + カプセル半径 0.35 より外、セル半幅より内に収まる位置へ横にずらす。
-            spawn = center + new Vector3(config.cellSize * 0.3f, SpawnLift, 0f);
 
             note = layout.StairUpRoom >= 0
                 ? $"上り階段の部屋 {index} / セル ({cell.X}, {cell.Y})"

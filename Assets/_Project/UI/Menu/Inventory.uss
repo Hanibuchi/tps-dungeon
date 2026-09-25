@@ -1,0 +1,94 @@
+/* インベントリ画面。色・書体・枠・パネル・枠（.slot）・情報欄（.item-details）は Theme.uss。 */
+
+.inventory {
+    padding-bottom: 22px;
+}
+
+.inventory__body {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.inventory__slots {
+    align-items: flex-start;
+}
+
+.inventory__caption {
+    margin: 0 0 8px 4px;
+    padding: 0;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--brass);
+}
+
+/* 6 列で折り返す。枠 64px + 左右の余白 4px ずつ。 */
+.inventory__bag {
+    width: 432px;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.inventory__hotbar {
+    flex-direction: row;
+    margin-top: 8px;
+}
+
+.inventory__divider {
+    align-self: stretch;
+    height: 1px;
+    margin: 10px 4px 14px 4px;
+    background-color: var(--brass-dim);
+}
+
+.inventory .slot {
+    margin: 4px;
+}
+
+/* 枠は触れる。合わせると金の縁が灯る。 */
+.inventory .slot:hover {
+    border-color: var(--gold);
+    background-color: var(--gold-glow);
+}
+
+/* ドラッグ中、掴んだ枠は抜け殻として薄くする。 */
+.inventory .slot.slot--drag-source .slot__icon {
+    opacity: 0.25;
+}
+
+/* ドラッグ中、離すと入る枠。 */
+.inventory .slot.slot--drop-target {
+    border-color: var(--gold-bright);
+    background-color: var(--gold-glow-strong);
+    scale: 1.06 1.06;
+}
+
+/* 持ち替え先が埋まっていて動かせなかったとき、一瞬赤く灯る。 */
+.inventory .slot.slot--denied {
+    border-color: var(--blood-bright);
+    translate: 3px 0;
+    transition-duration: 0.05s;
+}
+
+.inventory__details {
+    margin-left: 24px;
+    width: 250px;
+}
+
+.inventory__details.inventory__details--empty .item-details__well {
+    opacity: 0.35;
+}
+
+.inventory__details.inventory__details--empty .item-details__title {
+    color: var(--ink-faint);
+}
+
+/* ポインタに付いてくる、掴んでいるアイテムの絵。 */
+.inventory-ghost {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    display: none;
+    opacity: 0.9;
+    scale: 1.1 1.1;
+    -unity-background-scale-mode: scale-to-fit;
+}

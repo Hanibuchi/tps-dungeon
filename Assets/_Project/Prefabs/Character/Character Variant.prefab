@@ -1,5 +1,86 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &805902924561893918
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1314704842998318305}
+  - component: {fileID: 4402327844944264542}
+  - component: {fileID: 5928083924021284814}
+  m_Layer: 0
+  m_Name: Inventory Screen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1314704842998318305
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805902924561893918}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3715460319869569215}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4402327844944264542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805902924561893918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: abfb7f159945040fe9d002464fdac521, type: 3}
+  m_SortingOrder: 5
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &5928083924021284814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805902924561893918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80b78353c34e84e71ac21004e4236179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.UI.InventoryScreen
+  playerInput: {fileID: 4090438157950177801}
+  inventory: {fileID: 7164853347632738234}
+  hotbar: {fileID: 7227348474748329602}
+  controls: {fileID: 9017600457561530597}
+  mapToggle: {fileID: 8948942209542754525}
+  toggleActionName: Player/Inventory
+  cancelActionName: UI/Cancel
+  quickMoveActionName: UI/QuickMove
+  dropActionName: UI/DropModifier
+  gameplayMapName: Player
+  menuMapName: UI
+  emptyDetailsTitle: "\u2014"
+  emptyDetailsBody: "\u67A0\u306B\u5408\u308F\u305B\u308B\u3068\u3001\u3053\u3053\u306B\u8A73\u3057\u304F\u51FA\u308B\u3002"
 --- !u!1 &1605216043675353633
 GameObject:
   m_ObjectHideFlags: 0
@@ -70,6 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.GameHudView
   health: {fileID: 1830929375005900730}
   hotbar: {fileID: 7227348474748329602}
+  inventory: {fileID: 7164853347632738234}
   mapToggle: {fileID: 8948942209542754525}
   player: {fileID: 3715460319869569215}
 --- !u!1 &2845389573017558099
@@ -302,6 +384,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 883518903114229607}
+    - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1314704842998318305}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
@@ -318,6 +403,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9017600457561530597}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7164853347632738234}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!4 &3715460319869569215 stripped
 Transform:
@@ -407,6 +495,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.PlayerControlSettings
   playerInput: {fileID: 4090438157950177801}
   lookActionName: Look
+--- !u!114 &7164853347632738234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2d152a3c24a14e88ae46b667ecd5408, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.PlayerInventory
+  bagCapacity: 12
+  dropDistance: 1
+  dropScatter: 0.25
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &4090438157950177801 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}

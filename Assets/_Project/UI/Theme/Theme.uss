@@ -489,3 +489,155 @@
     color: var(--ink-faint);
     -unity-text-align: middle-center;
 }
+
+/* ---- アイテムの枠（HUD のホットバーとインベントリ画面で共有） ---- */
+
+.slot {
+    width: 64px;
+    height: 64px;
+    margin: 0 5px;
+    background-color: rgba(20, 17, 15, 0.84);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    transition-property: translate, scale, border-color, background-color;
+    transition-duration: 0.3s, 0.3s, 0.2s, 0.2s;
+    transition-timing-function: ease-out-back, ease-out-back, ease-out-cubic, ease-out-cubic;
+}
+
+.slot--selected {
+    translate: 0 -8px;
+    scale: 1.08 1.08;
+    border-color: var(--gold);
+    background-color: rgba(52, 42, 30, 0.92);
+}
+
+.slot__number {
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    color: var(--ink-faint);
+    transition-property: color;
+    transition-duration: 0.2s;
+}
+
+.slot--selected .slot__number {
+    color: var(--gold-bright);
+}
+
+/* 選んだ枠の上に灯る宝石。 */
+.slot__gem {
+    position: absolute;
+    left: 50%;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    background-color: var(--gold-bright);
+    border-width: 2px;
+    border-color: var(--stone);
+    rotate: -45deg;
+    scale: 0 0;
+    transition-property: rotate, scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.slot--selected .slot__gem {
+    rotate: 45deg;
+    scale: 1 1;
+}
+
+/* 内側の細い線。枠も石板と揃える。 */
+.slot__inner {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    right: 3px;
+    bottom: 3px;
+    border-width: 1px;
+    border-color: rgba(140, 108, 60, 0.25);
+    transition-property: border-color;
+    transition-duration: 0.2s;
+}
+
+.slot--selected .slot__inner {
+    border-color: rgba(214, 170, 92, 0.55);
+}
+
+/* アイテムの絵が入る場所。 */
+.slot__icon {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ---- アイテムの情報欄（照準を合わせたときと、インベントリでホバーしたとき） ---- */
+
+.item-details {
+    width: 260px;
+    padding: 18px 20px 20px 20px;
+    background-color: rgba(20, 17, 15, 0.9);
+    border-width: 1px;
+    border-color: rgb(8, 6, 5);
+    align-items: center;
+    --frame-inset: 4;
+    --frame-gap: 2;
+    --frame-corner-gap: 6;
+}
+
+.item-details .ornate-frame__corner {
+    width: 8px;
+    height: 8px;
+    border-width: 1px;
+}
+
+/* 絵を収める小さな窪み。 */
+.item-details__well {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 12px;
+    background-color: var(--stone-2);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    align-items: center;
+    justify-content: center;
+}
+
+.item-details__icon {
+    width: 64px;
+    height: 64px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.item-details__title {
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+    letter-spacing: 3px;
+    color: var(--gold-bright);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.item-details__rule {
+    width: 120px;
+    height: 1px;
+    margin: 10px 0 12px 0;
+    background-color: var(--brass-dim);
+}
+
+.item-details__body {
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    color: var(--ink-dim);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}

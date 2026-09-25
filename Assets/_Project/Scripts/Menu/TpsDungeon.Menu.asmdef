@@ -5,7 +5,9 @@
         "Unity.InputSystem",
         "TpsDungeon.Audio",
         "TpsDungeon.Player",
-        "TpsDungeon.UiKit"
+        "TpsDungeon.UiKit",
+        "TpsDungeon.Items",
+        "TpsDungeon.Interaction"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
