@@ -7,7 +7,7 @@ namespace TpsDungeon.Player
     /// <summary>
     /// 画面下のホットバー（アイテム欄）のどの枠を選んでいるか。
     /// マウスホイール（ゲームパッドは LB/RB）で隣へ、数字キーで直接選ぶ。
-    /// なめらかスクロールを無視する設定（<see cref="DiscreteScroll"/>）では、ホイールをひと続きに回して 1 枠送る。
+    /// なめらかスクロールを無視する設定（<see cref="DiscreteScroll"/>）では、ホイール 1 ノッチで 1 枠送る。
     /// 枠の中身はインベントリの先頭の枠（PlayerInventory）が持ち、ここは選択位置だけを持つ。
     /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
     /// </summary>
@@ -34,7 +34,7 @@ namespace TpsDungeon.Player
         private ScrollGesture scrollGesture;
 
         /// <summary>
-        /// マウスホイールをひと続きの回しで 1 枠ずつ送るか（なめらかスクロールを無視する）。
+        /// マウスホイールを 1 ノッチにつき 1 枠ずつ送るか（なめらかスクロールを無視する）。
         /// オフなら値が来るたびに 1 枠送る。設定画面（PlayerControlSettings）が切り替える。
         /// </summary>
         public bool DiscreteScroll { get; set; }

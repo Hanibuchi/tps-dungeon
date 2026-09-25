@@ -27,7 +27,7 @@ namespace TpsDungeon.Menu
 
         public bool InvertY { get; private set; }
 
-        /// <summary>マウスホイールをひと続きの回しで 1 枠ずつ送るか（Mos などのなめらかスクロール向け）。</summary>
+        /// <summary>マウスホイールを 1 ノッチにつき 1 枠ずつ送るか（Mos などのなめらかスクロール向け）。</summary>
         public bool DiscreteScroll { get; private set; }
 
         /// <summary>キー設定を書き換える対象。PlayerInput が無ければ null。</summary>
