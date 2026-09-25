@@ -1,3 +1,4 @@
+using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -20,6 +21,8 @@ namespace TpsDungeon.Interaction
         private VisualElement prompt;
         private Label keyLabel;
         private Label actionLabel;
+        private VisualElement reticle;
+        private bool shown;
 
         private void Reset()
         {
@@ -42,7 +45,8 @@ namespace TpsDungeon.Interaction
             prompt = root.Q<VisualElement>("prompt");
             keyLabel = root.Q<Label>("prompt-key");
             actionLabel = root.Q<Label>("prompt-action");
-            SetVisible(false);
+            reticle = root.Q<VisualElement>("reticle");
+            SetVisible(false, immediate: true);
         }
 
         private void LateUpdate()
@@ -57,11 +61,19 @@ namespace TpsDungeon.Interaction
             SetText(actionLabel, target.PromptLabel);
         }
 
-        private void SetVisible(bool visible)
+        /// <summary>
+        /// 案内を出し入れする。下からせり上がって現れ、沈んで消える（InteractionHud.uss）。
+        /// 消えていく間は最後の文字を残したままにする。照準も狙っている間は回って灯る。
+        /// </summary>
+        private void SetVisible(bool visible, bool immediate = false)
         {
             if (prompt == null) return;
-            var display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-            if (prompt.style.display != display) prompt.style.display = display;
+            if (!immediate && visible == shown) return;
+
+            shown = visible;
+            reticle?.EnableInClassList("reticle--aimed", visible);
+            if (immediate && !visible) UiTransitions.HideImmediately(prompt);
+            else UiTransitions.SetShown(prompt, visible);
         }
 
         private static void SetText(Label label, string text)

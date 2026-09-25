@@ -1,5 +1,6 @@
 using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.UiKit;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -7,9 +8,9 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Audio.UI
 {
     /// <summary>
-    /// 全体 / BGM / SE の音量を触る設定画面。
+    /// 全体 / BGM / SE の音量だけを触る単体の設定パネル。
     /// AudioSettingsPanel.uxml を UIDocument に差して使う。
-    /// 今はタイトルやポーズ画面が無いので、単体で開閉できる形にしてある。
+    /// ゲーム中の設定はポーズ画面から開くので、これは音の確認用シーンなどで単体で開閉したいとき向け。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -25,17 +26,17 @@ namespace TpsDungeon.Audio.UI
         [SerializeField, Tooltip("起動直後から開いておく。")]
         private bool openOnStart;
 
-        [SerializeField, Tooltip("Esc キーで開閉できるようにする。")]
-        private bool toggleWithEscape = true;
+        [SerializeField, Tooltip("Esc キーで開閉できるようにする。ポーズ画面と取り合うので、ポーズ画面のあるシーンでは切っておく。")]
+        private bool toggleWithEscape;
 
         [SerializeField, Tooltip("SE スライダーを動かしたときに鳴らす確認用の音。")]
         private AudioClip previewClip;
 
         private UIDocument document;
         private VisualElement scrim;
-        private readonly Slider[] sliders = new Slider[3];
-        private readonly Label[] values = new Label[3];
-        private float nextPreviewTime;
+        private VisualElement panel;
+        private VisualElement page;
+        private AudioVolumeSection volumes;
 
         /// <summary>開いているかどうか。</summary>
         public bool IsOpen { get; private set; }
@@ -51,24 +52,12 @@ namespace TpsDungeon.Audio.UI
             if (root == null) return;
 
             scrim = root.Q<VisualElement>("scrim") ?? root;
-
-            Bind(AudioChannel.Master, "master-volume", "master-value");
-            Bind(AudioChannel.Bgm, "bgm-volume", "bgm-value");
-            Bind(AudioChannel.Se, "se-volume", "se-value");
+            panel = root.Q<VisualElement>("panel");
+            page = root.Q<VisualElement>("page");
+            volumes = new AudioVolumeSection(root, previewClip);
 
             root.Q<Button>("close-button")?.RegisterCallback<ClickEvent>(_ => Close());
-            root.Q<Button>("reset-button")?.RegisterCallback<ClickEvent>(_ =>
-            {
-                GameAudio.Instance?.Volumes?.ResetToDefaults();
-                Pull();
-            });
-
-            if (GameAudio.Instance != null)
-            {
-                GameAudio.Instance.Volumes.VolumeChanged += OnVolumeChanged;
-            }
-
-            Pull();
+            root.Q<Button>("reset-button")?.RegisterCallback<ClickEvent>(_ => volumes?.ResetToDefaults());
 
             // 起動時の初期化ではスナップショットを触らない。
             // 閉じた状態を作るだけのつもりで、ミキサーの状態まで書き換えてしまわないように。
@@ -77,10 +66,8 @@ namespace TpsDungeon.Audio.UI
 
         private void OnDisable()
         {
-            if (GameAudio.Instance != null && GameAudio.Instance.Volumes != null)
-            {
-                GameAudio.Instance.Volumes.VolumeChanged -= OnVolumeChanged;
-            }
+            volumes?.Dispose();
+            volumes = null;
         }
 
         private void Update()
@@ -106,13 +93,23 @@ namespace TpsDungeon.Audio.UI
 
         private void SetOpen(bool open, bool applySnapshot = true)
         {
+            bool wasOpen = IsOpen;
             IsOpen = open;
-            if (scrim != null)
+
+            // 幕・パネル・行の順に、USS のトランジションで開け閉めする。初期化で閉じるときだけは一瞬で。
+            VisualElement[] parts = { scrim, panel, page };
+            foreach (VisualElement part in parts)
             {
-                scrim.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+                if (open) UiTransitions.Show(part);
+                else if (wasOpen) UiTransitions.Hide(part);
+                else UiTransitions.HideImmediately(part);
             }
 
-            if (open) Pull();
+            if (open)
+            {
+                volumes?.Pull();
+                UiTransitions.Stagger(page?.Q<TemplateContainer>(), 50, 150);
+            }
 
             GameAudio audio = GameAudio.Instance;
             if (audio == null || !applySnapshot) return;
@@ -126,61 +123,6 @@ namespace TpsDungeon.Audio.UI
             }
 
             if (muffleWhileOpen) audio.TransitionTo(AudioSnapshotId.Paused);
-        }
-
-        private void Bind(AudioChannel channel, string sliderName, string valueName)
-        {
-            VisualElement root = document.rootVisualElement;
-            var slider = root.Q<Slider>(sliderName);
-            var label = root.Q<Label>(valueName);
-
-            sliders[(int)channel] = slider;
-            values[(int)channel] = label;
-            if (slider == null) return;
-
-            slider.RegisterValueChangedCallback(evt =>
-            {
-                GameAudio.Instance?.Volumes?.SetVolume(channel, evt.newValue);
-                Show(channel, evt.newValue);
-                if (channel == AudioChannel.Se) PlayPreview();
-            });
-        }
-
-        /// <summary>今の音量をスライダーに反映する。</summary>
-        private void Pull()
-        {
-            AudioVolumeController volumes = GameAudio.Instance?.Volumes;
-            if (volumes == null) return;
-
-            foreach (AudioChannel channel in System.Enum.GetValues(typeof(AudioChannel)))
-            {
-                float value = volumes.GetVolume(channel);
-                Slider slider = sliders[(int)channel];
-                if (slider != null) slider.SetValueWithoutNotify(value);
-                Show(channel, value);
-            }
-        }
-
-        private void OnVolumeChanged(AudioChannel channel, float value)
-        {
-            Slider slider = sliders[(int)channel];
-            if (slider != null) slider.SetValueWithoutNotify(value);
-            Show(channel, value);
-        }
-
-        private void Show(AudioChannel channel, float value)
-        {
-            Label label = values[(int)channel];
-            if (label != null) label.text = Mathf.RoundToInt(value * 100f) + "%";
-        }
-
-        /// <summary>SE を触っている間、音量が分かるように短い音を鳴らす。鳴らしすぎないよう間引く。</summary>
-        private void PlayPreview()
-        {
-            if (previewClip == null || Time.unscaledTime < nextPreviewTime) return;
-
-            nextPreviewTime = Time.unscaledTime + 0.12f;
-            GameAudio.Instance?.PlaySe(previewClip);
         }
     }
 }

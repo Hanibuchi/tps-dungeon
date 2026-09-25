@@ -1,0 +1,112 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <ui:Template name="AudioVolumeRows" src="project://database/Assets/_Project/UI/Audio/AudioVolumeRows.uxml" />
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/PauseMenu.uss" />
+    <ui:VisualElement name="scrim" class="rpg-scrim">
+        <kit:Vignette />
+
+        <!-- Esc で開くメニュー -->
+        <ui:VisualElement class="rpg-stage" picking-mode="Ignore">
+            <ui:VisualElement name="menu-panel" class="rpg-panel pause-menu">
+                <kit:OrnateFrame crest="true" />
+                <ui:VisualElement class="rpg-heading">
+                    <ui:Label text="— PAUSE —" class="rpg-heading__caption rpg-deco" />
+                    <ui:Label text="休 息" class="rpg-heading__title rpg-bold" />
+                    <ui:VisualElement class="rpg-rule">
+                        <ui:VisualElement class="rpg-rule__line" />
+                        <ui:VisualElement class="rpg-rule__gem" />
+                        <ui:VisualElement class="rpg-rule__line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="menu-items" class="menu-items">
+                    <ui:Button name="resume-button" class="menu-item">
+                        <ui:VisualElement class="menu-item__cursor" />
+                        <ui:Label text="冒険を続ける" class="menu-item__label rpg-bold" />
+                        <ui:VisualElement class="menu-item__underline" />
+                    </ui:Button>
+                    <ui:Button name="settings-button" class="menu-item">
+                        <ui:VisualElement class="menu-item__cursor" />
+                        <ui:Label text="設定" class="menu-item__label rpg-bold" />
+                        <ui:VisualElement class="menu-item__underline" />
+                    </ui:Button>
+                    <ui:Button name="quit-button" class="menu-item">
+                        <ui:VisualElement class="menu-item__cursor" />
+                        <ui:Label text="冒険をやめる" class="menu-item__label rpg-bold" />
+                        <ui:VisualElement class="menu-item__underline" />
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- メニューの「設定」から開く画面 -->
+        <ui:VisualElement class="rpg-stage" picking-mode="Ignore">
+            <ui:VisualElement name="settings-panel" class="rpg-panel settings">
+                <kit:OrnateFrame crest="true" />
+                <ui:VisualElement class="rpg-heading">
+                    <ui:Label text="— SETTINGS —" class="rpg-heading__caption rpg-deco" />
+                    <ui:Label text="設 定" class="rpg-heading__title rpg-bold" />
+                    <ui:VisualElement class="rpg-rule">
+                        <ui:VisualElement class="rpg-rule__line" />
+                        <ui:VisualElement class="rpg-rule__gem" />
+                        <ui:VisualElement class="rpg-rule__line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="tabs" class="tabs">
+                    <ui:Button name="tab-sound" text="音" class="tab rpg-bold" />
+                    <ui:Button name="tab-controls" text="操作" class="tab rpg-bold" />
+                    <ui:Button name="tab-keys" text="キー設定" class="tab rpg-bold" />
+                    <ui:VisualElement name="tab-indicator" class="tabs__indicator" picking-mode="Ignore">
+                        <ui:VisualElement class="tabs__indicator-gem" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="pages" class="pages">
+                    <ui:VisualElement name="page-sound" class="rpg-page">
+                        <ui:Instance template="AudioVolumeRows" name="volume-rows" class="page__rows" />
+                        <ui:VisualElement class="page__spacer" />
+                        <ui:VisualElement class="rpg-actions">
+                            <ui:Button name="sound-reset" text="既定に戻す" class="rpg-button rpg-button--small" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="page-controls" class="rpg-page">
+                        <ui:VisualElement class="page__rows">
+                            <ui:VisualElement class="rpg-row">
+                                <ui:Label text="マウス感度" class="rpg-row__label" />
+                                <ui:Slider name="mouse-sensitivity" low-value="0.1" high-value="3" value="1" class="rpg-slider" />
+                                <ui:Label name="mouse-sensitivity-value" text="1.00" class="rpg-row__value rpg-deco" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="rpg-row">
+                                <ui:Label text="上下反転" class="rpg-row__label" />
+                                <ui:Toggle name="invert-y" class="rpg-switch" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="page__spacer" />
+                        <ui:VisualElement class="rpg-actions">
+                            <ui:Button name="controls-reset" text="既定に戻す" class="rpg-button rpg-button--small" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="page-keys" class="rpg-page">
+                        <ui:VisualElement class="key-row key-row--header">
+                            <ui:Label text="操作" class="key-row__label" />
+                            <ui:Label text="其の一" class="key-row__heading" />
+                            <ui:Label text="其の二" class="key-row__heading" />
+                            <ui:VisualElement class="key-row__reset-space" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="key-list" class="key-list" />
+                        <ui:Label name="key-hint" text="左クリックで変更　右クリックで解除　Esc で取り消し" class="rpg-hint" />
+                        <ui:VisualElement class="rpg-actions">
+                            <ui:Button name="keys-reset" text="すべて既定に戻す" class="rpg-button rpg-button--small" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="rpg-actions settings__footer">
+                    <ui:Button name="back-button" text="戻る" class="rpg-button rpg-button--primary" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,491 @@
+/*
+ * 迷宮の石と真鍮。すべての画面（ポーズ・設定・HUD・操作案内）が最初に読み込む共通の見た目。
+ *
+ * - 色: 暗い石板の上に、くすんだ真鍮の線と、明るい金の飾り。文字は古い紙の色。
+ * - 書体: 和文は明朝体（Shippori Mincho B1）、欧文の飾り見出しと数字は Cinzel Decorative。
+ *   フォントは Assets/ThirdParty/Fonts（リポジトリ管理外）。置き方は UiFontAssetBuilder のコメント。
+ * - 動き: 開閉は UiTransitions が付け外しする .is-shown を境に、ここに書いたトランジションで動く。
+ */
+
+:root {
+    --ink: rgb(236, 226, 206);
+    --ink-dim: rgb(170, 156, 132);
+    --ink-faint: rgb(112, 101, 86);
+
+    --stone: rgb(20, 17, 15);
+    --stone-2: rgb(32, 28, 24);
+    --stone-3: rgb(46, 40, 34);
+
+    --brass: rgb(140, 108, 60);
+    --brass-dim: rgba(140, 108, 60, 0.45);
+    --gold: rgb(214, 170, 92);
+    --gold-bright: rgb(248, 220, 150);
+    /* 石板の上にかける金の照り返し。プロジェクトはリニア色空間で、半透明の金は見た目よりずっと強く出るので不透明色で持つ。 */
+    --gold-glow: rgb(44, 35, 23);
+    --gold-glow-strong: rgb(62, 48, 28);
+    --ember: rgb(222, 126, 60);
+    --blood: rgb(150, 40, 34);
+    --blood-bright: rgb(214, 70, 52);
+
+    --frame-brass: rgb(140, 108, 60);
+    --frame-gold: rgb(214, 170, 92);
+    --frame-inset: 6;
+    --frame-gap: 3;
+    --frame-corner-gap: 9;
+}
+
+/* ---- 書体 ---- */
+
+.unity-text-element {
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Regular%20SDF.asset");
+    color: var(--ink);
+}
+
+.rpg-bold {
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Bold%20SDF.asset");
+}
+
+.rpg-deco {
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Regular%20SDF.asset");
+}
+
+.rpg-deco-bold {
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Bold%20SDF.asset");
+}
+
+/* ---- 飾り枠（OrnateFrame） ---- */
+
+.ornate-frame__corner {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    background-color: var(--gold);
+    border-width: 2px;
+    border-color: var(--stone);
+    rotate: 45deg;
+    transition-property: scale, rotate, background-color;
+    transition-duration: 0.45s, 0.45s, 0.2s;
+    transition-timing-function: ease-out-back, ease-out-back, ease-out-cubic;
+}
+
+/* 枠の内側の線（--frame-inset: 6）の角に中心が来るように置く。 */
+.ornate-frame__corner--tl { left: 0.5px; top: 0.5px; }
+.ornate-frame__corner--tr { right: 0.5px; top: 0.5px; }
+.ornate-frame__corner--bl { left: 0.5px; bottom: 0.5px; }
+.ornate-frame__corner--br { right: 0.5px; bottom: 0.5px; }
+
+.ornate-frame__crest {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+    background-color: var(--stone);
+    border-width: 2px;
+    border-color: var(--gold);
+    rotate: 45deg;
+    transition-property: scale, rotate;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-out-back;
+}
+
+/* ---- 画面を覆う幕 ---- */
+
+.rpg-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(6, 4, 3, 0);
+    transition-property: background-color;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-scrim.is-shown {
+    background-color: rgba(6, 4, 3, 0.62);
+}
+
+/* 四辺を暗く沈める。幕と一緒にフェードする。 */
+.rpg-vignette {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-scrim.is-shown .rpg-vignette {
+    opacity: 1;
+}
+
+/* パネルを画面中央に置くための台。メニューと設定を重ねて入れ替えるため、それぞれ画面いっぱいに広げる。 */
+.rpg-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- 石板のパネル ---- */
+
+.rpg-panel {
+    padding: 30px 36px 26px 36px;
+    background-color: var(--stone);
+    border-width: 1px;
+    border-color: rgb(8, 6, 5);
+    opacity: 0;
+    translate: 0 26px;
+    scale: 0.94 0.94;
+    transition-property: opacity, translate, scale;
+    transition-duration: 0.3s, 0.45s, 0.45s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-cubic;
+}
+
+.rpg-panel.is-shown {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1 1;
+}
+
+/* 横へ入れ替わるときの出入りの向き。 */
+.rpg-panel.rpg-panel--from-left {
+    translate: -70px 0;
+    scale: 0.98 0.98;
+}
+
+.rpg-panel.rpg-panel--from-right {
+    translate: 70px 0;
+    scale: 0.98 0.98;
+}
+
+.rpg-panel.rpg-panel--from-left.is-shown,
+.rpg-panel.rpg-panel--from-right.is-shown {
+    translate: 0 0;
+    scale: 1 1;
+}
+
+/* パネルが開くとき、四隅の菱形と上の飾りが遅れて回りながら現れる。 */
+.rpg-panel .ornate-frame__corner,
+.rpg-panel .ornate-frame__crest {
+    scale: 0 0;
+    rotate: -45deg;
+}
+
+.rpg-panel.is-shown .ornate-frame__corner,
+.rpg-panel.is-shown .ornate-frame__crest {
+    scale: 1 1;
+    rotate: 45deg;
+    transition-delay: 0.18s;
+}
+
+/* ---- 表題 ---- */
+
+.rpg-heading {
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.rpg-heading__caption {
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--brass);
+    margin: 0 0 2px 0;
+    padding: 0;
+}
+
+.rpg-heading__title {
+    font-size: 28px;
+    letter-spacing: 10px;
+    color: var(--gold-bright);
+    margin: 0;
+    padding: 0 0 0 10px;
+    -unity-text-align: middle-center;
+}
+
+/* 表題の下の飾り線。左右の線が中央の菱形から伸びる。 */
+.rpg-rule {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 12px;
+    margin-top: 8px;
+}
+
+.rpg-rule__line {
+    width: 0;
+    height: 1px;
+    background-color: var(--brass);
+    transition-property: width;
+    transition-duration: 0.55s;
+    transition-timing-function: ease-out-cubic;
+    transition-delay: 0.15s;
+}
+
+.rpg-rule__gem {
+    width: 7px;
+    height: 7px;
+    margin: 0 8px;
+    background-color: var(--gold);
+    rotate: 45deg;
+}
+
+.rpg-panel.is-shown .rpg-rule__line {
+    width: 96px;
+}
+
+/* ---- ボタン ---- */
+
+.rpg-button {
+    height: 34px;
+    margin: 0 0 0 10px;
+    padding: 0 20px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--ink-dim);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    border-radius: 0;
+    transition-property: color, border-color, background-color, scale, translate;
+    transition-duration: 0.2s, 0.2s, 0.2s, 0.12s, 0.2s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-button:hover,
+.rpg-button:hover:enabled,
+.rpg-button:focus,
+.rpg-button:focus:enabled {
+    color: var(--gold-bright);
+    border-color: var(--gold);
+    background-color: var(--gold-glow);
+    translate: 0 -1px;
+}
+
+.rpg-button:active,
+.rpg-button:active:enabled {
+    scale: 0.96 0.96;
+}
+
+/* 主な操作。暗い真鍮の地に明るい金の文字。 */
+.rpg-button--primary {
+    color: var(--gold-bright);
+    background-color: rgb(78, 58, 30);
+    border-color: var(--gold);
+}
+
+.rpg-button--primary:hover,
+.rpg-button--primary:hover:enabled,
+.rpg-button--primary:focus,
+.rpg-button--primary:focus:enabled {
+    color: var(--stone);
+    background-color: var(--gold);
+    border-color: var(--gold-bright);
+}
+
+.rpg-button--small {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.rpg-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+/* ---- 行（ラベル・操作・値） ---- */
+
+.rpg-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 36px;
+    margin-bottom: 10px;
+    opacity: 0;
+    translate: 18px 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.3s, 0.4s;
+    transition-timing-function: ease-out-cubic;
+}
+
+/* 行はそれを包むページが見えているときに現れる。SettingsScreen が時間差を付ける。 */
+.rpg-page.is-shown .rpg-row {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* ---- ページ（タブの中身など、入れ替わる塊） ---- */
+
+.rpg-page {
+    opacity: 0;
+    translate: 0 10px;
+    transition-property: opacity, translate;
+    transition-duration: 0.25s, 0.4s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-page.is-shown {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.rpg-page.rpg-page--from-left {
+    translate: -40px 0;
+}
+
+.rpg-page.rpg-page--from-right {
+    translate: 40px 0;
+}
+
+.rpg-page.rpg-page--from-left.is-shown,
+.rpg-page.rpg-page--from-right.is-shown {
+    translate: 0 0;
+}
+
+.rpg-row__label {
+    width: 128px;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--ink-dim);
+}
+
+.rpg-row__value {
+    width: 56px;
+    font-size: 14px;
+    color: var(--ink);
+    -unity-text-align: middle-right;
+    transition-property: color, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-row__value.is-flash {
+    color: var(--gold-bright);
+    scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+/* ---- スライダー ---- */
+
+.rpg-slider {
+    flex-grow: 1;
+    margin: 0 14px 0 4px;
+}
+
+.rpg-slider .unity-base-slider__tracker {
+    height: 6px;
+    margin-top: -3px;
+    background-color: var(--stone-3);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    border-radius: 0;
+}
+
+/* 溝のうち値までを満たす金の帯（SliderDecor が足す）。 */
+.rpg-slider__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--brass);
+    transition-property: width, background-color;
+    transition-duration: 0.12s, 0.2s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.rpg-slider:hover .rpg-slider__fill {
+    background-color: var(--gold);
+}
+
+.rpg-slider .unity-base-slider__dragger {
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    background-color: var(--gold);
+    border-width: 2px;
+    border-color: var(--stone);
+    border-radius: 0;
+    rotate: 45deg;
+    transition-property: scale, background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out-back;
+}
+
+.rpg-slider .unity-base-slider__dragger-border {
+    display: none;
+}
+
+.rpg-slider:hover .unity-base-slider__dragger,
+.rpg-slider:focus .unity-base-slider__dragger {
+    scale: 1.3 1.3;
+    background-color: var(--gold-bright);
+}
+
+.rpg-slider:active .unity-base-slider__dragger {
+    scale: 1.45 1.45;
+}
+
+/* ---- 宝石のスイッチ（Toggle） ---- */
+
+.rpg-switch {
+    margin: 0;
+}
+
+.rpg-switch .unity-toggle__input {
+    width: 48px;
+    height: 22px;
+    background-color: var(--stone-3);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    transition-property: background-color, border-color;
+    transition-duration: 0.25s;
+}
+
+.rpg-switch .unity-toggle__checkmark {
+    width: 12px;
+    height: 12px;
+    margin: 4px 0 0 5px;
+    background-image: none;
+    background-color: var(--ink-faint);
+    border-width: 0;
+    rotate: 45deg;
+    translate: 0 0;
+    transition-property: translate, background-color, scale;
+    transition-duration: 0.35s, 0.25s, 0.25s;
+    transition-timing-function: ease-out-back, ease-out-cubic, ease-out-back;
+}
+
+.rpg-switch:hover .unity-toggle__input {
+    border-color: var(--gold);
+}
+
+.rpg-switch:checked .unity-toggle__input {
+    background-color: var(--gold-glow-strong);
+    border-color: var(--gold);
+}
+
+.rpg-switch:checked .unity-toggle__checkmark {
+    translate: 24px 0;
+    background-color: var(--gold-bright);
+    scale: 1.15 1.15;
+}
+
+/* ---- 小さな説明文 ---- */
+
+.rpg-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}

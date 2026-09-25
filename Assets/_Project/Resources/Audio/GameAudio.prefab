@@ -118,5 +118,5 @@ MonoBehaviour:
   muffleWhileOpen: 1
   closedSnapshot: 1
   openOnStart: 0
-  toggleWithEscape: 1
+  toggleWithEscape: 0
   previewClip: {fileID: 8300000, guid: f73b4c70b81d3481a828dd1251e54e98, type: 3}

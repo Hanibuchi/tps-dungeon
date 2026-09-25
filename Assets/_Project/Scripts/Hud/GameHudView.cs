@@ -2,6 +2,7 @@ using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
 using UnityEngine;
+using TpsDungeon.UiKit;
 using UnityEngine.UIElements;
 
 namespace TpsDungeon.Hud
@@ -37,6 +38,9 @@ namespace TpsDungeon.Hud
         private UIDocument document;
         private VisualElement hpRoot;
         private VisualElement hpFill;
+        private VisualElement hpTrail;
+        private int lastHp = -1;
+        private bool beating;
         private Label hpValue;
         private VisualElement[] slots;
         private VisualElement minimapFrame;
@@ -74,9 +78,13 @@ namespace TpsDungeon.Hud
             root.pickingMode = PickingMode.Ignore;
             hpRoot = root.Q<VisualElement>("hp");
             hpFill = root.Q<VisualElement>("hp-fill");
+            hpTrail = root.Q<VisualElement>("hp-trail");
             hpValue = root.Q<Label>("hp-value");
             minimapFrame = root.Q<VisualElement>("minimap");
             mapOverlay = root.Q<VisualElement>("map-overlay");
+            UiTransitions.HideImmediately(mapOverlay);
+            lastHp = -1;
+            beating = false;
             maps = root.Query<MinimapElement>().ToList().ToArray();
             slots = BuildSlots(root.Q<VisualElement>("hotbar"));
 
@@ -126,6 +134,15 @@ namespace TpsDungeon.Hud
                 number.AddToClassList("slot__number");
                 slot.Add(number);
 
+                // 内側の細い線と、選んだときに上に灯る宝石。
+                var inner = new VisualElement { pickingMode = PickingMode.Ignore };
+                inner.AddToClassList("slot__inner");
+                slot.Insert(0, inner);
+
+                var gem = new VisualElement { pickingMode = PickingMode.Ignore };
+                gem.AddToClassList("slot__gem");
+                slot.Add(gem);
+
                 container.Add(slot);
                 result[i] = slot;
             }
@@ -142,8 +159,9 @@ namespace TpsDungeon.Hud
         private void RefreshMapOverlay()
         {
             bool open = mapToggle != null && mapToggle.IsOpen;
-            if (mapOverlay != null) mapOverlay.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
-            if (minimapFrame != null) minimapFrame.style.display = open ? DisplayStyle.None : DisplayStyle.Flex;
+            // 大きな地図は拡がりながら現れ、右下の小さい地図は入れ替わりにフェードで退く（GameHud.uss）。
+            UiTransitions.SetShown(mapOverlay, open);
+            UiTransitions.SetShown(minimapFrame, !open);
         }
 
         private void RefreshHealth()
@@ -156,8 +174,27 @@ namespace TpsDungeon.Hud
 
             float fraction = health.Fraction;
             if (hpFill != null) hpFill.style.width = Length.Percent(fraction * 100f);
+
+            // 削れ跡は USS の遅れ付きトランジションで、本体を後からゆっくり追いかける。
+            if (hpTrail != null) hpTrail.style.width = Length.Percent(fraction * 100f);
+
+            // 減った瞬間だけ小さく揺らす。
+            if (lastHp >= 0 && health.CurrentHp < lastHp) UiTransitions.Flash(hpRoot, "hp--hit", 80);
+            lastHp = health.CurrentHp;
+
+            SetBeating(fraction < LowHpFraction);
             if (hpValue != null) hpValue.text = HpText(health.CurrentHp, health.MaxHp);
             hpRoot.EnableInClassList("hp--low", fraction < LowHpFraction);
+        }
+
+        /// <summary>残りが少ない間は枠と帯を鼓動させる。</summary>
+        private void SetBeating(bool beat)
+        {
+            if (beat == beating) return;
+
+            beating = beat;
+            if (beat) UiTransitions.Pulse(hpRoot, "hp--beat", 520);
+            else UiTransitions.StopPulse(hpRoot, "hp--beat");
         }
 
         private void RefreshHotbar()

@@ -2,7 +2,8 @@
     "name": "TpsDungeon.Interaction",
     "rootNamespace": "TpsDungeon.Interaction",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "TpsDungeon.UiKit"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

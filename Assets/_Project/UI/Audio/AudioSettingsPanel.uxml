@@ -1,31 +1,30 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <ui:Template name="AudioVolumeRows" src="project://database/Assets/_Project/UI/Audio/AudioVolumeRows.uxml" />
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Audio/AudioSettingsPanel.uss" />
-    <ui:VisualElement name="scrim" class="scrim">
-        <ui:VisualElement name="panel" class="panel">
-            <ui:Label text="AUDIO" class="panel__title" />
-            <ui:VisualElement class="panel__rule" />
+    <ui:VisualElement name="scrim" class="rpg-scrim">
+        <kit:Vignette />
+        <ui:VisualElement class="rpg-stage" picking-mode="Ignore">
+            <ui:VisualElement name="panel" class="rpg-panel audio-panel">
+                <kit:OrnateFrame crest="true" />
+                <ui:VisualElement class="rpg-heading">
+                    <ui:Label text="— AUDIO —" class="rpg-heading__caption rpg-deco" />
+                    <ui:Label text="音" class="rpg-heading__title rpg-bold" />
+                    <ui:VisualElement class="rpg-rule">
+                        <ui:VisualElement class="rpg-rule__line" />
+                        <ui:VisualElement class="rpg-rule__gem" />
+                        <ui:VisualElement class="rpg-rule__line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
 
-            <ui:VisualElement name="master-row" class="row">
-                <ui:Label text="MASTER" class="row__label" />
-                <ui:Slider name="master-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-                <ui:Label name="master-value" text="100%" class="row__value" />
-            </ui:VisualElement>
+                <ui:VisualElement name="page" class="rpg-page">
+                    <ui:Instance template="AudioVolumeRows" name="volume-rows" />
+                </ui:VisualElement>
 
-            <ui:VisualElement name="bgm-row" class="row">
-                <ui:Label text="BGM" class="row__label" />
-                <ui:Slider name="bgm-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-                <ui:Label name="bgm-value" text="100%" class="row__value" />
-            </ui:VisualElement>
-
-            <ui:VisualElement name="se-row" class="row">
-                <ui:Label text="SE" class="row__label" />
-                <ui:Slider name="se-volume" low-value="0" high-value="1" value="1" class="row__slider" />
-                <ui:Label name="se-value" text="100%" class="row__value" />
-            </ui:VisualElement>
-
-            <ui:VisualElement class="actions">
-                <ui:Button name="reset-button" text="RESET" class="button button--ghost" />
-                <ui:Button name="close-button" text="CLOSE" class="button" />
+                <ui:VisualElement class="rpg-actions">
+                    <ui:Button name="reset-button" text="既定に戻す" class="rpg-button" />
+                    <ui:Button name="close-button" text="閉じる" class="rpg-button rpg-button--primary" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

@@ -1,10 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Interaction/InteractionHud.uss" />
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
-        <ui:VisualElement name="reticle" class="reticle" picking-mode="Ignore" />
+        <ui:VisualElement name="reticle" class="reticle" picking-mode="Ignore">
+            <ui:VisualElement class="reticle__core" picking-mode="Ignore" />
+        </ui:VisualElement>
         <ui:VisualElement name="prompt" class="prompt" picking-mode="Ignore">
-            <ui:Label name="prompt-key" text="E" class="prompt__key" picking-mode="Ignore" />
-            <ui:Label name="prompt-action" text="開ける" class="prompt__action" picking-mode="Ignore" />
+            <ui:Label name="prompt-key" text="E" class="prompt__key rpg-deco-bold" picking-mode="Ignore" />
+            <ui:Label name="prompt-action" text="開ける" class="prompt__action rpg-bold" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
