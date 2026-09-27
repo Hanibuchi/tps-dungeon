@@ -10,3 +10,5 @@
 | Pandazole - Survival Crafting Low poly Pack | Pandazole | [Unity Asset Store](https://assetstore.unity.com/packages/3d/props/pandazole-survival-crafting-low-poly-pack-208575?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset) |
 | GanzSe FREE Character Accessories - Fantasy Low Poly Pack | GanzSe | [Unity Asset Store](https://assetstore.unity.com/packages/3d/props/ganzse-free-character-accessories-fantasy-low-poly-pack-391328?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset) |
 | Books Essentials | Daniel Riches | [Unity Asset Store](https://assetstore.unity.com/packages/3d/props/books-essentials-362582?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset) |
+| Magic Effects FREE | Hovl Studio | [Unity Asset Store](https://assetstore.unity.com/packages/vfx/particles/spells/magic-effects-free-247933?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset) |
+| Hyper Casual FX | Lana Studio | [Unity Asset Store](https://assetstore.unity.com/packages/vfx/particles/hyper-casual-fx-200333?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset) |
