@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3170992677553937870}
   - component: {fileID: 2867270204075315981}
+  - component: {fileID: 1191880390879264127}
   m_Layer: 0
   m_Name: Flying_Ghost
   m_TagString: Untagged
@@ -56,6 +57,19 @@ CapsuleCollider:
   m_Height: 1.2
   m_Direction: 1
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1191880390879264127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
+  exp: 6
 --- !u!1001 &7758115122663712730
 PrefabInstance:
   m_ObjectHideFlags: 0

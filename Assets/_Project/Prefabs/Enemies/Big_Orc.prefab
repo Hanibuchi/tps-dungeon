@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1198193242435007384}
   - component: {fileID: 1972503240603127583}
+  - component: {fileID: 5351018189754480580}
   m_Layer: 0
   m_Name: Big_Orc
   m_TagString: Untagged
@@ -56,6 +57,19 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &5351018189754480580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5526345836102086532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
+  exp: 12
 --- !u!1001 &8097619201129507205
 PrefabInstance:
   m_ObjectHideFlags: 0
