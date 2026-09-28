@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.GameHudView
   health: {fileID: 1830929375005900730}
+  progression: {fileID: 4778576193049319955}
   hotbar: {fileID: 7227348474748329602}
   inventory: {fileID: 7164853347632738234}
   mapToggle: {fileID: 8948942209542754525}

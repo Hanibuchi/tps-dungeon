@@ -1,5 +1,6 @@
 using TpsDungeon.Items;
 using TpsDungeon.Player;
+using TpsDungeon.Progression;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -69,6 +70,7 @@ namespace TpsDungeon.Hud.Editor
 
                 var serializedView = new SerializedObject(view);
                 serializedView.FindProperty("health").objectReferenceValue = health;
+                serializedView.FindProperty("progression").objectReferenceValue = root.GetComponent<CharacterProgression>();
                 serializedView.FindProperty("hotbar").objectReferenceValue = hotbar;
                 serializedView.FindProperty("inventory").objectReferenceValue = inventory;
                 serializedView.FindProperty("mapToggle").objectReferenceValue = mapToggle;

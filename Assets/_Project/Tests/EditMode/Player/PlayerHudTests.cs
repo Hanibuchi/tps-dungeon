@@ -123,5 +123,20 @@ namespace TpsDungeon.Player.Tests
         {
             Assert.AreEqual("80 / 100", GameHudView.HpText(80, 100));
         }
+
+        [Test]
+        public void Hud_LevelText()
+        {
+            Assert.AreEqual("12", GameHudView.LevelText(12));
+        }
+
+        [TestCase(0, 100, 0f)]
+        [TestCase(25, 100, 0.25f)]
+        [TestCase(150, 100, 1f)]
+        [TestCase(0, 0, 1f)]
+        public void Hud_ExpFraction(int exp, int toNext, float expected)
+        {
+            Assert.AreEqual(expected, GameHudView.ExpFraction(exp, toNext), 0.0001f, "次までが 0（最大レベル）なら満タン");
+        }
     }
 }
