@@ -15,6 +15,9 @@ namespace TpsDungeon.Progression
 
         public static string DefaultPath => Path.Combine(Application.persistentDataPath, FileName);
 
+        // null も空文字も「既定の場所」。エディタのドメインリロードをまたぐと、null だった文字列が空文字になって戻ってくるため。
+        private static string Resolve(string path) => string.IsNullOrEmpty(path) ? DefaultPath : path;
+
         public static string ToJson(PartyProgressSaveData data) => JsonUtility.ToJson(data, true);
 
         /// <summary>JSON を読む。空・壊れている・形が違うときは false。</summary>
@@ -41,7 +44,7 @@ namespace TpsDungeon.Progression
         public static void Save(PartyProgressSaveData data, string path = null)
         {
             if (data == null) return;
-            path ??= DefaultPath;
+            path = Resolve(path);
 
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
@@ -62,7 +65,7 @@ namespace TpsDungeon.Progression
         public static bool TryLoad(out PartyProgressSaveData data, string path = null)
         {
             data = null;
-            path ??= DefaultPath;
+            path = Resolve(path);
             if (!File.Exists(path)) return false;
 
             string json;
@@ -82,12 +85,12 @@ namespace TpsDungeon.Progression
             return false;
         }
 
-        public static bool Exists(string path = null) => File.Exists(path ?? DefaultPath);
+        public static bool Exists(string path = null) => File.Exists(Resolve(path));
 
         /// <summary>保存を消す。</summary>
         public static void Delete(string path = null)
         {
-            path ??= DefaultPath;
+            path = Resolve(path);
             if (File.Exists(path)) File.Delete(path);
         }
     }

@@ -63,7 +63,7 @@ namespace TpsDungeon.Progression
             if (keyboard[deleteSaveKey].wasPressedThisFrame)
             {
                 ProgressSaveStore.Delete(target.SavePath);
-                Debug.Log($"[Progression] 保存を消した: {target.SavePath ?? ProgressSaveStore.DefaultPath}");
+                Debug.Log($"[Progression] 保存を消した: {(string.IsNullOrEmpty(target.SavePath) ? ProgressSaveStore.DefaultPath : target.SavePath)}");
             }
         }
 

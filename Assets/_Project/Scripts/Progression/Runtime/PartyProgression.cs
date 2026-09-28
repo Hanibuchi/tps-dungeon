@@ -47,7 +47,8 @@ namespace TpsDungeon.Progression
             set => autoSave = value;
         }
 
-        /// <summary>保存先のファイル。null なら ProgressSaveStore.DefaultPath。テストで差し替える。</summary>
+        /// <summary>保存先のファイル。null か空なら ProgressSaveStore.DefaultPath。テストで差し替える。</summary>
+        [field: System.NonSerialized]
         public string SavePath { get; set; }
 
         /// <summary>(自分, 倍率を掛けた後の量)。</summary>

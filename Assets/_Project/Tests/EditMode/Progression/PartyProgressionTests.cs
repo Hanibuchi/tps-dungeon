@@ -207,6 +207,13 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void Store_EmptyPath_MeansDefaultLocation()
+        {
+            // ドメインリロードをまたぐと null の文字列が空文字で戻るので、空でも既定の場所として扱う（Path の例外にしない）。
+            Assert.AreEqual(ProgressSaveStore.Exists(null), ProgressSaveStore.Exists(string.Empty));
+        }
+
+        [Test]
         public void Store_MissingFile_IsNotLoaded()
         {
             Assert.IsFalse(ProgressSaveStore.TryLoad(out _, savePath));
