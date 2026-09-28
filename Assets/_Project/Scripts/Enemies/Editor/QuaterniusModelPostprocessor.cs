@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
-    /// Quaternius の Ultimate Monsters（Assets/ThirdParty/quaternius/ 以下の FBX）の取り込み設定。
+    /// Quaternius の Ultimate Monsters（Assets/ThirdParty/3D Model/quaternius/ 以下の FBX）の取り込み設定。
     ///
     /// ThirdParty は git に載らず .meta も共有されないので、Inspector で直した設定は他の環境へ持ち越せない。
     /// そこで取り込むたびにここで同じ設定をかける:
@@ -16,7 +16,7 @@ namespace TpsDungeon.Enemies.Editor
     /// </summary>
     public class QuaterniusModelPostprocessor : AssetPostprocessor
     {
-        public const string Root = "Assets/ThirdParty/quaternius/";
+        public const string Root = "Assets/ThirdParty/3D Model/quaternius/";
 
         private const string TakePrefix = "CharacterArmature|";
 

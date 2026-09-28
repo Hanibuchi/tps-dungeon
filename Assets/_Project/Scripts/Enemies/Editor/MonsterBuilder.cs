@@ -27,8 +27,12 @@ namespace TpsDungeon.Enemies.Editor
     /// ステート名がクリップ名なので、animator.CrossFade("Wave", 0.1f) のように直接流してもよい。
     /// 死んでいる間（Dead が true）は Dead を戻すまでどれも流れない。
     ///
-    /// プレハブは「ルート（CapsuleCollider・EnemyExpReward）＋子の Model（FBX と Animator）」。足元がルートの原点、
-    /// 背丈はグループの <see cref="Group.Height"/> にそろえる。ルートモーションは使わない。
+    /// プレハブは「ルート（CapsuleCollider・EnemyHealth・EnemyDamageReaction・EnemyRagdoll・EnemyDeath・EnemyExpReward）
+    /// ＋子の Model（FBX と Animator）」。足元がルートの原点、背丈はグループの <see cref="Group.Height"/> にそろえる。
+    /// ルートモーションは使わない。
+    ///
+    /// 気絶で倒れ込むためのラグドールも骨に焼き込む（<see cref="Group.Ragdoll"/>）。
+    /// 骨ごとに Rigidbody（普段は kinematic）・CapsuleCollider（普段は無効）・親の骨への CharacterJoint。
     /// </summary>
     public static class MonsterBuilder
     {
@@ -36,10 +40,37 @@ namespace TpsDungeon.Enemies.Editor
         private const string OverrideFolder = AnimationFolder + "/Overrides";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
+        // 仮の効果音（効果音ラボ）。見つからなければ空のまま。
+        private const string StunClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/弓矢が刺さる (1).mp3";
+        private const string FaintClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/翼竜の鳴き声1.mp3";
+
         public const string SpeedParam = "Speed";
         public const string AttackParam = "Attack";
         public const string HitParam = "Hit";
         public const string DeadParam = "Dead";
+
+        /// <summary>
+        /// ラグドールの 1 本の骨。Parent が null なら腰（押し出しと起き上がりの基準、1 本だけ）。
+        /// End の骨の位置までをカプセルにする。End が null なら骨の位置の上に Radius の球を置く。
+        /// Radius は見た目の大きさ（m、プレハブに置いたときの）。
+        /// </summary>
+        private readonly struct RagdollBone
+        {
+            public readonly string Bone;
+            public readonly string Parent;
+            public readonly string End;
+            public readonly float Radius;
+            public readonly float Mass;
+
+            public RagdollBone(string bone, string parent, string end, float radius, float mass = 1f)
+            {
+                Bone = bone;
+                Parent = parent;
+                End = end;
+                Radius = radius;
+                Mass = mass;
+            }
+        }
 
         private sealed class Group
         {
@@ -54,6 +85,10 @@ namespace TpsDungeon.Enemies.Editor
             /// <summary>待機の最初のポーズでの背丈（m）。プレイヤーはおよそ 1.8 m。</summary>
             public float Height;
             public float Radius;
+            /// <summary>ラグドールにする骨。先頭が腰。</summary>
+            public RagdollBone[] Ragdoll;
+            /// <summary>倒れている間、Target の骨にくっついていく骨（物理の骨の子になっていない IK 用の足首など）。</summary>
+            public (string follower, string target)[] Followers = new (string, string)[0];
 
             /// <summary>見本に必ず要るクリップ。これ以外に見本が持っているクリップも全部ステートになる。</summary>
             public IEnumerable<string> RequiredClips =>
@@ -73,6 +108,22 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 2.0f,
             Radius = 0.45f,
+            // 脚は Hips ではなく Body の子。足首（Foot）は IK 用に Root の直下にある。
+            Ragdoll = new[]
+            {
+                new RagdollBone("Body", null, "Abdomen", 0.28f, 3f),
+                new RagdollBone("Torso", "Body", "Neck", 0.32f, 2f),
+                new RagdollBone("Head", "Torso", "Head_end", 0.22f),
+                new RagdollBone("UpperArm.L", "Torso", "LowerArm.L", 0.11f),
+                new RagdollBone("LowerArm.L", "UpperArm.L", "Middle1.L", 0.1f),
+                new RagdollBone("UpperArm.R", "Torso", "LowerArm.R", 0.11f),
+                new RagdollBone("LowerArm.R", "UpperArm.R", "Middle1.R", 0.1f),
+                new RagdollBone("UpperLeg.L", "Body", "LowerLeg.L", 0.13f),
+                new RagdollBone("LowerLeg.L", "UpperLeg.L", "LowerLeg.L_end", 0.11f),
+                new RagdollBone("UpperLeg.R", "Body", "LowerLeg.R", 0.13f),
+                new RagdollBone("LowerLeg.R", "UpperLeg.R", "LowerLeg.R_end", 0.11f),
+            },
+            Followers = new[] { ("Foot.L", "LowerLeg.L"), ("Foot.R", "LowerLeg.R") },
         };
 
         private static readonly Group Flying = new Group
@@ -85,6 +136,17 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 1.2f,
             Radius = 0.45f,
+            // 胴（Torso）と尾（Body1〜4）は Root の下で兄弟になっている。
+            Ragdoll = new[]
+            {
+                new RagdollBone("Torso", null, "Neck", 0.25f, 2f),
+                new RagdollBone("Head", "Torso", "Head_end", 0.24f),
+                new RagdollBone("Body1", "Torso", "Body4", 0.16f),
+                new RagdollBone("UpperArm.L", "Torso", "LowerArm.L", 0.07f),
+                new RagdollBone("LowerArm.L", "UpperArm.L", "Middle1.L", 0.06f),
+                new RagdollBone("UpperArm.R", "Torso", "LowerArm.R", 0.07f),
+                new RagdollBone("LowerArm.R", "UpperArm.R", "Middle1.R", 0.06f),
+            },
         };
 
         private static readonly Group Blob = new Group
@@ -97,19 +159,24 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 0.9f,
             Radius = 0.4f,
+            Ragdoll = new[]
+            {
+                new RagdollBone("Body", null, null, 0.3f, 2f),
+                new RagdollBone("Head", "Body", "Head3_end", 0.25f),
+            },
         };
 
         private static readonly Group[] Groups = { Big, Flying, Blob };
 
         /// <summary>
         /// プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。
-        /// exp は倒したときの経験値（<see cref="EnemyExpReward"/>）。1 層を想定した仮の値。
+        /// hp は最大 HP（<see cref="EnemyHealth"/>）、exp は倒したときの経験値（<see cref="EnemyExpReward"/>）。1 層を想定した仮の値。
         /// </summary>
-        private static readonly (Group group, string model, int exp)[] Monsters =
+        private static readonly (Group group, string model, int hp, int exp)[] Monsters =
         {
-            (Big, "Orc", 12),
-            (Flying, "Ghost", 6),
-            (Blob, "GreenBlob", 3),
+            (Big, "Orc", 60, 12),
+            (Flying, "Ghost", 30, 6),
+            (Blob, "GreenBlob", 20, 3),
         };
 
         [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの Animator とプレハブを作る")]
@@ -138,7 +205,10 @@ namespace TpsDungeon.Enemies.Editor
                 log.Add($"コントローラ: {group.ControllerPath}（{clips.Count} クリップ）");
             }
 
-            foreach (var (group, model, exp) in Monsters)
+            var stunClip = LoadClip(StunClipPath, log);
+            var faintClip = LoadClip(FaintClipPath, log);
+
+            foreach (var (group, model, hp, exp) in Monsters)
             {
                 // 差し替えは名前で引くので、見本と同じ名前のクリップが全部そろっていないと骨組みの違う動きが残ってしまう。
                 string path = group.ModelPath(model);
@@ -148,11 +218,19 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
                 var overrides = BuildOverride(group, model, controllers[group], clips);
-                log.Add("プレハブ: " + BuildPrefab(group, model, exp, overrides, clips[group.Locomotion[0].clip]));
+                log.Add("プレハブ: " + BuildPrefab(group, model, hp, exp, overrides, clips[group.Locomotion[0].clip],
+                    stunClip, faintClip));
             }
 
             AssetDatabase.SaveAssets();
             return "モンスターを作り直した\n  " + string.Join("\n  ", log);
+        }
+
+        private static AudioClip LoadClip(string path, List<string> log)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null) log.Add($"効果音が見つからないので空のままにした: {path}");
+            return clip;
         }
 
         // ---- クリップ ----
@@ -322,8 +400,8 @@ namespace TpsDungeon.Enemies.Editor
 
         // ---- プレハブ ----
 
-        private static string BuildPrefab(Group group, string model, int exp, AnimatorOverrideController overrides,
-            AnimationClip idle)
+        private static string BuildPrefab(Group group, string model, int hp, int exp, AnimatorOverrideController overrides,
+            AnimationClip idle, AudioClip stunClip, AudioClip faintClip)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(model));
             string prefabName = $"{group.Name}_{model}";
@@ -355,6 +433,18 @@ namespace TpsDungeon.Enemies.Editor
                 reward.FindProperty("exp").intValue = exp;
                 reward.ApplyModifiedPropertiesWithoutUndo();
 
+                var health = new SerializedObject(root.AddComponent<EnemyHealth>());
+                health.FindProperty("maxHp").intValue = hp;
+                health.ApplyModifiedPropertiesWithoutUndo();
+
+                var reaction = new SerializedObject(root.AddComponent<EnemyDamageReaction>());
+                reaction.FindProperty("stunClip").objectReferenceValue = stunClip;
+                reaction.FindProperty("faintClip").objectReferenceValue = faintClip;
+                reaction.ApplyModifiedPropertiesWithoutUndo();
+
+                BuildRagdoll(group, root, animator);
+                root.AddComponent<EnemyDeath>();
+
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
             finally
@@ -363,6 +453,75 @@ namespace TpsDungeon.Enemies.Editor
             }
             return path;
         }
+
+        /// <summary>骨に Rigidbody・コライダー・関節を付け、EnemyRagdoll に渡す。プレハブは原点・バインドポーズのまま測る。</summary>
+        private static void BuildRagdoll(Group group, GameObject root, Animator animator)
+        {
+            var bones = animator.GetComponentsInChildren<Transform>()
+                .GroupBy(t => t.name)
+                .ToDictionary(g => g.Key, g => g.First());
+            Transform Bone(string name) =>
+                bones.TryGetValue(name, out var t) ? t : throw new System.InvalidOperationException($"{group.Name}: 骨 {name} が無い");
+
+            var bodies = new List<Rigidbody>();
+            var byName = new Dictionary<string, Rigidbody>();
+            foreach (RagdollBone spec in group.Ragdoll)
+            {
+                Transform bone = Bone(spec.Bone);
+                var body = bone.gameObject.AddComponent<Rigidbody>();
+                body.mass = spec.Mass;
+                body.isKinematic = true;
+                body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                bodies.Add(body);
+                byName[spec.Bone] = body;
+
+                // 骨は大きく拡縮されている（FBX の 100 倍 × 背丈合わせ）ので、ワールドで決めてから骨の座標へ直す。
+                float scale = bone.lossyScale.x;
+                float radius = spec.Radius / scale;
+                var capsule = bone.gameObject.AddComponent<CapsuleCollider>();
+                capsule.radius = radius;
+                if (spec.End != null)
+                {
+                    Vector3 end = bone.InverseTransformPoint(Bone(spec.End).position);
+                    int axis = LongestAxis(end);
+                    capsule.direction = axis;
+                    capsule.center = end / 2f;
+                    capsule.height = Mathf.Max(Mathf.Abs(end[axis]) + radius, radius * 2f);
+                }
+                else
+                {
+                    capsule.direction = 1;
+                    capsule.center = bone.InverseTransformPoint(bone.position + Vector3.up * spec.Radius);
+                    capsule.height = radius * 2f;
+                }
+                capsule.enabled = false;
+
+                if (spec.Parent == null) continue;
+
+                var joint = bone.gameObject.AddComponent<CharacterJoint>();
+                joint.connectedBody = byName[spec.Parent];
+                int twist = spec.End != null ? LongestAxis(bone.InverseTransformPoint(Bone(spec.End).position)) : 1;
+                joint.axis = AxisVector(twist);
+                joint.swingAxis = AxisVector((twist + 1) % 3);
+                joint.lowTwistLimit = new SoftJointLimit { limit = -20f };
+                joint.highTwistLimit = new SoftJointLimit { limit = 20f };
+                joint.swing1Limit = new SoftJointLimit { limit = 40f };
+                joint.swing2Limit = new SoftJointLimit { limit = 30f };
+                joint.enableProjection = true;
+            }
+
+            var followers = group.Followers.Select(f => Bone(f.follower)).ToArray();
+            var targets = group.Followers.Select(f => Bone(f.target)).ToArray();
+            root.AddComponent<EnemyRagdoll>().Configure(animator, bodies.ToArray(), followers, targets);
+        }
+
+        private static int LongestAxis(Vector3 v)
+        {
+            Vector3 a = new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
+            return a.x >= a.y && a.x >= a.z ? 0 : a.y >= a.z ? 1 : 2;
+        }
+
+        private static Vector3 AxisVector(int axis) => axis == 0 ? Vector3.right : axis == 1 ? Vector3.up : Vector3.forward;
 
         /// <summary>原点に置いてクリップの 0 秒のポーズを取らせたときの、見た目の外接箱（モデルのルートから見た座標）。</summary>
         private static Bounds MeasurePose(GameObject source, AnimationClip clip)
