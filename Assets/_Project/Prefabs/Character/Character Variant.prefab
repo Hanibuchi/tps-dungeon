@@ -585,9 +585,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f94bc37b04fe400bad3f9ecd973f263, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.LevelUpSound
-  clip: {fileID: 8300000, guid: db7548372070e448caeb5aacf1f14f8f, type: 3}
+  clip: {fileID: 8300000, guid: d46a6165baf4e43ceb877650da7b9074, type: 3}
   volume: 1
-  minInterval: 0.2
+  minInterval: 0.05
 --- !u!114 &4090438157950177801 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
