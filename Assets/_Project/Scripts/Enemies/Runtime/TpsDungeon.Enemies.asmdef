@@ -1,13 +1,11 @@
 {
-    "name": "TpsDungeon.Enemies.Editor",
-    "rootNamespace": "TpsDungeon.Enemies.Editor",
+    "name": "TpsDungeon.Enemies",
+    "rootNamespace": "TpsDungeon.Enemies",
     "references": [
-        "TpsDungeon.Progression",
-        "TpsDungeon.Enemies"
+        "TpsDungeon.Audio",
+        "TpsDungeon.Progression"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

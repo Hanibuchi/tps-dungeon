@@ -4,7 +4,7 @@ namespace TpsDungeon.Progression
 {
     /// <summary>
     /// 倒したときにパーティがもらえる経験値。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
-    /// 敵の HP と死亡の仕組みはまだ無いので、倒したことになったらそちらから <see cref="Grant()"/> を呼ぶ。
+    /// 倒れたときに EnemyDeath が <see cref="Grant()"/> を呼ぶ。
     /// 経験値倍率は PartyProgression 側で掛かる。
     /// </summary>
     [DisallowMultipleComponent]
