@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4396f158b6298486eb9a9681f461a91a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDamageReaction
-  stunPerRelativeDamage: 2
+  stunThreshold: 0.1
   faintPerRelativeDamage: 0.5
   stunDuration: 0.5
   faintDuration: 3

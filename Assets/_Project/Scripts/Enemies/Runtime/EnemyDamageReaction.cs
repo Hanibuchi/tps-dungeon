@@ -5,7 +5,8 @@ using UnityEngine;
 namespace TpsDungeon.Enemies
 {
     /// <summary>
-    /// 被弾でスタン・気絶させる。確率は相対ダメージ量（その一撃 ÷ 最大 HP）に比例する（<see cref="DamageReactionRules"/>）。
+    /// 被弾でスタン・気絶させる。相対ダメージ量（その一撃 ÷ 最大 HP）がしきい値以上なら必ずスタン、
+    /// 気絶は相対ダメージ量に比例する確率で起きる（<see cref="DamageReactionRules"/>）。
     ///
     ///   スタン … Hit のひるみを流し、<see cref="stunDuration"/> 秒だけ動けない
     ///   気絶   … ラグドールで倒れ込み、<see cref="faintDuration"/> 秒後に起き上がる
@@ -22,11 +23,11 @@ namespace TpsDungeon.Enemies
         // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
         private const string HitParam = "Hit";
 
-        [Header("確率（相対ダメージ量 1 あたり）")]
-        [SerializeField, Min(0f), Tooltip("2 なら最大 HP の 1 割を削る一撃で 20%、半分で必ずスタンする。")]
-        private float stunPerRelativeDamage = 2f;
+        [Header("起きる条件（相対ダメージ量＝その一撃 ÷ 最大 HP）")]
+        [SerializeField, Min(0f), Tooltip("この割合以上の一撃で必ずスタンする。0.1 なら最大 HP の 1 割以上。1 を超えるとスタンしない。")]
+        private float stunThreshold = 0.1f;
 
-        [SerializeField, Min(0f), Tooltip("0.5 なら最大 HP の 1 割を削る一撃で 5%、半分で 25% 気絶する。")]
+        [SerializeField, Min(0f), Tooltip("相対ダメージ量 1 あたりの気絶確率。0.5 なら最大 HP の 1 割を削る一撃で 5%、半分で 25% 気絶する。")]
         private float faintPerRelativeDamage = 0.5f;
 
         [Header("時間（秒）")]
@@ -59,7 +60,7 @@ namespace TpsDungeon.Enemies
         private float stunRemaining;
         private float faintRemaining;
 
-        public DamageReactionRules Rules => new DamageReactionRules(stunPerRelativeDamage, faintPerRelativeDamage);
+        public DamageReactionRules Rules => new DamageReactionRules(stunThreshold, faintPerRelativeDamage);
 
         public bool IsStunned => stunRemaining > 0f;
         public bool IsFainted => faintRemaining > 0f;
@@ -127,8 +128,7 @@ namespace TpsDungeon.Enemies
 
             // Random.value は 1 も返すので、確率 1 のときに外れないよう 1 未満に収める。
             float faintRoll = Mathf.Min(UnityEngine.Random.value, 0.9999999f);
-            float stunRoll = Mathf.Min(UnityEngine.Random.value, 0.9999999f);
-            Apply(Rules.Roll(dealt, source.MaxHp, false, faintRoll, stunRoll), damage);
+            Apply(Rules.Roll(dealt, source.MaxHp, false, faintRoll), damage);
         }
 
         /// <summary>状態異常を起こす。重なりのルールはここで決まる。起こせたら true。</summary>
