@@ -1,7 +1,9 @@
 {
     "name": "TpsDungeon.Enemies.Editor",
     "rootNamespace": "TpsDungeon.Enemies.Editor",
-    "references": [],
+    "references": [
+        "TpsDungeon.Progression"
+    ],
     "includePlatforms": [
         "Editor"
     ],

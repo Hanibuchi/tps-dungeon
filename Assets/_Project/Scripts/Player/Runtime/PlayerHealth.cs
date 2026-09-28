@@ -1,4 +1,5 @@
 using System;
+using TpsDungeon.Progression;
 using UnityEngine;
 
 namespace TpsDungeon.Player
@@ -6,11 +7,12 @@ namespace TpsDungeon.Player
     /// <summary>
     /// プレイヤーの体力。値を持って増減させ、変わったら知らせるだけ。
     /// 死亡やダメージ演出はまだ無く、HUD がこれを読んで表示する。
+    /// 最大 HP はレベルに応じて CharacterProgression が <see cref="SetMaxAndCurrent"/> で書き込む（Inspector の値は初期値）。
     /// プレイヤーのルートに付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Health")]
-    public sealed class PlayerHealth : MonoBehaviour
+    public sealed class PlayerHealth : MonoBehaviour, IHealthPool
     {
         [SerializeField, Min(1), Tooltip("最大 HP。")]
         private int maxHp = 100;
@@ -56,6 +58,18 @@ namespace TpsDungeon.Player
 
             maxHp = value;
             currentHp = Mathf.Min(currentHp, maxHp);
+            Changed?.Invoke(this);
+        }
+
+        /// <summary>最大と今の HP をまとめて変える。知らせるのは 1 回だけ（レベルアップで両方増やすとき用）。</summary>
+        public void SetMaxAndCurrent(int max, int current)
+        {
+            max = Mathf.Max(1, max);
+            current = Mathf.Clamp(current, 0, max);
+            if (max == maxHp && current == currentHp) return;
+
+            maxHp = max;
+            currentHp = current;
             Changed?.Invoke(this);
         }
 

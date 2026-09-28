@@ -4,6 +4,10 @@
     <ui:VisualElement name="game-hud" class="game-hud" picking-mode="Ignore">
         <ui:VisualElement name="hp" class="hp" picking-mode="Ignore">
             <kit:OrnateFrame class="hud-frame" />
+            <ui:VisualElement name="level" class="level" picking-mode="Ignore">
+                <ui:Label text="Lv" class="level__caption rpg-deco-bold" picking-mode="Ignore" />
+                <ui:Label name="level-value" text="1" class="level__value rpg-deco-bold" picking-mode="Ignore" />
+            </ui:VisualElement>
             <ui:VisualElement class="hp__header" picking-mode="Ignore">
                 <ui:Label text="HP" class="hp__caption rpg-deco-bold" picking-mode="Ignore" />
                 <ui:Label name="hp-value" text="100 / 100" class="hp__value rpg-deco" picking-mode="Ignore" />
@@ -11,6 +15,12 @@
             <ui:VisualElement class="hp__track" picking-mode="Ignore">
                 <ui:VisualElement name="hp-trail" class="hp__trail" picking-mode="Ignore" />
                 <ui:VisualElement name="hp-fill" class="hp__fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="exp" class="exp" picking-mode="Ignore">
+                <ui:VisualElement name="exp-fill" class="exp__fill" picking-mode="Ignore" />
+                <ui:VisualElement class="exp__tick exp__tick--25" picking-mode="Ignore" />
+                <ui:VisualElement class="exp__tick exp__tick--50" picking-mode="Ignore" />
+                <ui:VisualElement class="exp__tick exp__tick--75" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="hotbar-name" class="hotbar-name rpg-deco" picking-mode="Ignore" />

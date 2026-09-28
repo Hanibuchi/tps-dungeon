@@ -2,6 +2,7 @@ using TpsDungeon.Items;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
+using TpsDungeon.Progression;
 using UnityEngine;
 using TpsDungeon.UiKit;
 using UnityEngine.UIElements;
@@ -9,9 +10,10 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud
 {
     /// <summary>
-    /// 常時表示の HUD（左下 HP・下中央ホットバーと選んでいるアイテムの名前・右下マップ）と、マップキーで開く大きな地図。
+    /// 常時表示の HUD（左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
-    /// 表示は PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 経験値は数字を出さず、帯の伸びだけで見せる。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -21,11 +23,17 @@ namespace TpsDungeon.Hud
         // 残りがこの割合を切ったら HP を警告色にする。
         private const float LowHpFraction = 0.3f;
 
+        // レベルアップで経験値の帯を端まで伸ばしてから、空に戻して余りを伸ばし直すまでの間（ミリ秒）。USS の .exp__fill の伸びる時間に合わせる。
+        private const long ExpLevelUpHoldMs = 380;
+
         // フロアが無いシーンで毎フレーム探さないための間隔（秒）。
         private const float FloorSearchInterval = 1f;
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
+
+        [SerializeField, Tooltip("レベルと経験値の出どころ。未設定なら親から探す。")]
+        private CharacterProgression progression;
 
         [SerializeField, Tooltip("ホットバーの選択の出どころ。未設定なら親から探す。")]
         private PlayerHotbar hotbar;
@@ -46,6 +54,16 @@ namespace TpsDungeon.Hud
         private int lastHp = -1;
         private bool beating;
         private Label hpValue;
+        private VisualElement levelRoot;
+        private Label levelValue;
+        private VisualElement expRoot;
+        private VisualElement expFill;
+
+        // 獲得でレベルが上がった（LeveledUp は ExpChanged より先に来る）。保存の読み込みで上がったときは演出しない。
+        private bool levelUpPending;
+
+        // レベルアップの伸ばし直しの予約。続けて上がったら前の予約は捨てる。
+        private IVisualElementScheduledItem expRefill;
         private VisualElement[] slots;
         private Label itemName;
 
@@ -64,6 +82,7 @@ namespace TpsDungeon.Hud
         private void Reset()
         {
             health = GetComponentInParent<PlayerHealth>();
+            progression = GetComponentInParent<CharacterProgression>();
             hotbar = GetComponentInParent<PlayerHotbar>();
             inventory = GetComponentInParent<PlayerInventory>();
             mapToggle = GetComponentInParent<PlayerMapToggle>();
@@ -73,6 +92,7 @@ namespace TpsDungeon.Hud
         {
             document = GetComponent<UIDocument>();
             if (health == null) health = GetComponentInParent<PlayerHealth>();
+            if (progression == null) progression = GetComponentInParent<CharacterProgression>();
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
             if (inventory == null) inventory = GetComponentInParent<PlayerInventory>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
@@ -90,6 +110,11 @@ namespace TpsDungeon.Hud
             hpFill = root.Q<VisualElement>("hp-fill");
             hpTrail = root.Q<VisualElement>("hp-trail");
             hpValue = root.Q<Label>("hp-value");
+            levelRoot = root.Q<VisualElement>("level");
+            levelValue = root.Q<Label>("level-value");
+            expRoot = root.Q<VisualElement>("exp");
+            expFill = root.Q<VisualElement>("exp-fill");
+            levelUpPending = false;
             minimapFrame = root.Q<VisualElement>("minimap");
             mapOverlay = root.Q<VisualElement>("map-overlay");
             UiTransitions.HideImmediately(mapOverlay);
@@ -102,10 +127,13 @@ namespace TpsDungeon.Hud
             shownItemName = null;
 
             if (health != null) health.Changed += OnHealthChanged;
+            if (progression != null) progression.ExpChanged += OnExpChanged;
+            if (progression != null) progression.LeveledUp += OnLeveledUp;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
             if (inventory != null) inventory.Changed += OnInventoryChanged;
             if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
             RefreshHealth();
+            RefreshProgression();
             RefreshHotbar();
             RefreshHotbarItems();
             RefreshMapOverlay();
@@ -114,6 +142,10 @@ namespace TpsDungeon.Hud
         private void OnDisable()
         {
             if (health != null) health.Changed -= OnHealthChanged;
+            if (progression != null) progression.ExpChanged -= OnExpChanged;
+            if (progression != null) progression.LeveledUp -= OnLeveledUp;
+            expRefill?.Pause();
+            expRefill = null;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
@@ -148,6 +180,10 @@ namespace TpsDungeon.Hud
         }
 
         private void OnHealthChanged(PlayerHealth _) => RefreshHealth();
+
+        private void OnExpChanged(CharacterProgression _) => RefreshProgression();
+
+        private void OnLeveledUp(CharacterProgression _, int from, int to) => levelUpPending = true;
 
         private void OnHotbarChanged(PlayerHotbar _) => RefreshHotbar();
 
@@ -185,6 +221,59 @@ namespace TpsDungeon.Hud
             SetBeating(fraction < LowHpFraction);
             if (hpValue != null) hpValue.text = HpText(health.CurrentHp, health.MaxHp);
             hpRoot.EnableInClassList("hp--low", fraction < LowHpFraction);
+        }
+
+        /// <summary>
+        /// レベルの数字と経験値の帯。レベルが上がったときは帯を端まで伸ばし、数字を光らせてから、
+        /// 空に戻して今のレベル内の分だけ伸ばし直す。リセットや保存の読み込みで変わったときはそのまま合わせる。
+        /// </summary>
+        private void RefreshProgression()
+        {
+            bool has = progression != null;
+            if (levelRoot != null) levelRoot.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
+            if (expRoot != null) expRoot.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!has) return;
+
+            bool leveledUp = levelUpPending;
+            levelUpPending = false;
+
+            if (levelValue != null) levelValue.text = LevelText(progression.Level);
+            if (expRoot != null) expRoot.EnableInClassList("exp--max", progression.IsMaxLevel);
+            if (expFill == null) return;
+
+            if (!leveledUp)
+            {
+                // 伸ばし直しを待っている間の獲得は、予約の側が最新の値で伸ばすので任せる。
+                if (expRefill == null) SetExpWidth(CurrentExpFraction());
+                return;
+            }
+
+            if (levelRoot != null) UiTransitions.Flash(levelRoot, "level--up", 260);
+            SetExpWidth(1f);
+            expRefill?.Pause();
+            expRefill = expFill.schedule.Execute(RefillExpAfterLevelUp).StartingIn(ExpLevelUpHoldMs);
+        }
+
+        private void RefillExpAfterLevelUp()
+        {
+            expRefill = null;
+            if (expFill == null || progression == null) return;
+
+            // 減っていく様子を見せないよう、トランジションを切って空に戻し、次のフレームで余りまで伸ばす。
+            expFill.AddToClassList("exp__fill--instant");
+            SetExpWidth(0f);
+            expFill.schedule.Execute(() =>
+            {
+                expFill.RemoveFromClassList("exp__fill--instant");
+                if (progression != null) SetExpWidth(CurrentExpFraction());
+            }).StartingIn(16);
+        }
+
+        private float CurrentExpFraction() => progression.IsMaxLevel ? 1f : ExpFraction(progression.Exp, progression.ExpToNext);
+
+        private void SetExpWidth(float fraction)
+        {
+            expFill.style.width = Length.Percent(Mathf.Clamp01(fraction) * 100f);
         }
 
         /// <summary>残りが少ない間は枠と帯を鼓動させる。</summary>
@@ -310,6 +399,11 @@ namespace TpsDungeon.Hud
         }
 
         public static string HpText(int current, int max) => $"{current} / {max}";
+
+        public static string LevelText(int level) => level.ToString();
+
+        /// <summary>経験値の帯の伸び（0〜1）。次までが 0（最大レベル）なら満タン。</summary>
+        public static float ExpFraction(int exp, int expToNext) => expToNext > 0 ? Mathf.Clamp01((float)exp / expToNext) : 1f;
 
         /// <summary>ホットバーの上に出す名前。アイテムが無ければ null（何も出さない）。</summary>
         public static string ItemNameText(ItemDefinition item) => item != null ? item.DisplayName : null;

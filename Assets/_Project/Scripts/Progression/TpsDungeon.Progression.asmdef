@@ -1,16 +1,11 @@
 {
-    "name": "TpsDungeon.Hud.Editor",
-    "rootNamespace": "TpsDungeon.Hud.Editor",
+    "name": "TpsDungeon.Progression",
+    "rootNamespace": "TpsDungeon.Progression",
     "references": [
-        "TpsDungeon.Hud",
-        "TpsDungeon.Player",
         "Unity.InputSystem",
-        "TpsDungeon.Items",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Audio"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
