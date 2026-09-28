@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TpsDungeon.Progression.Editor
 {
     /// <summary>
-    /// 成長パラメータのアセットを用意し、主人公のプレハブにレベルの仕組み（CharacterProgression・PartyProgression・デバッグ入力）を組み込む。
+    /// 成長パラメータのアセットを用意し、主人公のプレハブにレベルの仕組み（CharacterProgression・PartyProgression・レベルアップの効果音・デバッグ入力）を組み込む。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す。アセットの値は上書きしない）。
     /// </summary>
     public static class ProgressionSetup
@@ -14,6 +14,9 @@ namespace TpsDungeon.Progression.Editor
         private const string ProfileFolder = "Assets/_Project/Progression";
         public const string PlayerProfilePath = ProfileFolder + "/PlayerGrowth.asset";
         public const string CompanionTemplatePath = ProfileFolder + "/CompanionGrowth_Template.asset";
+
+        // 仮の効果音（効果音ラボ「パワーアップ」）。既に別の音が入っていれば上書きしない。
+        private const string LevelUpClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/パワーアップ.mp3";
 
         [MenuItem("Tools/TPS Dungeon/Progression/主人公に組み込む")]
         public static void Setup()
@@ -32,6 +35,18 @@ namespace TpsDungeon.Progression.Editor
                 serialized.FindProperty("profile").objectReferenceValue = playerProfile;
                 serialized.FindProperty("progressId").stringValue = CharacterProgression.PlayerId;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                var sound = root.GetComponent<LevelUpSound>();
+                if (sound == null) sound = root.AddComponent<LevelUpSound>();
+                var serializedSound = new SerializedObject(sound);
+                var clipProperty = serializedSound.FindProperty("clip");
+                if (clipProperty.objectReferenceValue == null)
+                {
+                    var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(LevelUpClipPath);
+                    if (clip == null) Debug.LogWarning($"レベルアップの効果音が見つからないので空のままにした: {LevelUpClipPath}");
+                    clipProperty.objectReferenceValue = clip;
+                    serializedSound.ApplyModifiedPropertiesWithoutUndo();
+                }
 
                 if (root.GetComponent<PartyProgression>() == null) root.AddComponent<PartyProgression>();
                 if (root.GetComponent<ProgressionDebugInput>() == null) root.AddComponent<ProgressionDebugInput>();
