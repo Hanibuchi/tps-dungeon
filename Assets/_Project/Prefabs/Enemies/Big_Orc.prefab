@@ -104,8 +104,8 @@ MonoBehaviour:
   stunDuration: 0.5
   faintDuration: 3
   faintPush: 2.5
-  stunClip: {fileID: 8300000, guid: 2ee2d22bfd17241029ad6b851a53fff4, type: 3}
-  faintClip: {fileID: 8300000, guid: 79df6724f920448a8a006aa5636c84b1, type: 3}
+  stunClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
+  faintClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
   volume: 1
 --- !u!114 &706407542563773294
 MonoBehaviour:
