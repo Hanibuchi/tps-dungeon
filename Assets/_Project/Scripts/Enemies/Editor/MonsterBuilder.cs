@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using TpsDungeon.Progression;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace TpsDungeon.Enemies.Editor
     /// ステート名がクリップ名なので、animator.CrossFade("Wave", 0.1f) のように直接流してもよい。
     /// 死んでいる間（Dead が true）は Dead を戻すまでどれも流れない。
     ///
-    /// プレハブは「ルート（CapsuleCollider）＋子の Model（FBX と Animator）」。足元がルートの原点、
+    /// プレハブは「ルート（CapsuleCollider・EnemyExpReward）＋子の Model（FBX と Animator）」。足元がルートの原点、
     /// 背丈はグループの <see cref="Group.Height"/> にそろえる。ルートモーションは使わない。
     /// </summary>
     public static class MonsterBuilder
@@ -100,12 +101,15 @@ namespace TpsDungeon.Enemies.Editor
 
         private static readonly Group[] Groups = { Big, Flying, Blob };
 
-        /// <summary>プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。</summary>
-        private static readonly (Group group, string model)[] Monsters =
+        /// <summary>
+        /// プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。
+        /// exp は倒したときの経験値（<see cref="EnemyExpReward"/>）。1 層を想定した仮の値。
+        /// </summary>
+        private static readonly (Group group, string model, int exp)[] Monsters =
         {
-            (Big, "Orc"),
-            (Flying, "Ghost"),
-            (Blob, "GreenBlob"),
+            (Big, "Orc", 12),
+            (Flying, "Ghost", 6),
+            (Blob, "GreenBlob", 3),
         };
 
         [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの Animator とプレハブを作る")]
@@ -134,7 +138,7 @@ namespace TpsDungeon.Enemies.Editor
                 log.Add($"コントローラ: {group.ControllerPath}（{clips.Count} クリップ）");
             }
 
-            foreach (var (group, model) in Monsters)
+            foreach (var (group, model, exp) in Monsters)
             {
                 // 差し替えは名前で引くので、見本と同じ名前のクリップが全部そろっていないと骨組みの違う動きが残ってしまう。
                 string path = group.ModelPath(model);
@@ -144,7 +148,7 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
                 var overrides = BuildOverride(group, model, controllers[group], clips);
-                log.Add("プレハブ: " + BuildPrefab(group, model, overrides, clips[group.Locomotion[0].clip]));
+                log.Add("プレハブ: " + BuildPrefab(group, model, exp, overrides, clips[group.Locomotion[0].clip]));
             }
 
             AssetDatabase.SaveAssets();
@@ -318,7 +322,7 @@ namespace TpsDungeon.Enemies.Editor
 
         // ---- プレハブ ----
 
-        private static string BuildPrefab(Group group, string model, AnimatorOverrideController overrides,
+        private static string BuildPrefab(Group group, string model, int exp, AnimatorOverrideController overrides,
             AnimationClip idle)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(model));
@@ -346,6 +350,10 @@ namespace TpsDungeon.Enemies.Editor
                 capsule.height = group.Height;
                 capsule.radius = group.Radius;
                 capsule.center = new Vector3(0f, group.Height / 2f, 0f);
+
+                var reward = new SerializedObject(root.AddComponent<EnemyExpReward>());
+                reward.FindProperty("exp").intValue = exp;
+                reward.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }

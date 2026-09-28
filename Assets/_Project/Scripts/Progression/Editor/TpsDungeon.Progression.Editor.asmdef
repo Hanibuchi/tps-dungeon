@@ -1,11 +1,13 @@
 {
-    "name": "TpsDungeon.Player",
-    "rootNamespace": "TpsDungeon.Player",
+    "name": "TpsDungeon.Progression.Editor",
+    "rootNamespace": "TpsDungeon.Progression.Editor",
     "references": [
-        "Unity.InputSystem",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Progression",
+        "TpsDungeon.Player"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

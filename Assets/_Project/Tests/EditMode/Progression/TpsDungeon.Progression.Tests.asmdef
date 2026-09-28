@@ -1,0 +1,26 @@
+{
+    "name": "TpsDungeon.Progression.Tests",
+    "rootNamespace": "TpsDungeon.Progression.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "TpsDungeon.Progression",
+        "TpsDungeon.Player",
+        "TpsDungeon.Hud"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,9 +1,8 @@
 {
-    "name": "TpsDungeon.Player",
-    "rootNamespace": "TpsDungeon.Player",
+    "name": "TpsDungeon.Progression",
+    "rootNamespace": "TpsDungeon.Progression",
     "references": [
-        "Unity.InputSystem",
-        "TpsDungeon.Progression"
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
