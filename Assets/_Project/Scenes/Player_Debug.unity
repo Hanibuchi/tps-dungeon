@@ -1300,6 +1300,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2489097418605579653, guid: 3aeeed5c3a09343018c88e80be480fe7, type: 3}
   m_PrefabInstance: {fileID: 1619743770}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1621263608 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+  m_PrefabInstance: {fileID: 5508518673633225154}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1662340250
 GameObject:
   m_ObjectHideFlags: 0
@@ -1388,8 +1393,40 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5508518673633225156}
   m_SourcePrefab: {fileID: 100100000, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+--- !u!114 &5508518673633225155 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8938358473402762286, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+  m_PrefabInstance: {fileID: 5508518673633225154}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621263608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e33934105ad4340e3953951bc3ec429e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.CharacterActions
+--- !u!114 &5508518673633225156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621263608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc00d879c102d41659a601f081a08deb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Player.Debug::TpsDungeon.Player.DebugTools.CharacterActionDebugInput
+  actions: {fileID: 5508518673633225155}
+  previousKey: 11
+  nextKey: 12
+  playKey: 2
+  stopKey: 65
+  showOverlay: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

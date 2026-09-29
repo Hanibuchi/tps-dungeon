@@ -420,6 +420,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8189682549201205282}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8938358473402762286}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!4 &3715460319869569215 stripped
 Transform:
@@ -612,6 +615,19 @@ MonoBehaviour:
   faceCameraOnAttack: 1
   explosionEffect: {fileID: 0}
   logHits: 0
+--- !u!114 &8938358473402762286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e33934105ad4340e3953951bc3ec429e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.CharacterActions
+  animator: {fileID: 7309302257321726661}
 --- !u!114 &4090438157950177801 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
