@@ -68,6 +68,7 @@ namespace TpsDungeon.Player.Editor
         private const float TwoHandedFinisherSpeed = 1.2f;
         private const float HammerSlamSpeed = 1.1f;
         // Kevin の長柄の突き（AttackPolearm01、30fps・41F）は 12F（0.4 秒）で伸び切る → 2 倍で 0.2 秒。走り出しに合わせて速く突く。
+        // 同じクリップは全身の動き（CharacterAction.KevinAttackPolearm）でも再生できる。
         private const float DashThrustSpeed = 2f;
 
         private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
@@ -76,50 +77,60 @@ namespace TpsDungeon.Player.Editor
         private const string KevinCombat = "Assets/ThirdParty/Animation/Kevin Iglesias/Human Animations/Animations/Male/Combat/";
 
         /// <summary>
-        /// Action 層に置く動きと、その元のクリップ（パック内のファイルとクリップ名）。パックのクリップは tpose 以外全部。
+        /// Action 層に置く動きと、その元のクリップ（ファイルとクリップ名）。
+        /// Blink のパックは tpose 以外全部。Kevin の Male/Combat は、武器の攻撃で使う Attack1H01_R・Attack2H01 以外。
         /// </summary>
         private static readonly (CharacterAction action, string file, string clip)[] ActionClips =
         {
-            (CharacterAction.BlockingLoop, "Combat/BlockingLoop.fbx", "BlockingLoop"),
-            (CharacterAction.BowShot, "Combat/BowShot.fbx", "BowShot"),
-            (CharacterAction.Buff, "Combat/Buff.fbx", "Buff"),
-            (CharacterAction.CastingLoop, "Combat/CastingLoop.fbx", "CastingLoop"),
-            (CharacterAction.Death, "Combat/Death.fbx", "Death"),
-            (CharacterAction.GetHit, "Combat/GetHit.fbx", "GetHit"),
-            (CharacterAction.IdleCombat, "Combat/IdleCombat.fbx", "IdleCombat"),
-            (CharacterAction.MeleeAttackOneHanded, "Combat/MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded"),
-            (CharacterAction.MeleeAttackTwoHanded, "Combat/MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded"),
-            (CharacterAction.PunchLeft, "Combat/PunchLeft.fbx", "PunchLeft"),
-            (CharacterAction.PunchRight, "Combat/PunchRight.fbx", "PunchRight"),
-            (CharacterAction.SpellCast, "Combat/SpellCast.fbx", "SpellCast"),
-            (CharacterAction.SpellCastStart, "Combat/SpellCast.fbx", "SpellCast_Start"),
-            (CharacterAction.SpellCastEnd, "Combat/SpellCast.fbx", "SpellCast_End"),
-            (CharacterAction.StunnedLoop, "Combat/StunnedLoop.fbx", "StunnedLoop"),
-            (CharacterAction.Gathering, "Gathering/Gathering.fbx", "Gathering"),
-            (CharacterAction.MiningLoop, "Gathering/MiningLoop.fbx", "MiningLoop"),
-            (CharacterAction.FallingLoop, "Movement/FallingLoop.fbx", "FallingLoop"),
-            (CharacterAction.Idle, "Movement/Idle.fbx", "Idle"),
-            (CharacterAction.Jump, "Movement/Jumps.fbx", "Jump"),
-            (CharacterAction.JumpUp, "Movement/Jumps.fbx", "Jump_Up"),
-            (CharacterAction.JumpDown, "Movement/Jumps.fbx", "Jump_Down"),
-            (CharacterAction.JumpWhileRunning, "Movement/JumpWhileRunning.fbx", "JumpWhileRunning"),
-            (CharacterAction.RollBackward, "Movement/RollBackward.fbx", "RollBackward"),
-            (CharacterAction.RollForward, "Movement/RollForward.fbx", "RollForward"),
-            (CharacterAction.RollLeft, "Movement/RollLeft.fbx", "RollLeft"),
-            (CharacterAction.RollRight, "Movement/RollRight.fbx", "RollRight"),
-            (CharacterAction.RunBackward, "Movement/RunBackward.fbx", "RunBackward"),
-            (CharacterAction.RunBackwardLeft, "Movement/RunBackwardLeft.fbx", "RunBackwardLeft"),
-            (CharacterAction.RunBackwardRight, "Movement/RunBackwardRight.fbx", "RunBackwardRight"),
-            (CharacterAction.RunForward, "Movement/RunForward.fbx", "RunForward"),
-            (CharacterAction.RunLeft, "Movement/RunLeft.fbx", "RunLeft"),
-            (CharacterAction.RunRight, "Movement/RunRight.fbx", "RunRight"),
-            (CharacterAction.Sprint, "Movement/Sprint.fbx", "Sprint"),
-            (CharacterAction.StrafeLeft, "Movement/StrafeLeft.fbx", "StrafeLeft"),
-            (CharacterAction.StrafeRight, "Movement/StrafeRight.fbx", "StrafeRight"),
+            (CharacterAction.BlockingLoop, BlinkPack + "Combat/BlockingLoop.fbx", "BlockingLoop"),
+            (CharacterAction.BowShot, BlinkPack + "Combat/BowShot.fbx", "BowShot"),
+            (CharacterAction.Buff, BlinkPack + "Combat/Buff.fbx", "Buff"),
+            (CharacterAction.CastingLoop, BlinkPack + "Combat/CastingLoop.fbx", "CastingLoop"),
+            (CharacterAction.Death, BlinkPack + "Combat/Death.fbx", "Death"),
+            (CharacterAction.GetHit, BlinkPack + "Combat/GetHit.fbx", "GetHit"),
+            (CharacterAction.IdleCombat, BlinkPack + "Combat/IdleCombat.fbx", "IdleCombat"),
+            (CharacterAction.MeleeAttackOneHanded, BlinkPack + "Combat/MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded"),
+            (CharacterAction.MeleeAttackTwoHanded, BlinkPack + "Combat/MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded"),
+            (CharacterAction.PunchLeft, BlinkPack + "Combat/PunchLeft.fbx", "PunchLeft"),
+            (CharacterAction.PunchRight, BlinkPack + "Combat/PunchRight.fbx", "PunchRight"),
+            (CharacterAction.SpellCast, BlinkPack + "Combat/SpellCast.fbx", "SpellCast"),
+            (CharacterAction.SpellCastStart, BlinkPack + "Combat/SpellCast.fbx", "SpellCast_Start"),
+            (CharacterAction.SpellCastEnd, BlinkPack + "Combat/SpellCast.fbx", "SpellCast_End"),
+            (CharacterAction.StunnedLoop, BlinkPack + "Combat/StunnedLoop.fbx", "StunnedLoop"),
+            (CharacterAction.Gathering, BlinkPack + "Gathering/Gathering.fbx", "Gathering"),
+            (CharacterAction.MiningLoop, BlinkPack + "Gathering/MiningLoop.fbx", "MiningLoop"),
+            (CharacterAction.FallingLoop, BlinkPack + "Movement/FallingLoop.fbx", "FallingLoop"),
+            (CharacterAction.Idle, BlinkPack + "Movement/Idle.fbx", "Idle"),
+            (CharacterAction.Jump, BlinkPack + "Movement/Jumps.fbx", "Jump"),
+            (CharacterAction.JumpUp, BlinkPack + "Movement/Jumps.fbx", "Jump_Up"),
+            (CharacterAction.JumpDown, BlinkPack + "Movement/Jumps.fbx", "Jump_Down"),
+            (CharacterAction.JumpWhileRunning, BlinkPack + "Movement/JumpWhileRunning.fbx", "JumpWhileRunning"),
+            (CharacterAction.RollBackward, BlinkPack + "Movement/RollBackward.fbx", "RollBackward"),
+            (CharacterAction.RollForward, BlinkPack + "Movement/RollForward.fbx", "RollForward"),
+            (CharacterAction.RollLeft, BlinkPack + "Movement/RollLeft.fbx", "RollLeft"),
+            (CharacterAction.RollRight, BlinkPack + "Movement/RollRight.fbx", "RollRight"),
+            (CharacterAction.RunBackward, BlinkPack + "Movement/RunBackward.fbx", "RunBackward"),
+            (CharacterAction.RunBackwardLeft, BlinkPack + "Movement/RunBackwardLeft.fbx", "RunBackwardLeft"),
+            (CharacterAction.RunBackwardRight, BlinkPack + "Movement/RunBackwardRight.fbx", "RunBackwardRight"),
+            (CharacterAction.RunForward, BlinkPack + "Movement/RunForward.fbx", "RunForward"),
+            (CharacterAction.RunLeft, BlinkPack + "Movement/RunLeft.fbx", "RunLeft"),
+            (CharacterAction.RunRight, BlinkPack + "Movement/RunRight.fbx", "RunRight"),
+            (CharacterAction.Sprint, BlinkPack + "Movement/Sprint.fbx", "Sprint"),
+            (CharacterAction.StrafeLeft, BlinkPack + "Movement/StrafeLeft.fbx", "StrafeLeft"),
+            (CharacterAction.StrafeRight, BlinkPack + "Movement/StrafeRight.fbx", "StrafeRight"),
+            (CharacterAction.KevinCombatIdle, KevinCombat + "HumanM@CombatIdle01.fbx", "HumanM@CombatIdle01"),
+            (CharacterAction.KevinGetHit, KevinCombat + "HumanM@CombatDamage01.fbx", "HumanM@CombatDamage01"),
+            (CharacterAction.KevinDeath, KevinCombat + "HumanM@Death01.fbx", "HumanM@Death01"),
+            (CharacterAction.KevinAttackShield, KevinCombat + "Shield/HumanM@AttackShield01.fbx", "HumanM@AttackShield01"),
+            (CharacterAction.KevinAttack1HLeft, KevinCombat + "1H/HumanM@Attack1H01_L.fbx", "HumanM@Attack1H01_L"),
+            (CharacterAction.KevinCombatIdle1H, KevinCombat + "1H/HumanM@CombatIdle1H01.fbx", "HumanM@CombatIdle1H01"),
+            (CharacterAction.KevinCombatIdle2H, KevinCombat + "2H/HumanM@CombatIdle2H01.fbx", "HumanM@CombatIdle2H01"),
+            (CharacterAction.KevinCombatIdlePolearm, KevinCombat + "Polearm/HumanM@CombatIdlePolearm01.fbx", "HumanM@CombatIdlePolearm01"),
+            (CharacterAction.KevinAttackPolearm, KevinCombat + "Polearm/HumanM@AttackPolearm01.fbx", "HumanM@AttackPolearm01"),
         };
 
         /// <summary>ループしないのに、終わっても戻らず最後の姿勢のまま止める動き。</summary>
-        private static readonly HashSet<CharacterAction> HoldAtEnd = new HashSet<CharacterAction> { CharacterAction.Death };
+        private static readonly HashSet<CharacterAction> HoldAtEnd = new HashSet<CharacterAction> { CharacterAction.Death, CharacterAction.KevinDeath };
 
         // BowShot（30fps・29 フレーム）の中身。手の位置を 1 フレームずつ見て決めた。
         //   0-7F: つがえた矢を引く / 7-13F: 引き切って保持 / 14F: 放す / 22-29F: 次の矢をつがえて 0F と同じ姿勢に戻る
@@ -609,7 +620,7 @@ namespace TpsDungeon.Player.Editor
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");
 
                 Actions = new AnimationClip[ActionClips.Length];
-                for (int i = 0; i < ActionClips.Length; i++) Actions[i] = Load(BlinkPack + ActionClips[i].file, ActionClips[i].clip);
+                for (int i = 0; i < ActionClips.Length; i++) Actions[i] = Load(ActionClips[i].file, ActionClips[i].clip);
 
                 missing = string.Join(", ", _missing);
                 return _missing.Count == 0;

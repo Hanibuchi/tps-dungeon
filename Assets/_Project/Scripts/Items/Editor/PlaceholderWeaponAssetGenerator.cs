@@ -41,8 +41,14 @@ namespace TpsDungeon.Items.Editor
         public const string PunchHitEffectPath = LanaPrefabs + "Flash/Flash_round_ellow.prefab";
         public const string CriticalHitEffectPath = HovlPrefabs + "Hits and explosions/Star hit.prefab";
         public const string ExplosionEffectPath = HovlPrefabs + "Hits and explosions/Explosion.prefab";
-        public const string SlamEffectPath = HovlPrefabs + "Hits and explosions/Stones hit.prefab";
-        public const string ShockwaveEffectPath = HovlPrefabs + "Smoke effects/Dust ground.prefab";
+        // 叩きつけの着弾は、土煙と地割れ（Ground AOE explosion、素材は 15 m ほどに広がる）に、
+        // 土煙の塊・石の破片・火花・閃光を重ねる。着弾の 0.05 秒で光と破片、0.3 秒で土煙の輪が広がる（Play で撮って決めた）。
+        public const string SlamDustEffectPath = HovlPrefabs + "AoE effects/Ground AOE explosion.prefab";
+        public const string SlamFlashEffectPath = LanaPrefabs + "Flash/Flash_ellow.prefab";
+        public const string StonesEffectPath = HovlPrefabs + "Hits and explosions/Stones hit.prefab";
+        public const string SparksEffectPath = HovlPrefabs + "Sparks/Sparks explode white.prefab";
+        // 衝撃波の通り道に噴き上げる土煙（素材は 12 m ほど）。
+        public const string ShockwaveDustEffectPath = HovlPrefabs + "Smoke effects/Dust puff.prefab";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
@@ -526,18 +532,31 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("shockwaveSpeed").floatValue = 14f;
             serialized.FindProperty("shockwaveWidth").floatValue = 1.2f;
             serialized.FindProperty("shockwaveSpacingAngle").floatValue = 20f;
-            serialized.FindProperty("shockwaveEffect").objectReferenceValue = LoadEffect(ShockwaveEffectPath);
-            serialized.FindProperty("shockwaveEffectScale").floatValue = 0.5f;
+            WriteEffectLayers(serialized.FindProperty("shockwaveEffects"), new[]
+            {
+                new EffectLayer(LoadEffect(ShockwaveDustEffectPath), 0.13f),
+                new EffectLayer(LoadEffect(StonesEffectPath), 0.35f),
+            });
+            serialized.FindProperty("shockwaveEffectSpacing").floatValue = 0.9f;
             serialized.FindProperty("followUpDamageRatio").floatValue = 0.6f;
             serialized.FindProperty("followUpSpacing").floatValue = 1.5f;
             serialized.FindProperty("followUpInterval").floatValue = 0.18f;
+            serialized.FindProperty("followUpEffectScale").floatValue = 0.7f;
+            serialized.FindProperty("slamShake").floatValue = 0.35f;
+            serialized.FindProperty("followUpShakeRatio").floatValue = 0.4f;
             SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
-            // 振りの斬撃は出さない（槌なので）。着弾点に石の砕けるエフェクト、当たった敵には閃光。
+            // 振りの斬撃は出さない（槌なので）。着弾点に土煙・石の破片・火花・閃光を重ね、当たった敵にも閃光。
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
-            serialized.FindProperty("slamEffect").objectReferenceValue = LoadEffect(SlamEffectPath);
-            serialized.FindProperty("slamEffectScale").floatValue = 0.6f;
+            WriteEffectLayers(serialized.FindProperty("slamEffects"), new[]
+            {
+                new EffectLayer(LoadEffect(SlamDustEffectPath), 0.5f),
+                new EffectLayer(LoadEffect(ShockwaveDustEffectPath), 0.3f),
+                new EffectLayer(LoadEffect(StonesEffectPath), 1.2f),
+                new EffectLayer(LoadEffect(SparksEffectPath), 0.9f, new Vector3(0f, 0.2f, 0f)),
+                new EffectLayer(LoadEffect(SlamFlashEffectPath), 0.1f, new Vector3(0f, 0.3f, 0f)),
+            });
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
-            serialized.FindProperty("hitEffectScale").floatValue = 0.15f;
+            serialized.FindProperty("hitEffectScale").floatValue = 0.22f;
             // 叩きつけの音は外れても着弾の瞬間に鳴る（MeleeAttacker が命中の音として鳴らす）。風切りは付けない。
             serialized.FindProperty("swingSound").objectReferenceValue = null;
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(HammerSlamSoundPath);
@@ -609,6 +628,18 @@ namespace TpsDungeon.Items.Editor
                 // 段ごとの音の上書きは、要る段だけ呼び出し側で入れ直す。
                 step.FindPropertyRelative("swingSound").objectReferenceValue = null;
                 step.FindPropertyRelative("hitSound").objectReferenceValue = null;
+            }
+        }
+
+        private static void WriteEffectLayers(SerializedProperty list, EffectLayer[] layers)
+        {
+            list.arraySize = layers.Length;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                SerializedProperty layer = list.GetArrayElementAtIndex(i);
+                layer.FindPropertyRelative("prefab").objectReferenceValue = layers[i].prefab;
+                layer.FindPropertyRelative("scale").floatValue = layers[i].scale;
+                layer.FindPropertyRelative("offset").vector3Value = layers[i].offset;
             }
         }
 

@@ -58,19 +58,42 @@ MonoBehaviour:
   shockwaveSpeed: 14
   shockwaveWidth: 1.2
   shockwaveSpacingAngle: 20
-  shockwaveEffect: {fileID: 8230022441722461589, guid: 41494896fc96c9748b81d3356632794e, type: 3}
-  shockwaveEffectScale: 0.5
+  shockwaveEffects:
+  - prefab: {fileID: 5610010966355794069, guid: 803ecf87f61d9fb4f84ba6319ba95c9c, type: 3}
+    scale: 0.13
+    offset: {x: 0, y: 0, z: 0}
+  - prefab: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
+    scale: 0.35
+    offset: {x: 0, y: 0, z: 0}
+  shockwaveEffectSpacing: 0.9
   followUpDamageRatio: 0.6
   followUpSpacing: 1.5
   followUpInterval: 0.18
+  followUpEffectScale: 0.7
+  slamShake: 0.35
+  followUpShakeRatio: 0.4
   heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1
   hitEffect: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
-  hitEffectScale: 0.15
-  slamEffect: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
-  slamEffectScale: 0.6
+  hitEffectScale: 0.22
+  slamEffects:
+  - prefab: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
+    scale: 0.5
+    offset: {x: 0, y: 0, z: 0}
+  - prefab: {fileID: 5610010966355794069, guid: 803ecf87f61d9fb4f84ba6319ba95c9c, type: 3}
+    scale: 0.3
+    offset: {x: 0, y: 0, z: 0}
+  - prefab: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
+    scale: 1.2
+    offset: {x: 0, y: 0, z: 0}
+  - prefab: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
+    scale: 0.9
+    offset: {x: 0, y: 0.2, z: 0}
+  - prefab: {fileID: 4035903591278710484, guid: aa122f157eac1c8428ae5db8a315ccd8, type: 3}
+    scale: 0.1
+    offset: {x: 0, y: 0.3, z: 0}
   swingSound: {fileID: 0}
   hitSound: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
   soundVolume: 0.9

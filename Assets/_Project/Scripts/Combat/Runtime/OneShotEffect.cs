@@ -14,6 +14,29 @@ namespace TpsDungeon.Combat
             if (prefab == null) return null;
 
             GameObject instance = Object.Instantiate(prefab, position, rotation);
+            Prepare(instance, scale, false);
+            Object.Destroy(instance, lifetime);
+            return instance;
+        }
+
+        /// <summary>
+        /// parent の子として local の位置・向きに出し、parent と一緒に動かす（走りながら出す斬撃など）。
+        /// 出た粒も置き去りにならないよう、パーティクルは parent の座標系で動かす。
+        /// </summary>
+        public static GameObject SpawnAttached(GameObject prefab, Transform parent, Vector3 localPosition, Quaternion localRotation,
+            float scale = 1f, float lifetime = 3f)
+        {
+            if (prefab == null || parent == null) return null;
+
+            GameObject instance = Object.Instantiate(prefab, parent);
+            instance.transform.SetLocalPositionAndRotation(localPosition, localRotation);
+            Prepare(instance, scale, true);
+            Object.Destroy(instance, lifetime);
+            return instance;
+        }
+
+        private static void Prepare(GameObject instance, float scale, bool local)
+        {
             bool scaled = !Mathf.Approximately(scale, 1f);
             if (scaled) instance.transform.localScale *= scale;
 
@@ -22,10 +45,8 @@ namespace TpsDungeon.Combat
                 ParticleSystem.MainModule main = particles.main;
                 main.loop = false;
                 if (scaled) main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                if (local) main.simulationSpace = ParticleSystemSimulationSpace.Local;
             }
-
-            Object.Destroy(instance, lifetime);
-            return instance;
         }
     }
 }

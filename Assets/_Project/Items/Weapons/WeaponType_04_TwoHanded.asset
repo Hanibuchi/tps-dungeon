@@ -104,19 +104,21 @@ MonoBehaviour:
   shockwaveSpeed: 14
   shockwaveWidth: 1.2
   shockwaveSpacingAngle: 20
-  shockwaveEffect: {fileID: 0}
-  shockwaveEffectScale: 1
+  shockwaveEffects: []
+  shockwaveEffectSpacing: 1
   followUpDamageRatio: 0.6
   followUpSpacing: 1.5
   followUpInterval: 0.18
+  followUpEffectScale: 0.7
+  slamShake: 0
+  followUpShakeRatio: 0.4
   heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 3153472991145048103, guid: 3407e378c048bb5438424b28c7740b48, type: 3}
   swingEffectScale: 0.9
   hitEffect: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   hitEffectScale: 0.8
-  slamEffect: {fileID: 0}
-  slamEffectScale: 1
+  slamEffects: []
   swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
   hitSound: {fileID: 8300000, guid: 369cb5e02638448c6ab53fdd7ec4746a, type: 3}
   soundVolume: 0.8

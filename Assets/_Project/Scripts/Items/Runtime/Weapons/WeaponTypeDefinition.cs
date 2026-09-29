@@ -73,11 +73,11 @@ namespace TpsDungeon.Items
         [SerializeField, Range(0f, 90f), Tooltip("隣り合う衝撃波の間の角度（度）。前を中心に左右対称に広げる。")]
         private float shockwaveSpacingAngle = 20f;
 
-        [SerializeField, Tooltip("衝撃波の先頭に付いて進む見た目（任意）。")]
-        private GameObject shockwaveEffect;
+        [SerializeField, Tooltip("衝撃波の通り道に、一定の間隔で噴き上げる見た目（重ねて出す。任意）。")]
+        private EffectLayer[] shockwaveEffects = Array.Empty<EffectLayer>();
 
-        [SerializeField, Min(0.01f)]
-        private float shockwaveEffectScale = 1f;
+        [SerializeField, Min(0.1f), Tooltip("通り道の見た目を出す間隔（m）。")]
+        private float shockwaveEffectSpacing = 1f;
 
         [Header("追撃（Slam の段。「多重」のエンチャント 1 つで 1 回。値は仮）")]
         [SerializeField, Min(0f), Tooltip("1 回が当てるダメージ（その段の 1 撃に対する割合）。")]
@@ -88,6 +88,16 @@ namespace TpsDungeon.Items
 
         [SerializeField, Min(0f), Tooltip("k 回目は本撃から k × この秒数あとに落とす。")]
         private float followUpInterval = 0.18f;
+
+        [SerializeField, Min(0.01f), Tooltip("追撃の着弾の見た目は、本撃の着弾（slamEffects）をこの倍率で出す。")]
+        private float followUpEffectScale = 0.7f;
+
+        [Header("カメラ揺れ（Slam の段）")]
+        [SerializeField, Min(0f), Tooltip("着弾の瞬間にカメラを揺らす強さ。0 で揺らさない。")]
+        private float slamShake;
+
+        [SerializeField, Range(0f, 1f), Tooltip("追撃の着弾で揺らす強さ（本撃に対する割合）。")]
+        private float followUpShakeRatio = 0.4f;
 
         [Header("見た目")]
         [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。" +
@@ -110,11 +120,8 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0.01f), Tooltip("命中のエフェクトの大きさの倍率。")]
         private float hitEffectScale = 1f;
 
-        [SerializeField, Tooltip("Slam の段で着弾点に出す（任意）。追撃の着弾にも出す。")]
-        private GameObject slamEffect;
-
-        [SerializeField, Min(0.01f), Tooltip("着弾のエフェクトの大きさの倍率。")]
-        private float slamEffectScale = 1f;
+        [SerializeField, Tooltip("Slam の段で着弾点に重ねて出す（任意）。追撃の着弾にも縮めて出す。")]
+        private EffectLayer[] slamEffects = Array.Empty<EffectLayer>();
 
         [Header("効果音（未設定なら鳴らさない）")]
         [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
@@ -150,13 +157,15 @@ namespace TpsDungeon.Items
         public float ShockwaveSpeed => shockwaveSpeed;
         public float ShockwaveWidth => shockwaveWidth;
         public float ShockwaveSpacingAngle => shockwaveSpacingAngle;
-        public GameObject ShockwaveEffect => shockwaveEffect;
-        public float ShockwaveEffectScale => shockwaveEffectScale;
+        public IReadOnlyList<EffectLayer> ShockwaveEffects => shockwaveEffects ?? Array.Empty<EffectLayer>();
+        public float ShockwaveEffectSpacing => shockwaveEffectSpacing;
         public float FollowUpDamageRatio => followUpDamageRatio;
         public float FollowUpSpacing => followUpSpacing;
         public float FollowUpInterval => followUpInterval;
-        public GameObject SlamEffect => slamEffect;
-        public float SlamEffectScale => slamEffectScale;
+        public float FollowUpEffectScale => followUpEffectScale;
+        public float SlamShake => slamShake;
+        public float FollowUpShakeRatio => followUpShakeRatio;
+        public IReadOnlyList<EffectLayer> SlamEffects => slamEffects ?? Array.Empty<EffectLayer>();
         public GameObject HitEffect => hitEffect;
         public float HitEffectScale => hitEffectScale;
         public AudioClip SwingSound => swingSound;

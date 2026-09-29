@@ -124,7 +124,8 @@ namespace TpsDungeon.Combat
             public int Damage;
             public float Knockback;
             public float ReactionScale;
-            public GameObject Effect;
+            /// <summary>次に通り道の見た目を出す距離（着弾点から、m）。</summary>
+            public float NextEffectAt;
             public readonly HashSet<EnemyHealth> Hit = new HashSet<EnemyHealth>();
         }
 
@@ -358,8 +359,13 @@ namespace TpsDungeon.Combat
         {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
-            OneShotEffect.Spawn(type.SwingEffect, swingPoint,
-                transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            // 走る段の斬撃は、走り出しの位置に置き去りにせず体に付けて一緒に走らせる。
+            if (shape.motion == MeleeStepMotion.Lunge)
+                OneShotEffect.SpawnAttached(type.SwingEffect, transform, shape.swingEffectOffset,
+                    Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            else
+                OneShotEffect.Spawn(type.SwingEffect, swingPoint,
+                    transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
             PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
         }
 
@@ -577,7 +583,8 @@ namespace TpsDungeon.Combat
 
             // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に鳴らす。
             Vector3 center = SlamCenter(shape);
-            OneShotEffect.Spawn(type.SlamEffect, center, transform.rotation, type.SlamEffectScale);
+            SpawnLayers(type.SlamEffects, center, transform.rotation, 1f);
+            ImpactShake.At(center, type.SlamShake);
             PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, center, type.SoundVolume);
 
             int hits = 0;
@@ -603,9 +610,7 @@ namespace TpsDungeon.Combat
                     Damage = MeleeWeaponStats.Share(baseHit, type.ShockwaveDamageRatio),
                     Knockback = shape.knockback * 0.5f + stats.KnockbackBonus,
                     ReactionScale = ReactionScale(shape),
-                    Effect = OneShotEffect.Spawn(type.ShockwaveEffect, center + direction * Mathf.Min(radius, type.ShockwaveRange),
-                        Quaternion.LookRotation(direction, Vector3.up),
-                        type.ShockwaveEffectScale, type.ShockwaveRange / type.ShockwaveSpeed + 2f),
+                    NextEffectAt = Mathf.Min(radius, type.ShockwaveRange),
                 };
                 if (wave.Damage > 0) shockwaves.Add(wave);
             }
@@ -674,7 +679,8 @@ namespace TpsDungeon.Combat
                 if (f.Delay > 0f) continue;
 
                 followUps.RemoveAt(i);
-                OneShotEffect.Spawn(f.Type.SlamEffect, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.SlamEffectScale);
+                SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale);
+                ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
                 PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
 
                 float radius = Mathf.Max(0f, f.Shape.slamRadius) * (stats != null ? stats.HitboxScale : 1f);
@@ -703,7 +709,12 @@ namespace TpsDungeon.Combat
                 Quaternion rotation = Quaternion.LookRotation(w.Direction, Vector3.up);
                 Vector3 center = w.Origin + w.Direction * ((from + to) * 0.5f) + Vector3.up * (width * 0.5f);
                 var halfExtents = new Vector3(width * 0.5f, width * 0.5f, (to - from) * 0.5f + width * 0.25f);
-                if (w.Effect != null) w.Effect.transform.position = w.Origin + w.Direction * to;
+                // 通り道に一定の間隔で噴き上げて、走っていくのが見えるようにする。
+                while (w.NextEffectAt <= to + 1e-4f)
+                {
+                    SpawnLayers(w.Type.ShockwaveEffects, w.Origin + w.Direction * w.NextEffectAt, rotation, 1f);
+                    w.NextEffectAt += Mathf.Max(0.1f, w.Type.ShockwaveEffectSpacing);
+                }
 
                 int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, rotation, hitMask, QueryTriggerInteraction.Ignore);
                 for (int j = 0; j < count; j++)
@@ -723,6 +734,16 @@ namespace TpsDungeon.Combat
         }
 
         // ---- 共通 ----
+
+        /// <summary>重ねのエフェクトを全部、position に rotation の向きで出す。scale は重ね全体に掛ける倍率。</summary>
+        private static void SpawnLayers(IReadOnlyList<EffectLayer> layers, Vector3 position, Quaternion rotation, float scale)
+        {
+            foreach (EffectLayer layer in layers)
+            {
+                if (layer.prefab == null) continue;
+                OneShotEffect.Spawn(layer.prefab, position + rotation * layer.offset, rotation, Mathf.Max(0.01f, layer.scale) * scale);
+            }
+        }
 
         private static Vector3 FlatDirection(Vector3 from, Vector3 to, Vector3 fallback)
         {
