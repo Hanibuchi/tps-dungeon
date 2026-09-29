@@ -54,6 +54,27 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void 素手の2段は同じ重さで_エンチャント無しでも1撃が出る()
+        {
+            // 素手の仮の段: 比重 1/1、時間 0.45/0.45（1 周 0.9 秒）。強さ 3。
+            MeleeWeaponStats stats = MeleeWeaponStats.Compute(new MeleeWeaponInputs
+            {
+                Strength = 3f,
+                CharacterAttackWeight = 1f,
+                StepWeights = new[] { 1f, 1f },
+                StepDurations = new[] { 0.45f, 0.45f },
+                Enchantments = EnchantmentTotals.Empty,
+                BaseCritChance = 0.05f,
+                BaseCritMultiplier = 1.5f,
+            });
+
+            Assert.AreEqual(2, stats.StepCount);
+            Assert.AreEqual(1, stats.HitDamage(0)); // 3 × 0.9 ÷ 2 = 1.35 → 1
+            Assert.AreEqual(stats.HitDamage(0), stats.HitDamage(1));
+            Assert.AreEqual(1f, stats.AttackSpeed);
+        }
+
+        [Test]
         public void 四段目は他の段より強い()
         {
             MeleeWeaponStats stats = Compute(37f);

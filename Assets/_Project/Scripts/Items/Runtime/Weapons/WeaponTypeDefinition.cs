@@ -54,6 +54,22 @@ namespace TpsDungeon.Items
         [SerializeField]
         private Vector3 heldLocalEuler;
 
+        [Header("エフェクト")]
+        [SerializeField, Tooltip("振りの判定の瞬間に出す（任意）。向きは段ごとの swingEffectEuler。")]
+        private GameObject swingEffect;
+
+        [SerializeField, Tooltip("振りのエフェクトを出す位置。キャラの足元から見たローカル位置（m）。")]
+        private Vector3 swingEffectOffset = new Vector3(0f, 1.1f, 0.3f);
+
+        [SerializeField, Min(0.01f), Tooltip("振りのエフェクトの大きさの倍率。")]
+        private float swingEffectScale = 1f;
+
+        [SerializeField, Tooltip("敵に当たった所に出す（任意）。")]
+        private GameObject hitEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("命中のエフェクトの大きさの倍率。")]
+        private float hitEffectScale = 1f;
+
         public string Id => id;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
         public int AnimatorWeaponType => animatorWeaponType;
@@ -68,5 +84,10 @@ namespace TpsDungeon.Items
         public bool IsMelee => comboSteps != null && comboSteps.Length > 0;
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Quaternion HeldLocalRotation => Quaternion.Euler(heldLocalEuler);
+        public GameObject SwingEffect => swingEffect;
+        public Vector3 SwingEffectOffset => swingEffectOffset;
+        public float SwingEffectScale => swingEffectScale;
+        public GameObject HitEffect => hitEffect;
+        public float HitEffectScale => hitEffectScale;
     }
 }

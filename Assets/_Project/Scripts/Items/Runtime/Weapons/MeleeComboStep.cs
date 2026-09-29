@@ -24,5 +24,8 @@ namespace TpsDungeon.Items
 
         [Tooltip("当てた敵を押し出す速さ（m/s）。")]
         public float knockback;
+
+        [Tooltip("振りのエフェクトの向き（キャラから見たローカルの回転、度）。左右反転の振りなら Z を反転させる。")]
+        public Vector3 swingEffectEuler;
     }
 }
