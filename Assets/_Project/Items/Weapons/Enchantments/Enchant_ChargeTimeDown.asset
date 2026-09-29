@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9b78367075dc4594ab5611239694f2f, type: 3}
+  m_Name: Enchant_ChargeTimeDown
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnchantmentDefinition
+  kind: 11
+  displayName: "\u30C1\u30E3\u30FC\u30B8\u6642\u9593\u6E1B\u5C11"
+  description: "\u6E9C\u3081\u306B\u304B\u304B\u308B\u6642\u9593\u304C 15% \u7E2E\u3080\u3002"
+  amount: 0.15
+  secondaryAmount: 0

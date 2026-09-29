@@ -417,6 +417,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1453996205278419730}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8189682549201205282}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!4 &3715460319869569215 stripped
 Transform:
@@ -588,6 +591,27 @@ MonoBehaviour:
   clip: {fileID: 8300000, guid: d46a6165baf4e43ceb877650da7b9074, type: 3}
   volume: 1
   minInterval: 0.05
+--- !u!114 &8189682549201205282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bb18f34f2d0a43cb9e4268ff74bdd94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Combat::TpsDungeon.Combat.MeleeAttacker
+  playerInput: {fileID: 4090438157950177801}
+  attackActionName: Player/Attack
+  animator: {fileID: 7309302257321726661}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  faceCameraOnAttack: 1
+  explosionEffect: {fileID: 0}
+  logHits: 0
 --- !u!114 &4090438157950177801 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
@@ -599,6 +623,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!95 &7309302257321726661 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 6982812146204527121, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+  m_PrefabInstance: {fileID: 398626891475622100}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8409445025338273527
 PrefabInstance:
   m_ObjectHideFlags: 0

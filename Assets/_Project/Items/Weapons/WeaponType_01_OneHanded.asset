@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
+  m_Name: WeaponType_01_OneHanded
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
+  id: 01
+  displayName: "\u7247\u624B\u8FD1\u8DDD\u96E2"
+  animatorWeaponType: 1
+  canUseShield: 1
+  allowedEnchantments:
+  - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+  - {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+  - {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+  - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+  - {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+  - {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
+  - {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
+  enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  characterAttackWeight: 1
+  baseCritChance: 0.05
+  baseCritMultiplier: 1.5
+  comboSteps:
+  - damageWeight: 1
+    duration: 0.45
+    hitTime: 0.18
+    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
+    hitboxCenter: {x: 0, y: 1, z: 1}
+    knockback: 0.5
+  - damageWeight: 1
+    duration: 0.45
+    hitTime: 0.18
+    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
+    hitboxCenter: {x: 0, y: 1, z: 1}
+    knockback: 0.5
+  - damageWeight: 1
+    duration: 0.5
+    hitTime: 0.2
+    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
+    hitboxCenter: {x: 0, y: 1, z: 1}
+    knockback: 0.5
+  - damageWeight: 2
+    duration: 0.8
+    hitTime: 0.4
+    hitboxSize: {x: 2, y: 1.2, z: 1.8}
+    hitboxCenter: {x: 0, y: 1, z: 1.2}
+    knockback: 3
+  comboChainGrace: 0.25
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
