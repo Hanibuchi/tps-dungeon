@@ -40,11 +40,12 @@ namespace TpsDungeon.Items.Editor
         public const string ExplosionEffectPath = HovlPrefabs + "Hits and explosions/Explosion.prefab";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
-        private const string SoundEffectLab = "Assets/ThirdParty/Sound/SoundEffect-Lab/";
-        public const string SwingSoundPath = SoundEffectLab + "ナイフを投げる.mp3";
-        public const string SwordHitSoundPath = SoundEffectLab + "剣で斬る2.mp3";
-        public const string PunchHitSoundPath = SoundEffectLab + "打撃3.mp3";
-        public const string ExplosionSoundPath = SoundEffectLab + "爆発2.mp3";
+        private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
+        public const string SwingSoundPath = ArmsSounds + "ナイフを投げる.mp3";
+        public const string SwordHitSoundPath = ArmsSounds + "剣で斬る2.mp3";
+        public const string SwordFinisherHitSoundPath = ArmsSounds + "剣で斬る1.mp3";
+        public const string PunchHitSoundPath = ArmsSounds + "打撃3.mp3";
+        public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
 
@@ -280,6 +281,10 @@ namespace TpsDungeon.Items.Editor
                 new ComboStepSpec(2f, 0.80f, 0.50f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f, low, new Vector3(0f, 0f, -90f)),
             });
 
+            // 4 段目（締めの重い振り）だけ命中の音を替える。
+            serialized.FindProperty("comboSteps").GetArrayElementAtIndex(3).FindPropertyRelative("hitSound").objectReferenceValue =
+                LoadSound(SwordFinisherHitSoundPath);
+
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
             serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
             serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
@@ -374,6 +379,9 @@ namespace TpsDungeon.Items.Editor
                 step.FindPropertyRelative("knockback").floatValue = steps[i].Knockback;
                 step.FindPropertyRelative("swingEffectOffset").vector3Value = steps[i].SwingEffectOffset;
                 step.FindPropertyRelative("swingEffectEuler").vector3Value = steps[i].SwingEffectEuler;
+                // 段ごとの音の上書きは、要る段だけ呼び出し側で入れ直す。
+                step.FindPropertyRelative("swingSound").objectReferenceValue = null;
+                step.FindPropertyRelative("hitSound").objectReferenceValue = null;
             }
         }
 

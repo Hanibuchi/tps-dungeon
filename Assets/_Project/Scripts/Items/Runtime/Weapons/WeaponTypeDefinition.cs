@@ -68,10 +68,10 @@ namespace TpsDungeon.Items
         private float hitEffectScale = 1f;
 
         [Header("効果音（未設定なら鳴らさない）")]
-        [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。")]
+        [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
         private AudioClip swingSound;
 
-        [SerializeField, Tooltip("敵に当たったときに鳴らす音。何体に当たっても 1 振りに 1 回。敵側の被弾音にも重なる。")]
+        [SerializeField, Tooltip("敵に当たったときに鳴らす音。何体に当たっても 1 振りに 1 回。敵側の被弾音にも重なる。段ごとに替えるなら MeleeComboStep.hitSound。")]
         private AudioClip hitSound;
 
         [SerializeField, Range(0f, 1f), Tooltip("この武器種の音の音量（SE 音量に掛かる）。")]

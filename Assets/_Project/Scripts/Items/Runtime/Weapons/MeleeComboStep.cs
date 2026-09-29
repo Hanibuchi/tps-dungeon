@@ -30,5 +30,11 @@ namespace TpsDungeon.Items
 
         [Tooltip("振りのエフェクトの向き（キャラから見たローカルの回転、度）。Z で振りの傾きに合わせる。")]
         public Vector3 swingEffectEuler;
+
+        [Tooltip("この段だけ振りの音を替える。未設定なら武器種の swingSound。")]
+        public AudioClip swingSound;
+
+        [Tooltip("この段だけ命中の音を替える。未設定なら武器種の hitSound。")]
+        public AudioClip hitSound;
     }
 }

@@ -41,8 +41,8 @@ namespace TpsDungeon.Enemies.Editor
         private const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
         // 仮の効果音（効果音ラボ）。見つからなければ空のまま。
-        private const string StunClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/弓矢が刺さる (1).mp3";
-        private const string FaintClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/翼竜の鳴き声1.mp3";
+        private const string StunClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/弓矢が刺さる (1).mp3";
+        private const string FaintClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/翼竜の鳴き声1.mp3";
 
         public const string SpeedParam = "Speed";
         public const string AttackParam = "Attack";

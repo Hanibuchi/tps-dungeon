@@ -259,7 +259,7 @@ namespace TpsDungeon.Combat
             Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
             OneShotEffect.Spawn(type.SwingEffect, swingPoint,
                 transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
-            PlaySound(type.SwingSound, swingPoint, type.SoundVolume);
+            PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
             int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, transform.rotation, hitMask, QueryTriggerInteraction.Ignore);
 
             int hits = 0;
@@ -279,7 +279,7 @@ namespace TpsDungeon.Combat
 
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
                     shape.knockback + stats.KnockbackBonus, stats.ReactionScale));
-                if (hits == 0) PlaySound(type.HitSound, point, type.SoundVolume);
+                if (hits == 0) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
                 hits++;
                 Quaternion facing = Quaternion.LookRotation(direction.normalized, Vector3.up);
                 OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
