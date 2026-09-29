@@ -93,6 +93,9 @@ namespace TpsDungeon.Combat
         private readonly Collider[] overlap = new Collider[32];
 
         private Lunge lunge;
+
+        // 溜めてから放つ振りのエフェクト（SpawnLeadingSwingEffect）の、放つ粒。判定の瞬間にこちらから出す。
+        private readonly List<ParticleSystem> pendingRelease = new List<ParticleSystem>();
         private readonly List<Collider> lungeIgnored = new List<Collider>();
         private readonly List<Shockwave> shockwaves = new List<Shockwave>();
         private readonly List<FollowUp> followUps = new List<FollowUp>();
@@ -124,7 +127,8 @@ namespace TpsDungeon.Combat
             public int Damage;
             public float Knockback;
             public float ReactionScale;
-            public GameObject Effect;
+            /// <summary>次に通り道の見た目を出す距離（着弾点から、m）。</summary>
+            public float NextEffectAt;
             public readonly HashSet<EnemyHealth> Hit = new HashSet<EnemyHealth>();
         }
 
@@ -311,6 +315,7 @@ namespace TpsDungeon.Combat
         {
             hitThisSwing.Clear();
             if (faceAimOnAttack) FaceAim();
+            SpawnLeadingSwingEffect(step);
 
             if (animator == null) return;
             if (hasComboStepParam) animator.SetInteger(ComboStepParam, step);
@@ -330,6 +335,7 @@ namespace TpsDungeon.Combat
         {
             if (heldWeapon == null || stats == null || step < 0) return;
 
+            ReleaseLeadingEffect();
             MeleeComboStep shape = heldWeapon.WeaponType.ComboSteps[step];
             switch (shape.motion)
             {
@@ -358,9 +364,77 @@ namespace TpsDungeon.Combat
         {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
-            OneShotEffect.Spawn(type.SwingEffect, swingPoint,
-                transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            // 溜めてから放つ素材は、振り始めに SpawnLeadingSwingEffect で出してあるので、ここでは音だけ。
+            bool alreadySpawned = type.SwingEffectLeadTime > 0f;
+            // 走る段の斬撃は、走り出しの位置に置き去りにせず体に付けて一緒に走らせる。
+            if (!alreadySpawned && shape.motion == MeleeStepMotion.Lunge)
+                OneShotEffect.SpawnAttached(type.SwingEffect, transform, shape.swingEffectOffset,
+                    Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            else if (!alreadySpawned)
+                OneShotEffect.Spawn(type.SwingEffect, swingPoint,
+                    transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
             PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
+        }
+
+        /// <summary>
+        /// 溜めてから放つ振りのエフェクト（武器種の SwingEffectLeadTime が正）を、段の振り始めに体へ付けて出す。
+        /// 溜め（素材の中で SwingEffectLeadTime より前に出る粒）はそのまま流し、放つ粒（それより後にしか出ない粒）は止めておいて、
+        /// 段の判定の瞬間（ReleaseLeadingEffect）にこちらから出す。素材の時計に任せると、判定とずれて先に飛んでしまうため。
+        /// 放つ粒は世界の座標で動かし、放ったあとは体から離れて自分の速さで飛ぶ。
+        /// </summary>
+        private void SpawnLeadingSwingEffect(int step)
+        {
+            pendingRelease.Clear();
+            if (heldWeapon == null || step < 0) return;
+
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            if (type.SwingEffectLeadTime <= 0f || type.SwingEffect == null) return;
+
+            MeleeComboStep shape = type.ComboSteps[step];
+            GameObject effect = OneShotEffect.SpawnAttached(type.SwingEffect, transform, shape.swingEffectOffset,
+                Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            if (effect == null) return;
+
+            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
+            {
+                if (!EmitsOnlyAfter(particles, type.SwingEffectLeadTime)) continue;
+
+                ParticleSystem.EmissionModule emission = particles.emission;
+                emission.enabled = false;
+                ParticleSystem.MainModule main = particles.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                pendingRelease.Add(particles);
+            }
+        }
+
+        /// <summary>particles が time 秒より後のバーストでしか粒を出さないか（ずっと出し続ける物は偽）。</summary>
+        private static bool EmitsOnlyAfter(ParticleSystem particles, float time)
+        {
+            ParticleSystem.EmissionModule emission = particles.emission;
+            if (emission.burstCount == 0 || emission.rateOverTime.constantMax > 0f || emission.rateOverDistance.constantMax > 0f) return false;
+
+            for (int i = 0; i < emission.burstCount; i++)
+            {
+                if (emission.GetBurst(i).time < time - 0.01f) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>止めておいた放つ粒を、バーストの数だけ今出す（段の判定の瞬間）。</summary>
+        private void ReleaseLeadingEffect()
+        {
+            foreach (ParticleSystem particles in pendingRelease)
+            {
+                if (particles == null) continue;
+
+                ParticleSystem.EmissionModule emission = particles.emission;
+                int count = 0;
+                for (int i = 0; i < emission.burstCount; i++) count += Mathf.RoundToInt(emission.GetBurst(i).count.constantMax);
+                particles.Emit(Mathf.Max(1, count));
+            }
+
+            pendingRelease.Clear();
         }
 
         /// <summary>今の位置の段の箱に入った、この振りでまだ当てていない敵に当てる。</summary>
@@ -577,7 +651,8 @@ namespace TpsDungeon.Combat
 
             // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に鳴らす。
             Vector3 center = SlamCenter(shape);
-            OneShotEffect.Spawn(type.SlamEffect, center, transform.rotation, type.SlamEffectScale);
+            SpawnLayers(type.SlamEffects, center, transform.rotation, 1f);
+            ImpactShake.At(center, type.SlamShake);
             PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, center, type.SoundVolume);
 
             int hits = 0;
@@ -603,9 +678,7 @@ namespace TpsDungeon.Combat
                     Damage = MeleeWeaponStats.Share(baseHit, type.ShockwaveDamageRatio),
                     Knockback = shape.knockback * 0.5f + stats.KnockbackBonus,
                     ReactionScale = ReactionScale(shape),
-                    Effect = OneShotEffect.Spawn(type.ShockwaveEffect, center + direction * Mathf.Min(radius, type.ShockwaveRange),
-                        Quaternion.LookRotation(direction, Vector3.up),
-                        type.ShockwaveEffectScale, type.ShockwaveRange / type.ShockwaveSpeed + 2f),
+                    NextEffectAt = Mathf.Min(radius, type.ShockwaveRange),
                 };
                 if (wave.Damage > 0) shockwaves.Add(wave);
             }
@@ -674,7 +747,8 @@ namespace TpsDungeon.Combat
                 if (f.Delay > 0f) continue;
 
                 followUps.RemoveAt(i);
-                OneShotEffect.Spawn(f.Type.SlamEffect, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.SlamEffectScale);
+                SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale);
+                ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
                 PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
 
                 float radius = Mathf.Max(0f, f.Shape.slamRadius) * (stats != null ? stats.HitboxScale : 1f);
@@ -703,7 +777,12 @@ namespace TpsDungeon.Combat
                 Quaternion rotation = Quaternion.LookRotation(w.Direction, Vector3.up);
                 Vector3 center = w.Origin + w.Direction * ((from + to) * 0.5f) + Vector3.up * (width * 0.5f);
                 var halfExtents = new Vector3(width * 0.5f, width * 0.5f, (to - from) * 0.5f + width * 0.25f);
-                if (w.Effect != null) w.Effect.transform.position = w.Origin + w.Direction * to;
+                // 通り道に一定の間隔で噴き上げて、走っていくのが見えるようにする。
+                while (w.NextEffectAt <= to + 1e-4f)
+                {
+                    SpawnLayers(w.Type.ShockwaveEffects, w.Origin + w.Direction * w.NextEffectAt, rotation, 1f);
+                    w.NextEffectAt += Mathf.Max(0.1f, w.Type.ShockwaveEffectSpacing);
+                }
 
                 int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, rotation, hitMask, QueryTriggerInteraction.Ignore);
                 for (int j = 0; j < count; j++)
@@ -723,6 +802,16 @@ namespace TpsDungeon.Combat
         }
 
         // ---- 共通 ----
+
+        /// <summary>重ねのエフェクトを全部、position に rotation の向きで出す。scale は重ね全体に掛ける倍率。</summary>
+        private static void SpawnLayers(IReadOnlyList<EffectLayer> layers, Vector3 position, Quaternion rotation, float scale)
+        {
+            foreach (EffectLayer layer in layers)
+            {
+                if (layer.prefab == null) continue;
+                OneShotEffect.Spawn(layer.prefab, position + rotation * layer.offset, rotation, Mathf.Max(0.01f, layer.scale) * scale);
+            }
+        }
 
         private static Vector3 FlatDirection(Vector3 from, Vector3 to, Vector3 fallback)
         {

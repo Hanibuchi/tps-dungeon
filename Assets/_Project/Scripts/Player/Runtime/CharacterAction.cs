@@ -1,7 +1,8 @@
 namespace TpsDungeon.Player
 {
     /// <summary>
-    /// キャラの全身で再生できる動き。Blink の Animations_Starter_Pack のクリップ 1 本ずつに対応する。
+    /// キャラの全身で再生できる動き。Blink の Animations_Starter_Pack のクリップと、
+    /// Kevin Iglesias の Human Animations（Male/Combat のうち、武器の攻撃で使っていないもの）の 1 本ずつに対応する。
     /// 値は Animator の Action パラメータの条件に焼き込まれるので、並べ替えず、足すときは末尾に。
     /// 再生は <see cref="CharacterActions"/> から。Animator は CharacterAnimatorBuilder が組む。
     /// </summary>
@@ -51,5 +52,17 @@ namespace TpsDungeon.Player
         Sprint = 34,
         StrafeLeft = 35,
         StrafeRight = 36,
+
+        // ---- Kevin Iglesias の Male/Combat（Attack1H01_R・Attack2H01 は武器の攻撃だけで使うので含めない。
+        //      AttackPolearm01 はダッシュ突きでも使う） ----
+        KevinCombatIdle = 37,
+        KevinGetHit = 38,
+        KevinDeath = 39,
+        KevinAttackShield = 40,
+        KevinAttack1HLeft = 41,
+        KevinCombatIdle1H = 42,
+        KevinCombatIdle2H = 43,
+        KevinCombatIdlePolearm = 44,
+        KevinAttackPolearm = 45,
     }
 }

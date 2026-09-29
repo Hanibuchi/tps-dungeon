@@ -257,6 +257,14 @@ namespace TpsDungeon.Player.Editor
 
             // 既定は off だが、ダンジョンは壁だらけでカメラが壁に埋まるので入れておく。
             body.AvoidObstacles.Enabled = true;
+
+            // 叩きつけの着弾などの揺れ（CinemachineImpulseSource）を受ける。値は CinemachineImpulseListener の既定と同じ。
+            // 無くても揺らすとき（Combat の ImpactShake）にその場で足すが、シーンに入れておけば Inspector で調整できる。
+            var listener = rigObject.AddComponent<CinemachineImpulseListener>();
+            listener.ChannelMask = 1;
+            listener.Gain = 1f;
+            listener.UseCameraSpace = true;
+            listener.ReactionSettings = new CinemachineImpulseListener.ImpulseReaction { AmplitudeGain = 1f, FrequencyGain = 1f, Duration = 1f };
         }
 
         /// <summary>
