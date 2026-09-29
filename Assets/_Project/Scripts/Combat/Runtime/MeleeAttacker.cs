@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
 using TpsDungeon.Player;
@@ -11,7 +12,7 @@ namespace TpsDungeon.Combat
 {
     /// <summary>
     /// ホットバーで持っている近接武器で攻撃する。攻撃キーを押すたびにコンボを 1 段ずつ進め（MeleeComboState）、
-    /// 段ごとの判定の瞬間に前方の箱の中の敵へダメージを与え、振りと命中のエフェクトを出す。
+    /// 段ごとの判定の瞬間に前方の箱の中の敵へダメージを与え、振りと命中のエフェクトと音を出す。
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない。
@@ -56,6 +57,12 @@ namespace TpsDungeon.Combat
 
         [SerializeField, Min(0.01f)]
         private float explosionEffectScale = 1f;
+
+        [SerializeField, Tooltip("爆発のエンチャントで鳴らす音（任意）。")]
+        private AudioClip explosionSound;
+
+        [SerializeField, Range(0f, 1f)]
+        private float explosionSoundVolume = 1f;
 
         [SerializeField, Tooltip("当てたダメージをコンソールに出す（調整用）。")]
         private bool logHits;
@@ -249,8 +256,10 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             MeleeComboStep shape = type.ComboSteps[step];
             HitBox(shape, out Vector3 center, out Vector3 halfExtents);
-            OneShotEffect.Spawn(type.SwingEffect, transform.TransformPoint(type.SwingEffectOffset),
+            Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
+            OneShotEffect.Spawn(type.SwingEffect, swingPoint,
                 transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            PlaySound(type.SwingSound, swingPoint, type.SoundVolume);
             int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, transform.rotation, hitMask, QueryTriggerInteraction.Ignore);
 
             int hits = 0;
@@ -270,6 +279,7 @@ namespace TpsDungeon.Combat
 
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
                     shape.knockback + stats.KnockbackBonus, stats.ReactionScale));
+                if (hits == 0) PlaySound(type.HitSound, point, type.SoundVolume);
                 hits++;
                 Quaternion facing = Quaternion.LookRotation(direction.normalized, Vector3.up);
                 OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
@@ -288,6 +298,7 @@ namespace TpsDungeon.Combat
             if (damage <= 0) return;
 
             OneShotEffect.Spawn(explosionEffect, point, Quaternion.identity, explosionEffectScale);
+            PlaySound(explosionSound, point, explosionSoundVolume);
 
             explosionTargets.Clear();
             int count = Physics.OverlapSphereNonAlloc(point, stats.ExplosionRadius, overlap, hitMask, QueryTriggerInteraction.Ignore);
@@ -300,6 +311,11 @@ namespace TpsDungeon.Combat
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction));
                 if (logHits) Debug.Log($"爆発 → {enemy.name}: {dealt}", enemy);
             }
+        }
+
+        private static void PlaySound(AudioClip clip, Vector3 position, float volume)
+        {
+            if (clip != null) GameAudio.Instance?.PlaySeAt(clip, position, volume);
         }
 
         /// <summary>段の判定の箱（ワールド）。サイズのエンチャントで大きさと前への伸びが増える。</summary>

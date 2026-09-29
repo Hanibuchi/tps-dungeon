@@ -6,7 +6,8 @@
         "TpsDungeon.Items",
         "TpsDungeon.Enemies",
         "TpsDungeon.Player",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Progression",
+        "TpsDungeon.Audio"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

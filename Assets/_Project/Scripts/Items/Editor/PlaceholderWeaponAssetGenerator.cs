@@ -15,7 +15,7 @@ namespace TpsDungeon.Items.Editor
     /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     /// - 武器 3 本（Notion の武器一覧 DB で武器種＝01 のもの）と、拾える物・手に持つ見た目のプレハブ
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
-    /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを武器種に入れる
+    /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
     /// 見た目は ThirdParty の FreeSwords があればそれを、無ければプリミティブの剣を使う。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
@@ -38,6 +38,13 @@ namespace TpsDungeon.Items.Editor
         public const string PunchHitEffectPath = LanaPrefabs + "Flash/Flash_round_ellow.prefab";
         public const string CriticalHitEffectPath = HovlPrefabs + "Hits and explosions/Star hit.prefab";
         public const string ExplosionEffectPath = HovlPrefabs + "Hits and explosions/Explosion.prefab";
+
+        // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
+        private const string SoundEffectLab = "Assets/ThirdParty/Sound/SoundEffect-Lab/";
+        public const string SwingSoundPath = SoundEffectLab + "ナイフを投げる.mp3";
+        public const string SwordHitSoundPath = SoundEffectLab + "剣で斬る2.mp3";
+        public const string PunchHitSoundPath = SoundEffectLab + "打撃3.mp3";
+        public const string ExplosionSoundPath = SoundEffectLab + "爆発2.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
 
@@ -257,23 +264,30 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("baseCritMultiplier").floatValue = 1.5f;
 
             // 素早い 3 振りと、溜めの長い重い 4 段目。値は仮。
-            // 判定はモーションの刃が正面を通る瞬間に合わせる（MeleeAttack_OneHanded は 0.32 秒、4 段目は CharacterAnimatorBuilder で 0.5 秒）。
-            // 斬撃（Stone slash は水平の三日月で、左から正面を回って右へ振る）は、振りの向きに Z で傾ける:
-            // 1・3 段目は右上から左下、2 段目は左右反転で左上から右下、4 段目は真上からの縦振り。
+            // 判定はモーションの刃が正面を通る瞬間に合わせる（MeleeAttack_OneHanded は 0.32 秒、2 段目の振り上げは 0.28 秒、
+            // 4 段目は CharacterAnimatorBuilder で 0.5 秒）。
+            // 斬撃（Stone slash は水平の三日月で、左から正面を回って右へ振る。半径は 0.6 倍で約 0.8 m）は、
+            // 刃先の通り道に三日月の頂点が来る位置に出し、振りの向きに Z で傾ける:
+            // 1・3 段目は右上から左下へ振り下ろして腰の前へ、2 段目は右下から左上へ振り上げて顔の前（y≈1.75, z≈1.2）を通る、
+            // 4 段目は真上からの縦振り。
+            var low = new Vector3(0f, 1.1f, 0.3f);
             WriteComboSteps(serialized, new[]
             {
-                new ComboStepSpec(1f, 0.45f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, new Vector3(0f, 0f, -125f)),
-                new ComboStepSpec(1f, 0.45f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, new Vector3(0f, 0f, -55f)),
-                new ComboStepSpec(1f, 0.50f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, new Vector3(0f, 0f, -125f)),
-                new ComboStepSpec(2f, 0.80f, 0.50f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f, new Vector3(0f, 0f, -90f)),
+                new ComboStepSpec(1f, 0.45f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, low, new Vector3(0f, 0f, -125f)),
+                new ComboStepSpec(1f, 0.45f, 0.28f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f,
+                    new Vector3(-0.2f, 1.75f, 0.45f), new Vector3(0f, 0f, 157f)),
+                new ComboStepSpec(1f, 0.50f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, low, new Vector3(0f, 0f, -125f)),
+                new ComboStepSpec(2f, 0.80f, 0.50f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f, low, new Vector3(0f, 0f, -90f)),
             });
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
             serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
-            serialized.FindProperty("swingEffectOffset").vector3Value = new Vector3(0f, 1.1f, 0.3f);
             serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -296,14 +310,17 @@ namespace TpsDungeon.Items.Editor
             // 判定は腕が伸び切る瞬間（CharacterAnimatorBuilder でパンチを 1.4 倍にして 0.3 秒）。
             WriteComboSteps(serialized, new[]
             {
-                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero),
-                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero),
+                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero, Vector3.zero),
+                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero, Vector3.zero),
             });
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.12f; // 素材は 14 m ほどに広がる
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(PunchHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.6f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -326,10 +343,10 @@ namespace TpsDungeon.Items.Editor
         private readonly struct ComboStepSpec
         {
             public readonly float Weight, Duration, HitTime, Knockback;
-            public readonly Vector3 Size, Center, SwingEffectEuler;
+            public readonly Vector3 Size, Center, SwingEffectOffset, SwingEffectEuler;
 
             public ComboStepSpec(float weight, float duration, float hitTime, Vector3 size, Vector3 center, float knockback,
-                Vector3 swingEffectEuler)
+                Vector3 swingEffectOffset, Vector3 swingEffectEuler)
             {
                 Weight = weight;
                 Duration = duration;
@@ -337,6 +354,7 @@ namespace TpsDungeon.Items.Editor
                 Size = size;
                 Center = center;
                 Knockback = knockback;
+                SwingEffectOffset = swingEffectOffset;
                 SwingEffectEuler = swingEffectEuler;
             }
         }
@@ -354,8 +372,16 @@ namespace TpsDungeon.Items.Editor
                 step.FindPropertyRelative("hitboxSize").vector3Value = steps[i].Size;
                 step.FindPropertyRelative("hitboxCenter").vector3Value = steps[i].Center;
                 step.FindPropertyRelative("knockback").floatValue = steps[i].Knockback;
+                step.FindPropertyRelative("swingEffectOffset").vector3Value = steps[i].SwingEffectOffset;
                 step.FindPropertyRelative("swingEffectEuler").vector3Value = steps[i].SwingEffectEuler;
             }
+        }
+
+        public static AudioClip LoadSound(string path)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null) Debug.LogWarning($"効果音が無い: {path}");
+            return clip;
         }
 
         public static GameObject LoadEffect(string path)

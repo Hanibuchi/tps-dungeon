@@ -618,6 +618,8 @@ MonoBehaviour:
   criticalHitEffectScale: 0.4
   explosionEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
   explosionEffectScale: 0.5
+  explosionSound: {fileID: 8300000, guid: f564babe8474c49ee9ffa0693f462d80, type: 3}
+  explosionSoundVolume: 0.8
   logHits: 0
 --- !u!114 &8938358473402762286
 MonoBehaviour:

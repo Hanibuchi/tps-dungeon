@@ -57,6 +57,7 @@ namespace TpsDungeon.Player.Editor
         private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
         private const string BlinkPack = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/";
         private const string BlinkCombat = BlinkPack + "Combat/";
+        private const string KevinCombat = "Assets/ThirdParty/Animation/Kevin Iglesias/Human Animations/Animations/Male/Combat/";
 
         /// <summary>
         /// Action 層に置く動きと、その元のクリップ（パック内のファイルとクリップ名）。パックのクリップは tpose 以外全部。
@@ -298,7 +299,8 @@ namespace TpsDungeon.Player.Editor
         }
 
         /// <summary>
-        /// 片手武器の 4 段コンボ。素材の振りが 1 つしかないので、2 段目は左右反転、4 段目は両手武器の重い振りで代用する。
+        /// 片手武器の 4 段コンボ。1・3 段目は右上からの振り下ろし、2 段目は Kevin Iglesias の右手の突き（0.30 秒で伸び切る）、
+        /// 4 段目は両手武器の重い振りで代用する。剣は右手に持たせるので、左右反転（左手で振る）は使わない。
         /// 両手武器の振りは振り下ろしが 0.8 秒と遅いので 1.6 倍で回し、0.5 秒で当たるようにする（武器種の hitTime と揃える）。
         /// </summary>
         private static void BuildOneHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
@@ -307,7 +309,8 @@ namespace TpsDungeon.Player.Editor
             for (int i = 0; i < steps.Length; i++)
             {
                 bool finisher = i == steps.Length - 1;
-                steps[i] = finisher ? (clips.TwoHanded, false, 1.6f) : (clips.OneHanded, i % 2 == 1, 1f);
+                if (finisher) steps[i] = (clips.TwoHanded, false, 1.6f);
+                else steps[i] = (i % 2 == 1 ? clips.OneHandedThrust : clips.OneHanded, false, 1f);
             }
 
             BuildCombo(sm, free, "OneHanded", Weapon.OneHanded, steps, new Vector3(900, -40));
@@ -544,7 +547,7 @@ namespace TpsDungeon.Player.Editor
         {
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
-            public AnimationClip Punch, PunchLeft, OneHanded, TwoHanded, SpellCast, BowShot;
+            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, SpellCast, BowShot;
             public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
@@ -563,6 +566,7 @@ namespace TpsDungeon.Player.Editor
                 Punch = Load(BlinkCombat + "PunchRight.fbx", "PunchRight");
                 PunchLeft = Load(BlinkCombat + "PunchLeft.fbx", "PunchLeft");
                 OneHanded = Load(BlinkCombat + "MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded");
+                OneHandedThrust = Load(KevinCombat + "1H/HumanM@Attack1H01_R.fbx", "HumanM@Attack1H01_R");
                 TwoHanded = Load(BlinkCombat + "MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");

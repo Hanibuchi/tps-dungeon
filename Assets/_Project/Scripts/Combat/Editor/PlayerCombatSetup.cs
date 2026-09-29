@@ -38,6 +38,9 @@ namespace TpsDungeon.Combat.Editor
                 serialized.FindProperty("explosionEffect").objectReferenceValue =
                     PlaceholderWeaponAssetGenerator.LoadEffect(PlaceholderWeaponAssetGenerator.ExplosionEffectPath);
                 serialized.FindProperty("explosionEffectScale").floatValue = 0.5f;
+                serialized.FindProperty("explosionSound").objectReferenceValue =
+                    PlaceholderWeaponAssetGenerator.LoadSound(PlaceholderWeaponAssetGenerator.ExplosionSoundPath);
+                serialized.FindProperty("explosionSoundVolume").floatValue = 0.8f;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);

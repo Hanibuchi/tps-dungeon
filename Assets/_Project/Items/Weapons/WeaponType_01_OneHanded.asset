@@ -37,20 +37,23 @@ MonoBehaviour:
     hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
     hitboxCenter: {x: 0, y: 1, z: 1}
     knockback: 0.5
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
     swingEffectEuler: {x: 0, y: 0, z: -125}
   - damageWeight: 1
     duration: 0.45
-    hitTime: 0.32
+    hitTime: 0.28
     hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
     hitboxCenter: {x: 0, y: 1, z: 1}
     knockback: 0.5
-    swingEffectEuler: {x: 0, y: 0, z: -55}
+    swingEffectOffset: {x: -0.2, y: 1.75, z: 0.45}
+    swingEffectEuler: {x: 0, y: 0, z: 157}
   - damageWeight: 1
     duration: 0.5
     hitTime: 0.32
     hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
     hitboxCenter: {x: 0, y: 1, z: 1}
     knockback: 0.5
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
     swingEffectEuler: {x: 0, y: 0, z: -125}
   - damageWeight: 2
     duration: 0.8
@@ -58,12 +61,15 @@ MonoBehaviour:
     hitboxSize: {x: 2, y: 1.2, z: 1.8}
     hitboxCenter: {x: 0, y: 1, z: 1.2}
     knockback: 3
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
     swingEffectEuler: {x: 0, y: 0, z: -90}
   comboChainGrace: 0.25
   heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 3153472991145048103, guid: 3407e378c048bb5438424b28c7740b48, type: 3}
-  swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
   swingEffectScale: 0.6
   hitEffect: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   hitEffectScale: 0.6
+  swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
+  hitSound: {fileID: 8300000, guid: 369cb5e02638448c6ab53fdd7ec4746a, type: 3}
+  soundVolume: 0.8

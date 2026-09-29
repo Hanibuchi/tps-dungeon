@@ -55,11 +55,8 @@ namespace TpsDungeon.Items
         private Vector3 heldLocalEuler;
 
         [Header("エフェクト")]
-        [SerializeField, Tooltip("振りの判定の瞬間に出す（任意）。向きは段ごとの swingEffectEuler。")]
+        [SerializeField, Tooltip("振りの判定の瞬間に出す（任意）。位置と向きは段ごとの swingEffectOffset / swingEffectEuler。")]
         private GameObject swingEffect;
-
-        [SerializeField, Tooltip("振りのエフェクトを出す位置。キャラの足元から見たローカル位置（m）。")]
-        private Vector3 swingEffectOffset = new Vector3(0f, 1.1f, 0.3f);
 
         [SerializeField, Min(0.01f), Tooltip("振りのエフェクトの大きさの倍率。")]
         private float swingEffectScale = 1f;
@@ -69,6 +66,16 @@ namespace TpsDungeon.Items
 
         [SerializeField, Min(0.01f), Tooltip("命中のエフェクトの大きさの倍率。")]
         private float hitEffectScale = 1f;
+
+        [Header("効果音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。")]
+        private AudioClip swingSound;
+
+        [SerializeField, Tooltip("敵に当たったときに鳴らす音。何体に当たっても 1 振りに 1 回。敵側の被弾音にも重なる。")]
+        private AudioClip hitSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("この武器種の音の音量（SE 音量に掛かる）。")]
+        private float soundVolume = 1f;
 
         public string Id => id;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
@@ -85,9 +92,11 @@ namespace TpsDungeon.Items
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Quaternion HeldLocalRotation => Quaternion.Euler(heldLocalEuler);
         public GameObject SwingEffect => swingEffect;
-        public Vector3 SwingEffectOffset => swingEffectOffset;
         public float SwingEffectScale => swingEffectScale;
         public GameObject HitEffect => hitEffect;
         public float HitEffectScale => hitEffectScale;
+        public AudioClip SwingSound => swingSound;
+        public AudioClip HitSound => hitSound;
+        public float SoundVolume => soundVolume;
     }
 }
