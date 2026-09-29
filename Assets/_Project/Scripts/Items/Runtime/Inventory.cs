@@ -4,12 +4,12 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// 持ち物の枠の並び。先頭の <see cref="HotbarSize"/> 枠がホットバー、その後ろがバッグ。
-    /// 1 枠に 1 個（重ね持ちはしない）。空き枠は null。
+    /// 1 枠に 1 個（重ね持ちはしない）。枠には個体（ItemInstance）が入り、空き枠は null。
     /// 並べ替えの規則だけを持ち、見た目や入力は扱わない。
     /// </summary>
     public sealed class Inventory
     {
-        private ItemDefinition[] slots;
+        private ItemInstance[] slots;
 
         public Inventory(int hotbarSize, int bagCapacity)
         {
@@ -17,7 +17,7 @@ namespace TpsDungeon.Items
             if (bagCapacity < 0) throw new ArgumentOutOfRangeException(nameof(bagCapacity));
 
             HotbarSize = hotbarSize;
-            slots = new ItemDefinition[hotbarSize + bagCapacity];
+            slots = new ItemInstance[hotbarSize + bagCapacity];
         }
 
         /// <summary>ホットバーの枠の数。枠番号 0 から HotbarSize - 1 がホットバー。</summary>
@@ -33,7 +33,7 @@ namespace TpsDungeon.Items
         public event Action<Inventory> Changed;
 
         /// <summary>index 番目の枠の中身。空きや範囲外なら null。</summary>
-        public ItemDefinition this[int index] => IsValid(index) ? slots[index] : null;
+        public ItemInstance this[int index] => IsValid(index) ? slots[index] : null;
 
         public bool IsHotbar(int index) => index >= 0 && index < HotbarSize;
 
@@ -48,7 +48,7 @@ namespace TpsDungeon.Items
         /// 拾ったものを入れる。ホットバーの左から順に空きを探し、埋まっていればバッグの先頭から。
         /// 入れた枠の番号を返す。満杯なら -1。
         /// </summary>
-        public int TryAdd(ItemDefinition item)
+        public int TryAdd(ItemInstance item)
         {
             if (item == null) return -1;
 
@@ -89,11 +89,11 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>index 番目の枠を空け、入っていたものを返す。空きや範囲外なら null。</summary>
-        public ItemDefinition RemoveAt(int index)
+        public ItemInstance RemoveAt(int index)
         {
             if (!IsValid(index) || slots[index] == null) return null;
 
-            ItemDefinition item = slots[index];
+            ItemInstance item = slots[index];
             slots[index] = null;
             Changed?.Invoke(this);
             return item;

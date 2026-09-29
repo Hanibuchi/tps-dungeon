@@ -277,7 +277,7 @@ namespace TpsDungeon.Menu.UI
             int selected = hotbar != null ? hotbar.SelectedIndex : -1;
             for (int i = 0; i < slots.Count; i++)
             {
-                ItemDefinition item = items[i];
+                ItemInstance item = items[i];
                 ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
                 slots[i].EnableInClassList(ItemSlot.SelectedClass, items.IsHotbar(i) && i == selected);
             }
@@ -320,7 +320,7 @@ namespace TpsDungeon.Menu.UI
 
             if (ghost != null)
             {
-                ItemDefinition item = inventory.Inventory[index];
+                ItemInstance item = inventory.Inventory[index];
                 ghost.style.backgroundImage = item != null && item.Icon != null ? new StyleBackground(item.Icon) : new StyleBackground(StyleKeyword.None);
                 ghost.style.display = DisplayStyle.Flex;
                 ghost.BringToFront();
@@ -431,12 +431,12 @@ namespace TpsDungeon.Menu.UI
             if (details == null || inventory == null) return;
 
             int index = dragFrom >= 0 ? dragFrom : hoverIndex;
-            ItemDefinition item = inventory.Inventory[index];
+            ItemInstance item = inventory.Inventory[index];
 
             // 何も合わせていないときは枠だけ残して文字は出さない。
             details.EnableInClassList(DetailsEmptyClass, item == null);
             if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : string.Empty;
-            if (detailsBody != null) detailsBody.text = item != null ? item.Description : string.Empty;
+            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText() : string.Empty;
             if (detailsIcon != null)
             {
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null

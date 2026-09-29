@@ -69,7 +69,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>拾ったものを入れる。入らなければ false。</summary>
-        public bool TryAdd(ItemDefinition item) => Inventory.TryAdd(item) >= 0;
+        public bool TryAdd(ItemInstance item) => Inventory.TryAdd(item) >= 0;
 
         /// <summary>
         /// index 番目の枠のものを足元（キャラの少し前）に捨て、拾える物として置く。
@@ -77,12 +77,12 @@ namespace TpsDungeon.Items
         /// </summary>
         public bool Drop(int index)
         {
-            ItemDefinition item = Inventory[index];
+            ItemInstance item = Inventory[index];
             if (item == null) return false;
 
             if (item.WorldPrefab == null)
             {
-                Debug.LogWarning($"{item.DisplayName} には捨てたときに出す物が無いので捨てられない", item);
+                Debug.LogWarning($"{item.DisplayName} には捨てたときに出す物が無いので捨てられない", item.Definition);
                 return false;
             }
 
@@ -92,7 +92,7 @@ namespace TpsDungeon.Items
             Quaternion rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
             ItemPickup pickup = Instantiate(item.WorldPrefab, position, rotation);
             pickup.name = item.WorldPrefab.name;
-            pickup.Definition = item;
+            pickup.Instance = item;
             return true;
         }
 

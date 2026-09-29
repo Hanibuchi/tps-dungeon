@@ -6,7 +6,7 @@ namespace TpsDungeon.Items
     /// アイテム 1 種類の定義。インベントリの枠にはこれへの参照が入る（重ね持ちはしないので個数は持たない）。
     /// </summary>
     [CreateAssetMenu(fileName = "Item", menuName = "TPS Dungeon/Item")]
-    public sealed class ItemDefinition : ScriptableObject
+    public class ItemDefinition : ScriptableObject
     {
         [SerializeField, Tooltip("セーブなどで使う識別子。種類ごとに重ならないようにする。")]
         private string id;

@@ -302,7 +302,7 @@ namespace TpsDungeon.Hud
 
             for (int i = 0; i < slots.Length; i++)
             {
-                ItemDefinition item = inventory != null ? inventory.Inventory[i] : null;
+                ItemInstance item = inventory != null ? inventory.Inventory[i] : null;
                 ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
             }
 
@@ -334,7 +334,7 @@ namespace TpsDungeon.Hud
             if (wasShown) UiTransitions.Flash(itemName, "hotbar-name--pop", 70);
         }
 
-        private ItemDefinition SelectedItem()
+        private ItemInstance SelectedItem()
         {
             if (hotbar == null || inventory == null) return null;
             return inventory.Inventory[hotbar.SelectedIndex];
@@ -406,6 +406,6 @@ namespace TpsDungeon.Hud
         public static float ExpFraction(int exp, int expToNext) => expToNext > 0 ? Mathf.Clamp01((float)exp / expToNext) : 1f;
 
         /// <summary>ホットバーの上に出す名前。アイテムが無ければ null（何も出さない）。</summary>
-        public static string ItemNameText(ItemDefinition item) => item != null ? item.DisplayName : null;
+        public static string ItemNameText(ItemInstance item) => item != null ? item.DisplayName : null;
     }
 }
