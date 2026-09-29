@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
-  m_Name: WeaponType_01_OneHanded
+  m_Name: WeaponType_04_TwoHanded
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
-  id: 01
-  displayName: "\u7247\u624B\u8FD1\u8DDD\u96E2"
-  animatorWeaponType: 1
-  canUseShield: 1
+  id: 04
+  displayName: "\u4E21\u624B\u8FD1\u8DDD\u96E2"
+  animatorWeaponType: 2
+  canUseShield: 0
   allowedEnchantments:
   - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
   - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
@@ -33,70 +33,70 @@ MonoBehaviour:
   comboSteps:
   - motion: 0
     damageWeight: 1
-    duration: 0.45
-    hitTime: 0.32
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
-    swingEffectEuler: {x: 0, y: 0, z: -125}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 1
-    duration: 0.45
-    hitTime: 0.28
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: -0.2, y: 1.75, z: 0.45}
-    swingEffectEuler: {x: 0, y: 0, z: 157}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 1
-    duration: 0.5
-    hitTime: 0.32
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
-    swingEffectEuler: {x: 0, y: 0, z: -125}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 2
-    duration: 0.8
-    hitTime: 0.5
-    hitboxSize: {x: 2, y: 1.2, z: 1.8}
+    duration: 0.7
+    hitTime: 0.42
+    hitboxSize: {x: 2.6, y: 1.4, z: 2}
     hitboxCenter: {x: 0, y: 1, z: 1.2}
-    knockback: 3
+    knockback: 1.5
     reactionBonus: 0
     lungeDistance: 0
     lungeDuration: 0
     slamRadius: 0
     slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.5}
+    swingEffectEuler: {x: 0, y: 0, z: -160}
+    swingSound: {fileID: 0}
+    hitSound: {fileID: 0}
+  - motion: 0
+    damageWeight: 1
+    duration: 0.7
+    hitTime: 0.42
+    hitboxSize: {x: 2.6, y: 1.4, z: 2}
+    hitboxCenter: {x: 0, y: 1, z: 1.2}
+    knockback: 1.5
+    reactionBonus: 0
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 0
+    slamHeight: 0
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.5}
+    swingEffectEuler: {x: 0, y: 0, z: 20}
+    swingSound: {fileID: 0}
+    hitSound: {fileID: 0}
+  - motion: 0
+    damageWeight: 1
+    duration: 0.75
+    hitTime: 0.42
+    hitboxSize: {x: 2.6, y: 1.4, z: 2}
+    hitboxCenter: {x: 0, y: 1, z: 1.2}
+    knockback: 1.5
+    reactionBonus: 0
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 0
+    slamHeight: 0
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.5}
+    swingEffectEuler: {x: 0, y: 0, z: -160}
+    swingSound: {fileID: 0}
+    hitSound: {fileID: 0}
+  - motion: 0
+    damageWeight: 2.5
+    duration: 1.1
+    hitTime: 0.67
+    hitboxSize: {x: 2.4, y: 1.6, z: 2.8}
+    hitboxCenter: {x: 0, y: 1, z: 1.5}
+    knockback: 5
+    reactionBonus: 1
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 0
+    slamHeight: 0
+    swingEffectOffset: {x: 0, y: 1.1, z: 0.5}
     swingEffectEuler: {x: 0, y: 0, z: -90}
     swingSound: {fileID: 0}
     hitSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
-  comboChainGrace: 0.25
-  comboCooldown: 0.3
+  comboChainGrace: 0.35
+  comboCooldown: 0.5
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
   shockwaveDamageRatio: 0.5
@@ -112,9 +112,9 @@ MonoBehaviour:
   heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 3153472991145048103, guid: 3407e378c048bb5438424b28c7740b48, type: 3}
-  swingEffectScale: 0.6
+  swingEffectScale: 0.9
   hitEffect: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
-  hitEffectScale: 0.6
+  hitEffectScale: 0.8
   slamEffect: {fileID: 0}
   slamEffectScale: 1
   swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}

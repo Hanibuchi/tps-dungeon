@@ -22,33 +22,60 @@ MonoBehaviour:
   baseCritChance: 0.05
   baseCritMultiplier: 1.5
   comboSteps:
-  - damageWeight: 1
+  - motion: 0
+    damageWeight: 1
     duration: 0.45
     hitTime: 0.3
     hitboxSize: {x: 1, y: 1, z: 1}
     hitboxCenter: {x: 0, y: 1.1, z: 0.8}
     knockback: 0.3
+    reactionBonus: 0
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 0
+    slamHeight: 0
     swingEffectOffset: {x: 0, y: 0, z: 0}
     swingEffectEuler: {x: 0, y: 0, z: 0}
     swingSound: {fileID: 0}
     hitSound: {fileID: 0}
-  - damageWeight: 1
+  - motion: 0
+    damageWeight: 1
     duration: 0.45
     hitTime: 0.3
     hitboxSize: {x: 1, y: 1, z: 1}
     hitboxCenter: {x: 0, y: 1.1, z: 0.8}
     knockback: 0.3
+    reactionBonus: 0
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 0
+    slamHeight: 0
     swingEffectOffset: {x: 0, y: 0, z: 0}
     swingEffectEuler: {x: 0, y: 0, z: 0}
     swingSound: {fileID: 0}
     hitSound: {fileID: 0}
   comboChainGrace: 0.25
+  comboCooldown: 0.3
+  lungePassesThroughEnemies: 1
+  invulnerableDuringLunge: 1
+  shockwaveDamageRatio: 0.5
+  shockwaveRange: 6
+  shockwaveSpeed: 14
+  shockwaveWidth: 1.2
+  shockwaveSpacingAngle: 20
+  shockwaveEffect: {fileID: 0}
+  shockwaveEffectScale: 1
+  followUpDamageRatio: 0.6
+  followUpSpacing: 1.5
+  followUpInterval: 0.18
   heldLocalPosition: {x: 0, y: 0, z: 0}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1
   hitEffect: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
   hitEffectScale: 0.12
-  swingSound: {fileID: 8300000, guid: b2a0eba14200849be9c3a142941dca5a, type: 3}
-  hitSound: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
+  slamEffect: {fileID: 0}
+  slamEffectScale: 1
+  swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
+  hitSound: {fileID: 8300000, guid: 2ee2d22bfd17241029ad6b851a53fff4, type: 3}
   soundVolume: 0.6

@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
+  m_Name: WeaponType_05_Hammer
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
+  id: 05
+  displayName: "\u53E9\u304D\u3064\u3051"
+  animatorWeaponType: 6
+  canUseShield: 0
+  allowedEnchantments:
+  - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+  - {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+  - {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+  - {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+  - {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+  - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+  - {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+  - {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
+  - {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
+  enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  characterAttackWeight: 1
+  baseCritChance: 0.05
+  baseCritMultiplier: 1.5
+  comboSteps:
+  - motion: 2
+    damageWeight: 1
+    duration: 1
+    hitTime: 0.76
+    hitboxSize: {x: 0, y: 0, z: 0}
+    hitboxCenter: {x: 0, y: 0, z: 1.5}
+    knockback: 4
+    reactionBonus: 0.5
+    lungeDistance: 0
+    lungeDuration: 0
+    slamRadius: 1.8
+    slamHeight: 1.5
+    swingEffectOffset: {x: 0, y: 1.2, z: 0.8}
+    swingEffectEuler: {x: 0, y: 0, z: -90}
+    swingSound: {fileID: 0}
+    hitSound: {fileID: 0}
+  comboChainGrace: 0
+  comboCooldown: 0.4
+  lungePassesThroughEnemies: 1
+  invulnerableDuringLunge: 1
+  shockwaveDamageRatio: 0.5
+  shockwaveRange: 6
+  shockwaveSpeed: 14
+  shockwaveWidth: 1.2
+  shockwaveSpacingAngle: 20
+  shockwaveEffect: {fileID: 8230022441722461589, guid: 41494896fc96c9748b81d3356632794e, type: 3}
+  shockwaveEffectScale: 0.5
+  followUpDamageRatio: 0.6
+  followUpSpacing: 1.5
+  followUpInterval: 0.18
+  heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  swingEffect: {fileID: 0}
+  swingEffectScale: 1
+  hitEffect: {fileID: 8680598818964007281, guid: dcd90c4976197424b9958a7c54b6bb8c, type: 3}
+  hitEffectScale: 0.15
+  slamEffect: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
+  slamEffectScale: 0.6
+  swingSound: {fileID: 0}
+  hitSound: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
+  soundVolume: 0.9

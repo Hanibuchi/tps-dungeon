@@ -189,6 +189,78 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(new[] { 16, 16, 16, 33 }, Hits(Compute(37f)));
         }
 
+        [Test]
+        public void 持続時間は走る時間の倍率になる()
+        {
+            Assert.AreEqual(1f, Compute(100f).LungeTimeScale, 1e-5f);
+            Assert.AreEqual(1.4f, Compute(100f, With(EnchantmentKind.Duration, 0.2f, 2)).LungeTimeScale, 1e-5f);
+        }
+
+        [Test]
+        public void 数は衝撃波の本数_多重は追撃の回数になる()
+        {
+            MeleeWeaponStats none = Compute(100f);
+            Assert.AreEqual(0, none.ShockwaveCount);
+            Assert.AreEqual(0, none.FollowUpCount);
+
+            var totals = new EnchantmentTotals();
+            totals.Add(EnchantmentKind.ProjectileCount, 1f, 0f, 3);
+            totals.Add(EnchantmentKind.Multishot, 1f, 0f, 2);
+            MeleeWeaponStats stats = Compute(100f, totals);
+            Assert.AreEqual(3, stats.ShockwaveCount);
+            Assert.AreEqual(2, stats.FollowUpCount);
+        }
+
+        [Test]
+        public void 数や多重の効果量が端数なら切り捨てる()
+        {
+            Assert.AreEqual(1, Compute(100f, With(EnchantmentKind.ProjectileCount, 0.5f, 3)).ShockwaveCount);
+            Assert.AreEqual(0, Compute(100f, With(EnchantmentKind.Multishot, 0.5f)).FollowUpCount);
+        }
+
+        [Test]
+        public void 上乗せの割合は1撃に掛けて四捨五入し_最低1()
+        {
+            Assert.AreEqual(7, MeleeWeaponStats.Share(14, 0.5f));
+            Assert.AreEqual(8, MeleeWeaponStats.Share(14, 0.6f)); // 8.4
+            Assert.AreEqual(1, MeleeWeaponStats.Share(1, 0.1f));
+            Assert.AreEqual(0, MeleeWeaponStats.Share(14, 0f));
+            Assert.AreEqual(0, MeleeWeaponStats.Share(0, 0.5f));
+        }
+
+        [Test]
+        public void 新しい武器種3本の1撃_キャラ攻撃力なし()
+        {
+            // 木柄の刺突剣: 強さ 8、1 段 0.75 秒。
+            Assert.AreEqual(new[] { 6 }, Hits(Single(8f, 0.75f)));
+            // 石のハンマー: 強さ 14、1 段 1.0 秒。
+            Assert.AreEqual(new[] { 14 }, Hits(Single(14f, 1.0f)));
+
+            // 欠けた両手剣: 強さ 11、比重 1/1/1/2.5、時間 0.7/0.7/0.75/1.1（1 周 3.25 秒 → 35.75 を配る）。
+            MeleeWeaponStats twoHanded = MeleeWeaponStats.Compute(new MeleeWeaponInputs
+            {
+                Strength = 11f,
+                CharacterAttackWeight = 1f,
+                StepWeights = new[] { 1f, 1f, 1f, 2.5f },
+                StepDurations = new[] { 0.7f, 0.7f, 0.75f, 1.1f },
+                Enchantments = EnchantmentTotals.Empty,
+                BaseCritChance = 0.05f,
+                BaseCritMultiplier = 1.5f,
+            });
+            Assert.AreEqual(new[] { 7, 7, 7, 16 }, Hits(twoHanded)); // 6.5 → 7、16.25 → 16
+        }
+
+        private static MeleeWeaponStats Single(float strength, float duration) => MeleeWeaponStats.Compute(new MeleeWeaponInputs
+        {
+            Strength = strength,
+            CharacterAttackWeight = 1f,
+            StepWeights = new[] { 1f },
+            StepDurations = new[] { duration },
+            Enchantments = EnchantmentTotals.Empty,
+            BaseCritChance = 0.05f,
+            BaseCritMultiplier = 1.5f,
+        });
+
         private static int[] Hits(MeleeWeaponStats stats)
         {
             var result = new int[stats.StepCount];

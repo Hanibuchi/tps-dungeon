@@ -49,6 +49,10 @@ namespace TpsDungeon.Player.Editor
             new Vector3(0f, 0f, -1.7f),
             new Vector3(1.6f, 0f, 1.6f),
             new Vector3(1.6f, 0f, -1.6f),
+            // ダッシュ突き・両手近距離・叩きつけ。
+            new Vector3(-0.8f, 0f, -2.1f),
+            new Vector3(0.9f, 0f, 2.1f),
+            new Vector3(0.9f, 0f, -2.2f),
         };
 
         [MenuItem("Tools/TPS Dungeon/Player/確認用シーンに仮アイテムを置く")]

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_StoneHammer
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_StoneHammer
+  displayName: "\u77F3\u306E\u30CF\u30F3\u30DE\u30FC"
+  description: "\u5CA9\u3092\u524A\u308A\u51FA\u3057\u305F\u3060\u3051\u306E\u6B66\u9AA8\u306A\u69CC\u3002\u5F53\u305F\u308C\u3070\u6F70\u308C\u308B\u3002"
+  icon: {fileID: 2800000, guid: 84cd59ab1168249c6814537e55ed19d1, type: 3}
+  worldPrefab: {fileID: 594657191843248611, guid: 044b31f8cd597499d80c00cffbb0217e, type: 3}
+  rank: 1
+  strength: 14
+  weaponType: {fileID: 11400000, guid: fc8db1696acdd47c18bfc251eda2af3d, type: 2}
+  heldModel: {fileID: 8564222982490510969, guid: 8e10facfd40394687a29d66ff05973c3, type: 3}
