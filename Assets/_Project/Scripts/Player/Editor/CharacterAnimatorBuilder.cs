@@ -9,7 +9,8 @@ namespace TpsDungeon.Player.Editor
     /// プレイヤーの AnimatorController を組み立てる。
     /// 下半身（Base Layer）は Starter Assets の ThirdPersonController がそのまま動かせる移動とジャンプ、
     /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃、
-    /// 全身（Action、一番上）は Blink の Animations_Starter_Pack のクリップ全部を、呼ばれたときだけ再生する。
+    /// 全身の攻撃（FullBodyAttack）は足まで使う攻撃（ダッシュ突き）を振っている間だけ全身で、
+    /// 全身（Action、一番上）は Blink の Animations_Starter_Pack と Kevin の Combat のクリップを、呼ばれたときだけ再生する。
     /// 生成物なので手で編集せず、構成を変えたくなったらこのファイルを直して作り直すこと。
     ///
     /// スクリプトから触るパラメータ:
@@ -169,6 +170,7 @@ namespace TpsDungeon.Player.Editor
             AddParameters(controller);
             BuildBaseLayer(controller, clips);
             BuildUpperBodyLayer(controller, clips, bowAim, upperBody);
+            BuildFullBodyAttackLayer(controller, clips);
             BuildActionLayer(controller, clips);
 
             EditorUtility.SetDirty(controller);
@@ -322,8 +324,6 @@ namespace TpsDungeon.Player.Editor
             BuildOneHandedCombo(sm, free, clips);
             BuildUnarmedCombo(sm, free, clips);
             BuildTwoHandedCombo(sm, free, clips);
-            BuildCombo(sm, free, "DashThrust", Weapon.DashThrust,
-                new (Motion, bool, float)[] { (clips.PolearmThrust, false, DashThrustSpeed) }, new Vector3(1500, -40));
             BuildCombo(sm, free, "Hammer", Weapon.Hammer,
                 new (Motion, bool, float)[] { (clips.TwoHanded, false, HammerSlamSpeed) }, new Vector3(1500, 80));
         }
@@ -396,6 +396,34 @@ namespace TpsDungeon.Player.Editor
                 int previous = (i + states.Length - 1) % states.Length;
                 if (previous != i) AddComboEntry(states[previous], states[i], weapon, i);
             }
+        }
+
+        // ---- FullBodyAttack: 足まで使う攻撃を全身で ----
+
+        /// <summary>
+        /// 上半身だけだと足が歩きのままで不自然な攻撃を、全身で再生する層。マスクは付けない。
+        /// Motion の無い Free の間は何も書かないので、下の移動と上半身の構えがそのまま見える。
+        /// ダッシュ突きは踏み込んで突く長柄の突きを、走り出しに合わせて振る（走りは MeleeAttacker が体ごと動かす）。
+        /// </summary>
+        private static void BuildFullBodyAttackLayer(AnimatorController controller, ClipSet clips)
+        {
+            controller.AddLayer("FullBodyAttack");
+            AnimatorControllerLayer[] layers = controller.layers;
+            int index = layers.Length - 1;
+            layers[index].blendingMode = AnimatorLayerBlendingMode.Override;
+            layers[index].defaultWeight = 1f;
+            controller.layers = layers;
+
+            AnimatorStateMachine sm = layers[index].stateMachine;
+            sm.entryPosition = new Vector3(20, 200);
+            sm.anyStatePosition = new Vector3(20, 60);
+            sm.exitPosition = new Vector3(20, 400);
+
+            AnimatorState free = sm.AddState("Free", new Vector3(300, 200));
+            sm.defaultState = free;
+
+            BuildCombo(sm, free, "DashThrust", Weapon.DashThrust,
+                new (Motion, bool, float)[] { (clips.PolearmThrust, false, DashThrustSpeed) }, new Vector3(600, 200));
         }
 
         // ---- Action: パックのクリップを全身で再生する ----
