@@ -15,6 +15,8 @@ namespace TpsDungeon.Player.Editor
     ///   Speed / MotionSpeed / Jump / Grounded / FreeFall … ThirdPersonController が今まで通り流す
     ///   WeaponType (int) … <see cref="Weapon"/> の値。持ち替えたら入れる
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
+    ///   ComboStep (int) … 片手武器のコンボの段（0 始まり）。Attack より先に入れる
+    ///   AttackSpeed (float) … 片手武器の振りの再生速度（速射のエンチャント）。既定 1
     /// </summary>
     public static class CharacterAnimatorBuilder
     {
@@ -39,9 +41,14 @@ namespace TpsDungeon.Player.Editor
         public const string FreeFallParam = "FreeFall";
         public const string WeaponTypeParam = "WeaponType";
         public const string AttackParam = "Attack";
+        public const string ComboStepParam = "ComboStep";
+        public const string AttackSpeedParam = "AttackSpeed";
+
+        /// <summary>片手武器のコンボの段数。MeleeAttacker が武器種の段数ぶん ComboStep を回す。</summary>
+        public const int OneHandedComboSteps = 4;
 
         private const string StarterAnimations = "Assets/ThirdParty/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
-        private const string BlinkCombat = "Assets/ThirdParty/Blink/Art/Animations/Animations_Starter_Pack/Combat/";
+        private const string BlinkCombat = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/Combat/";
 
         // BowShot（30fps・29 フレーム）の中身。手の位置を 1 フレームずつ見て決めた。
         //   0-7F: つがえた矢を引く / 7-13F: 引き切って保持 / 14F: 放す / 22-29F: 次の矢をつがえて 0F と同じ姿勢に戻る
@@ -120,6 +127,13 @@ namespace TpsDungeon.Player.Editor
             controller.AddParameter(FreeFallParam, AnimatorControllerParameterType.Bool);
             controller.AddParameter(WeaponTypeParam, AnimatorControllerParameterType.Int);
             controller.AddParameter(AttackParam, AnimatorControllerParameterType.Trigger);
+            controller.AddParameter(ComboStepParam, AnimatorControllerParameterType.Int);
+            controller.AddParameter(new AnimatorControllerParameter
+            {
+                name = AttackSpeedParam,
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = 1f,
+            });
         }
 
         // ---- Base Layer: 移動とジャンプ。Starter Assets の構成と遷移の値をそのまま引き継いでいる ----
@@ -217,14 +231,49 @@ namespace TpsDungeon.Player.Editor
 
             AddOneShotAttack(sm, free, "Unarmed Attack", clips.Punch, Weapon.Unarmed,
                 new Vector3(600, 0), startAt: 0f, exitAt: 0.8f);
-            AddOneShotAttack(sm, free, "OneHanded Attack", clips.OneHanded, Weapon.OneHanded,
-                new Vector3(600, 80), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "TwoHanded Attack", clips.TwoHanded, Weapon.TwoHanded,
                 new Vector3(600, 160), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
                 new Vector3(600, 240), startAt: SpellCastStart, exitAt: SpellCastExit);
 
             BuildBow(sm, free, clips, bowAim);
+            BuildOneHandedCombo(sm, free, clips);
+        }
+
+        /// <summary>
+        /// 片手武器の 4 段コンボ。素材の振りが 1 つしかないので、2 段目は左右反転、4 段目は両手武器の重い振りで代用する。
+        /// どの段からでも、次の段の ComboStep で Attack が立てば途中から切り替わる（先行入力で繋がる）。
+        /// </summary>
+        private static void BuildOneHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            var states = new AnimatorState[OneHandedComboSteps];
+            for (int i = 0; i < states.Length; i++)
+            {
+                bool finisher = i == states.Length - 1;
+                AnimatorState state = sm.AddState($"OneHanded Attack {i + 1}", new Vector3(900, -40 + 80 * i));
+                state.motion = finisher ? clips.TwoHanded : clips.OneHanded;
+                state.mirror = i % 2 == 1;
+                state.speedParameterActive = true;
+                state.speedParameter = AttackSpeedParam;
+                states[i] = state;
+
+                Transition(state, free, 0.25f, exitTime: 0.85f);
+            }
+
+            for (int i = 0; i < states.Length; i++)
+            {
+                AddComboEntry(free, states[i], i);
+                int previous = (i + states.Length - 1) % states.Length;
+                AddComboEntry(states[previous], states[i], i);
+            }
+        }
+
+        private static void AddComboEntry(AnimatorState from, AnimatorState to, int step)
+        {
+            AnimatorStateTransition t = Transition(from, to, 0.08f);
+            t.AddCondition(AnimatorConditionMode.If, 0, AttackParam);
+            t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.OneHanded, WeaponTypeParam);
+            t.AddCondition(AnimatorConditionMode.Equals, step, ComboStepParam);
         }
 
         private static void AddOneShotAttack(AnimatorStateMachine sm, AnimatorState free, string name,

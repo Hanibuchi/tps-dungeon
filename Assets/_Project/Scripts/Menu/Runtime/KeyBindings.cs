@@ -43,6 +43,7 @@ namespace TpsDungeon.Menu
             new KeyBindingEntry("右", "Move", "right"),
             new KeyBindingEntry("ジャンプ", "Jump"),
             new KeyBindingEntry("ダッシュ", "Sprint"),
+            new KeyBindingEntry("攻撃", "Attack"),
             new KeyBindingEntry("インタラクト", "Interact"),
             new KeyBindingEntry("マップ", "Map"),
             new KeyBindingEntry("インベントリ", "Inventory"),
