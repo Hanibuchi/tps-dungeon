@@ -1,6 +1,5 @@
 using System;
 using TpsDungeon.Player;
-using TpsDungeon.Progression;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -29,7 +28,6 @@ namespace TpsDungeon.Items
 
         private Inventory inventory;
         private PlayerHotbar hotbar;
-        private CharacterProgression progression;
 
         /// <summary>持ち物の枠。先頭の PlayerHotbar.SlotCount 枠がホットバー。</summary>
         public Inventory Inventory
@@ -43,16 +41,6 @@ namespace TpsDungeon.Items
 
         /// <summary>中身か枠の数が変わったら飛ぶ。</summary>
         public event Action<PlayerInventory> Changed;
-
-        /// <summary>持ち主の基礎攻撃力。武器の情報欄の実効 DPS に入れる。成長の仕組みが無ければ 0。</summary>
-        public float OwnerAttack
-        {
-            get
-            {
-                if (progression == null) progression = GetComponent<CharacterProgression>();
-                return progression != null ? progression.BaseAttack : 0f;
-            }
-        }
 
         private void Awake()
         {

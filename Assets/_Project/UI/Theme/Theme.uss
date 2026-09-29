@@ -559,6 +559,15 @@
     scale: 1 1;
 }
 
+/* ランクの下地（武器のレア度）。色は ItemSlot.SetItem がインラインで塗る。 */
+.slot__rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
 /* 内側の細い線。枠も石板と揃える。 */
 .slot__inner {
     position: absolute;

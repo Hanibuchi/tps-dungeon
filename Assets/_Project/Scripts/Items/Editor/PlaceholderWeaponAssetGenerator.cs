@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 using Gen = TpsDungeon.Items.Editor.PlaceholderItemAssetGenerator;
 
@@ -9,8 +11,10 @@ namespace TpsDungeon.Items.Editor
 {
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
-    /// - ランクの色・エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）: Assets/_Project/Items/Weapons/
+    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）: Assets/_Project/Items/Weapons/
+    /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     /// - 武器 3 本（Notion の武器一覧 DB で武器種＝01 のもの）と、拾える物・手に持つ見た目のプレハブ
+    /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
     /// 見た目は ThirdParty の FreeSwords があればそれを、無ければプリミティブの剣を使う。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
@@ -18,7 +22,8 @@ namespace TpsDungeon.Items.Editor
     {
         public const string WeaponsFolder = Gen.ItemsFolder + "/Weapons";
         private const string EnchantmentsFolder = WeaponsFolder + "/Enchantments";
-        public const string RankTablePath = WeaponsFolder + "/WeaponRankTable.asset";
+        public const string RankTablePath = "Assets/_Project/Resources/" + WeaponRankTable.ResourcePath + ".asset";
+        private const string OldRankTablePath = WeaponsFolder + "/WeaponRankTable.asset";
         public const string RollSettingsPath = WeaponsFolder + "/EnchantmentRollSettings.asset";
         public const string OneHandedTypePath = WeaponsFolder + "/WeaponType_01_OneHanded.asset";
 
@@ -28,6 +33,12 @@ namespace TpsDungeon.Items.Editor
         private const float SwordLength = 0.9f;
 
         private static readonly Vector3 PickupVolume = new Vector3(0.35f, 0.3f, 1.0f);
+
+        /// <summary>モデルを撮った絵の大きさ（px）。枠と情報欄は 64px なので、高解像度の画面でも粗くならないよう倍で撮る。</summary>
+        private const int IconSize = 128;
+
+        /// <summary>背景の透明が残らないときに撮り直す、抜き取り用の背景色。</summary>
+        private static readonly Color KeyColor = new Color(1f, 0f, 1f, 1f);
 
         private sealed class WeaponSpec
         {
@@ -49,12 +60,12 @@ namespace TpsDungeon.Items.Editor
             Gen.EnsureFolder(Gen.IconsFolder);
             Gen.EnsureFolder(Gen.PrefabsFolder);
 
-            WeaponRankTable rankTable = WriteRankTable();
+            WriteRankTable();
             EnchantmentRollSettings roll = WriteRollSettings();
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments = WriteEnchantments();
             WeaponTypeDefinition oneHanded = WriteOneHandedType(enchantments, roll);
 
-            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, oneHanded, rankTable);
+            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, oneHanded);
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮の武器データを作った: {WeaponsFolder}");
@@ -102,6 +113,15 @@ namespace TpsDungeon.Items.Editor
 
         private static WeaponRankTable WriteRankTable()
         {
+            // 前は Items/Weapons に置いていた。GUID を保ったまま Resources へ移す。
+            Gen.EnsureFolder(RankTablePath.Substring(0, RankTablePath.LastIndexOf('/')));
+            if (AssetDatabase.LoadAssetAtPath<WeaponRankTable>(OldRankTablePath) != null
+                && AssetDatabase.LoadAssetAtPath<WeaponRankTable>(RankTablePath) == null)
+            {
+                string error = AssetDatabase.MoveAsset(OldRankTablePath, RankTablePath);
+                if (!string.IsNullOrEmpty(error)) Debug.LogWarning($"ランク表を移せなかった: {error}");
+            }
+
             var table = Gen.LoadOrCreate<WeaponRankTable>(RankTablePath);
             // Notion の色設定（ユニーク=orange、S=yellow、A=purple、B=blue、C=green、D=brown、E=gray）を仮採用。
             var entries = new (WeaponRank rank, string hex)[]
@@ -240,7 +260,7 @@ namespace TpsDungeon.Items.Editor
 
         // ---- 武器 --------------------------------------------------------
 
-        private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type, WeaponRankTable rankTable)
+        private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type)
         {
             var weapon = Gen.LoadOrCreate<WeaponDefinition>($"{WeaponsFolder}/{spec.Id}.asset");
 
@@ -249,10 +269,8 @@ namespace TpsDungeon.Items.Editor
                 Id = spec.Id,
                 Name = spec.Name,
                 Description = spec.Description,
-                BuildModel = (root, mat) => BuildSword(root, spec, mat),
-                IconLayers = SwordIcon(spec),
             };
-            Texture2D icon = Gen.WriteIcon(iconSpec);
+            Texture2D icon = WriteModelIcon(spec);
 
             // 床に落ちているときは寝かせる。
             iconSpec.BuildModel = (root, mat) =>
@@ -262,7 +280,7 @@ namespace TpsDungeon.Items.Editor
                 BuildSword(root, spec, mat);
             };
             ItemPickup pickup = Gen.BuildPickupPrefab(iconSpec, weapon);
-            SetPickupDetails(pickup, rankTable);
+            FitPickupVolume(pickup);
             GameObject held = BuildHeldPrefab(spec);
 
             var serialized = new SerializedObject(weapon);
@@ -278,8 +296,8 @@ namespace TpsDungeon.Items.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>拾える物の判定を剣の形に合わせ、情報欄のランクに色を付ける。</summary>
-        private static void SetPickupDetails(ItemPickup pickup, WeaponRankTable rankTable)
+        /// <summary>拾える物の判定を剣の形に合わせる。</summary>
+        private static void FitPickupVolume(ItemPickup pickup)
         {
             string path = AssetDatabase.GetAssetPath(pickup);
             GameObject root = PrefabUtility.LoadPrefabContents(path);
@@ -288,10 +306,6 @@ namespace TpsDungeon.Items.Editor
                 var volume = root.GetComponent<BoxCollider>();
                 volume.size = PickupVolume;
                 volume.center = new Vector3(0f, PickupVolume.y * 0.5f, 0f);
-
-                var serialized = new SerializedObject(root.GetComponent<ItemPickup>());
-                serialized.FindProperty("rankTable").objectReferenceValue = rankTable;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
             finally
@@ -389,18 +403,117 @@ namespace TpsDungeon.Items.Editor
             return any;
         }
 
-        private static (Color color, Func<Vector2, float> shape)[] SwordIcon(WeaponSpec spec)
+        // ---- モデルを撮った絵 ----------------------------------------------
+
+        /// <summary>
+        /// 手に持つ見た目と同じ剣をプレビュー用のシーンに置き、斜め 45° に立てて正面から撮る。背景は透明。
+        /// 刃の平たい面がカメラを向くよう、横幅の広い向きを画面の横に合わせてから少しひねる。
+        /// </summary>
+        private static Texture2D WriteModelIcon(WeaponSpec spec)
         {
-            var pivot = new Vector2(32, 32);
-            Color light = Color.Lerp(spec.Blade, Color.white, 0.45f);
-            return new[]
+            Scene scene = EditorSceneManager.NewPreviewScene();
+            var model = new GameObject("IconModel");
+            var rt = new RenderTexture(IconSize, IconSize, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            try
             {
-                (spec.Blade, Gen.Rotated(Gen.Box(new Vector2(32, 38), new Vector2(3.5f, 20)), pivot, -45f)),
-                (light, Gen.Rotated(Gen.Box(new Vector2(31, 40), new Vector2(1f, 16)), pivot, -45f)),
-                (spec.Hilt, Gen.Rotated(Gen.Box(new Vector2(32, 17), new Vector2(10, 2.5f)), pivot, -45f)),
-                (spec.Hilt, Gen.Rotated(Gen.Box(new Vector2(32, 10), new Vector2(2.5f, 6)), pivot, -45f)),
-                (spec.Hilt, Gen.Rotated(Gen.Circle(new Vector2(32, 3.5f), 3f), pivot, -45f)),
-            };
+                var pivot = new GameObject("Pivot");
+                pivot.transform.SetParent(model.transform, false);
+                BuildSword(pivot, spec, Gen.Material);
+                SceneManager.MoveGameObjectToScene(model, scene);
+
+                // 刃の平たい面を画面に向ける（横幅の広い軸を X に）。少しひねって立体に見せ、45° 傾けて右上へ刃を伸ばす。
+                Bounds upright = RendererBounds(model);
+                float face = upright.size.z > upright.size.x ? 90f : 0f;
+                pivot.transform.localRotation = Quaternion.Euler(0f, face, 0f);
+                model.transform.rotation = Quaternion.Euler(0f, 0f, -45f) * Quaternion.Euler(0f, 25f, 0f);
+
+                Bounds bounds = RendererBounds(model);
+                var cameraObject = new GameObject("IconCamera");
+                SceneManager.MoveGameObjectToScene(cameraObject, scene);
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.scene = scene;
+                camera.orthographic = true;
+                camera.orthographicSize = Mathf.Max(bounds.extents.x, bounds.extents.y) * 1.08f;
+                camera.nearClipPlane = 0.01f;
+                camera.farClipPlane = 20f;
+                camera.allowHDR = false;
+                camera.allowMSAA = true;
+                camera.transform.SetPositionAndRotation(bounds.center - Vector3.forward * 5f, Quaternion.identity);
+                camera.targetTexture = rt;
+
+                AddLight(scene, Quaternion.Euler(35f, -30f, 0f), 1.2f);
+                AddLight(scene, Quaternion.Euler(-20f, 150f, 0f), 0.5f);
+
+                Texture2D texture = Capture(camera, rt, Color.clear);
+                // URP が背景の透明を残さなかったら、抜き取り色で撮り直して色で抜く。
+                if (texture.GetPixel(0, 0).a > 0.5f)
+                {
+                    Object.DestroyImmediate(texture);
+                    texture = Capture(camera, rt, KeyColor);
+                    KeyOut(texture);
+                }
+
+                Texture2D icon = Gen.SaveIcon(texture, spec.Id);
+                Object.DestroyImmediate(texture);
+                return icon;
+            }
+            finally
+            {
+                rt.Release();
+                Object.DestroyImmediate(rt);
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
+        private static void AddLight(Scene scene, Quaternion rotation, float intensity)
+        {
+            var go = new GameObject("IconLight");
+            SceneManager.MoveGameObjectToScene(go, scene);
+            go.transform.rotation = rotation;
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = intensity;
+        }
+
+        private static Texture2D Capture(Camera camera, RenderTexture rt, Color background)
+        {
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = background;
+            camera.Render();
+
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = rt;
+            var texture = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false);
+            texture.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
+            texture.Apply();
+            RenderTexture.active = previous;
+            return texture;
+        }
+
+        /// <summary>抜き取り色に近い画素を透明にする。縁はにじんだ分だけ半透明に。</summary>
+        private static void KeyOut(Texture2D texture)
+        {
+            Color[] pixels = texture.GetPixels();
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color c = pixels[i];
+                // 抜き取り色（マゼンタ）らしさ = 赤と青が緑よりどれだけ強いか。
+                float key = Mathf.Clamp01(Mathf.Min(c.r, c.b) - c.g);
+                float alpha = 1f - Mathf.SmoothStep(0.35f, 0.85f, key);
+                pixels[i] = new Color(c.r, c.g, c.b, alpha);
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+        }
+
+        private static Bounds RendererBounds(GameObject root)
+        {
+            var renderers = root.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return new Bounds(root.transform.position, Vector3.one * 0.5f);
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            return bounds;
         }
     }
 }

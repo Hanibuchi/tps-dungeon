@@ -64,26 +64,32 @@ namespace TpsDungeon.Items
             return totals;
         }
 
+        /// <summary>武器ならランクの色（<see cref="WeaponRankTable.Default"/>）を返す。武器でないか表が無ければ偽。</summary>
+        public bool TryGetRankColor(out Color color)
+        {
+            color = default;
+            WeaponDefinition weapon = Weapon;
+            WeaponRankTable table = WeaponRankTable.Default;
+            if (weapon == null || table == null) return false;
+
+            color = table.ColorOf(weapon.Rank);
+            return true;
+        }
+
         /// <summary>
-        /// 情報欄の本文。武器ならランク・DPS・エンチャントを説明の前に並べる。
-        /// rankTable を渡すとランクをその色で塗る（リッチテキスト）。
+        /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
+        /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
         /// </summary>
-        public string DetailText(WeaponRankTable rankTable = null, float characterAttack = 0f)
+        public string DetailText()
         {
             WeaponDefinition weapon = Weapon;
             if (weapon == null) return Definition.Description;
 
             var text = new StringBuilder();
             string rank = WeaponRanks.Label(weapon.Rank);
-            if (rankTable != null) rank = $"<color=#{ColorUtility.ToHtmlStringRGB(rankTable.ColorOf(weapon.Rank))}>{rank}</color>";
+            if (TryGetRankColor(out Color color)) rank = $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{rank}</color>";
             text.Append("ランク ").Append(rank);
-            if (weapon.WeaponType != null) text.Append("　").Append(weapon.WeaponType.DisplayName);
-
-            if (weapon.WeaponType != null && weapon.WeaponType.IsMelee)
-            {
-                MeleeWeaponStats stats = weapon.ComputeMeleeStats(EnchantmentTotals(), characterAttack);
-                text.Append($"\n強さ {weapon.Strength:0.#} DPS（実効 {stats.AverageDps:0.#}）");
-            }
+            text.Append($"\n攻撃力 {weapon.Strength:0.#}");
 
             foreach (EnchantmentStack stack in enchantments)
             {

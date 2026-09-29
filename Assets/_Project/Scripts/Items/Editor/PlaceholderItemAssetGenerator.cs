@@ -254,9 +254,16 @@ namespace TpsDungeon.Items.Editor
             var texture = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false);
             texture.SetPixels(pixels);
             texture.Apply();
-            string path = $"{IconsFolder}/Icon_{spec.Id}.png";
-            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Texture2D icon = SaveIcon(texture, spec.Id);
             Object.DestroyImmediate(texture);
+            return icon;
+        }
+
+        /// <summary>絵を Icons/Icon_{id}.png に書き出し、UI 向けの設定で取り込んだアセットを返す。</summary>
+        internal static Texture2D SaveIcon(Texture2D texture, string id)
+        {
+            string path = $"{IconsFolder}/Icon_{id}.png";
+            File.WriteAllBytes(path, texture.EncodeToPNG());
 
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);

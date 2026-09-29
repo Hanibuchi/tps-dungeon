@@ -13,6 +13,7 @@ namespace TpsDungeon.Enemies
     ///
     /// 重なり: 気絶中の被弾では何も起こさない（延長しない）。スタン中のスタンは時間を取り直し、スタン中の気絶は気絶に格上げする。
     /// 倒れたら両方とも解く（気絶中に倒れたらラグドールのまま起き上がらない）。
+    /// 被弾のたびに被弾音を鳴らす（未設定ならスタンの音）。ただしその一撃でスタン・気絶したらその音だけ、倒れたら死亡音（EnemyDeath）だけにする。
     /// 攻撃にノックバック（<see cref="DamageInfo.Knockback"/>）があれば、攻撃の向きへ短く滑らせる（壁の手前で止める）。気絶なら倒れ込む勢いに足す。
     /// 敵の AI は <see cref="CanAct"/> を見て、動けない間は何もしないこと。
     /// </summary>
@@ -53,6 +54,9 @@ namespace TpsDungeon.Enemies
         private float knockbackSkin = 0.4f;
 
         [Header("効果音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("スタン・気絶・死亡のどれも起きなかった被弾の音。未設定ならスタンの音。")]
+        private AudioClip hitClip;
+
         [SerializeField]
         private AudioClip stunClip;
 
@@ -81,6 +85,7 @@ namespace TpsDungeon.Enemies
         /// <summary>スタンも気絶もしておらず、倒れてもいない。</summary>
         public bool CanAct => !IsStunned && !IsFainted && !Health.IsDead;
 
+        public AudioClip HitClip => hitClip != null ? hitClip : stunClip;
         public AudioClip StunClip => stunClip;
         public AudioClip FaintClip => faintClip;
 
@@ -141,7 +146,8 @@ namespace TpsDungeon.Enemies
 
             // Random.value は 1 も返すので、確率 1 のときに外れないよう 1 未満に収める。
             float faintRoll = Mathf.Min(UnityEngine.Random.value, 0.9999999f);
-            Apply(Rules.Roll(dealt, source.MaxHp, false, faintRoll, damage.ReactionScale), damage);
+            bool reacted = Apply(Rules.Roll(dealt, source.MaxHp, false, faintRoll, damage.ReactionScale), damage);
+            if (!reacted) PlaySound(HitClip, damage);
             if (!IsFainted) StartKnockback(damage);
         }
 

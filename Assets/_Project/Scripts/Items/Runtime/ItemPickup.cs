@@ -16,9 +16,6 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("拾うと手に入るアイテム。")]
         private ItemDefinition definition;
 
-        [SerializeField, Tooltip("武器のランクを情報欄で色付けするための表。未設定なら色を付けない。")]
-        private WeaponRankTable rankTable;
-
         [SerializeField] private string pickupLabel = "拾う";
         [SerializeField] private string fullLabel = "持ちきれない";
 
@@ -57,8 +54,9 @@ namespace TpsDungeon.Items
         public string PromptLabel => lastInventory != null && !lastInventory.Inventory.HasSpace ? fullLabel : pickupLabel;
 
         public string DetailTitle => Instance != null ? Instance.DisplayName : string.Empty;
-        public string DetailBody => Instance != null ? Instance.DetailText(rankTable, lastInventory != null ? lastInventory.OwnerAttack : 0f) : string.Empty;
+        public string DetailBody => Instance != null ? Instance.DetailText() : string.Empty;
         public Texture2D DetailIcon => Instance != null ? Instance.Icon : null;
+        public Color? DetailBackground => Instance != null && Instance.TryGetRankColor(out Color color) ? color : (Color?)null;
 
         /// <summary>
         /// 持ちきれないときも触れる扱いにして案内を出したままにする。偽にすると案内ごと消え、なぜ拾えないのか分からないため。

@@ -303,7 +303,7 @@ namespace TpsDungeon.Hud
             for (int i = 0; i < slots.Length; i++)
             {
                 ItemInstance item = inventory != null ? inventory.Inventory[i] : null;
-                ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
+                ItemSlot.SetItem(slots[i], item?.Icon, RankColor(item));
             }
 
             RefreshItemName();
@@ -406,6 +406,8 @@ namespace TpsDungeon.Hud
         public static float ExpFraction(int exp, int expToNext) => expToNext > 0 ? Mathf.Clamp01((float)exp / expToNext) : 1f;
 
         /// <summary>ホットバーの上に出す名前。アイテムが無ければ null（何も出さない）。</summary>
+        private static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
+
         public static string ItemNameText(ItemInstance item) => item != null ? item.DisplayName : null;
     }
 }

@@ -278,7 +278,7 @@ namespace TpsDungeon.Menu.UI
             for (int i = 0; i < slots.Count; i++)
             {
                 ItemInstance item = items[i];
-                ItemSlot.SetIcon(slots[i], item != null ? item.Icon : null);
+                ItemSlot.SetItem(slots[i], item?.Icon, RankColor(item));
                 slots[i].EnableInClassList(ItemSlot.SelectedClass, items.IsHotbar(i) && i == selected);
             }
         }
@@ -436,14 +436,18 @@ namespace TpsDungeon.Menu.UI
             // 何も合わせていないときは枠だけ残して文字は出さない。
             details.EnableInClassList(DetailsEmptyClass, item == null);
             if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : string.Empty;
-            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText(null, inventory.OwnerAttack) : string.Empty;
+            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText() : string.Empty;
             if (detailsIcon != null)
             {
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null
                     ? new StyleBackground(item.Icon)
                     : new StyleBackground(StyleKeyword.None);
+                // 絵を収める窪みをランクの色で塗る。
+                if (detailsIcon.parent != null) detailsIcon.parent.style.backgroundColor = ItemSlot.Tint(RankColor(item));
             }
         }
+
+        private static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
 
         /// <summary>
         /// 操作の案内。クイック移動キーを押している間は「クリックで移動」だけにする。
