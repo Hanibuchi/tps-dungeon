@@ -52,5 +52,16 @@ namespace TpsDungeon.Enemies.Tests
             var rules = new DamageReactionRules(1.1f, 0f);
             Assert.AreEqual(DamageReaction.None, rules.Roll(100, 100, false, 0f));
         }
+
+        [Test]
+        public void ScaleMultipliesRelativeDamage_ForStunEnchantment()
+        {
+            // 最大 HP の 9% はしきい値 10% に届かないが、1.25 倍すると 11.25% で届く。
+            Assert.IsFalse(Rules.Stuns(9, 100));
+            Assert.IsTrue(Rules.Stuns(9, 100, 1.25f));
+            Assert.AreEqual(0.05625f, Rules.FaintChance(9, 100, 1.25f), 1e-5f);
+            Assert.AreEqual(DamageReaction.Stun, Rules.Roll(9, 100, false, 0.99f, 1.25f));
+            Assert.AreEqual(0.5f, Rules.FaintChance(90, 100, 2f), 1e-5f, "倍率を掛けても 1 で頭打ち");
+        }
     }
 }
