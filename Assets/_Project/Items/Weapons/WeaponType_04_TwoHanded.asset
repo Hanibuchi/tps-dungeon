@@ -93,7 +93,7 @@ MonoBehaviour:
     slamHeight: 0
     swingEffectOffset: {x: 0, y: 1.1, z: 0.5}
     swingEffectEuler: {x: 0, y: 0, z: -90}
-    swingSound: {fileID: 0}
+    swingSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
     hitSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
   comboChainGrace: 0.35
   comboCooldown: 0.5
@@ -120,6 +120,6 @@ MonoBehaviour:
   hitEffect: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   hitEffectScale: 0.8
   slamEffects: []
-  swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
+  swingSound: {fileID: 8300000, guid: 8b7b404f61a27424e8bb544a30297b07, type: 3}
   hitSound: {fileID: 8300000, guid: 369cb5e02638448c6ab53fdd7ec4746a, type: 3}
   soundVolume: 0.8
