@@ -5,7 +5,10 @@
         "Unity.InputSystem",
         "TpsDungeon.Combat",
         "TpsDungeon.Items",
-        "TpsDungeon.Items.Editor"
+        "TpsDungeon.Items.Editor",
+        "TpsDungeon.Enemies",
+        "TpsDungeon.Player",
+        "TpsDungeon.Progression"
     ],
     "includePlatforms": [
         "Editor"

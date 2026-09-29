@@ -116,6 +116,7 @@ namespace TpsDungeon.Combat
         /// <summary>叩きつけから扇状に走る衝撃波 1 本。</summary>
         private sealed class Shockwave
         {
+            public int Step;
             public WeaponTypeDefinition Type;
             public Vector3 Origin;
             public Vector3 Direction;
@@ -130,6 +131,7 @@ namespace TpsDungeon.Combat
         /// <summary>叩きつけのあとに遅れて落ちる追撃 1 回。</summary>
         private sealed class FollowUp
         {
+            public int Step;
             public WeaponTypeDefinition Type;
             public MeleeComboStep Shape;
             public Vector3 Center;
@@ -160,6 +162,16 @@ namespace TpsDungeon.Combat
 
         /// <summary>判定を出し終えた。(段, 当てた敵の数)。走る段は走り終えたとき、叩きつけは本撃だけを数える。</summary>
         public event Action<int, int> Swung;
+
+        /// <summary>敵に当てた 1 回ごと（本撃・爆発・衝撃波・追撃）。試験の窓や、ダメージ表示が読む。</summary>
+        public event Action<MeleeHitRecord> Dealt;
+
+        /// <summary>当てたダメージをコンソールにも出すか（調整用）。</summary>
+        public bool LogHits
+        {
+            get => logHits;
+            set => logHits = value;
+        }
 
         private void Reset()
         {
@@ -385,14 +397,15 @@ namespace TpsDungeon.Combat
             OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
             if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
             if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
+            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical));
 
-            Explode(point, stats.ExplosionDamage(damage));
+            Explode(point, stats.ExplosionDamage(damage), step);
         }
 
         private float ReactionScale(MeleeComboStep shape) => stats.ReactionScale * (1f + Mathf.Max(0f, shape.reactionBonus));
 
         /// <summary>爆発のエンチャント。範囲の敵（当てた敵も含む）に追加のダメージ。爆発からは爆発しない。</summary>
-        private void Explode(Vector3 point, int damage)
+        private void Explode(Vector3 point, int damage, int step)
         {
             if (damage <= 0) return;
 
@@ -409,6 +422,7 @@ namespace TpsDungeon.Combat
                 Vector3 direction = enemy.transform.position - point;
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction));
                 if (logHits) Debug.Log($"爆発 → {enemy.name}: {dealt}", enemy);
+                Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Explosion, enemy, step, damage, dealt, false));
             }
         }
 
@@ -580,6 +594,7 @@ namespace TpsDungeon.Combat
                 Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
                 var wave = new Shockwave
                 {
+                    Step = step,
                     Type = type,
                     Origin = center,
                     Direction = direction,
@@ -602,6 +617,7 @@ namespace TpsDungeon.Combat
 
                 followUps.Add(new FollowUp
                 {
+                    Step = step,
                     Type = type,
                     Shape = shape,
                     Center = center + forward * plan.ForwardOffset,
@@ -668,6 +684,7 @@ namespace TpsDungeon.Combat
                     int dealt = enemy.TakeDamage(new DamageInfo(f.Damage, point, direction, false, f.Shape.knockback, f.ReactionScale));
                     OneShotEffect.Spawn(f.Type.HitEffect, point, Quaternion.LookRotation(direction, Vector3.up), f.Type.HitEffectScale);
                     if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false));
                 }
             }
         }
@@ -698,6 +715,7 @@ namespace TpsDungeon.Combat
                     int dealt = enemy.TakeDamage(new DamageInfo(w.Damage, point, w.Direction, false, w.Knockback, w.ReactionScale));
                     OneShotEffect.Spawn(w.Type.HitEffect, point, rotation, w.Type.HitEffectScale);
                     if (logHits) Debug.Log($"衝撃波 → {enemy.name}: {dealt}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Shockwave, enemy, w.Step, w.Damage, dealt, false));
                 }
 
                 if (to >= w.Type.ShockwaveRange) shockwaves.RemoveAt(i);

@@ -88,6 +88,22 @@ namespace TpsDungeon.Items
             return to >= 0 && Move(index, to);
         }
 
+        /// <summary>
+        /// index 番目の枠に item を入れ、入っていたものを返す（空きなら null）。item が null なら枠を空ける。
+        /// 範囲外なら何もせず null。中身が変わったときだけ Changed が飛ぶ。試験用に持ち物を差し替えるときなどに使う。
+        /// </summary>
+        public ItemInstance Place(int index, ItemInstance item)
+        {
+            if (!IsValid(index)) return null;
+
+            ItemInstance previous = slots[index];
+            if (previous == item) return previous;
+
+            slots[index] = item;
+            Changed?.Invoke(this);
+            return previous;
+        }
+
         /// <summary>index 番目の枠を空け、入っていたものを返す。空きや範囲外なら null。</summary>
         public ItemInstance RemoveAt(int index)
         {

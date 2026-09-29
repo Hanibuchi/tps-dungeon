@@ -28,6 +28,40 @@ namespace TpsDungeon.Items.Tests
             Object.DestroyImmediate(c.Definition);
         }
 
+        // ---- 枠を指定して入れる -----------------------------------------------
+
+        [Test]
+        public void Placeは指定の枠に入れて_入っていた物を返す()
+        {
+            var inventory = new Inventory(Hotbar, 12);
+            inventory.TryAdd(a);
+            int changed = 0;
+            inventory.Changed += _ => changed++;
+
+            Assert.AreSame(a, inventory.Place(0, b));
+            Assert.AreSame(b, inventory[0]);
+            Assert.IsNull(inventory.Place(2, c), "空きなら null");
+            Assert.AreSame(c, inventory[2]);
+            Assert.AreEqual(2, changed);
+        }
+
+        [Test]
+        public void Placeにnullを渡すと枠を空け_同じ物や範囲外では何もしない()
+        {
+            var inventory = new Inventory(Hotbar, 12);
+            inventory.TryAdd(a);
+            int changed = 0;
+            inventory.Changed += _ => changed++;
+
+            Assert.AreSame(a, inventory.Place(0, a));
+            Assert.IsNull(inventory.Place(99, b));
+            Assert.AreEqual(0, changed);
+
+            Assert.AreSame(a, inventory.Place(0, null));
+            Assert.IsTrue(inventory.IsEmpty(0));
+            Assert.AreEqual(1, changed);
+        }
+
         // ---- 拾う ----------------------------------------------------------
 
         [Test]
