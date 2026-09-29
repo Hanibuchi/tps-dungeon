@@ -51,10 +51,11 @@ namespace TpsDungeon.Items
         private float comboCooldown = 0.3f;
 
         [Header("見た目")]
-        [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。")]
+        [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。" +
+            "Play 中に手の武器（Tools/TPS Dungeon/Player/手の武器を選ぶ）を Scene ビューで動かすと、ここに書き戻る。")]
         private Vector3 heldLocalPosition;
 
-        [SerializeField]
+        [SerializeField, Tooltip("手に持ったときの見た目の向き（右手の骨から見たローカルのオイラー角）。")]
         private Vector3 heldLocalEuler;
 
         [Header("エフェクト")]
@@ -94,7 +95,7 @@ namespace TpsDungeon.Items
         public float ComboCooldown => comboCooldown;
         public bool IsMelee => comboSteps != null && comboSteps.Length > 0;
         public Vector3 HeldLocalPosition => heldLocalPosition;
-        public Quaternion HeldLocalRotation => Quaternion.Euler(heldLocalEuler);
+        public Vector3 HeldLocalEuler => heldLocalEuler;
         public GameObject SwingEffect => swingEffect;
         public float SwingEffectScale => swingEffectScale;
         public GameObject HitEffect => hitEffect;

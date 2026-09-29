@@ -231,10 +231,7 @@ namespace TpsDungeon.Combat
 
             heldModel = Instantiate(weapon.HeldModel, hand);
             heldModel.name = weapon.HeldModel.name;
-            WeaponTypeDefinition type = weapon.WeaponType;
-            heldModel.transform.SetLocalPositionAndRotation(
-                type != null ? type.HeldLocalPosition : Vector3.zero,
-                type != null ? type.HeldLocalRotation : Quaternion.identity);
+            heldModel.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
             foreach (Collider c in heldModel.GetComponentsInChildren<Collider>()) Destroy(c);
         }
 
