@@ -1,5 +1,4 @@
 using TpsDungeon.Interaction;
-using TpsDungeon.Progression;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -58,7 +57,7 @@ namespace TpsDungeon.Items
         public string PromptLabel => lastInventory != null && !lastInventory.Inventory.HasSpace ? fullLabel : pickupLabel;
 
         public string DetailTitle => Instance != null ? Instance.DisplayName : string.Empty;
-        public string DetailBody => Instance != null ? Instance.DetailText(rankTable, ViewerAttack()) : string.Empty;
+        public string DetailBody => Instance != null ? Instance.DetailText(rankTable, lastInventory != null ? lastInventory.OwnerAttack : 0f) : string.Empty;
         public Texture2D DetailIcon => Instance != null ? Instance.Icon : null;
 
         /// <summary>
@@ -80,13 +79,6 @@ namespace TpsDungeon.Items
             // 同じフレームにもう一度拾われないよう、判定から先に外す。
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
             Destroy(gameObject);
-        }
-
-        /// <summary>情報欄の実効 DPS に入れる、見ている人の基礎攻撃力。</summary>
-        private float ViewerAttack()
-        {
-            var progression = lastInventory != null ? lastInventory.GetComponent<CharacterProgression>() : null;
-            return progression != null ? progression.BaseAttack : 0f;
         }
     }
 }

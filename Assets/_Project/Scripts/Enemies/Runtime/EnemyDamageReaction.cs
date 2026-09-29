@@ -224,11 +224,13 @@ namespace TpsDungeon.Enemies
                 return;
             }
 
+            // 速さは残り時間に比例して落ちる。フレームが粗くても進む距離が変わらないよう、区間の平均の速さで進める。
             float step = Mathf.Min(deltaTime, knockbackRemaining);
-            float fraction = knockbackRemaining / knockbackDuration;
+            float before = knockbackRemaining / knockbackDuration;
             knockbackRemaining -= step;
+            float after = knockbackRemaining / knockbackDuration;
 
-            Vector3 move = knockbackVelocity * (fraction * step);
+            Vector3 move = knockbackVelocity * ((before + after) * 0.5f * step);
             float distance = move.magnitude;
             if (distance <= 1e-5f) return;
 

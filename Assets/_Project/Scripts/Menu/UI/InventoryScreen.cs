@@ -436,7 +436,7 @@ namespace TpsDungeon.Menu.UI
             // 何も合わせていないときは枠だけ残して文字は出さない。
             details.EnableInClassList(DetailsEmptyClass, item == null);
             if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : string.Empty;
-            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText() : string.Empty;
+            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText(null, inventory.OwnerAttack) : string.Empty;
             if (detailsIcon != null)
             {
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null
