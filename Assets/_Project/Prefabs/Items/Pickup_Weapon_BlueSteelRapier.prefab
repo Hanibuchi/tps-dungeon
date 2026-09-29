@@ -68,10 +68,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.ItemPickup
   definition: {fileID: 11400000, guid: b272867a162ca4f2fad3d04d88418b38, type: 2}
-  rankTable: {fileID: 11400000, guid: 6d94ced9df5b74ccc8b21b2f5dd480d5, type: 2}
   pickupLabel: "\u62FE\u3046"
   fullLabel: "\u6301\u3061\u304D\u308C\u306A\u3044"
---- !u!1 &4254462520533660548
+--- !u!1 &8528748664740612430
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -79,7 +78,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2101492966466593760}
+  - component: {fileID: 5847021622562428283}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -87,13 +86,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2101492966466593760
+--- !u!4 &5847021622562428283
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4254462520533660548}
+  m_GameObject: {fileID: 8528748664740612430}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -132,7 +131,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2101492966466593760}
+  - {fileID: 5847021622562428283}
   m_Father: {fileID: 9123451380682819070}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &7545675103015175491
@@ -141,7 +140,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2101492966466593760}
+    m_TransformParent: {fileID: 5847021622562428283}
     m_Modifications:
     - target: {fileID: 3689515951906905501, guid: 53575ba1699a8c94c81a56ca90753235, type: 3}
       propertyPath: m_Name
