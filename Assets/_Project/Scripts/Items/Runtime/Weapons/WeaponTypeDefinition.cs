@@ -47,6 +47,9 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("段が終わってからこの秒数以内に押せば次の段に続く。過ぎたら 1 段目から。")]
         private float comboChainGrace = 0.25f;
 
+        [SerializeField, Min(0f), Tooltip("コンボが切れて（最後の段を振り終えるか、猶予を過ぎて）から次に振れるまでの秒数。")]
+        private float comboCooldown = 0.3f;
+
         [Header("見た目")]
         [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。")]
         private Vector3 heldLocalPosition;
@@ -88,6 +91,7 @@ namespace TpsDungeon.Items
         public float BaseCritMultiplier => baseCritMultiplier;
         public IReadOnlyList<MeleeComboStep> ComboSteps => comboSteps;
         public float ComboChainGrace => comboChainGrace;
+        public float ComboCooldown => comboCooldown;
         public bool IsMelee => comboSteps != null && comboSteps.Length > 0;
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Quaternion HeldLocalRotation => Quaternion.Euler(heldLocalEuler);

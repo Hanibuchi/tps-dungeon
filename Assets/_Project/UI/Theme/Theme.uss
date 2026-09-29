@@ -596,6 +596,18 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
+/* 次に使えるまでの待ち。残りの分だけ 12 時から時計回りに暗くする（CooldownSweep が描く）。 */
+.slot__cooldown {
+    --cooldown-shade: rgba(8, 6, 5, 0.82);
+    --cooldown-edge: rgba(248, 220, 150, 0.8);
+}
+
+/* 待ちが明けた瞬間、内側の線をひととき明るくする。 */
+.slot--ready .slot__inner {
+    border-color: var(--gold-bright);
+    transition-duration: 0s;
+}
+
 /* ---- アイテムの情報欄（照準を合わせたときと、インベントリでホバーしたとき） ---- */
 
 .item-details {

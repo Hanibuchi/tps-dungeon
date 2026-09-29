@@ -286,6 +286,7 @@ namespace TpsDungeon.Items.Editor
                 LoadSound(SwordFinisherHitSoundPath);
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
+            serialized.FindProperty("comboCooldown").floatValue = 0.3f;
             serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
             serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
@@ -320,6 +321,7 @@ namespace TpsDungeon.Items.Editor
             });
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
+            serialized.FindProperty("comboCooldown").floatValue = 0.3f;
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.12f; // 素材は 14 m ほどに広がる

@@ -6,7 +6,8 @@
         "TpsDungeon.Map",
         "TpsDungeon.UiKit",
         "TpsDungeon.Items",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Progression",
+        "TpsDungeon.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -37,26 +37,31 @@ namespace TpsDungeon.Combat
     ///   段が終わってから猶予内に押す → 次の段
     ///   猶予を過ぎる              → 待機（次は 1 段目から）
     ///   最後の段のあと            → 1 段目に戻る（先行入力があれば続けて 1 段目）
+    ///   待機に戻ったとき           → cooldown 秒の待ち。その間の押下は捨てる（先行入力にもしない）
+    ///                               最後の段のあとは先行入力があっても待つ（連打で待ちを飛ばさせない）
     ///
-    /// 時間は speed（攻撃速度の倍率）を掛けて進める。猶予は実時間のまま。
+    /// 時間は speed（攻撃速度の倍率）を掛けて進める。猶予と待ちは実時間のまま。
+    /// 持ち替えのように外から待たせたいときは <see cref="StartCooldown"/>。
     /// </summary>
     public sealed class MeleeComboState
     {
         private readonly ComboStepTiming[] steps;
         private readonly float chainGrace;
+        private readonly float cooldown;
 
         private float stepTime;
         private float graceRemaining;
         private bool buffered;
         private int nextStep;
 
-        public MeleeComboState(IReadOnlyList<ComboStepTiming> steps, float chainGrace)
+        public MeleeComboState(IReadOnlyList<ComboStepTiming> steps, float chainGrace, float cooldown = 0f)
         {
             if (steps == null || steps.Count == 0) throw new ArgumentException("段が 1 つも無い", nameof(steps));
 
             this.steps = new ComboStepTiming[steps.Count];
             for (int i = 0; i < steps.Count; i++) this.steps[i] = steps[i];
             this.chainGrace = Math.Max(0f, chainGrace);
+            this.cooldown = Math.Max(0f, cooldown);
             Reset();
         }
 
@@ -74,6 +79,23 @@ namespace TpsDungeon.Combat
         /// <summary>次に押したときに出る段。</summary>
         public int NextStep => nextStep;
 
+        /// <summary>次に振れるまでの残り（秒）。待っていなければ 0。</summary>
+        public float CooldownRemaining { get; private set; }
+
+        /// <summary>今の待ちの全体の長さ（秒）。残りの割合を出すのに使う。</summary>
+        public float CooldownDuration { get; private set; }
+
+        public bool IsCoolingDown => CooldownRemaining > 0f;
+
+        /// <summary>seconds 秒待たせる。今の残りのほうが長ければそのまま（短い待ちで長い待ちを縮めない）。</summary>
+        public void StartCooldown(float seconds)
+        {
+            if (seconds <= CooldownRemaining) return;
+
+            CooldownRemaining = seconds;
+            CooldownDuration = seconds;
+        }
+
         /// <summary>待機に戻す（持ち替えたときなど）。</summary>
         public void Reset()
         {
@@ -82,6 +104,8 @@ namespace TpsDungeon.Combat
             stepTime = 0f;
             graceRemaining = 0f;
             buffered = false;
+            CooldownRemaining = 0f;
+            CooldownDuration = 0f;
         }
 
         /// <summary>時間を deltaTime 秒進める。pressed はこのフレームに攻撃が押されたか。</summary>
@@ -92,6 +116,12 @@ namespace TpsDungeon.Combat
 
             if (!IsSwinging)
             {
+                if (IsCoolingDown)
+                {
+                    CooldownRemaining = Math.Max(0f, CooldownRemaining - deltaTime);
+                    return ComboEvents.None;
+                }
+
                 if (pressed) return StartStep(nextStep);
 
                 if (graceRemaining > 0f)
@@ -100,8 +130,7 @@ namespace TpsDungeon.Combat
                     if (graceRemaining <= 0f)
                     {
                         graceRemaining = 0f;
-                        nextStep = 0;
-                        return ComboEvents.Ended;
+                        return End();
                     }
                 }
 
@@ -121,25 +150,30 @@ namespace TpsDungeon.Combat
             if (stepTime < timing.Duration) return events;
 
             int following = Step + 1 >= steps.Length ? 0 : Step + 1;
-            if (buffered) return events | StartStep(following);
+            if (buffered && (following != 0 || cooldown <= 0f)) return events | StartStep(following);
 
             Step = -1;
             nextStep = following;
             stepTime = 0f;
+            buffered = false;
             if (following == 0)
             {
                 graceRemaining = 0f;
-                return events | ComboEvents.Ended;
+                return events | End();
             }
 
             graceRemaining = chainGrace;
-            if (graceRemaining <= 0f)
-            {
-                nextStep = 0;
-                return events | ComboEvents.Ended;
-            }
+            if (graceRemaining <= 0f) return events | End();
 
             return events;
+        }
+
+        /// <summary>コンボが切れて待機に戻る。次は 1 段目で、武器種の待ちに入る。</summary>
+        private ComboEvents End()
+        {
+            nextStep = 0;
+            StartCooldown(cooldown);
+            return ComboEvents.Ended;
         }
 
         private ComboEvents StartStep(int step)
