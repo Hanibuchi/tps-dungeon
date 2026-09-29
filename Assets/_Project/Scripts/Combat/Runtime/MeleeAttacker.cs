@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
-using TpsDungeon.Player;
 using TpsDungeon.Progression;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// ホットバーで持っている近接武器で攻撃する。攻撃キーを押すたびにコンボを 1 段ずつ進め（MeleeComboState）、
-    /// 段ごとの判定の瞬間に前方の箱の中の敵へダメージを与え、振りと命中のエフェクトと音を出す。
+    /// 持たされた近接武器で攻撃する実行役。入力は持たず、外から <see cref="Equip"/>（持ち替え）・<see cref="PressAttack"/>（攻撃の押下）・
+    /// <see cref="AimForward"/>（向き）を渡してもらう。プレイヤーは PlayerMeleeInput が、仲間は AI が叩く。
+    /// 押すたびにコンボを 1 段ずつ進め（MeleeComboState）、段の判定の瞬間に段の当て方（MeleeComboStep.motion）で当てる:
+    ///   Swing … 前方の箱の中の敵へ
+    ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ
+    ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で扇状に衝撃波が走り、「多重」で前へずらした追撃が遅れて落ちる
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない。
     /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
-    /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory と同じ GameObject）に付ける。
+    /// キャラのルート（CharacterController と同じ GameObject）に付ける。基礎攻撃力は同じ GameObject の CharacterProgression から読む。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Melee Attacker")]
@@ -29,20 +31,23 @@ namespace TpsDungeon.Combat
         private const string ComboStepParam = "ComboStep";
         private const string AttackSpeedParam = "AttackSpeed";
 
-        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject から探す。")]
-        private PlayerInput playerInput;
+        /// <summary>走っているとき、進めた量が予定のこの割合を切ったら壁に当たったとして止める。</summary>
+        private const float LungeBlockedRatio = 0.3f;
 
-        [SerializeField, Tooltip("攻撃のアクション名。")]
-        private string attackActionName = "Player/Attack";
+        /// <summary>
+        /// 敵をすり抜ける走りで、走り終えたときにまだ敵に重なっていたら、抜けるまでこの距離（m）まで走り足す。
+        /// 重なったままぶつかり直すと、押し戻されて手前へ戻ってしまうため。
+        /// </summary>
+        private const float LungeMaxOverrun = 1.5f;
 
         [SerializeField, Tooltip("キャラの Animator。未設定なら子から探す。")]
         private Animator animator;
 
-        [SerializeField, Tooltip("攻撃判定が当たるレイヤー。")]
+        [SerializeField, Tooltip("攻撃判定が当たるレイヤー。走る段で壁を探すのにも使う。")]
         private LayerMask hitMask = ~0;
 
-        [SerializeField, Tooltip("段を振り始めるときに、体をカメラの向きへ向ける。")]
-        private bool faceCameraOnAttack = true;
+        [SerializeField, Tooltip("段を振り始めるときに、体を AimForward へ向ける。")]
+        private bool faceAimOnAttack = true;
 
         [SerializeField, Min(0f), Tooltip("持ち替えてから振れるまでの秒数。全武器共通。")]
         private float switchCooldown = 0.5f;
@@ -71,27 +76,70 @@ namespace TpsDungeon.Combat
         [SerializeField, Tooltip("当てたダメージをコンソールに出す（調整用）。")]
         private bool logHits;
 
-        private PlayerHotbar hotbar;
-        private PlayerInventory inventory;
         private CharacterProgression progression;
-        private InputAction attackAction;
-        private Transform cameraTransform;
+        private CharacterController characterController;
 
-        private bool refreshed;
+        private bool initialized;
+        private bool equipped;
         private ItemInstance held;
         private WeaponDefinition heldWeapon;
         private GameObject heldModel;
         private MeleeComboState combo;
         private MeleeWeaponStats stats;
+        private bool pressQueued;
 
         private readonly HashSet<EnemyHealth> hitThisSwing = new HashSet<EnemyHealth>();
         private readonly HashSet<EnemyHealth> explosionTargets = new HashSet<EnemyHealth>();
         private readonly Collider[] overlap = new Collider[32];
 
+        private Lunge lunge;
+        private readonly List<Collider> lungeIgnored = new List<Collider>();
+        private readonly List<Shockwave> shockwaves = new List<Shockwave>();
+        private readonly List<FollowUp> followUps = new List<FollowUp>();
+
         private bool hasWeaponTypeParam;
         private bool hasAttackParam;
         private bool hasComboStepParam;
         private bool hasAttackSpeedParam;
+
+        /// <summary>走る段で走っている最中の状態。</summary>
+        private sealed class Lunge
+        {
+            public int Step;
+            public Vector3 Direction;
+            public float Speed;
+            public float Remaining;
+            public float Overrun;
+            public int Hits;
+        }
+
+        /// <summary>叩きつけから扇状に走る衝撃波 1 本。</summary>
+        private sealed class Shockwave
+        {
+            public int Step;
+            public WeaponTypeDefinition Type;
+            public Vector3 Origin;
+            public Vector3 Direction;
+            public float Travelled;
+            public int Damage;
+            public float Knockback;
+            public float ReactionScale;
+            public GameObject Effect;
+            public readonly HashSet<EnemyHealth> Hit = new HashSet<EnemyHealth>();
+        }
+
+        /// <summary>叩きつけのあとに遅れて落ちる追撃 1 回。</summary>
+        private sealed class FollowUp
+        {
+            public int Step;
+            public WeaponTypeDefinition Type;
+            public MeleeComboStep Shape;
+            public Vector3 Center;
+            public Vector3 Forward;
+            public float Delay;
+            public int Damage;
+            public float ReactionScale;
+        }
 
         /// <summary>今振る武器（素手なら unarmedWeapon）。振れなければ null。</summary>
         public WeaponDefinition HeldWeapon => heldWeapon;
@@ -103,86 +151,78 @@ namespace TpsDungeon.Combat
         public float CooldownFraction =>
             combo != null && combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
 
-        /// <summary>判定を出した。(段, 当てた敵の数)。</summary>
+        /// <summary>走る段で走っている最中か。持ち主の歩きはこの間止めること（プレイヤーなら PlayerMeleeInput が止める）。</summary>
+        public bool IsLunging => lunge != null;
+
+        /// <summary>走っていて、武器種が走る間の無敵を持っているか。被ダメージ側が読む。</summary>
+        public bool IsInvulnerable => lunge != null && heldWeapon != null && heldWeapon.WeaponType.InvulnerableDuringLunge;
+
+        /// <summary>段を振り始めるときに体を向ける向き（水平に直して使う）。ゼロなら向きを変えない。</summary>
+        public Vector3 AimForward { get; set; }
+
+        /// <summary>判定を出し終えた。(段, 当てた敵の数)。走る段は走り終えたとき、叩きつけは本撃だけを数える。</summary>
         public event Action<int, int> Swung;
+
+        /// <summary>敵に当てた 1 回ごと（本撃・爆発・衝撃波・追撃）。試験の窓や、ダメージ表示が読む。</summary>
+        public event Action<MeleeHitRecord> Dealt;
+
+        /// <summary>当てたダメージをコンソールにも出すか（調整用）。</summary>
+        public bool LogHits
+        {
+            get => logHits;
+            set => logHits = value;
+        }
 
         private void Reset()
         {
-            playerInput = GetComponent<PlayerInput>();
             animator = GetComponentInChildren<Animator>();
         }
 
-        private void Awake()
+        private void Awake() => Initialize();
+
+        // 入力役の OnEnable が先に Equip を呼ぶことがあるので、Awake を待たずに要る物を揃えられるようにしておく。
+        private void Initialize()
         {
-            if (playerInput == null) playerInput = GetComponent<PlayerInput>();
+            if (initialized) return;
+
+            initialized = true;
             if (animator == null) animator = GetComponentInChildren<Animator>();
-            hotbar = GetComponent<PlayerHotbar>();
-            inventory = GetComponent<PlayerInventory>();
             progression = GetComponent<CharacterProgression>();
+            characterController = GetComponent<CharacterController>();
             CacheAnimatorParameters();
-        }
-
-        private void OnEnable()
-        {
-            if (playerInput != null && playerInput.actions != null)
-            {
-                attackAction = playerInput.actions.FindAction(attackActionName);
-                if (attackAction == null) Debug.LogWarning($"アクション '{attackActionName}' が {playerInput.actions.name} に無い", this);
-            }
-
-            if (hotbar != null) hotbar.Changed += OnHotbarChanged;
-            if (inventory != null) inventory.Changed += OnInventoryChanged;
-            RefreshHeld();
         }
 
         private void OnDisable()
         {
-            if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
-            if (inventory != null) inventory.Changed -= OnInventoryChanged;
-            attackAction = null;
+            EndLunge();
+            pressQueued = false;
         }
 
-        // 枠を選び直したら、中身が同じ（空の枠どうしなど）でも持ち替えとして待たせる。
-        private void OnHotbarChanged(PlayerHotbar _) => RefreshHeld(true);
+        /// <summary>攻撃を 1 回押す。次の Update で使う（待ち中や振っている途中の押下の扱いは MeleeComboState に従う）。</summary>
+        public void PressAttack() => pressQueued = true;
 
-        private void OnInventoryChanged(PlayerInventory _) => RefreshHeld();
-
-        private void Update()
+        /// <summary>
+        /// item を手に持つ（null なら素手）。switched が真なら、中身が同じでも持ち替えとして待たせる（枠を選び直したときなど）。
+        /// 最初の 1 回は待たせない。前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+        /// </summary>
+        public void Equip(ItemInstance item, bool switched = false)
         {
-            if (combo == null) return;
+            if (equipped && item == held && !switched) return;
 
-            bool pressed = attackAction != null && attackAction.WasPressedThisFrame()
-                           && playerInput != null && attackAction.actionMap == playerInput.currentActionMap;
+            Initialize();
+            float switchWait = equipped ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
+            equipped = true;
+            EndLunge();
 
-            if (pressed && !combo.IsSwinging) stats = ComputeStats();
-            float speed = stats != null ? stats.AttackSpeed : 1f;
-
-            // 先行入力があると、判定と次の段の始まりが同じフレームに来ることがある。判定は進める前の段で出す。
-            int swinging = combo.Step;
-            ComboEvents events = combo.Tick(Time.deltaTime, pressed, speed);
-            if ((events & ComboEvents.Hit) != 0) DealHit(swinging >= 0 ? swinging : combo.Step);
-            if ((events & ComboEvents.StepStarted) != 0) BeginStep(combo.Step);
-        }
-
-        // ---- 持ち替え ----
-
-        private void RefreshHeld(bool switched = false)
-        {
-            ItemInstance current = hotbar != null && inventory != null ? inventory.Inventory[hotbar.SelectedIndex] : null;
-            if (refreshed && current == held && !switched) return;
-
-            // 持ち替えの待ちは最初の 1 回（起動時）には掛けない。前の武器の待ちが長ければ引き継ぎ、往復で消させない。
-            float switchWait = refreshed ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
-            refreshed = true;
-            held = current;
-            WeaponDefinition weapon = current?.Weapon;
+            held = item;
+            WeaponDefinition weapon = item?.Weapon;
             bool isWeapon = weapon != null && weapon.WeaponType != null;
             heldWeapon = IsMelee(weapon) ? weapon : !isWeapon && IsMelee(unarmedWeapon) ? unarmedWeapon : null;
 
-            WeaponTypeDefinition heldType = heldWeapon != null ? heldWeapon.WeaponType : null;
-            combo = heldType != null ? new MeleeComboState(Timings(heldType), heldType.ComboChainGrace, heldType.ComboCooldown) : null;
-            combo?.StartCooldown(switchWait);
             stats = heldWeapon != null ? ComputeStats() : null;
+            WeaponTypeDefinition heldType = heldWeapon != null ? heldWeapon.WeaponType : null;
+            combo = heldType != null ? new MeleeComboState(Timings(heldType, stats), heldType.ComboChainGrace, heldType.ComboCooldown) : null;
+            combo?.StartCooldown(switchWait);
 
             WeaponDefinition pose = isWeapon ? weapon : heldWeapon;
             if (animator != null && hasWeaponTypeParam)
@@ -191,12 +231,42 @@ namespace TpsDungeon.Combat
             AttachHeldModel(weapon);
         }
 
+        private void Update()
+        {
+            float dt = Time.deltaTime;
+            TickFollowUps(dt);
+            TickShockwaves(dt);
+            if (lunge != null) TickLunge(dt);
+
+            bool pressed = pressQueued;
+            pressQueued = false;
+            if (combo == null) return;
+
+            if (pressed && !combo.IsSwinging) stats = ComputeStats();
+            float speed = stats != null ? stats.AttackSpeed : 1f;
+
+            // 先行入力があると、判定と次の段の始まりが同じフレームに来ることがある。判定は進める前の段で出す。
+            int swinging = combo.Step;
+            ComboEvents events = combo.Tick(dt, pressed, speed);
+            if ((events & ComboEvents.Hit) != 0) DealHit(swinging >= 0 ? swinging : combo.Step);
+            if ((events & ComboEvents.StepStarted) != 0) BeginStep(combo.Step);
+        }
+
+        // ---- 持ち替え ----
+
         private static bool IsMelee(WeaponDefinition weapon) => weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsMelee;
 
-        private static List<ComboStepTiming> Timings(WeaponTypeDefinition type)
+        /// <summary>段の時間。走る段は、持続時間のエンチャントで走る時間が延びた分だけ段も延ばす。</summary>
+        private static List<ComboStepTiming> Timings(WeaponTypeDefinition type, MeleeWeaponStats stats)
         {
+            float lungeScale = stats != null ? stats.LungeTimeScale : 1f;
             var result = new List<ComboStepTiming>();
-            foreach (MeleeComboStep step in type.ComboSteps) result.Add(new ComboStepTiming(step.duration, step.hitTime));
+            foreach (MeleeComboStep step in type.ComboSteps)
+            {
+                float extra = step.motion == MeleeStepMotion.Lunge ? Mathf.Max(0f, step.lungeDuration * (lungeScale - 1f)) : 0f;
+                result.Add(new ComboStepTiming(step.duration + extra, step.hitTime));
+            }
+
             return result;
         }
 
@@ -240,7 +310,7 @@ namespace TpsDungeon.Combat
         private void BeginStep(int step)
         {
             hitThisSwing.Clear();
-            if (faceCameraOnAttack) FaceCamera();
+            if (faceAimOnAttack) FaceAim();
 
             if (animator == null) return;
             if (hasComboStepParam) animator.SetInteger(ComboStepParam, step);
@@ -248,12 +318,9 @@ namespace TpsDungeon.Combat
             if (hasAttackParam) animator.SetTrigger(AttackParam);
         }
 
-        private void FaceCamera()
+        private void FaceAim()
         {
-            if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
-            if (cameraTransform == null) return;
-
-            Vector3 forward = cameraTransform.forward;
+            Vector3 forward = AimForward;
             forward.y = 0f;
             if (forward.sqrMagnitude < 1e-6f) return;
             transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
@@ -263,47 +330,82 @@ namespace TpsDungeon.Combat
         {
             if (heldWeapon == null || stats == null || step < 0) return;
 
+            MeleeComboStep shape = heldWeapon.WeaponType.ComboSteps[step];
+            switch (shape.motion)
+            {
+                case MeleeStepMotion.Lunge:
+                    BeginLunge(step, shape);
+                    break;
+                case MeleeStepMotion.Slam:
+                    Slam(step, shape);
+                    break;
+                default:
+                    Swing(step, shape);
+                    break;
+            }
+        }
+
+        private void Swing(int step, MeleeComboStep shape)
+        {
+            PlaySwing(shape);
+            int hits = 0;
+            HitBox(step, shape, ref hits);
+            Swung?.Invoke(step, hits);
+        }
+
+        /// <summary>段の振りのエフェクトと音。当たっても外れても出す。</summary>
+        private void PlaySwing(MeleeComboStep shape)
+        {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
-            MeleeComboStep shape = type.ComboSteps[step];
-            HitBox(shape, out Vector3 center, out Vector3 halfExtents);
             Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
             OneShotEffect.Spawn(type.SwingEffect, swingPoint,
                 transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
             PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
-            int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, transform.rotation, hitMask, QueryTriggerInteraction.Ignore);
+        }
 
-            int hits = 0;
+        /// <summary>今の位置の段の箱に入った、この振りでまだ当てていない敵に当てる。</summary>
+        private void HitBox(int step, MeleeComboStep shape, ref int hits)
+        {
+            BoxOf(shape, out Vector3 center, out Vector3 halfExtents);
+            int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, transform.rotation, hitMask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 EnemyHealth enemy = overlap[i].GetComponentInParent<EnemyHealth>();
                 if (enemy == null || enemy.IsDead || !hitThisSwing.Add(enemy)) continue;
-
-                Vector3 point = overlap[i].ClosestPoint(center);
-                bool critical = UnityEngine.Random.value < stats.CritChance;
-                int damage = stats.HitDamage(step);
-                if (critical) damage = stats.ApplyCritical(damage);
-
-                Vector3 direction = enemy.transform.position - transform.position;
-                direction.y = 0f;
-                if (direction.sqrMagnitude < 1e-6f) direction = transform.forward;
-
-                int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
-                    shape.knockback + stats.KnockbackBonus, stats.ReactionScale));
-                if (hits == 0) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
-                hits++;
-                Quaternion facing = Quaternion.LookRotation(direction.normalized, Vector3.up);
-                OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
-                if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
-                if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
-
-                Explode(point, stats.ExplosionDamage(damage));
+                Strike(enemy, overlap[i].ClosestPoint(center), step, shape, ref hits);
             }
-
-            Swung?.Invoke(step, hits);
         }
 
+        /// <summary>
+        /// 段の 1 撃を enemy に当てる。クリティカル・命中のエフェクトと音・爆発のエンチャントまで。
+        /// 命中の音は 1 振りの最初の 1 体だけ。playHitSound が偽なら鳴らさない（叩きつけは着弾の瞬間に鳴らしている）。
+        /// </summary>
+        private void Strike(EnemyHealth enemy, Vector3 point, int step, MeleeComboStep shape, ref int hits, bool playHitSound = true)
+        {
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            bool critical = UnityEngine.Random.value < stats.CritChance;
+            int damage = stats.HitDamage(step);
+            if (critical) damage = stats.ApplyCritical(damage);
+
+            Vector3 direction = FlatDirection(transform.position, enemy.transform.position, transform.forward);
+            int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
+                shape.knockback + stats.KnockbackBonus, ReactionScale(shape)));
+            if (hits == 0 && playHitSound) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
+            hits++;
+
+            Quaternion facing = Quaternion.LookRotation(direction, Vector3.up);
+            OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
+            if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
+            if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
+            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical));
+
+            Explode(point, stats.ExplosionDamage(damage), step);
+        }
+
+        private float ReactionScale(MeleeComboStep shape) => stats.ReactionScale * (1f + Mathf.Max(0f, shape.reactionBonus));
+
         /// <summary>爆発のエンチャント。範囲の敵（当てた敵も含む）に追加のダメージ。爆発からは爆発しない。</summary>
-        private void Explode(Vector3 point, int damage)
+        private void Explode(Vector3 point, int damage, int step)
         {
             if (damage <= 0) return;
 
@@ -320,7 +422,319 @@ namespace TpsDungeon.Combat
                 Vector3 direction = enemy.transform.position - point;
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction));
                 if (logHits) Debug.Log($"爆発 → {enemy.name}: {dealt}", enemy);
+                Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Explosion, enemy, step, damage, dealt, false));
             }
+        }
+
+        // ---- 走る（Lunge） ----
+
+        private void BeginLunge(int step, MeleeComboStep shape)
+        {
+            EndLunge();
+            PlaySwing(shape);
+
+            float duration = Mathf.Max(0.01f, shape.lungeDuration);
+            lunge = new Lunge
+            {
+                Step = step,
+                Direction = FlatDirection(Vector3.zero, transform.forward, Vector3.forward),
+                Speed = Mathf.Max(0f, shape.lungeDistance) / duration,
+                Remaining = duration * stats.LungeTimeScale,
+            };
+
+            // 走り出す前に目の前にいる敵にも当てる。
+            HitBox(step, shape, ref lunge.Hits);
+        }
+
+        private void TickLunge(float dt)
+        {
+            if (heldWeapon == null || stats == null)
+            {
+                EndLunge();
+                return;
+            }
+
+            MeleeComboStep shape = heldWeapon.WeaponType.ComboSteps[lunge.Step];
+            bool overrunning = lunge.Remaining <= 0f;
+            float time = overrunning ? dt : Mathf.Min(dt, lunge.Remaining);
+            lunge.Remaining -= time;
+            Vector3 delta = lunge.Direction * (lunge.Speed * time);
+
+            float moved = MoveLunge(delta);
+            if (overrunning) lunge.Overrun += moved;
+            HitBox(lunge.Step, shape, ref lunge.Hits);
+
+            bool blocked = delta.sqrMagnitude > 1e-8f && moved < delta.magnitude * LungeBlockedRatio;
+            bool timeUp = lunge.Remaining <= 0f && (lunge.Overrun >= LungeMaxOverrun || !InsidePassedEnemy());
+            if (timeUp || blocked) EndLunge();
+        }
+
+        /// <summary>体を delta だけ動かし、実際に水平に進めた距離を返す。</summary>
+        private float MoveLunge(Vector3 delta)
+        {
+            bool passThrough = heldWeapon.WeaponType.LungePassesThroughEnemies;
+            Vector3 before = transform.position;
+
+            if (characterController != null && characterController.enabled)
+            {
+                if (passThrough) IgnoreEnemiesAhead(delta);
+                characterController.Move(delta);
+            }
+            else
+            {
+                // CharacterController の無い持ち主（仲間の AI など）。壁の手前までだけ動かす。
+                float distance = delta.magnitude;
+                if (distance > 1e-6f && FindWall(before + Vector3.up * 0.5f, delta / distance, distance + 0.3f, passThrough, out float wall))
+                    distance = Mathf.Max(0f, wall - 0.3f);
+                transform.position = before + delta.normalized * distance;
+            }
+
+            Vector3 moved = transform.position - before;
+            moved.y = 0f;
+            return moved.magnitude;
+        }
+
+        /// <summary>進む先のカプセルに入る敵とは、走り終えるまでぶつからないようにする。</summary>
+        private void IgnoreEnemiesAhead(Vector3 delta)
+        {
+            CharacterController cc = characterController;
+            float radius = cc.radius + cc.skinWidth + 0.1f;
+            Vector3 center = transform.TransformPoint(cc.center) + delta;
+            float half = Mathf.Max(0f, cc.height * 0.5f - cc.radius);
+            Vector3 bottom = center - Vector3.up * half;
+            Vector3 top = center + Vector3.up * half;
+
+            int count = Physics.OverlapCapsuleNonAlloc(bottom, top, radius, overlap, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                Collider other = overlap[i];
+                if (other == cc || lungeIgnored.Contains(other) || other.GetComponentInParent<EnemyHealth>() == null) continue;
+
+                Physics.IgnoreCollision(cc, other, true);
+                lungeIgnored.Add(other);
+            }
+        }
+
+        /// <summary>すり抜けている最中の敵に、今の体が重なっているか。</summary>
+        private bool InsidePassedEnemy()
+        {
+            CharacterController cc = characterController;
+            if (cc == null || lungeIgnored.Count == 0) return false;
+
+            float radius = cc.radius + cc.skinWidth;
+            Vector3 center = transform.TransformPoint(cc.center);
+            float half = Mathf.Max(0f, cc.height * 0.5f - cc.radius);
+            int count = Physics.OverlapCapsuleNonAlloc(center - Vector3.up * half, center + Vector3.up * half, radius, overlap, hitMask,
+                QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                if (lungeIgnored.Contains(overlap[i])) return true;
+            }
+
+            return false;
+        }
+
+        private bool FindWall(Vector3 origin, Vector3 direction, float distance, bool skipEnemies, out float wall)
+        {
+            wall = distance;
+            bool found = false;
+            RaycastHit[] hits = Physics.SphereCastAll(origin, 0.3f, direction, distance, hitMask, QueryTriggerInteraction.Ignore);
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider.transform.IsChildOf(transform)) continue;
+                if (skipEnemies && hit.collider.GetComponentInParent<EnemyHealth>() != null) continue;
+                if (hit.distance < wall) wall = hit.distance;
+                found = true;
+            }
+
+            return found;
+        }
+
+        private void EndLunge()
+        {
+            if (characterController != null)
+            {
+                foreach (Collider other in lungeIgnored)
+                {
+                    if (other != null) Physics.IgnoreCollision(characterController, other, false);
+                }
+            }
+
+            lungeIgnored.Clear();
+            if (lunge == null) return;
+
+            Lunge finished = lunge;
+            lunge = null;
+            Swung?.Invoke(finished.Step, finished.Hits);
+        }
+
+        // ---- 叩きつける（Slam） ----
+
+        private void Slam(int step, MeleeComboStep shape)
+        {
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            PlaySwing(shape);
+
+            // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に鳴らす。
+            Vector3 center = SlamCenter(shape);
+            OneShotEffect.Spawn(type.SlamEffect, center, transform.rotation, type.SlamEffectScale);
+            PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, center, type.SoundVolume);
+
+            int hits = 0;
+            float radius = Mathf.Max(0f, shape.slamRadius) * stats.HitboxScale;
+            foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(center, radius, shape.slamHeight))
+            {
+                if (hitThisSwing.Add(enemy)) Strike(enemy, point, step, shape, ref hits, false);
+            }
+
+            int baseHit = stats.HitDamage(step);
+            Vector3 forward = transform.forward;
+            foreach (float angle in SlamPattern.ShockwaveAngles(stats.ShockwaveCount, type.ShockwaveSpacingAngle))
+            {
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
+                var wave = new Shockwave
+                {
+                    Step = step,
+                    Type = type,
+                    Origin = center,
+                    Direction = direction,
+                    // 円の縁から走らせる。円の中の敵は本撃で叩いたので、本数ぶん重ねて当てない。
+                    Travelled = Mathf.Min(radius, type.ShockwaveRange),
+                    Damage = MeleeWeaponStats.Share(baseHit, type.ShockwaveDamageRatio),
+                    Knockback = shape.knockback * 0.5f + stats.KnockbackBonus,
+                    ReactionScale = ReactionScale(shape),
+                    Effect = OneShotEffect.Spawn(type.ShockwaveEffect, center + direction * Mathf.Min(radius, type.ShockwaveRange),
+                        Quaternion.LookRotation(direction, Vector3.up),
+                        type.ShockwaveEffectScale, type.ShockwaveRange / type.ShockwaveSpeed + 2f),
+                };
+                if (wave.Damage > 0) shockwaves.Add(wave);
+            }
+
+            foreach (SlamFollowUp plan in SlamPattern.FollowUps(stats.FollowUpCount, type.FollowUpSpacing, type.FollowUpInterval))
+            {
+                int damage = MeleeWeaponStats.Share(baseHit, type.FollowUpDamageRatio);
+                if (damage <= 0) continue;
+
+                followUps.Add(new FollowUp
+                {
+                    Step = step,
+                    Type = type,
+                    Shape = shape,
+                    Center = center + forward * plan.ForwardOffset,
+                    Forward = forward,
+                    Delay = plan.Delay,
+                    Damage = damage,
+                    ReactionScale = ReactionScale(shape),
+                });
+            }
+
+            Swung?.Invoke(step, hits);
+        }
+
+        /// <summary>着弾点。hitboxCenter のキャラから見た位置（前への距離はサイズで伸ばす）。</summary>
+        private Vector3 SlamCenter(MeleeComboStep shape)
+        {
+            Vector3 local = shape.hitboxCenter;
+            local.z *= stats != null ? stats.HitboxScale : 1f;
+            return transform.TransformPoint(local);
+        }
+
+        /// <summary>center から水平に radius 以内、上下 height 以内にいる生きた敵（1 体 1 回）と、当たった場所。</summary>
+        private List<(EnemyHealth, Vector3)> EnemiesInCircle(Vector3 center, float radius, float height)
+        {
+            var result = new List<(EnemyHealth, Vector3)>();
+            if (radius <= 0f) return result;
+
+            explosionTargets.Clear();
+            float reach = Mathf.Max(radius, height);
+            int count = Physics.OverlapSphereNonAlloc(center, reach + height, overlap, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                EnemyHealth enemy = overlap[i].GetComponentInParent<EnemyHealth>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                Vector3 point = overlap[i].ClosestPoint(center);
+                Vector3 flat = point - center;
+                float up = flat.y;
+                flat.y = 0f;
+                if (flat.magnitude > radius || Mathf.Abs(up) > Mathf.Max(0f, height)) continue;
+                if (explosionTargets.Add(enemy)) result.Add((enemy, point));
+            }
+
+            explosionTargets.Clear();
+            return result;
+        }
+
+        private void TickFollowUps(float dt)
+        {
+            for (int i = followUps.Count - 1; i >= 0; i--)
+            {
+                FollowUp f = followUps[i];
+                f.Delay -= dt;
+                if (f.Delay > 0f) continue;
+
+                followUps.RemoveAt(i);
+                OneShotEffect.Spawn(f.Type.SlamEffect, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.SlamEffectScale);
+                PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
+
+                float radius = Mathf.Max(0f, f.Shape.slamRadius) * (stats != null ? stats.HitboxScale : 1f);
+                foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(f.Center, radius, f.Shape.slamHeight))
+                {
+                    Vector3 direction = FlatDirection(f.Center, enemy.transform.position, f.Forward);
+                    int dealt = enemy.TakeDamage(new DamageInfo(f.Damage, point, direction, false, f.Shape.knockback, f.ReactionScale));
+                    OneShotEffect.Spawn(f.Type.HitEffect, point, Quaternion.LookRotation(direction, Vector3.up), f.Type.HitEffectScale);
+                    if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false));
+                }
+            }
+        }
+
+        private void TickShockwaves(float dt)
+        {
+            for (int i = shockwaves.Count - 1; i >= 0; i--)
+            {
+                Shockwave w = shockwaves[i];
+                float from = w.Travelled;
+                float to = Mathf.Min(w.Type.ShockwaveRange, from + w.Type.ShockwaveSpeed * dt);
+                w.Travelled = to;
+
+                // 前のフレームの先頭から今の先頭までを覆う箱。
+                float width = w.Type.ShockwaveWidth;
+                Quaternion rotation = Quaternion.LookRotation(w.Direction, Vector3.up);
+                Vector3 center = w.Origin + w.Direction * ((from + to) * 0.5f) + Vector3.up * (width * 0.5f);
+                var halfExtents = new Vector3(width * 0.5f, width * 0.5f, (to - from) * 0.5f + width * 0.25f);
+                if (w.Effect != null) w.Effect.transform.position = w.Origin + w.Direction * to;
+
+                int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, rotation, hitMask, QueryTriggerInteraction.Ignore);
+                for (int j = 0; j < count; j++)
+                {
+                    EnemyHealth enemy = overlap[j].GetComponentInParent<EnemyHealth>();
+                    if (enemy == null || enemy.IsDead || !w.Hit.Add(enemy)) continue;
+
+                    Vector3 point = overlap[j].ClosestPoint(center);
+                    int dealt = enemy.TakeDamage(new DamageInfo(w.Damage, point, w.Direction, false, w.Knockback, w.ReactionScale));
+                    OneShotEffect.Spawn(w.Type.HitEffect, point, rotation, w.Type.HitEffectScale);
+                    if (logHits) Debug.Log($"衝撃波 → {enemy.name}: {dealt}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Shockwave, enemy, w.Step, w.Damage, dealt, false));
+                }
+
+                if (to >= w.Type.ShockwaveRange) shockwaves.RemoveAt(i);
+            }
+        }
+
+        // ---- 共通 ----
+
+        private static Vector3 FlatDirection(Vector3 from, Vector3 to, Vector3 fallback)
+        {
+            Vector3 direction = to - from;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 1e-6f)
+            {
+                direction = fallback;
+                direction.y = 0f;
+            }
+
+            return direction.sqrMagnitude < 1e-6f ? Vector3.forward : direction.normalized;
         }
 
         private static void PlaySound(AudioClip clip, Vector3 position, float volume)
@@ -329,7 +743,7 @@ namespace TpsDungeon.Combat
         }
 
         /// <summary>段の判定の箱（ワールド）。サイズのエンチャントで大きさと前への伸びが増える。</summary>
-        private void HitBox(MeleeComboStep shape, out Vector3 center, out Vector3 halfExtents)
+        private void BoxOf(MeleeComboStep shape, out Vector3 center, out Vector3 halfExtents)
         {
             float scale = stats != null ? stats.HitboxScale : 1f;
             Vector3 local = shape.hitboxCenter;
@@ -359,8 +773,16 @@ namespace TpsDungeon.Combat
             int step = combo != null && combo.IsSwinging ? combo.Step : 0;
             if (step >= steps.Count) return;
 
-            HitBox(steps[step], out Vector3 center, out Vector3 halfExtents);
+            MeleeComboStep shape = steps[step];
             Gizmos.color = new Color(1f, 0.3f, 0.2f, 0.8f);
+            if (shape.motion == MeleeStepMotion.Slam)
+            {
+                float radius = shape.slamRadius * (stats != null ? stats.HitboxScale : 1f);
+                Gizmos.DrawWireSphere(SlamCenter(shape), radius);
+                return;
+            }
+
+            BoxOf(shape, out Vector3 center, out Vector3 halfExtents);
             Gizmos.matrix = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
             Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
         }

@@ -58,6 +58,13 @@ namespace TpsDungeon.Enemies
             return dealt;
         }
 
+        /// <summary>最大 HP を value（最低 1）にして満タンにする。試験用の的を硬くするときなどに使う。</summary>
+        public void SetMaxHp(int value)
+        {
+            maxHp = Mathf.Max(1, value);
+            currentHp = maxHp;
+        }
+
         /// <summary>使い回す（プール）ときに満タンへ戻す。</summary>
         public void ResetHealth()
         {

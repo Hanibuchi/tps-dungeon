@@ -197,6 +197,19 @@ namespace TpsDungeon.Combat.Tests
         }
 
         [Test]
+        public void 一段だけのコンボは振るたびに待ちに入る()
+        {
+            // ダッシュ突き・叩きつけ。連打しても 1 回ごとに待たせる。
+            var combo = new MeleeComboState(new[] { new ComboStepTiming(0.75f, 0.2f) }, Grace, 0.3f);
+            Assert.AreEqual(ComboEvents.StepStarted, combo.Tick(0f, true));
+            combo.Tick(0.5f, true);
+
+            Assert.IsTrue((Finish(combo) & ComboEvents.Ended) != 0);
+            Assert.IsTrue(combo.IsCoolingDown);
+            Assert.AreEqual(0, combo.NextStep);
+        }
+
+        [Test]
         public void 待ちが0なら最後の段の先行入力で1段目へ続く()
         {
             var combo = TwoStepCombo(0f);

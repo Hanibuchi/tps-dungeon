@@ -45,6 +45,19 @@ namespace TpsDungeon.Enemies.Tests
         }
 
         [Test]
+        public void SetMaxHp_RaisesMaxAndRefills()
+        {
+            health.TakeDamage(10);
+            health.SetMaxHp(5000);
+
+            Assert.AreEqual(5000, health.MaxHp);
+            Assert.AreEqual(5000, health.CurrentHp);
+
+            health.SetMaxHp(0);
+            Assert.AreEqual(1, health.MaxHp, "最低 1");
+        }
+
+        [Test]
         public void Stun_LastsItsDuration()
         {
             Assert.IsTrue(reaction.Apply(DamageReaction.Stun));

@@ -7,7 +7,7 @@ namespace TpsDungeon.Items
     /// <summary>
     /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
-    /// 今は近接（コンボ）の武器種だけを扱う。飛び道具などを足すときは、ここに設定を足すか派生させる。
+    /// 今は近接（コンボ）の武器種だけを扱う。段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。飛び道具などを足すときは、ここに設定を足すか派生させる。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
     public sealed class WeaponTypeDefinition : ScriptableObject
@@ -50,6 +50,45 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("コンボが切れて（最後の段を振り終えるか、猶予を過ぎて）から次に振れるまでの秒数。")]
         private float comboCooldown = 0.3f;
 
+        [Header("ダッシュ（Lunge の段）")]
+        [SerializeField, Tooltip("走っている間は敵をすり抜け、通り道の敵みんなに当てる。偽なら敵にぶつかって止まる。壁ではどちらでも止まる。")]
+        private bool lungePassesThroughEnemies = true;
+
+        [SerializeField, Tooltip("走っている間は無敵（MeleeAttacker.IsInvulnerable が真になる。被ダメージ側が読む）。")]
+        private bool invulnerableDuringLunge = true;
+
+        [Header("衝撃波（Slam の段。「数」のエンチャント 1 つで 1 本。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("1 本が当てるダメージ（その段の 1 撃に対する割合）。")]
+        private float shockwaveDamageRatio = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("着弾点から進む距離（m）。着弾の円の縁から走り出す。")]
+        private float shockwaveRange = 6f;
+
+        [SerializeField, Min(0.1f), Tooltip("進む速さ（m/s）。")]
+        private float shockwaveSpeed = 14f;
+
+        [SerializeField, Min(0.1f), Tooltip("判定の幅（m）。高さも同じ。")]
+        private float shockwaveWidth = 1.2f;
+
+        [SerializeField, Range(0f, 90f), Tooltip("隣り合う衝撃波の間の角度（度）。前を中心に左右対称に広げる。")]
+        private float shockwaveSpacingAngle = 20f;
+
+        [SerializeField, Tooltip("衝撃波の先頭に付いて進む見た目（任意）。")]
+        private GameObject shockwaveEffect;
+
+        [SerializeField, Min(0.01f)]
+        private float shockwaveEffectScale = 1f;
+
+        [Header("追撃（Slam の段。「多重」のエンチャント 1 つで 1 回。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("1 回が当てるダメージ（その段の 1 撃に対する割合）。")]
+        private float followUpDamageRatio = 0.6f;
+
+        [SerializeField, Min(0f), Tooltip("k 回目は着弾点から前へ k × この距離（m）ずらして落とす。")]
+        private float followUpSpacing = 1.5f;
+
+        [SerializeField, Min(0f), Tooltip("k 回目は本撃から k × この秒数あとに落とす。")]
+        private float followUpInterval = 0.18f;
+
         [Header("見た目")]
         [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。" +
             "Play 中に手の武器（Tools/TPS Dungeon/Player/手の武器を選ぶ）を Scene ビューで動かすと、ここに書き戻る。")]
@@ -70,6 +109,12 @@ namespace TpsDungeon.Items
 
         [SerializeField, Min(0.01f), Tooltip("命中のエフェクトの大きさの倍率。")]
         private float hitEffectScale = 1f;
+
+        [SerializeField, Tooltip("Slam の段で着弾点に出す（任意）。追撃の着弾にも出す。")]
+        private GameObject slamEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("着弾のエフェクトの大きさの倍率。")]
+        private float slamEffectScale = 1f;
 
         [Header("効果音（未設定なら鳴らさない）")]
         [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
@@ -98,6 +143,20 @@ namespace TpsDungeon.Items
         public Vector3 HeldLocalEuler => heldLocalEuler;
         public GameObject SwingEffect => swingEffect;
         public float SwingEffectScale => swingEffectScale;
+        public bool LungePassesThroughEnemies => lungePassesThroughEnemies;
+        public bool InvulnerableDuringLunge => invulnerableDuringLunge;
+        public float ShockwaveDamageRatio => shockwaveDamageRatio;
+        public float ShockwaveRange => shockwaveRange;
+        public float ShockwaveSpeed => shockwaveSpeed;
+        public float ShockwaveWidth => shockwaveWidth;
+        public float ShockwaveSpacingAngle => shockwaveSpacingAngle;
+        public GameObject ShockwaveEffect => shockwaveEffect;
+        public float ShockwaveEffectScale => shockwaveEffectScale;
+        public float FollowUpDamageRatio => followUpDamageRatio;
+        public float FollowUpSpacing => followUpSpacing;
+        public float FollowUpInterval => followUpInterval;
+        public GameObject SlamEffect => slamEffect;
+        public float SlamEffectScale => slamEffectScale;
         public GameObject HitEffect => hitEffect;
         public float HitEffectScale => hitEffectScale;
         public AudioClip SwingSound => swingSound;

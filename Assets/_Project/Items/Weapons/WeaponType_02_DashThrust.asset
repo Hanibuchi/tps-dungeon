@@ -10,92 +10,43 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
-  m_Name: WeaponType_01_OneHanded
+  m_Name: WeaponType_02_DashThrust
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
-  id: 01
-  displayName: "\u7247\u624B\u8FD1\u8DDD\u96E2"
-  animatorWeaponType: 1
+  id: 02
+  displayName: "\u30C0\u30C3\u30B7\u30E5\u7A81\u304D"
+  animatorWeaponType: 5
   canUseShield: 1
   allowedEnchantments:
   - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
   - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
   - {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
-  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
   - {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+  - {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
   - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
   - {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
-  - {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
   - {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   characterAttackWeight: 1
   baseCritChance: 0.05
   baseCritMultiplier: 1.5
   comboSteps:
-  - motion: 0
+  - motion: 1
     damageWeight: 1
-    duration: 0.45
-    hitTime: 0.32
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
+    duration: 0.75
+    hitTime: 0.2
+    hitboxSize: {x: 1.2, y: 1.4, z: 1.4}
+    hitboxCenter: {x: 0, y: 1, z: 0.8}
+    knockback: 2
     reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
+    lungeDistance: 5
+    lungeDuration: 0.18
     slamRadius: 0
     slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
-    swingEffectEuler: {x: 0, y: 0, z: -125}
+    swingEffectOffset: {x: 0, y: 1.3, z: 0.6}
+    swingEffectEuler: {x: 0, y: 0, z: 0}
     swingSound: {fileID: 0}
     hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 1
-    duration: 0.45
-    hitTime: 0.28
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: -0.2, y: 1.75, z: 0.45}
-    swingEffectEuler: {x: 0, y: 0, z: 157}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 1
-    duration: 0.5
-    hitTime: 0.32
-    hitboxSize: {x: 1.6, y: 1.2, z: 1.4}
-    hitboxCenter: {x: 0, y: 1, z: 1}
-    knockback: 0.5
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
-    swingEffectEuler: {x: 0, y: 0, z: -125}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 0}
-  - motion: 0
-    damageWeight: 2
-    duration: 0.8
-    hitTime: 0.5
-    hitboxSize: {x: 2, y: 1.2, z: 1.8}
-    hitboxCenter: {x: 0, y: 1, z: 1.2}
-    knockback: 3
-    reactionBonus: 0
-    lungeDistance: 0
-    lungeDuration: 0
-    slamRadius: 0
-    slamHeight: 0
-    swingEffectOffset: {x: 0, y: 1.1, z: 0.3}
-    swingEffectEuler: {x: 0, y: 0, z: -90}
-    swingSound: {fileID: 0}
-    hitSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
-  comboChainGrace: 0.25
+  comboChainGrace: 0
   comboCooldown: 0.3
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
@@ -117,6 +68,6 @@ MonoBehaviour:
   hitEffectScale: 0.6
   slamEffect: {fileID: 0}
   slamEffectScale: 1
-  swingSound: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
+  swingSound: {fileID: 8300000, guid: cb119c6a8e8724e6b99e421c566ceeef, type: 3}
   hitSound: {fileID: 8300000, guid: 369cb5e02638448c6ab53fdd7ec4746a, type: 3}
   soundVolume: 0.8

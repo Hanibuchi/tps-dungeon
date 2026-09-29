@@ -41,6 +41,7 @@ namespace TpsDungeon.Items
     ///   段 i の 1 撃     = 元 × 1 周の時間 ÷ Σ比重 × 比重i × (1 ＋ ダメージ増加) × (1 ＋ コンボボーナス × i)
     ///
     /// 1 周の時間は速射の補正前で配るので、速射は時間だけ縮めて DPS を上げる。
+    /// 衝撃波（数）・追撃（多重）・爆発は 1 撃に対する割合の上乗せで、ここの DPS には含めない。
     /// エンチャントの効果量は EnchantmentDefinition の値そのもの（例: ダメージ増加 0.15 で +15%）。
     /// </summary>
     public sealed class MeleeWeaponStats
@@ -82,6 +83,15 @@ namespace TpsDungeon.Items
 
         /// <summary>ドロップ率の上乗せ（0.1 で +10%）。ドロップの仕組みが読む。</summary>
         public float DropRateBonus { get; private set; }
+
+        /// <summary>走る段（ダッシュ突き）の走る時間の倍率（1 ＋ 持続時間）。速さは同じなので距離も同じだけ伸びる。</summary>
+        public float LungeTimeScale { get; private set; } = 1f;
+
+        /// <summary>叩きつけから扇状に走る衝撃波の本数（「数」の合計の切り捨て）。</summary>
+        public int ShockwaveCount { get; private set; }
+
+        /// <summary>叩きつけのあと前へずらして落とす追撃の回数（「多重」の合計の切り捨て）。</summary>
+        public int FollowUpCount { get; private set; }
 
         /// <summary>段 step（0 始まり）の 1 撃（クリティカル前）。</summary>
         public int HitDamage(int step) => step >= 0 && step < hitDamage.Length ? hitDamage[step] : 0;
@@ -152,8 +162,14 @@ namespace TpsDungeon.Items
                 ExplosionRatio = Math.Max(0f, enchant.Amount(EnchantmentKind.Explosion)),
                 ExplosionRadius = Math.Max(0f, enchant.Secondary(EnchantmentKind.Explosion)),
                 DropRateBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.DropUp)),
+                LungeTimeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Duration)),
+                ShockwaveCount = FloorCount(enchant.Amount(EnchantmentKind.ProjectileCount)),
+                FollowUpCount = FloorCount(enchant.Amount(EnchantmentKind.Multishot)),
             };
         }
+
+        /// <summary>1 撃 hit の ratio 倍（衝撃波・追撃）。四捨五入、ratio と hit が正なら最低 1。</summary>
+        public static int Share(int hit, float ratio) => ratio > 0f && hit > 0 ? Math.Max(1, RoundToInt(hit * (double)ratio)) : 0;
 
         /// <summary>1 撃 hit に添える爆発のダメージ。0 なら爆発しない。</summary>
         public int ExplosionDamage(int hit) =>
@@ -166,6 +182,9 @@ namespace TpsDungeon.Items
             if (rounded <= int.MinValue) return int.MinValue;
             return (int)rounded;
         }
+
+        // 1.0 が浮動小数の足し算で 0.9999… になっても 1 と数える。
+        private static int FloorCount(float value) => value <= 0f ? 0 : (int)Math.Floor(value + 1e-4);
 
         private static float Clamp01(float value) => value < 0f ? 0f : value > 1f ? 1f : value;
     }

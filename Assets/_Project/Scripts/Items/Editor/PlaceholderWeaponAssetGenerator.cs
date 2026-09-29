@@ -11,13 +11,13 @@ namespace TpsDungeon.Items.Editor
 {
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
-    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）: Assets/_Project/Items/Weapons/
+    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）: Assets/_Project/Items/Weapons/
     /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 3 本（Notion の武器一覧 DB で武器種＝01 のもの）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 6 本（Notion の武器一覧 DB で武器種＝01 の 3 本と、02・04・05 の 1 本ずつ）と、拾える物・手に持つ見た目のプレハブ
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
-    /// 見た目は ThirdParty の FreeSwords があればそれを、無ければプリミティブの剣を使う。
+    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマー）があればそれを、無ければプリミティブの剣を使う。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
     public static class PlaceholderWeaponAssetGenerator
@@ -28,6 +28,9 @@ namespace TpsDungeon.Items.Editor
         private const string OldRankTablePath = WeaponsFolder + "/WeaponRankTable.asset";
         public const string RollSettingsPath = WeaponsFolder + "/EnchantmentRollSettings.asset";
         public const string OneHandedTypePath = WeaponsFolder + "/WeaponType_01_OneHanded.asset";
+        public const string DashThrustTypePath = WeaponsFolder + "/WeaponType_02_DashThrust.asset";
+        public const string TwoHandedTypePath = WeaponsFolder + "/WeaponType_04_TwoHanded.asset";
+        public const string HammerTypePath = WeaponsFolder + "/WeaponType_05_Hammer.asset";
         public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
         public const string FistsPath = WeaponsFolder + "/Weapon_Fists.asset";
 
@@ -38,6 +41,8 @@ namespace TpsDungeon.Items.Editor
         public const string PunchHitEffectPath = LanaPrefabs + "Flash/Flash_round_ellow.prefab";
         public const string CriticalHitEffectPath = HovlPrefabs + "Hits and explosions/Star hit.prefab";
         public const string ExplosionEffectPath = HovlPrefabs + "Hits and explosions/Explosion.prefab";
+        public const string SlamEffectPath = HovlPrefabs + "Hits and explosions/Stones hit.prefab";
+        public const string ShockwaveEffectPath = HovlPrefabs + "Smoke effects/Dust ground.prefab";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
@@ -46,13 +51,18 @@ namespace TpsDungeon.Items.Editor
         public const string SwordFinisherHitSoundPath = ArmsSounds + "剣で斬る1.mp3";
         public const string PunchHitSoundPath = ArmsSounds + "打撃3.mp3";
         public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
+        public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
+        // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。
+        public const string HammerSlamSoundPath = ArmsSounds + "打撃1.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
+        private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
 
-        /// <summary>見た目の剣の長さ（m）。素材の大きさはまちまちなので、これに合わせて縮める。</summary>
+        /// <summary>片手剣の見た目の長さ（m）。素材の大きさはまちまちなので、武器ごとの長さに合わせて縮める。</summary>
         private const float SwordLength = 0.9f;
 
-        private static readonly Vector3 PickupVolume = new Vector3(0.35f, 0.3f, 1.0f);
+        /// <summary>拾える物の判定の幅と高さ（m）。奥行きは武器の長さに合わせる。</summary>
+        private static readonly Vector2 PickupVolume = new Vector2(0.35f, 0.3f);
 
         /// <summary>モデルを撮った絵の大きさ（px）。枠と情報欄は 64px なので、高解像度の画面でも粗くならないよう倍で撮る。</summary>
         private const int IconSize = 128;
@@ -77,7 +87,12 @@ namespace TpsDungeon.Items.Editor
             public WeaponRank Rank;
             public float Strength;
             public string Description;
-            public string ModelPrefab;
+            /// <summary>武器種（WeaponTypeDefinition のアセットのパス）。</summary>
+            public string TypePath;
+            /// <summary>見た目の素材のプレハブ（フルパス）。無ければプリミティブの剣で代える。</summary>
+            public string ModelPath;
+            /// <summary>見た目の長さ（m）。</summary>
+            public float Length = SwordLength;
             public Color Blade;
             public Color Hilt;
         }
@@ -93,9 +108,15 @@ namespace TpsDungeon.Items.Editor
             WriteRankTable();
             EnchantmentRollSettings roll = WriteRollSettings();
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments = WriteEnchantments();
-            WeaponTypeDefinition oneHanded = WriteOneHandedType(enchantments, roll);
+            var types = new Dictionary<string, WeaponTypeDefinition>
+            {
+                [OneHandedTypePath] = WriteOneHandedType(enchantments, roll),
+                [DashThrustTypePath] = WriteDashThrustType(enchantments, roll),
+                [TwoHandedTypePath] = WriteTwoHandedType(enchantments, roll),
+                [HammerTypePath] = WriteHammerType(enchantments, roll),
+            };
 
-            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, oneHanded);
+            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath]);
 
             WriteFists(WriteUnarmedType());
 
@@ -122,22 +143,43 @@ namespace TpsDungeon.Items.Editor
             {
                 Id = "Weapon_RustySword", Name = "錆びた片手剣", Rank = WeaponRank.E, Strength = 5f,
                 Description = "刃こぼれだらけだが、振れば斬れる。",
-                ModelPrefab = "Sword1_Bronze.prefab",
+                TypePath = OneHandedTypePath, ModelPath = FreeSwords + "Sword1_Bronze.prefab",
                 Blade = new Color32(150, 110, 80, 255), Hilt = new Color32(90, 60, 40, 255),
             };
             yield return new WeaponSpec
             {
                 Id = "Weapon_IronSword", Name = "鉄の片手剣", Rank = WeaponRank.C, Strength = 21f,
                 Description = "兵士が腰に下げていた、ありふれた造りの剣。",
-                ModelPrefab = "Sword15_Iron.prefab",
+                TypePath = OneHandedTypePath, ModelPath = FreeSwords + "Sword15_Iron.prefab",
                 Blade = new Color32(190, 196, 204, 255), Hilt = new Color32(80, 60, 50, 255),
             };
             yield return new WeaponSpec
             {
                 Id = "Weapon_BlueSteelRapier", Name = "蒼鋼の細剣", Rank = WeaponRank.A, Strength = 37f,
                 Description = "薄く鍛えられた刃が、風を裂いて敵を刻む。",
-                ModelPrefab = "Sword13_Blue.prefab",
+                TypePath = OneHandedTypePath, ModelPath = FreeSwords + "Sword13_Blue.prefab",
                 Blade = new Color32(110, 170, 230, 255), Hilt = new Color32(50, 60, 110, 255),
+            };
+            yield return new WeaponSpec
+            {
+                Id = "Weapon_WoodenRapier", Name = "木柄の刺突剣", Rank = WeaponRank.E, Strength = 8f,
+                Description = "踏み込みの勢いを、そのまま切っ先に乗せる。",
+                TypePath = DashThrustTypePath, ModelPath = FreeSwords + "Sword2_Red.prefab", Length = 1.0f,
+                Blade = new Color32(180, 180, 175, 255), Hilt = new Color32(120, 80, 45, 255),
+            };
+            yield return new WeaponSpec
+            {
+                Id = "Weapon_ChippedGreatsword", Name = "欠けた両手剣", Rank = WeaponRank.D, Strength = 11f,
+                Description = "重さだけは一人前。振り回せば道が開く。",
+                TypePath = TwoHandedTypePath, ModelPath = FreeSwords + "Sword4_Red.prefab", Length = 1.35f,
+                Blade = new Color32(120, 120, 125, 255), Hilt = new Color32(60, 45, 35, 255),
+            };
+            yield return new WeaponSpec
+            {
+                Id = "Weapon_StoneHammer", Name = "石のハンマー", Rank = WeaponRank.D, Strength = 14f,
+                Description = "岩を削り出しただけの武骨な槌。当たれば潰れる。",
+                TypePath = HammerTypePath, ModelPath = StylizedHammers + "Hammer1_1_3.prefab", Length = 1.1f,
+                Blade = new Color32(130, 125, 120, 255), Hilt = new Color32(95, 70, 45, 255),
             };
         }
 
@@ -195,18 +237,19 @@ namespace TpsDungeon.Items.Editor
 
         private static Dictionary<EnchantmentKind, EnchantmentDefinition> WriteEnchantments()
         {
-            // 効果量は仮。割合は 0.15 で +15%。効果を実装しているのは片手近距離に付く 9 種だけ。
+            // 効果量は仮。割合は 0.15 で +15%。効果を実装しているのは近接の武器種に付く 12 種だけ
+            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝衝撃波・多重＝追撃）。
             var specs = new (EnchantmentKind kind, string name, float amount, float secondary, string description)[]
             {
                 (EnchantmentKind.DamageUp, "ダメージ増加", 0.15f, 0f, "与えるダメージが 15% 上がる。"),
                 (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具の数が 1 つ増える。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具や、叩きつけから走る衝撃波が 1 つ増える。"),
                 (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲が 15% 広がる。"),
-                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果の続く時間が 20% 延びる。"),
+                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数が 1 つ増える。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
                 (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "飛び道具が敵を追う。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
@@ -332,6 +375,177 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
+        // ---- 武器種 02 / 04 / 05 ----------------------------------------------
+
+        /// <summary>武器種の見出しと、付けられるエンチャント・ダメージの基礎を入れる。</summary>
+        private static SerializedObject BeginType(WeaponTypeDefinition type, string id, string displayName, int animatorWeaponType,
+            bool canUseShield, EnchantmentKind[] allowed, Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var serialized = new SerializedObject(type);
+            serialized.FindProperty("id").stringValue = id;
+            serialized.FindProperty("displayName").stringValue = displayName;
+            serialized.FindProperty("animatorWeaponType").intValue = animatorWeaponType;
+            serialized.FindProperty("canUseShield").boolValue = canUseShield;
+
+            SerializedProperty list = serialized.FindProperty("allowedEnchantments");
+            list.arraySize = allowed.Length;
+            for (int i = 0; i < allowed.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[allowed[i]];
+
+            serialized.FindProperty("enchantmentRoll").objectReferenceValue = roll;
+            serialized.FindProperty("characterAttackWeight").floatValue = 1f;
+            serialized.FindProperty("baseCritChance").floatValue = 0.05f;
+            serialized.FindProperty("baseCritMultiplier").floatValue = 1.5f;
+            return serialized;
+        }
+
+        /// <summary>手に持つ位置が未調整（両方ゼロ）なら、片手剣と同じ握りを仮に入れる。調整済みなら触らない。</summary>
+        private static void SeedHeldGrip(SerializedObject serialized, Vector3 position, Vector3 euler)
+        {
+            SerializedProperty p = serialized.FindProperty("heldLocalPosition");
+            SerializedProperty e = serialized.FindProperty("heldLocalEuler");
+            if (p.vector3Value != Vector3.zero || e.vector3Value != Vector3.zero) return;
+
+            p.vector3Value = position;
+            e.vector3Value = euler;
+        }
+
+        /// <summary>
+        /// ダッシュ突き（02）。1 段で、判定の瞬間から前へ走り、走っている間ずっと前方の箱で当てる。敵はすり抜け、壁で止まる。
+        /// 持続時間のエンチャントで走る時間（＝距離）が延びる。値は仮。
+        /// </summary>
+        private static WeaponTypeDefinition WriteDashThrustType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(DashThrustTypePath);
+            SerializedObject serialized = BeginType(type, "02", "ダッシュ突き", 5, true, new[]
+            {
+                EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.RapidFire,
+                EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.ComboBonus,
+            }, enchantments, roll); // 5 = CharacterAnimatorBuilder.Weapon.DashThrust
+
+            // 0.2 秒で突き出してから 0.18 秒で 5 m 走る（約 28 m/s）。走り終えて 0.37 秒で構えに戻る。
+            WriteComboSteps(serialized, new[]
+            {
+                new ComboStepSpec(1f, 0.75f, 0.2f, new Vector3(1.2f, 1.4f, 1.4f), new Vector3(0f, 1f, 0.8f), 2f,
+                    new Vector3(0f, 1.3f, 0.6f), new Vector3(0f, 0f, 0f))
+                {
+                    Motion = MeleeStepMotion.Lunge, LungeDistance = 5f, LungeDuration = 0.18f,
+                },
+            });
+
+            serialized.FindProperty("comboChainGrace").floatValue = 0f;
+            serialized.FindProperty("comboCooldown").floatValue = 0.3f;
+            serialized.FindProperty("lungePassesThroughEnemies").boolValue = true;
+            serialized.FindProperty("invulnerableDuringLunge").boolValue = true;
+            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
+            serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
+            serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(DashThrustSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 両手近距離（04）。大ぶりの横薙ぎ 3 回と、重い振り下ろしの 4 段目。4 段目は箱が大きく、ノックバックとスタンが強い。
+        /// 音は片手剣の振り・命中を流用し、4 段目の命中だけ替える。値は仮。
+        /// </summary>
+        private static WeaponTypeDefinition WriteTwoHandedType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(TwoHandedTypePath);
+            SerializedObject serialized = BeginType(type, "04", "両手近距離", 2, false, new[]
+            {
+                EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.Size,
+                EnchantmentKind.RapidFire, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Explosion,
+                EnchantmentKind.ComboBonus,
+            }, enchantments, roll); // 2 = CharacterAnimatorBuilder.Weapon.TwoHanded
+
+            // 判定は CharacterAnimatorBuilder の再生速度に合わせる（横薙ぎ 0.42 秒、締めの振り下ろし 0.67 秒）。
+            var sweep = new Vector3(2.6f, 1.4f, 2.0f);
+            var sweepCenter = new Vector3(0f, 1f, 1.2f);
+            var waist = new Vector3(0f, 1.1f, 0.5f);
+            WriteComboSteps(serialized, new[]
+            {
+                new ComboStepSpec(1f, 0.70f, 0.42f, sweep, sweepCenter, 1.5f, waist, new Vector3(0f, 0f, -160f)),
+                new ComboStepSpec(1f, 0.70f, 0.42f, sweep, sweepCenter, 1.5f, waist, new Vector3(0f, 0f, 20f)),
+                new ComboStepSpec(1f, 0.75f, 0.42f, sweep, sweepCenter, 1.5f, waist, new Vector3(0f, 0f, -160f)),
+                new ComboStepSpec(2.5f, 1.10f, 0.67f, new Vector3(2.4f, 1.6f, 2.8f), new Vector3(0f, 1f, 1.5f), 5f, waist,
+                    new Vector3(0f, 0f, -90f)) { ReactionBonus = 1f },
+            });
+            serialized.FindProperty("comboSteps").GetArrayElementAtIndex(3).FindPropertyRelative("hitSound").objectReferenceValue =
+                LoadSound(SwordFinisherHitSoundPath);
+
+            serialized.FindProperty("comboChainGrace").floatValue = 0.35f;
+            serialized.FindProperty("comboCooldown").floatValue = 0.5f;
+            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
+            serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
+            serialized.FindProperty("swingEffectScale").floatValue = 0.9f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.8f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 叩きつけ（05）。1 段で、前方の着弾点を中心とした円に当てる。
+        /// 数のエンチャントで着弾点から扇状に衝撃波が走り、多重のエンチャントで前へずらした追撃が遅れて落ちる。値は仮。
+        /// </summary>
+        private static WeaponTypeDefinition WriteHammerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HammerTypePath);
+            SerializedObject serialized = BeginType(type, "05", "叩きつけ", 6, false, new[]
+            {
+                EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount,
+                EnchantmentKind.Size, EnchantmentKind.Multishot, EnchantmentKind.RapidFire, EnchantmentKind.Stun,
+                EnchantmentKind.Knockback, EnchantmentKind.Explosion, EnchantmentKind.ComboBonus,
+            }, enchantments, roll); // 6 = CharacterAnimatorBuilder.Weapon.Hammer
+
+            // 振り下ろしが地面に着く 0.76 秒（CharacterAnimatorBuilder で 1.1 倍）に、1.5 m 前の地面を中心に半径 1.8 m。
+            WriteComboSteps(serialized, new[]
+            {
+                new ComboStepSpec(1f, 1.0f, 0.76f, Vector3.zero, new Vector3(0f, 0f, 1.5f), 4f,
+                    new Vector3(0f, 1.2f, 0.8f), new Vector3(0f, 0f, -90f))
+                {
+                    Motion = MeleeStepMotion.Slam, SlamRadius = 1.8f, SlamHeight = 1.5f, ReactionBonus = 0.5f,
+                },
+            });
+
+            serialized.FindProperty("comboChainGrace").floatValue = 0f;
+            serialized.FindProperty("comboCooldown").floatValue = 0.4f;
+            serialized.FindProperty("shockwaveDamageRatio").floatValue = 0.5f;
+            serialized.FindProperty("shockwaveRange").floatValue = 6f;
+            serialized.FindProperty("shockwaveSpeed").floatValue = 14f;
+            serialized.FindProperty("shockwaveWidth").floatValue = 1.2f;
+            serialized.FindProperty("shockwaveSpacingAngle").floatValue = 20f;
+            serialized.FindProperty("shockwaveEffect").objectReferenceValue = LoadEffect(ShockwaveEffectPath);
+            serialized.FindProperty("shockwaveEffectScale").floatValue = 0.5f;
+            serialized.FindProperty("followUpDamageRatio").floatValue = 0.6f;
+            serialized.FindProperty("followUpSpacing").floatValue = 1.5f;
+            serialized.FindProperty("followUpInterval").floatValue = 0.18f;
+            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
+            // 振りの斬撃は出さない（槌なので）。着弾点に石の砕けるエフェクト、当たった敵には閃光。
+            serialized.FindProperty("swingEffect").objectReferenceValue = null;
+            serialized.FindProperty("slamEffect").objectReferenceValue = LoadEffect(SlamEffectPath);
+            serialized.FindProperty("slamEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.15f;
+            // 叩きつけの音は外れても着弾の瞬間に鳴る（MeleeAttacker が命中の音として鳴らす）。風切りは付けない。
+            serialized.FindProperty("swingSound").objectReferenceValue = null;
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(HammerSlamSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.9f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
         private static void WriteFists(WeaponTypeDefinition type)
         {
@@ -347,10 +561,15 @@ namespace TpsDungeon.Items.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private readonly struct ComboStepSpec
+        private sealed class ComboStepSpec
         {
             public readonly float Weight, Duration, HitTime, Knockback;
             public readonly Vector3 Size, Center, SwingEffectOffset, SwingEffectEuler;
+
+            public MeleeStepMotion Motion = MeleeStepMotion.Swing;
+            public float ReactionBonus;
+            public float LungeDistance, LungeDuration;
+            public float SlamRadius, SlamHeight;
 
             public ComboStepSpec(float weight, float duration, float hitTime, Vector3 size, Vector3 center, float knockback,
                 Vector3 swingEffectOffset, Vector3 swingEffectEuler)
@@ -381,6 +600,12 @@ namespace TpsDungeon.Items.Editor
                 step.FindPropertyRelative("knockback").floatValue = steps[i].Knockback;
                 step.FindPropertyRelative("swingEffectOffset").vector3Value = steps[i].SwingEffectOffset;
                 step.FindPropertyRelative("swingEffectEuler").vector3Value = steps[i].SwingEffectEuler;
+                step.FindPropertyRelative("motion").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(MeleeStepMotion)), steps[i].Motion);
+                step.FindPropertyRelative("reactionBonus").floatValue = steps[i].ReactionBonus;
+                step.FindPropertyRelative("lungeDistance").floatValue = steps[i].LungeDistance;
+                step.FindPropertyRelative("lungeDuration").floatValue = steps[i].LungeDuration;
+                step.FindPropertyRelative("slamRadius").floatValue = steps[i].SlamRadius;
+                step.FindPropertyRelative("slamHeight").floatValue = steps[i].SlamHeight;
                 // 段ごとの音の上書きは、要る段だけ呼び出し側で入れ直す。
                 step.FindPropertyRelative("swingSound").objectReferenceValue = null;
                 step.FindPropertyRelative("hitSound").objectReferenceValue = null;
@@ -418,12 +643,12 @@ namespace TpsDungeon.Items.Editor
             // 床に落ちているときは寝かせる。
             iconSpec.BuildModel = (root, mat) =>
             {
-                root.transform.localPosition = new Vector3(0f, 0.05f, -SwordLength * 0.5f);
+                root.transform.localPosition = new Vector3(0f, 0.05f, -spec.Length * 0.5f);
                 root.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 BuildSword(root, spec, mat);
             };
             ItemPickup pickup = Gen.BuildPickupPrefab(iconSpec, weapon);
-            FitPickupVolume(pickup);
+            FitPickupVolume(pickup, spec.Length);
             GameObject held = BuildHeldPrefab(spec);
 
             var serialized = new SerializedObject(weapon);
@@ -440,14 +665,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>拾える物の判定を剣の形に合わせる。</summary>
-        private static void FitPickupVolume(ItemPickup pickup)
+        private static void FitPickupVolume(ItemPickup pickup, float length)
         {
             string path = AssetDatabase.GetAssetPath(pickup);
             GameObject root = PrefabUtility.LoadPrefabContents(path);
             try
             {
                 var volume = root.GetComponent<BoxCollider>();
-                volume.size = PickupVolume;
+                volume.size = new Vector3(PickupVolume.x, PickupVolume.y, length + 0.1f);
                 volume.center = new Vector3(0f, PickupVolume.y * 0.5f, 0f);
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
@@ -475,18 +700,18 @@ namespace TpsDungeon.Items.Editor
         /// </summary>
         private static void BuildSword(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
         {
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>(FreeSwords + spec.ModelPrefab);
-            if (source != null && TryPlaceModel(parent, source)) return;
+            var source = string.IsNullOrEmpty(spec.ModelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
+            if (source != null && TryPlaceModel(parent, source, spec.Length)) return;
 
             Material blade = material($"Placeholder_{spec.Id}_Blade", spec.Blade);
             Material hilt = material($"Placeholder_{spec.Id}_Hilt", spec.Hilt);
             Gen.Part(parent, PrimitiveType.Cylinder, hilt, new Vector3(0f, 0.08f, 0f), new Vector3(0.035f, 0.08f, 0.035f));
             Gen.Part(parent, PrimitiveType.Cube, hilt, new Vector3(0f, 0.17f, 0f), new Vector3(0.2f, 0.03f, 0.04f));
-            Gen.Part(parent, PrimitiveType.Cube, blade, new Vector3(0f, 0.17f + (SwordLength - 0.17f) * 0.5f, 0f),
-                new Vector3(0.06f, SwordLength - 0.17f, 0.012f));
+            Gen.Part(parent, PrimitiveType.Cube, blade, new Vector3(0f, 0.17f + (spec.Length - 0.17f) * 0.5f, 0f),
+                new Vector3(0.06f, spec.Length - 0.17f, 0.012f));
         }
 
-        private static bool TryPlaceModel(GameObject parent, GameObject source)
+        private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength)
         {
             var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
@@ -503,7 +728,7 @@ namespace TpsDungeon.Items.Editor
                 : size.x >= size.z ? Quaternion.Euler(0f, 0f, 90f)
                 : Quaternion.Euler(-90f, 0f, 0f);
             float length = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
-            float scale = length > 1e-4f ? SwordLength / length : 1f;
+            float scale = length > 1e-4f ? targetLength / length : 1f;
 
             var pivot = new GameObject("Model");
             pivot.transform.SetParent(parent.transform, false);

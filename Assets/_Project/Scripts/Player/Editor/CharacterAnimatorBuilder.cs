@@ -16,8 +16,8 @@ namespace TpsDungeon.Player.Editor
     ///   Speed / MotionSpeed / Jump / Grounded / FreeFall … ThirdPersonController が今まで通り流す
     ///   WeaponType (int) … <see cref="Weapon"/> の値。持ち替えたら入れる
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
-    ///   ComboStep (int) … 素手・片手武器のコンボの段（0 始まり）。Attack より先に入れる
-    ///   AttackSpeed (float) … 素手・片手武器の振りの再生速度（速射のエンチャント）。既定 1
+    ///   ComboStep (int) … 近接武器のコンボの段（0 始まり）。Attack より先に入れる
+    ///   AttackSpeed (float) … 近接武器の振りの再生速度（速射のエンチャント）。既定 1
     ///   Action (int) / PlayAction (trigger) … <see cref="CharacterAction"/> の値を入れてトリガーを立てると全身で再生する（CharacterActions が叩く）
     /// </summary>
     public static class CharacterAnimatorBuilder
@@ -34,6 +34,8 @@ namespace TpsDungeon.Player.Editor
             TwoHanded = 2,
             Bow = 3,
             Magic = 4,
+            DashThrust = 5,
+            Hammer = 6,
         }
 
         public const string SpeedParam = "Speed";
@@ -53,6 +55,20 @@ namespace TpsDungeon.Player.Editor
 
         /// <summary>素手のコンボの段数（右・左のパンチ）。</summary>
         public const int UnarmedComboSteps = 2;
+
+        /// <summary>両手武器のコンボの段数。4 段目が締めの重い振り。</summary>
+        public const int TwoHandedComboSteps = 4;
+
+        // 両手・ダッシュ突き・ハンマーの再生速度。判定の瞬間（武器種の hitTime）に刃や槌が当たる所へ来るよう合わせる。
+        // 右手の骨の軌跡を 2F ごとに見て決めた（2026-09-29）。
+        // Kevin の両手の横薙ぎ（Attack2H01、30fps・48F）は 17F（0.57 秒）で手が正面を横切る → 1.35 倍で 0.42 秒。
+        private const float TwoHandedSweepSpeed = 1.35f;
+        // Blink の両手の振り下ろし（MeleeAttack_TwoHanded）は 0.8 秒で正面へ振り下ろし、0.83 秒で下まで下りきる。
+        // 締めは 1.2 倍で 0.67 秒、ハンマーは 1.1 倍で地面に着く 0.76 秒。
+        private const float TwoHandedFinisherSpeed = 1.2f;
+        private const float HammerSlamSpeed = 1.1f;
+        // Kevin の長柄の突き（AttackPolearm01、30fps・41F）は 12F（0.4 秒）で伸び切る → 2 倍で 0.2 秒。走り出しに合わせて速く突く。
+        private const float DashThrustSpeed = 2f;
 
         private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
         private const string BlinkPack = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/";
@@ -288,14 +304,33 @@ namespace TpsDungeon.Player.Editor
             AnimatorState free = sm.AddState("Free", new Vector3(300, 200));
             sm.defaultState = free;
 
-            AddOneShotAttack(sm, free, "TwoHanded Attack", clips.TwoHanded, Weapon.TwoHanded,
-                new Vector3(600, 160), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
                 new Vector3(600, 240), startAt: SpellCastStart, exitAt: SpellCastExit);
 
             BuildBow(sm, free, clips, bowAim);
             BuildOneHandedCombo(sm, free, clips);
             BuildUnarmedCombo(sm, free, clips);
+            BuildTwoHandedCombo(sm, free, clips);
+            BuildCombo(sm, free, "DashThrust", Weapon.DashThrust,
+                new (Motion, bool, float)[] { (clips.PolearmThrust, false, DashThrustSpeed) }, new Vector3(1500, -40));
+            BuildCombo(sm, free, "Hammer", Weapon.Hammer,
+                new (Motion, bool, float)[] { (clips.TwoHanded, false, HammerSlamSpeed) }, new Vector3(1500, 80));
+        }
+
+        /// <summary>
+        /// 両手武器の 4 段コンボ。1〜3 段目は Kevin の両手の横薙ぎ（2 段目は左右反転で返し斬り）、
+        /// 4 段目は Blink の両手の振り下ろしで締める。
+        /// </summary>
+        private static void BuildTwoHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            var steps = new (Motion motion, bool mirror, float speed)[TwoHandedComboSteps];
+            for (int i = 0; i < steps.Length; i++)
+            {
+                bool finisher = i == steps.Length - 1;
+                steps[i] = finisher ? (clips.TwoHanded, false, TwoHandedFinisherSpeed) : (clips.TwoHandedSweep, i % 2 == 1, TwoHandedSweepSpeed);
+            }
+
+            BuildCombo(sm, free, "TwoHanded", Weapon.TwoHanded, steps, new Vector3(1200, -40));
         }
 
         /// <summary>
@@ -547,7 +582,7 @@ namespace TpsDungeon.Player.Editor
         {
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
-            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, SpellCast, BowShot;
+            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, TwoHandedSweep, PolearmThrust, SpellCast, BowShot;
             public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
@@ -568,6 +603,8 @@ namespace TpsDungeon.Player.Editor
                 OneHanded = Load(BlinkCombat + "MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded");
                 OneHandedThrust = Load(KevinCombat + "1H/HumanM@Attack1H01_R.fbx", "HumanM@Attack1H01_R");
                 TwoHanded = Load(BlinkCombat + "MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded");
+                TwoHandedSweep = Load(KevinCombat + "2H/HumanM@Attack2H01.fbx", "HumanM@Attack2H01");
+                PolearmThrust = Load(KevinCombat + "Polearm/HumanM@AttackPolearm01.fbx", "HumanM@AttackPolearm01");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");
 

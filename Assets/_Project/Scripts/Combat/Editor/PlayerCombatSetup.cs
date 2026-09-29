@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Combat.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに近接攻撃（MeleeAttacker）を組み込む。素手の武器とエフェクトもここで入れる
+    /// プレイヤーのプレハブに近接攻撃（実行役の MeleeAttacker と、入力を渡す PlayerMeleeInput）を組み込む。素手の武器とエフェクトもここで入れる
     /// （先に「プレースホルダの武器を生成」で素手の武器を作っておくこと）。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
@@ -24,8 +24,13 @@ namespace TpsDungeon.Combat.Editor
                 var attacker = root.GetComponent<MeleeAttacker>();
                 if (attacker == null) attacker = root.AddComponent<MeleeAttacker>();
 
+                var input = root.GetComponent<PlayerMeleeInput>();
+                if (input == null) input = root.AddComponent<PlayerMeleeInput>();
+                var serializedInput = new SerializedObject(input);
+                serializedInput.FindProperty("playerInput").objectReferenceValue = root.GetComponent<PlayerInput>();
+                serializedInput.ApplyModifiedPropertiesWithoutUndo();
+
                 var serialized = new SerializedObject(attacker);
-                serialized.FindProperty("playerInput").objectReferenceValue = root.GetComponent<PlayerInput>();
                 serialized.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();
 
                 var fists = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(PlaceholderWeaponAssetGenerator.FistsPath);
