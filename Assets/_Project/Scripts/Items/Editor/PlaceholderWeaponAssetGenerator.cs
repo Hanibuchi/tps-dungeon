@@ -37,6 +37,9 @@ namespace TpsDungeon.Items.Editor
         private const string HovlPrefabs = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Prefabs/";
         private const string LanaPrefabs = "Assets/ThirdParty/VFX/Lana Studio/Hyper Casual FX/Prefabs/";
         public const string SlashEffectPath = HovlPrefabs + "Slash effects/Stone slash.prefab";
+        // 0.5 秒溜めて（黄色い輪）から、三日月の斬撃を素材の前（+Z）へ秒速 30 m で放つ。
+        public const string ChargeSlashEffectPath = HovlPrefabs + "Slash effects/Charge slash blue.prefab";
+        private const float ChargeSlashReleaseTime = 0.5f;
         public const string SwordHitEffectPath = HovlPrefabs + "Sparks/Sparks explode white.prefab";
         public const string PunchHitEffectPath = LanaPrefabs + "Flash/Flash_round_ellow.prefab";
         public const string CriticalHitEffectPath = HovlPrefabs + "Hits and explosions/Star hit.prefab";
@@ -445,8 +448,10 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("lungePassesThroughEnemies").boolValue = true;
             serialized.FindProperty("invulnerableDuringLunge").boolValue = true;
             SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
-            serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
-            serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
+            // 振り始めに体の胸の前へ付けて溜め、走り出す瞬間（hitTime）に斬撃を前へ放つ（MeleeAttacker が再生の速さを合わせる）。
+            serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(ChargeSlashEffectPath);
+            serialized.FindProperty("swingEffectScale").floatValue = 0.8f;
+            serialized.FindProperty("swingEffectLeadTime").floatValue = ChargeSlashReleaseTime;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.6f;
             serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(DashThrustSoundPath);

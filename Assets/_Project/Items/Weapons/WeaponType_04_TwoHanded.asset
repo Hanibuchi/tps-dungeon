@@ -116,6 +116,7 @@ MonoBehaviour:
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 3153472991145048103, guid: 3407e378c048bb5438424b28c7740b48, type: 3}
   swingEffectScale: 0.9
+  swingEffectLeadTime: 0
   hitEffect: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   hitEffectScale: 0.8
   slamEffects: []

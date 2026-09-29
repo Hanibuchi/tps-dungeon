@@ -114,6 +114,10 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0.01f), Tooltip("振りのエフェクトの大きさの倍率。")]
         private float swingEffectScale = 1f;
 
+        [SerializeField, Min(0f), Tooltip("振りのエフェクトの中で「放つ」時刻（秒）。溜めてから放つ素材（Charge slash など）用。" +
+            "0 より大きいと、段の振り始めに体へ付けて出して溜めを見せ、この時刻より後にしか出ない粒（斬撃の本体）は判定の瞬間に出す。0 なら判定の瞬間に全部出す。")]
+        private float swingEffectLeadTime;
+
         [SerializeField, Tooltip("敵に当たった所に出す（任意）。")]
         private GameObject hitEffect;
 
@@ -150,6 +154,7 @@ namespace TpsDungeon.Items
         public Vector3 HeldLocalEuler => heldLocalEuler;
         public GameObject SwingEffect => swingEffect;
         public float SwingEffectScale => swingEffectScale;
+        public float SwingEffectLeadTime => swingEffectLeadTime;
         public bool LungePassesThroughEnemies => lungePassesThroughEnemies;
         public bool InvulnerableDuringLunge => invulnerableDuringLunge;
         public float ShockwaveDamageRatio => shockwaveDamageRatio;
