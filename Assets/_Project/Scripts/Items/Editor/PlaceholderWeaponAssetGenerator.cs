@@ -14,6 +14,8 @@ namespace TpsDungeon.Items.Editor
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）: Assets/_Project/Items/Weapons/
     /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     /// - 武器 3 本（Notion の武器一覧 DB で武器種＝01 のもの）と、拾える物・手に持つ見た目のプレハブ
+    /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
+    /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
     /// 見た目は ThirdParty の FreeSwords があればそれを、無ければプリミティブの剣を使う。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
@@ -26,6 +28,24 @@ namespace TpsDungeon.Items.Editor
         private const string OldRankTablePath = WeaponsFolder + "/WeaponRankTable.asset";
         public const string RollSettingsPath = WeaponsFolder + "/EnchantmentRollSettings.asset";
         public const string OneHandedTypePath = WeaponsFolder + "/WeaponType_01_OneHanded.asset";
+        public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
+        public const string FistsPath = WeaponsFolder + "/Weapon_Fists.asset";
+
+        private const string HovlPrefabs = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Prefabs/";
+        private const string LanaPrefabs = "Assets/ThirdParty/VFX/Lana Studio/Hyper Casual FX/Prefabs/";
+        public const string SlashEffectPath = HovlPrefabs + "Slash effects/Stone slash.prefab";
+        public const string SwordHitEffectPath = HovlPrefabs + "Sparks/Sparks explode white.prefab";
+        public const string PunchHitEffectPath = LanaPrefabs + "Flash/Flash_round_ellow.prefab";
+        public const string CriticalHitEffectPath = HovlPrefabs + "Hits and explosions/Star hit.prefab";
+        public const string ExplosionEffectPath = HovlPrefabs + "Hits and explosions/Explosion.prefab";
+
+        // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
+        private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
+        public const string SwingSoundPath = ArmsSounds + "ナイフを投げる.mp3";
+        public const string SwordHitSoundPath = ArmsSounds + "剣で斬る2.mp3";
+        public const string SwordFinisherHitSoundPath = ArmsSounds + "剣で斬る1.mp3";
+        public const string PunchHitSoundPath = ArmsSounds + "打撃3.mp3";
+        public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
 
@@ -76,6 +96,8 @@ namespace TpsDungeon.Items.Editor
             WeaponTypeDefinition oneHanded = WriteOneHandedType(enchantments, roll);
 
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, oneHanded);
+
+            WriteFists(WriteUnarmedType());
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮の武器データを作った: {WeaponsFolder}");
@@ -243,29 +265,138 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("baseCritMultiplier").floatValue = 1.5f;
 
             // 素早い 3 振りと、溜めの長い重い 4 段目。値は仮。
-            var steps = new (float weight, float duration, float hit, Vector3 size, Vector3 center, float knockback)[]
+            // 判定はモーションの刃が正面を通る瞬間に合わせる（MeleeAttack_OneHanded は 0.32 秒、2 段目の振り上げは 0.28 秒、
+            // 4 段目は CharacterAnimatorBuilder で 0.5 秒）。
+            // 斬撃（Stone slash は水平の三日月で、左から正面を回って右へ振る。半径は 0.6 倍で約 0.8 m）は、
+            // 刃先の通り道に三日月の頂点が来る位置に出し、振りの向きに Z で傾ける:
+            // 1・3 段目は右上から左下へ振り下ろして腰の前へ、2 段目は右下から左上へ振り上げて顔の前（y≈1.75, z≈1.2）を通る、
+            // 4 段目は真上からの縦振り。
+            var low = new Vector3(0f, 1.1f, 0.3f);
+            WriteComboSteps(serialized, new[]
             {
-                (1f, 0.45f, 0.18f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f),
-                (1f, 0.45f, 0.18f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f),
-                (1f, 0.50f, 0.20f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f),
-                (2f, 0.80f, 0.40f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f),
-            };
+                new ComboStepSpec(1f, 0.45f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, low, new Vector3(0f, 0f, -125f)),
+                new ComboStepSpec(1f, 0.45f, 0.28f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f,
+                    new Vector3(-0.2f, 1.75f, 0.45f), new Vector3(0f, 0f, 157f)),
+                new ComboStepSpec(1f, 0.50f, 0.32f, new Vector3(1.6f, 1.2f, 1.4f), new Vector3(0f, 1f, 1.0f), 0.5f, low, new Vector3(0f, 0f, -125f)),
+                new ComboStepSpec(2f, 0.80f, 0.50f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f, low, new Vector3(0f, 0f, -90f)),
+            });
+
+            // 4 段目（締めの重い振り）だけ命中の音を替える。
+            serialized.FindProperty("comboSteps").GetArrayElementAtIndex(3).FindPropertyRelative("hitSound").objectReferenceValue =
+                LoadSound(SwordFinisherHitSoundPath);
+
+            serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
+            serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
+            serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>素手の武器種。右・左のパンチの 2 段。エンチャントは付かない。振りのエフェクトは出さず、命中だけ。</summary>
+        private static WeaponTypeDefinition WriteUnarmedType()
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(UnarmedTypePath);
+            var serialized = new SerializedObject(type);
+            serialized.FindProperty("id").stringValue = "00";
+            serialized.FindProperty("displayName").stringValue = "素手";
+            serialized.FindProperty("animatorWeaponType").intValue = 0; // CharacterAnimatorBuilder.Weapon.Unarmed
+            serialized.FindProperty("canUseShield").boolValue = false;
+            serialized.FindProperty("allowedEnchantments").arraySize = 0;
+            serialized.FindProperty("enchantmentRoll").objectReferenceValue = null;
+            serialized.FindProperty("characterAttackWeight").floatValue = 1f;
+            serialized.FindProperty("baseCritChance").floatValue = 0.05f;
+            serialized.FindProperty("baseCritMultiplier").floatValue = 1.5f;
+
+            // 判定は腕が伸び切る瞬間（CharacterAnimatorBuilder でパンチを 1.4 倍にして 0.3 秒）。
+            WriteComboSteps(serialized, new[]
+            {
+                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero, Vector3.zero),
+                new ComboStepSpec(1f, 0.45f, 0.30f, new Vector3(1.0f, 1.0f, 1.0f), new Vector3(0f, 1.1f, 0.8f), 0.3f, Vector3.zero, Vector3.zero),
+            });
+
+            serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
+            serialized.FindProperty("swingEffect").objectReferenceValue = null;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.12f; // 素材は 14 m ほどに広がる
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(PunchHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.6f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
+        private static void WriteFists(WeaponTypeDefinition type)
+        {
+            var fists = Gen.LoadOrCreate<WeaponDefinition>(FistsPath);
+            var serialized = new SerializedObject(fists);
+            serialized.FindProperty("id").stringValue = "Weapon_Fists";
+            serialized.FindProperty("displayName").stringValue = "素手";
+            serialized.FindProperty("description").stringValue = "何も持たずに殴る。";
+            serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(WeaponRank.E);
+            serialized.FindProperty("strength").floatValue = 3f; // 錆びた片手剣（5）より弱い。値は仮。
+            serialized.FindProperty("weaponType").objectReferenceValue = type;
+            serialized.FindProperty("heldModel").objectReferenceValue = null;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private readonly struct ComboStepSpec
+        {
+            public readonly float Weight, Duration, HitTime, Knockback;
+            public readonly Vector3 Size, Center, SwingEffectOffset, SwingEffectEuler;
+
+            public ComboStepSpec(float weight, float duration, float hitTime, Vector3 size, Vector3 center, float knockback,
+                Vector3 swingEffectOffset, Vector3 swingEffectEuler)
+            {
+                Weight = weight;
+                Duration = duration;
+                HitTime = hitTime;
+                Size = size;
+                Center = center;
+                Knockback = knockback;
+                SwingEffectOffset = swingEffectOffset;
+                SwingEffectEuler = swingEffectEuler;
+            }
+        }
+
+        private static void WriteComboSteps(SerializedObject serialized, ComboStepSpec[] steps)
+        {
             SerializedProperty combo = serialized.FindProperty("comboSteps");
             combo.arraySize = steps.Length;
             for (int i = 0; i < steps.Length; i++)
             {
                 SerializedProperty step = combo.GetArrayElementAtIndex(i);
-                step.FindPropertyRelative("damageWeight").floatValue = steps[i].weight;
-                step.FindPropertyRelative("duration").floatValue = steps[i].duration;
-                step.FindPropertyRelative("hitTime").floatValue = steps[i].hit;
-                step.FindPropertyRelative("hitboxSize").vector3Value = steps[i].size;
-                step.FindPropertyRelative("hitboxCenter").vector3Value = steps[i].center;
-                step.FindPropertyRelative("knockback").floatValue = steps[i].knockback;
+                step.FindPropertyRelative("damageWeight").floatValue = steps[i].Weight;
+                step.FindPropertyRelative("duration").floatValue = steps[i].Duration;
+                step.FindPropertyRelative("hitTime").floatValue = steps[i].HitTime;
+                step.FindPropertyRelative("hitboxSize").vector3Value = steps[i].Size;
+                step.FindPropertyRelative("hitboxCenter").vector3Value = steps[i].Center;
+                step.FindPropertyRelative("knockback").floatValue = steps[i].Knockback;
+                step.FindPropertyRelative("swingEffectOffset").vector3Value = steps[i].SwingEffectOffset;
+                step.FindPropertyRelative("swingEffectEuler").vector3Value = steps[i].SwingEffectEuler;
+                // 段ごとの音の上書きは、要る段だけ呼び出し側で入れ直す。
+                step.FindPropertyRelative("swingSound").objectReferenceValue = null;
+                step.FindPropertyRelative("hitSound").objectReferenceValue = null;
             }
+        }
 
-            serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            return type;
+        public static AudioClip LoadSound(string path)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null) Debug.LogWarning($"効果音が無い: {path}");
+            return clip;
+        }
+
+        public static GameObject LoadEffect(string path)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) Debug.LogWarning($"エフェクトが無い: {path}");
+            return prefab;
         }
 
         // ---- 武器 --------------------------------------------------------

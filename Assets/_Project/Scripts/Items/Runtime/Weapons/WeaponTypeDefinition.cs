@@ -54,6 +54,29 @@ namespace TpsDungeon.Items
         [SerializeField]
         private Vector3 heldLocalEuler;
 
+        [Header("エフェクト")]
+        [SerializeField, Tooltip("振りの判定の瞬間に出す（任意）。位置と向きは段ごとの swingEffectOffset / swingEffectEuler。")]
+        private GameObject swingEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("振りのエフェクトの大きさの倍率。")]
+        private float swingEffectScale = 1f;
+
+        [SerializeField, Tooltip("敵に当たった所に出す（任意）。")]
+        private GameObject hitEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("命中のエフェクトの大きさの倍率。")]
+        private float hitEffectScale = 1f;
+
+        [Header("効果音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
+        private AudioClip swingSound;
+
+        [SerializeField, Tooltip("敵に当たったときに鳴らす音。何体に当たっても 1 振りに 1 回。敵側の被弾音にも重なる。段ごとに替えるなら MeleeComboStep.hitSound。")]
+        private AudioClip hitSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("この武器種の音の音量（SE 音量に掛かる）。")]
+        private float soundVolume = 1f;
+
         public string Id => id;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
         public int AnimatorWeaponType => animatorWeaponType;
@@ -68,5 +91,12 @@ namespace TpsDungeon.Items
         public bool IsMelee => comboSteps != null && comboSteps.Length > 0;
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Quaternion HeldLocalRotation => Quaternion.Euler(heldLocalEuler);
+        public GameObject SwingEffect => swingEffect;
+        public float SwingEffectScale => swingEffectScale;
+        public GameObject HitEffect => hitEffect;
+        public float HitEffectScale => hitEffectScale;
+        public AudioClip SwingSound => swingSound;
+        public AudioClip HitSound => hitSound;
+        public float SoundVolume => soundVolume;
     }
 }

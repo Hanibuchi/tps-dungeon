@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
 using TpsDungeon.Player;
@@ -11,8 +12,10 @@ namespace TpsDungeon.Combat
 {
     /// <summary>
     /// ホットバーで持っている近接武器で攻撃する。攻撃キーを押すたびにコンボを 1 段ずつ進め（MeleeComboState）、
-    /// 段ごとの判定の瞬間に前方の箱の中の敵へダメージを与える。数値は武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
-    /// 持ち替えたら Animator の WeaponType と手の見た目も替える。近接でない物や素手では攻撃しない。
+    /// 段ごとの判定の瞬間に前方の箱の中の敵へダメージを与え、振りと命中のエフェクトと音を出す。
+    /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
+    /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
+    /// 近接でない武器（弓など）はここでは振らない。
     /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -40,8 +43,26 @@ namespace TpsDungeon.Combat
         [SerializeField, Tooltip("段を振り始めるときに、体をカメラの向きへ向ける。")]
         private bool faceCameraOnAttack = true;
 
+        [SerializeField, Tooltip("素手や武器でない物を持っているときに振る武器（インベントリには入れない）。未設定なら素手では攻撃しない。")]
+        private WeaponDefinition unarmedWeapon;
+
+        [SerializeField, Tooltip("クリティカルのとき、命中のエフェクトに重ねて出す見た目（任意）。")]
+        private GameObject criticalHitEffect;
+
+        [SerializeField, Min(0.01f)]
+        private float criticalHitEffectScale = 1f;
+
         [SerializeField, Tooltip("爆発のエンチャントで出す見た目（任意）。出して数秒で消す。")]
         private GameObject explosionEffect;
+
+        [SerializeField, Min(0.01f)]
+        private float explosionEffectScale = 1f;
+
+        [SerializeField, Tooltip("爆発のエンチャントで鳴らす音（任意）。")]
+        private AudioClip explosionSound;
+
+        [SerializeField, Range(0f, 1f)]
+        private float explosionSoundVolume = 1f;
 
         [SerializeField, Tooltip("当てたダメージをコンソールに出す（調整用）。")]
         private bool logHits;
@@ -52,6 +73,7 @@ namespace TpsDungeon.Combat
         private InputAction attackAction;
         private Transform cameraTransform;
 
+        private bool refreshed;
         private ItemInstance held;
         private WeaponDefinition heldWeapon;
         private GameObject heldModel;
@@ -67,7 +89,7 @@ namespace TpsDungeon.Combat
         private bool hasComboStepParam;
         private bool hasAttackSpeedParam;
 
-        /// <summary>今持っている近接武器。持っていなければ null。</summary>
+        /// <summary>今振る武器（素手なら unarmedWeapon）。振れなければ null。</summary>
         public WeaponDefinition HeldWeapon => heldWeapon;
 
         /// <summary>今振っている段（0 始まり）。振っていなければ -1。</summary>
@@ -138,20 +160,25 @@ namespace TpsDungeon.Combat
         private void RefreshHeld()
         {
             ItemInstance current = hotbar != null && inventory != null ? inventory.Inventory[hotbar.SelectedIndex] : null;
-            if (current == held) return;
+            if (refreshed && current == held) return;
 
+            refreshed = true;
             held = current;
             WeaponDefinition weapon = current?.Weapon;
-            heldWeapon = weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsMelee ? weapon : null;
+            bool isWeapon = weapon != null && weapon.WeaponType != null;
+            heldWeapon = IsMelee(weapon) ? weapon : !isWeapon && IsMelee(unarmedWeapon) ? unarmedWeapon : null;
 
             combo = heldWeapon != null ? new MeleeComboState(Timings(heldWeapon.WeaponType), heldWeapon.WeaponType.ComboChainGrace) : null;
             stats = heldWeapon != null ? ComputeStats() : null;
 
+            WeaponDefinition pose = isWeapon ? weapon : heldWeapon;
             if (animator != null && hasWeaponTypeParam)
-                animator.SetInteger(WeaponTypeParam, weapon != null && weapon.WeaponType != null ? weapon.WeaponType.AnimatorWeaponType : 0);
+                animator.SetInteger(WeaponTypeParam, pose != null ? pose.WeaponType.AnimatorWeaponType : 0);
 
             AttachHeldModel(weapon);
         }
+
+        private static bool IsMelee(WeaponDefinition weapon) => weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsMelee;
 
         private static List<ComboStepTiming> Timings(WeaponTypeDefinition type)
         {
@@ -173,8 +200,10 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
+            // 素手で殴っているとき、手の物のエンチャントは乗せない。
+            EnchantmentTotals enchantments = held != null && held.Weapon == heldWeapon ? held.EnchantmentTotals() : EnchantmentTotals.Empty;
             float attack = progression != null ? progression.BaseAttack : 0f;
-            return heldWeapon.ComputeMeleeStats(held.EnchantmentTotals(), attack, critChance, critMultiplier);
+            return heldWeapon.ComputeMeleeStats(enchantments, attack, critChance, critMultiplier);
         }
 
         private void AttachHeldModel(WeaponDefinition weapon)
@@ -224,8 +253,13 @@ namespace TpsDungeon.Combat
         {
             if (heldWeapon == null || stats == null || step < 0) return;
 
-            MeleeComboStep shape = heldWeapon.WeaponType.ComboSteps[step];
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            MeleeComboStep shape = type.ComboSteps[step];
             HitBox(shape, out Vector3 center, out Vector3 halfExtents);
+            Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
+            OneShotEffect.Spawn(type.SwingEffect, swingPoint,
+                transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
             int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, transform.rotation, hitMask, QueryTriggerInteraction.Ignore);
 
             int hits = 0;
@@ -245,7 +279,11 @@ namespace TpsDungeon.Combat
 
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
                     shape.knockback + stats.KnockbackBonus, stats.ReactionScale));
+                if (hits == 0) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
                 hits++;
+                Quaternion facing = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
+                if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
                 if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
 
                 Explode(point, stats.ExplosionDamage(damage));
@@ -259,7 +297,8 @@ namespace TpsDungeon.Combat
         {
             if (damage <= 0) return;
 
-            if (explosionEffect != null) Destroy(Instantiate(explosionEffect, point, Quaternion.identity), 3f);
+            OneShotEffect.Spawn(explosionEffect, point, Quaternion.identity, explosionEffectScale);
+            PlaySound(explosionSound, point, explosionSoundVolume);
 
             explosionTargets.Clear();
             int count = Physics.OverlapSphereNonAlloc(point, stats.ExplosionRadius, overlap, hitMask, QueryTriggerInteraction.Ignore);
@@ -272,6 +311,11 @@ namespace TpsDungeon.Combat
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction));
                 if (logHits) Debug.Log($"爆発 → {enemy.name}: {dealt}", enemy);
             }
+        }
+
+        private static void PlaySound(AudioClip clip, Vector3 position, float volume)
+        {
+            if (clip != null) GameAudio.Instance?.PlaySeAt(clip, position, volume);
         }
 
         /// <summary>段の判定の箱（ワールド）。サイズのエンチャントで大きさと前への伸びが増える。</summary>

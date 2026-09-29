@@ -3,7 +3,9 @@
     "rootNamespace": "TpsDungeon.Combat.Editor",
     "references": [
         "Unity.InputSystem",
-        "TpsDungeon.Combat"
+        "TpsDungeon.Combat",
+        "TpsDungeon.Items",
+        "TpsDungeon.Items.Editor"
     ],
     "includePlatforms": [
         "Editor"

@@ -16,7 +16,7 @@ namespace TpsDungeon.Progression.Editor
         public const string CompanionTemplatePath = ProfileFolder + "/CompanionGrowth_Template.asset";
 
         // 仮の効果音（効果音ラボ「ひらめく2」）。既に別の音が入っていれば上書きしない。
-        private const string LevelUpClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/ひらめく2.mp3";
+        private const string LevelUpClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Character/ひらめく2.mp3";
 
         [MenuItem("Tools/TPS Dungeon/Progression/主人公に組み込む")]
         public static void Setup()

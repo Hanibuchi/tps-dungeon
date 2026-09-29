@@ -16,8 +16,8 @@ namespace TpsDungeon.Player.Editor
     ///   Speed / MotionSpeed / Jump / Grounded / FreeFall … ThirdPersonController が今まで通り流す
     ///   WeaponType (int) … <see cref="Weapon"/> の値。持ち替えたら入れる
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
-    ///   ComboStep (int) … 片手武器のコンボの段（0 始まり）。Attack より先に入れる
-    ///   AttackSpeed (float) … 片手武器の振りの再生速度（速射のエンチャント）。既定 1
+    ///   ComboStep (int) … 素手・片手武器のコンボの段（0 始まり）。Attack より先に入れる
+    ///   AttackSpeed (float) … 素手・片手武器の振りの再生速度（速射のエンチャント）。既定 1
     ///   Action (int) / PlayAction (trigger) … <see cref="CharacterAction"/> の値を入れてトリガーを立てると全身で再生する（CharacterActions が叩く）
     /// </summary>
     public static class CharacterAnimatorBuilder
@@ -51,9 +51,13 @@ namespace TpsDungeon.Player.Editor
         /// <summary>片手武器のコンボの段数。MeleeAttacker が武器種の段数ぶん ComboStep を回す。</summary>
         public const int OneHandedComboSteps = 4;
 
+        /// <summary>素手のコンボの段数（右・左のパンチ）。</summary>
+        public const int UnarmedComboSteps = 2;
+
         private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
         private const string BlinkPack = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/";
         private const string BlinkCombat = BlinkPack + "Combat/";
+        private const string KevinCombat = "Assets/ThirdParty/Animation/Kevin Iglesias/Human Animations/Animations/Male/Combat/";
 
         /// <summary>
         /// Action 層に置く動きと、その元のクリップ（パック内のファイルとクリップ名）。パックのクリップは tpose 以外全部。
@@ -284,8 +288,6 @@ namespace TpsDungeon.Player.Editor
             AnimatorState free = sm.AddState("Free", new Vector3(300, 200));
             sm.defaultState = free;
 
-            AddOneShotAttack(sm, free, "Unarmed Attack", clips.Punch, Weapon.Unarmed,
-                new Vector3(600, 0), startAt: 0f, exitAt: 0.8f);
             AddOneShotAttack(sm, free, "TwoHanded Attack", clips.TwoHanded, Weapon.TwoHanded,
                 new Vector3(600, 160), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
@@ -293,21 +295,48 @@ namespace TpsDungeon.Player.Editor
 
             BuildBow(sm, free, clips, bowAim);
             BuildOneHandedCombo(sm, free, clips);
+            BuildUnarmedCombo(sm, free, clips);
         }
 
         /// <summary>
-        /// 片手武器の 4 段コンボ。素材の振りが 1 つしかないので、2 段目は左右反転、4 段目は両手武器の重い振りで代用する。
-        /// どの段からでも、次の段の ComboStep で Attack が立てば途中から切り替わる（先行入力で繋がる）。
+        /// 片手武器の 4 段コンボ。1・3 段目は右上からの振り下ろし、2 段目は Kevin Iglesias の右手の突き（0.30 秒で伸び切る）、
+        /// 4 段目は両手武器の重い振りで代用する。剣は右手に持たせるので、左右反転（左手で振る）は使わない。
+        /// 両手武器の振りは振り下ろしが 0.8 秒と遅いので 1.6 倍で回し、0.5 秒で当たるようにする（武器種の hitTime と揃える）。
         /// </summary>
         private static void BuildOneHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
         {
-            var states = new AnimatorState[OneHandedComboSteps];
+            var steps = new (Motion motion, bool mirror, float speed)[OneHandedComboSteps];
+            for (int i = 0; i < steps.Length; i++)
+            {
+                bool finisher = i == steps.Length - 1;
+                if (finisher) steps[i] = (clips.TwoHanded, false, 1.6f);
+                else steps[i] = (i % 2 == 1 ? clips.OneHandedThrust : clips.OneHanded, false, 1f);
+            }
+
+            BuildCombo(sm, free, "OneHanded", Weapon.OneHanded, steps, new Vector3(900, -40));
+        }
+
+        /// <summary>素手の 2 段コンボ。右・左のパンチを交互に出す。素材は腕が伸び切るまで 0.42 秒かかるので 1.4 倍で回す（0.3 秒で当たる）。</summary>
+        private static void BuildUnarmedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            BuildCombo(sm, free, "Unarmed", Weapon.Unarmed,
+                new (Motion, bool, float)[] { (clips.Punch, false, 1.4f), (clips.PunchLeft, false, 1.4f) }, new Vector3(600, -40));
+        }
+
+        /// <summary>
+        /// 段ごとのステートを並べる。どの段からでも、次の段の ComboStep で Attack が立てば途中から切り替わる（先行入力で繋がる）。
+        /// 最後の段のあとは 1 段目へ戻る。
+        /// </summary>
+        private static void BuildCombo(AnimatorStateMachine sm, AnimatorState free, string name, Weapon weapon,
+            (Motion motion, bool mirror, float speed)[] steps, Vector3 position)
+        {
+            var states = new AnimatorState[steps.Length];
             for (int i = 0; i < states.Length; i++)
             {
-                bool finisher = i == states.Length - 1;
-                AnimatorState state = sm.AddState($"OneHanded Attack {i + 1}", new Vector3(900, -40 + 80 * i));
-                state.motion = finisher ? clips.TwoHanded : clips.OneHanded;
-                state.mirror = i % 2 == 1;
+                AnimatorState state = sm.AddState($"{name} Attack {i + 1}", position + new Vector3(0, 80 * i));
+                state.motion = steps[i].motion;
+                state.mirror = steps[i].mirror;
+                state.speed = steps[i].speed; // AttackSpeed はこれに掛かる
                 state.speedParameterActive = true;
                 state.speedParameter = AttackSpeedParam;
                 states[i] = state;
@@ -317,9 +346,9 @@ namespace TpsDungeon.Player.Editor
 
             for (int i = 0; i < states.Length; i++)
             {
-                AddComboEntry(free, states[i], i);
+                AddComboEntry(free, states[i], weapon, i);
                 int previous = (i + states.Length - 1) % states.Length;
-                AddComboEntry(states[previous], states[i], i);
+                if (previous != i) AddComboEntry(states[previous], states[i], weapon, i);
             }
         }
 
@@ -369,11 +398,11 @@ namespace TpsDungeon.Player.Editor
             }
         }
 
-        private static void AddComboEntry(AnimatorState from, AnimatorState to, int step)
+        private static void AddComboEntry(AnimatorState from, AnimatorState to, Weapon weapon, int step)
         {
             AnimatorStateTransition t = Transition(from, to, 0.08f);
             t.AddCondition(AnimatorConditionMode.If, 0, AttackParam);
-            t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.OneHanded, WeaponTypeParam);
+            t.AddCondition(AnimatorConditionMode.Equals, (int)weapon, WeaponTypeParam);
             t.AddCondition(AnimatorConditionMode.Equals, step, ComboStepParam);
         }
 
@@ -518,7 +547,7 @@ namespace TpsDungeon.Player.Editor
         {
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
-            public AnimationClip Punch, OneHanded, TwoHanded, SpellCast, BowShot;
+            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, SpellCast, BowShot;
             public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
@@ -535,7 +564,9 @@ namespace TpsDungeon.Player.Editor
                 RunLand = Load(StarterAnimations + "Locomotion--Run_N_Land.anim.fbx", "Run_N_Land");
 
                 Punch = Load(BlinkCombat + "PunchRight.fbx", "PunchRight");
+                PunchLeft = Load(BlinkCombat + "PunchLeft.fbx", "PunchLeft");
                 OneHanded = Load(BlinkCombat + "MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded");
+                OneHandedThrust = Load(KevinCombat + "1H/HumanM@Attack1H01_R.fbx", "HumanM@Attack1H01_R");
                 TwoHanded = Load(BlinkCombat + "MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");

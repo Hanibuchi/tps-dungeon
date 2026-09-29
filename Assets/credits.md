@@ -16,6 +16,7 @@
 | 効果音ラボ | 効果音ラボ | [効果音ラボ](https://soundeffect-lab.info/sound/battle/?utm_source=gemini) | 商用利用無料、クレジット表記・リンク不要 |
 | [Yughues Free Wooden Floor Materials](https://assetstore.unity.com/packages/2d/textures-materials/wood/yughues-free-wooden-floor-materials-13213?utm_source=gemini) | Nobiax / Yughues | [Unity Asset Store](https://assetstore.unity.com/packages/2d/textures-materials/wood/yughues-free-wooden-floor-materials-13213?utm_source=gemini) | 無料（Standard Unity Asset Store EULA） |
 | [Horror Ambient Album - 082318](https://assetstore.unity.com/packages/audio/ambient/horror-ambient-album-082318-127190?utm_source=gemini) | GWriterStudio | [Unity Asset Store](https://assetstore.unity.com/packages/audio/ambient/horror-ambient-album-082318-127190?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset)<br>※商用/非商用利用可。再配布・自作発言は不可。 |
+| Human Melee Animations FREE | Kevin Iglesias | [Unity Asset Store](https://assetstore.unity.com/packages/3d/animations/human-melee-animations-free-165785) | Standard Unity Asset Store EULA (Extension Asset) |
 
 
 # BGM
