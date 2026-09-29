@@ -7,12 +7,17 @@ namespace TpsDungeon.UiKit
     /// アイテムの枠 1 つ分の要素を組み立てる。HUD のホットバーとインベントリ画面で同じ見た目にするため共有する。
     /// 見た目は Theme.uss の .slot*。選んでいる枠は <see cref="SelectedClass"/> を付ける。
     /// 武器などレア度のあるものは、絵の後ろにランクの色の光を敷く（<see cref="SetItem"/>）。中心が濃く、外へ向かって地に溶ける。
+    /// 次に使えるまでの待ちは、絵の上に時計回りに欠けていく暗幕で出す（<see cref="SetCooldown"/>）。
     /// </summary>
     public static class ItemSlot
     {
         public const string SelectedClass = "slot--selected";
         public const string IconName = "slot-icon";
         public const string RankName = "slot-rank";
+        public const string CooldownName = "slot-cooldown";
+
+        /// <summary>待ちが明けた瞬間に枠へ短く付けるクラス。</summary>
+        public const string ReadyClass = "slot--ready";
 
         /// <summary>ランクの光のいちばん濃いところ（中心）の不透明度。リニア色空間では半透明が強く出るので控えめに。</summary>
         public const float RankGlowPeak = 0.8f;
@@ -43,6 +48,11 @@ namespace TpsDungeon.UiKit
             var icon = new VisualElement { name = IconName, pickingMode = PickingMode.Ignore };
             icon.AddToClassList("slot__icon");
             slot.Add(icon);
+
+            // 待ちの暗幕。絵の上、番号の下。
+            var cooldown = new CooldownSweep { name = CooldownName };
+            cooldown.AddToClassList("slot__cooldown");
+            slot.Add(cooldown);
 
             if (!string.IsNullOrEmpty(number))
             {
@@ -121,6 +131,13 @@ namespace TpsDungeon.UiKit
             // 中心寄りに色を集めたいので、なめらかな曲線をもう一度かけて裾を細らせる。
             float s = t * t * (3f - 2f * t);
             return RankGlowPeak * s * s;
+        }
+
+        /// <summary>待ちの残りの割合（1 で全部暗く、0 で消える）を暗幕に写す。</summary>
+        public static void SetCooldown(VisualElement slot, float fraction)
+        {
+            CooldownSweep sweep = slot?.Q<CooldownSweep>(CooldownName);
+            if (sweep != null) sweep.Fraction = fraction;
         }
 
         /// <summary>枠に絵を入れる。null なら空にする。</summary>

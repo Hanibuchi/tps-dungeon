@@ -151,5 +151,97 @@ namespace TpsDungeon.Combat.Tests
             Assert.AreEqual(-1, combo.Step);
             Assert.AreEqual(0, combo.NextStep);
         }
+
+        // ---- 待ち ----
+
+        private const float Cooldown = 0.6f;
+
+        private static MeleeComboState TwoStepCombo(float cooldown = Cooldown) => new MeleeComboState(new[]
+        {
+            new ComboStepTiming(0.4f, 0.2f),
+            new ComboStepTiming(0.4f, 0.2f),
+        }, Grace, cooldown);
+
+        [Test]
+        public void 最後の段のあとは待ちに入りその間の押下は捨てる()
+        {
+            var combo = TwoStepCombo();
+            combo.Tick(0f, true);
+            Finish(combo);
+            combo.Tick(0f, true);
+            Assert.IsTrue((Finish(combo) & ComboEvents.Ended) != 0);
+
+            Assert.IsTrue(combo.IsCoolingDown);
+            Assert.AreEqual(Cooldown, combo.CooldownDuration, 1e-5f);
+            Assert.AreEqual(ComboEvents.None, combo.Tick(0.3f, true));
+            Assert.IsFalse(combo.IsSwinging, "待ちの間は振れない");
+            Assert.AreEqual(ComboEvents.None, combo.Tick(0.31f, false));
+
+            Assert.IsFalse(combo.IsCoolingDown);
+            Assert.AreEqual(ComboEvents.StepStarted, combo.Tick(0.016f, true));
+            Assert.AreEqual(0, combo.Step, "明けたら 1 段目から");
+        }
+
+        [Test]
+        public void 最後の段で先行入力しても待ちに入る()
+        {
+            var combo = TwoStepCombo();
+            combo.Tick(0f, true);
+            Finish(combo);
+            combo.Tick(0f, true);
+            combo.Tick(0.3f, true);
+
+            Finish(combo);
+            Assert.IsFalse(combo.IsSwinging);
+            Assert.IsTrue(combo.IsCoolingDown);
+        }
+
+        [Test]
+        public void 待ちが0なら最後の段の先行入力で1段目へ続く()
+        {
+            var combo = TwoStepCombo(0f);
+            combo.Tick(0f, true);
+            Finish(combo);
+            combo.Tick(0f, true);
+            combo.Tick(0.3f, true);
+
+            Assert.IsTrue((combo.Tick(0.2f, false) & ComboEvents.StepStarted) != 0);
+            Assert.AreEqual(0, combo.Step);
+        }
+
+        [Test]
+        public void 猶予を過ぎてコンボが切れても待ちに入る()
+        {
+            var combo = TwoStepCombo();
+            combo.Tick(0f, true);
+            Finish(combo);
+            Assert.IsFalse(combo.IsCoolingDown, "猶予の間はまだ待たない");
+
+            Assert.IsTrue((combo.Tick(Grace + 0.01f, false) & ComboEvents.Ended) != 0);
+            Assert.IsTrue(combo.IsCoolingDown);
+        }
+
+        [Test]
+        public void 待ちは攻撃速度に関係なく実時間で減る()
+        {
+            var combo = TwoStepCombo();
+            combo.StartCooldown(0.5f);
+
+            combo.Tick(0.25f, false, 4f);
+            Assert.AreEqual(0.25f, combo.CooldownRemaining, 1e-5f);
+        }
+
+        [Test]
+        public void StartCooldownは今の残りより短ければ縮めない()
+        {
+            var combo = TwoStepCombo();
+            combo.StartCooldown(1f);
+            combo.StartCooldown(0.5f);
+            Assert.AreEqual(1f, combo.CooldownRemaining, 1e-5f);
+            Assert.AreEqual(1f, combo.CooldownDuration, 1e-5f);
+
+            combo.StartCooldown(2f);
+            Assert.AreEqual(2f, combo.CooldownDuration, 1e-5f);
+        }
     }
 }

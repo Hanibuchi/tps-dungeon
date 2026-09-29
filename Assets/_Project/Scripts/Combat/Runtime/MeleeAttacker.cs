@@ -16,6 +16,7 @@ namespace TpsDungeon.Combat
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない。
+    /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
     /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -42,6 +43,9 @@ namespace TpsDungeon.Combat
 
         [SerializeField, Tooltip("段を振り始めるときに、体をカメラの向きへ向ける。")]
         private bool faceCameraOnAttack = true;
+
+        [SerializeField, Min(0f), Tooltip("持ち替えてから振れるまでの秒数。全武器共通。")]
+        private float switchCooldown = 0.5f;
 
         [SerializeField, Tooltip("素手や武器でない物を持っているときに振る武器（インベントリには入れない）。未設定なら素手では攻撃しない。")]
         private WeaponDefinition unarmedWeapon;
@@ -95,6 +99,10 @@ namespace TpsDungeon.Combat
         /// <summary>今振っている段（0 始まり）。振っていなければ -1。</summary>
         public int ComboStep => combo != null ? combo.Step : -1;
 
+        /// <summary>次に振れるまでの待ちの残りの割合（1 で待ち始め、0 で振れる）。振れる武器が無いときも 0。</summary>
+        public float CooldownFraction =>
+            combo != null && combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
+
         /// <summary>判定を出した。(段, 当てた敵の数)。</summary>
         public event Action<int, int> Swung;
 
@@ -134,7 +142,8 @@ namespace TpsDungeon.Combat
             attackAction = null;
         }
 
-        private void OnHotbarChanged(PlayerHotbar _) => RefreshHeld();
+        // 枠を選び直したら、中身が同じ（空の枠どうしなど）でも持ち替えとして待たせる。
+        private void OnHotbarChanged(PlayerHotbar _) => RefreshHeld(true);
 
         private void OnInventoryChanged(PlayerInventory _) => RefreshHeld();
 
@@ -157,18 +166,22 @@ namespace TpsDungeon.Combat
 
         // ---- 持ち替え ----
 
-        private void RefreshHeld()
+        private void RefreshHeld(bool switched = false)
         {
             ItemInstance current = hotbar != null && inventory != null ? inventory.Inventory[hotbar.SelectedIndex] : null;
-            if (refreshed && current == held) return;
+            if (refreshed && current == held && !switched) return;
 
+            // 持ち替えの待ちは最初の 1 回（起動時）には掛けない。前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+            float switchWait = refreshed ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
             refreshed = true;
             held = current;
             WeaponDefinition weapon = current?.Weapon;
             bool isWeapon = weapon != null && weapon.WeaponType != null;
             heldWeapon = IsMelee(weapon) ? weapon : !isWeapon && IsMelee(unarmedWeapon) ? unarmedWeapon : null;
 
-            combo = heldWeapon != null ? new MeleeComboState(Timings(heldWeapon.WeaponType), heldWeapon.WeaponType.ComboChainGrace) : null;
+            WeaponTypeDefinition heldType = heldWeapon != null ? heldWeapon.WeaponType : null;
+            combo = heldType != null ? new MeleeComboState(Timings(heldType), heldType.ComboChainGrace, heldType.ComboCooldown) : null;
+            combo?.StartCooldown(switchWait);
             stats = heldWeapon != null ? ComputeStats() : null;
 
             WeaponDefinition pose = isWeapon ? weapon : heldWeapon;

@@ -1,3 +1,4 @@
+using TpsDungeon.Combat;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
@@ -12,7 +13,8 @@ namespace TpsDungeon.Hud
     /// <summary>
     /// 常時表示の HUD（左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
-    /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / MeleeAttacker / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 次に振れるまでの待ち（武器種の待ち・持ち替えの待ち）は、選んでいる枠の暗幕で見せる。
     /// 経験値は数字を出さず、帯の伸びだけで見せる。
     /// </summary>
     [DisallowMultipleComponent]
@@ -25,6 +27,9 @@ namespace TpsDungeon.Hud
 
         // レベルアップで経験値の帯を端まで伸ばしてから、空に戻して余りを伸ばし直すまでの間（ミリ秒）。USS の .exp__fill の伸びる時間に合わせる。
         private const long ExpLevelUpHoldMs = 380;
+
+        // 待ちが明けたときに枠を光らせておく時間（ミリ秒）。
+        private const long CooldownReadyFlashMs = 120;
 
         // フロアが無いシーンで毎フレーム探さないための間隔（秒）。
         private const float FloorSearchInterval = 1f;
@@ -40,6 +45,9 @@ namespace TpsDungeon.Hud
 
         [SerializeField, Tooltip("ホットバーの枠に入っているアイテムの出どころ。未設定なら親から探す。")]
         private PlayerInventory inventory;
+
+        [SerializeField, Tooltip("次に振れるまでの待ちの出どころ。未設定なら親から探す。")]
+        private MeleeAttacker attacker;
 
         [SerializeField, Tooltip("大きな地図を開いているかの出どころ。未設定なら親から探す。")]
         private PlayerMapToggle mapToggle;
@@ -67,6 +75,10 @@ namespace TpsDungeon.Hud
         private VisualElement[] slots;
         private Label itemName;
 
+        // 選んでいる枠に出している待ちの割合。明けた瞬間を拾うために覚えておく。
+        private int cooldownSlot = -1;
+        private float shownCooldown;
+
         // 今出しているアイテム名。空の枠を選んでいる間は null。
         private string shownItemName;
         private VisualElement minimapFrame;
@@ -85,6 +97,7 @@ namespace TpsDungeon.Hud
             progression = GetComponentInParent<CharacterProgression>();
             hotbar = GetComponentInParent<PlayerHotbar>();
             inventory = GetComponentInParent<PlayerInventory>();
+            attacker = GetComponentInParent<MeleeAttacker>();
             mapToggle = GetComponentInParent<PlayerMapToggle>();
         }
 
@@ -95,6 +108,7 @@ namespace TpsDungeon.Hud
             if (progression == null) progression = GetComponentInParent<CharacterProgression>();
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
             if (inventory == null) inventory = GetComponentInParent<PlayerInventory>();
+            if (attacker == null) attacker = GetComponentInParent<MeleeAttacker>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
             if (player == null && health != null) player = health.transform;
         }
@@ -125,6 +139,8 @@ namespace TpsDungeon.Hud
             itemName = root.Q<Label>("hotbar-name");
             UiTransitions.HideImmediately(itemName);
             shownItemName = null;
+            cooldownSlot = -1;
+            shownCooldown = 0f;
 
             if (health != null) health.Changed += OnHealthChanged;
             if (progression != null) progression.ExpChanged += OnExpChanged;
@@ -161,6 +177,7 @@ namespace TpsDungeon.Hud
                 BindFloor(FindAnyObjectByType<FloorBootstrap>());
             }
             UpdateMinimap();
+            RefreshCooldown();
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)
@@ -293,6 +310,24 @@ namespace TpsDungeon.Hud
             int selected = hotbar != null ? hotbar.SelectedIndex : -1;
             for (int i = 0; i < slots.Length; i++) slots[i].EnableInClassList(ItemSlot.SelectedClass, i == selected);
             RefreshItemName();
+        }
+
+        /// <summary>
+        /// 次に振れるまでの待ちを、選んでいる枠の暗幕に写す。ほかの枠は空ける。
+        /// 同じ枠のまま待ちが明けたら、枠を短く光らせて振れるようになったと知らせる。
+        /// </summary>
+        private void RefreshCooldown()
+        {
+            if (slots == null) return;
+
+            int selected = hotbar != null ? hotbar.SelectedIndex : -1;
+            float fraction = attacker != null && attacker.isActiveAndEnabled ? attacker.CooldownFraction : 0f;
+            for (int i = 0; i < slots.Length; i++) ItemSlot.SetCooldown(slots[i], i == selected ? fraction : 0f);
+
+            if (selected == cooldownSlot && shownCooldown > 0f && fraction <= 0f && selected >= 0)
+                UiTransitions.Flash(slots[selected], ItemSlot.ReadyClass, CooldownReadyFlashMs);
+            cooldownSlot = selected;
+            shownCooldown = fraction;
         }
 
         /// <summary>ホットバーの枠にアイテムの絵を入れる。ホットバーの枠はインベントリの先頭の枠。</summary>
