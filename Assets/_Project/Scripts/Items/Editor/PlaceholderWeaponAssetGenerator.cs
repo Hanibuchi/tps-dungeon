@@ -55,14 +55,15 @@ namespace TpsDungeon.Items.Editor
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
-        public const string SwingSoundPath = ArmsSounds + "ナイフを投げる.mp3";
+        public const string SwordSwingSoundPath = ArmsSounds + "剣の素振り2.mp3";
         public const string SwordHitSoundPath = ArmsSounds + "剣で斬る2.mp3";
-        public const string SwordFinisherHitSoundPath = ArmsSounds + "剣で斬る1.mp3";
-        public const string PunchHitSoundPath = ArmsSounds + "打撃3.mp3";
+        public const string SwordFinisherSoundPath = ArmsSounds + "剣で斬る1.mp3";
+        public const string PunchSwingSoundPath = ArmsSounds + "パンチ素振り.mp3";
+        public const string PunchHitSoundPath = ArmsSounds + "打撃1.mp3";
         public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
         public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
-        // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。
-        public const string HammerSlamSoundPath = ArmsSounds + "打撃1.mp3";
+        // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
+        public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
         private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
@@ -333,9 +334,8 @@ namespace TpsDungeon.Items.Editor
                 new ComboStepSpec(2f, 0.80f, 0.50f, new Vector3(2.0f, 1.2f, 1.8f), new Vector3(0f, 1f, 1.2f), 3f, low, new Vector3(0f, 0f, -90f)),
             });
 
-            // 4 段目（締めの重い振り）だけ命中の音を替える。
-            serialized.FindProperty("comboSteps").GetArrayElementAtIndex(3).FindPropertyRelative("hitSound").objectReferenceValue =
-                LoadSound(SwordFinisherHitSoundPath);
+            // 4 段目（締めの重い振り）だけ振りと命中の音を替える。
+            SetStepSounds(serialized, 3, SwordFinisherSoundPath, SwordFinisherSoundPath);
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.25f;
             serialized.FindProperty("comboCooldown").floatValue = 0.3f;
@@ -343,7 +343,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("swingEffectScale").floatValue = 0.6f;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.6f;
-            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwordSwingSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.8f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -377,7 +377,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.12f; // 素材は 14 m ほどに広がる
-            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(PunchSwingSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(PunchHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.6f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -488,8 +488,7 @@ namespace TpsDungeon.Items.Editor
                 new ComboStepSpec(2.5f, 1.10f, 0.67f, new Vector3(2.4f, 1.6f, 2.8f), new Vector3(0f, 1f, 1.5f), 5f, waist,
                     new Vector3(0f, 0f, -90f)) { ReactionBonus = 1f },
             });
-            serialized.FindProperty("comboSteps").GetArrayElementAtIndex(3).FindPropertyRelative("hitSound").objectReferenceValue =
-                LoadSound(SwordFinisherHitSoundPath);
+            SetStepSounds(serialized, 3, SwordFinisherSoundPath, SwordFinisherSoundPath);
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.35f;
             serialized.FindProperty("comboCooldown").floatValue = 0.5f;
@@ -498,7 +497,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("swingEffectScale").floatValue = 0.9f;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.8f;
-            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwingSoundPath);
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwordSwingSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.8f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -562,8 +561,8 @@ namespace TpsDungeon.Items.Editor
             });
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(PunchHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.22f;
-            // 叩きつけの音は外れても着弾の瞬間に鳴る（MeleeAttacker が命中の音として鳴らす）。風切りは付けない。
-            serialized.FindProperty("swingSound").objectReferenceValue = null;
+            // 叩きつけの音は外れても着弾の瞬間に鳴る（MeleeAttacker が命中の音として鳴らす）。振りの音も同じ瞬間に重ねて厚くする。
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(HammerSlamSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(HammerSlamSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.9f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -646,6 +645,14 @@ namespace TpsDungeon.Items.Editor
                 layer.FindPropertyRelative("scale").floatValue = layers[i].scale;
                 layer.FindPropertyRelative("offset").vector3Value = layers[i].offset;
             }
+        }
+
+        /// <summary>段 index だけ振りと命中の音を替える（武器種の音より優先される）。</summary>
+        private static void SetStepSounds(SerializedObject serialized, int index, string swingPath, string hitPath)
+        {
+            SerializedProperty step = serialized.FindProperty("comboSteps").GetArrayElementAtIndex(index);
+            step.FindPropertyRelative("swingSound").objectReferenceValue = LoadSound(swingPath);
+            step.FindPropertyRelative("hitSound").objectReferenceValue = LoadSound(hitPath);
         }
 
         public static AudioClip LoadSound(string path)
