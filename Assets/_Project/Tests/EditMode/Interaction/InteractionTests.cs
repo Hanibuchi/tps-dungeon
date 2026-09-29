@@ -54,6 +54,7 @@ namespace TpsDungeon.Interaction.Tests
             public string DetailTitle => "回復薬";
             public string DetailBody => "説明";
             public Texture2D DetailIcon => null;
+            public Color? DetailBackground => null;
         }
     }
 }

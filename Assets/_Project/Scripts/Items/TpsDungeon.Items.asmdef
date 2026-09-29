@@ -3,7 +3,8 @@
     "rootNamespace": "TpsDungeon.Items",
     "references": [
         "TpsDungeon.Interaction",
-        "TpsDungeon.Player"
+        "TpsDungeon.Player",
+        "TpsDungeon.Progression"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

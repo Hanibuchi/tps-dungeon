@@ -443,7 +443,7 @@ namespace TpsDungeon.Enemies.Editor
                 reaction.ApplyModifiedPropertiesWithoutUndo();
 
                 BuildRagdoll(group, root, animator);
-                root.AddComponent<EnemyDeath>();
+                EnemyDeathSetup.Assign(root.AddComponent<EnemyDeath>(), EnemyDeathSetup.EnsureFadeTemplate());
 
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }

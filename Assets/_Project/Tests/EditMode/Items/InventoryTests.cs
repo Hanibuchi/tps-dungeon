@@ -8,24 +8,24 @@ namespace TpsDungeon.Items.Tests
     {
         private const int Hotbar = 4;
 
-        private ItemDefinition a;
-        private ItemDefinition b;
-        private ItemDefinition c;
+        private ItemInstance a;
+        private ItemInstance b;
+        private ItemInstance c;
 
         [SetUp]
         public void SetUp()
         {
-            a = ScriptableObject.CreateInstance<ItemDefinition>();
-            b = ScriptableObject.CreateInstance<ItemDefinition>();
-            c = ScriptableObject.CreateInstance<ItemDefinition>();
+            a = new ItemInstance(ScriptableObject.CreateInstance<ItemDefinition>());
+            b = new ItemInstance(ScriptableObject.CreateInstance<ItemDefinition>());
+            c = new ItemInstance(ScriptableObject.CreateInstance<ItemDefinition>());
         }
 
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(a);
-            Object.DestroyImmediate(b);
-            Object.DestroyImmediate(c);
+            Object.DestroyImmediate(a.Definition);
+            Object.DestroyImmediate(b.Definition);
+            Object.DestroyImmediate(c.Definition);
         }
 
         // ---- 拾う ----------------------------------------------------------

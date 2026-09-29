@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_RustySword
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_RustySword
+  displayName: "\u9306\u3073\u305F\u7247\u624B\u5263"
+  description: "\u5203\u3053\u307C\u308C\u3060\u3089\u3051\u3060\u304C\u3001\u632F\u308C\u3070\u65AC\u308C\u308B\u3002"
+  icon: {fileID: 2800000, guid: 1ea0e0d956d54498ca6e4fc2a78d89b0, type: 3}
+  worldPrefab: {fileID: 8115375555206274004, guid: 9e83c18837cd849bdb075e80fee554b3, type: 3}
+  rank: 0
+  strength: 5
+  weaponType: {fileID: 11400000, guid: 4029f65ab88e24c319dc99b132f9a61f, type: 2}
+  heldModel: {fileID: 3867962235167362316, guid: abe8ff49f143347efbdf0bfcc6d5cd34, type: 3}

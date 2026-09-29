@@ -104,6 +104,12 @@ MonoBehaviour:
   stunDuration: 0.5
   faintDuration: 3
   faintPush: 2.5
+  knockbackDuration: 0.2
+  knockbackBlockers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  knockbackSkin: 0.4
+  hitClip: {fileID: 0}
   stunClip: {fileID: 8300000, guid: 0e625dcf092fe43618c9354f4deabc38, type: 3}
   faintClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
   volume: 1
@@ -146,6 +152,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b21b82fa6a66a42c99f66ebc9375de48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDeath
+  deathPush: 3
+  deathClip: {fileID: 0}
+  volume: 1
+  corpseDelay: 2
+  fadeDuration: 1.5
+  fadeTemplate: {fileID: 2100000, guid: 5908f5acdfb3d42dbb8a216f5aea1d12, type: 2}
 --- !u!1001 &7758115122663712730
 PrefabInstance:
   m_ObjectHideFlags: 0

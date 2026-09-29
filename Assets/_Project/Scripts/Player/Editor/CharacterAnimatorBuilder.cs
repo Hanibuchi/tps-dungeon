@@ -8,13 +8,17 @@ namespace TpsDungeon.Player.Editor
     /// <summary>
     /// プレイヤーの AnimatorController を組み立てる。
     /// 下半身（Base Layer）は Starter Assets の ThirdPersonController がそのまま動かせる移動とジャンプ、
-    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃を担当する。
+    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃、
+    /// 全身（Action、一番上）は Blink の Animations_Starter_Pack のクリップ全部を、呼ばれたときだけ再生する。
     /// 生成物なので手で編集せず、構成を変えたくなったらこのファイルを直して作り直すこと。
     ///
     /// スクリプトから触るパラメータ:
     ///   Speed / MotionSpeed / Jump / Grounded / FreeFall … ThirdPersonController が今まで通り流す
     ///   WeaponType (int) … <see cref="Weapon"/> の値。持ち替えたら入れる
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
+    ///   ComboStep (int) … 片手武器のコンボの段（0 始まり）。Attack より先に入れる
+    ///   AttackSpeed (float) … 片手武器の振りの再生速度（速射のエンチャント）。既定 1
+    ///   Action (int) / PlayAction (trigger) … <see cref="CharacterAction"/> の値を入れてトリガーを立てると全身で再生する（CharacterActions が叩く）
     /// </summary>
     public static class CharacterAnimatorBuilder
     {
@@ -39,9 +43,63 @@ namespace TpsDungeon.Player.Editor
         public const string FreeFallParam = "FreeFall";
         public const string WeaponTypeParam = "WeaponType";
         public const string AttackParam = "Attack";
+        public const string ComboStepParam = "ComboStep";
+        public const string AttackSpeedParam = "AttackSpeed";
+        public const string ActionParam = CharacterActions.ActionParam;
+        public const string PlayActionParam = CharacterActions.PlayActionParam;
 
-        private const string StarterAnimations = "Assets/ThirdParty/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
-        private const string BlinkCombat = "Assets/ThirdParty/Blink/Art/Animations/Animations_Starter_Pack/Combat/";
+        /// <summary>片手武器のコンボの段数。MeleeAttacker が武器種の段数ぶん ComboStep を回す。</summary>
+        public const int OneHandedComboSteps = 4;
+
+        private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
+        private const string BlinkPack = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/";
+        private const string BlinkCombat = BlinkPack + "Combat/";
+
+        /// <summary>
+        /// Action 層に置く動きと、その元のクリップ（パック内のファイルとクリップ名）。パックのクリップは tpose 以外全部。
+        /// </summary>
+        private static readonly (CharacterAction action, string file, string clip)[] ActionClips =
+        {
+            (CharacterAction.BlockingLoop, "Combat/BlockingLoop.fbx", "BlockingLoop"),
+            (CharacterAction.BowShot, "Combat/BowShot.fbx", "BowShot"),
+            (CharacterAction.Buff, "Combat/Buff.fbx", "Buff"),
+            (CharacterAction.CastingLoop, "Combat/CastingLoop.fbx", "CastingLoop"),
+            (CharacterAction.Death, "Combat/Death.fbx", "Death"),
+            (CharacterAction.GetHit, "Combat/GetHit.fbx", "GetHit"),
+            (CharacterAction.IdleCombat, "Combat/IdleCombat.fbx", "IdleCombat"),
+            (CharacterAction.MeleeAttackOneHanded, "Combat/MeleeAttack_OneHanded.fbx", "MeleeAttack_OneHanded"),
+            (CharacterAction.MeleeAttackTwoHanded, "Combat/MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded"),
+            (CharacterAction.PunchLeft, "Combat/PunchLeft.fbx", "PunchLeft"),
+            (CharacterAction.PunchRight, "Combat/PunchRight.fbx", "PunchRight"),
+            (CharacterAction.SpellCast, "Combat/SpellCast.fbx", "SpellCast"),
+            (CharacterAction.SpellCastStart, "Combat/SpellCast.fbx", "SpellCast_Start"),
+            (CharacterAction.SpellCastEnd, "Combat/SpellCast.fbx", "SpellCast_End"),
+            (CharacterAction.StunnedLoop, "Combat/StunnedLoop.fbx", "StunnedLoop"),
+            (CharacterAction.Gathering, "Gathering/Gathering.fbx", "Gathering"),
+            (CharacterAction.MiningLoop, "Gathering/MiningLoop.fbx", "MiningLoop"),
+            (CharacterAction.FallingLoop, "Movement/FallingLoop.fbx", "FallingLoop"),
+            (CharacterAction.Idle, "Movement/Idle.fbx", "Idle"),
+            (CharacterAction.Jump, "Movement/Jumps.fbx", "Jump"),
+            (CharacterAction.JumpUp, "Movement/Jumps.fbx", "Jump_Up"),
+            (CharacterAction.JumpDown, "Movement/Jumps.fbx", "Jump_Down"),
+            (CharacterAction.JumpWhileRunning, "Movement/JumpWhileRunning.fbx", "JumpWhileRunning"),
+            (CharacterAction.RollBackward, "Movement/RollBackward.fbx", "RollBackward"),
+            (CharacterAction.RollForward, "Movement/RollForward.fbx", "RollForward"),
+            (CharacterAction.RollLeft, "Movement/RollLeft.fbx", "RollLeft"),
+            (CharacterAction.RollRight, "Movement/RollRight.fbx", "RollRight"),
+            (CharacterAction.RunBackward, "Movement/RunBackward.fbx", "RunBackward"),
+            (CharacterAction.RunBackwardLeft, "Movement/RunBackwardLeft.fbx", "RunBackwardLeft"),
+            (CharacterAction.RunBackwardRight, "Movement/RunBackwardRight.fbx", "RunBackwardRight"),
+            (CharacterAction.RunForward, "Movement/RunForward.fbx", "RunForward"),
+            (CharacterAction.RunLeft, "Movement/RunLeft.fbx", "RunLeft"),
+            (CharacterAction.RunRight, "Movement/RunRight.fbx", "RunRight"),
+            (CharacterAction.Sprint, "Movement/Sprint.fbx", "Sprint"),
+            (CharacterAction.StrafeLeft, "Movement/StrafeLeft.fbx", "StrafeLeft"),
+            (CharacterAction.StrafeRight, "Movement/StrafeRight.fbx", "StrafeRight"),
+        };
+
+        /// <summary>ループしないのに、終わっても戻らず最後の姿勢のまま止める動き。</summary>
+        private static readonly HashSet<CharacterAction> HoldAtEnd = new HashSet<CharacterAction> { CharacterAction.Death };
 
         // BowShot（30fps・29 フレーム）の中身。手の位置を 1 フレームずつ見て決めた。
         //   0-7F: つがえた矢を引く / 7-13F: 引き切って保持 / 14F: 放す / 22-29F: 次の矢をつがえて 0F と同じ姿勢に戻る
@@ -80,13 +138,15 @@ namespace TpsDungeon.Player.Editor
             AddParameters(controller);
             BuildBaseLayer(controller, clips);
             BuildUpperBodyLayer(controller, clips, bowAim, upperBody);
+            BuildActionLayer(controller, clips);
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
 
             return "キャラクターの AnimatorController を作り直した: " + ControllerPath
                    + "\n  上半身マスク: " + UpperBodyMaskPath
-                   + "\n  弓の構え（BowShot の引き切り姿勢を焼き出したもの）: " + BowAimClipPath;
+                   + "\n  弓の構え（BowShot の引き切り姿勢を焼き出したもの）: " + BowAimClipPath
+                   + $"\n  全身の動き（Action 層）: {ActionClips.Length} 本";
         }
 
         /// <summary>
@@ -120,6 +180,15 @@ namespace TpsDungeon.Player.Editor
             controller.AddParameter(FreeFallParam, AnimatorControllerParameterType.Bool);
             controller.AddParameter(WeaponTypeParam, AnimatorControllerParameterType.Int);
             controller.AddParameter(AttackParam, AnimatorControllerParameterType.Trigger);
+            controller.AddParameter(ComboStepParam, AnimatorControllerParameterType.Int);
+            controller.AddParameter(new AnimatorControllerParameter
+            {
+                name = AttackSpeedParam,
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = 1f,
+            });
+            controller.AddParameter(ActionParam, AnimatorControllerParameterType.Int);
+            controller.AddParameter(PlayActionParam, AnimatorControllerParameterType.Trigger);
         }
 
         // ---- Base Layer: 移動とジャンプ。Starter Assets の構成と遷移の値をそのまま引き継いでいる ----
@@ -217,14 +286,95 @@ namespace TpsDungeon.Player.Editor
 
             AddOneShotAttack(sm, free, "Unarmed Attack", clips.Punch, Weapon.Unarmed,
                 new Vector3(600, 0), startAt: 0f, exitAt: 0.8f);
-            AddOneShotAttack(sm, free, "OneHanded Attack", clips.OneHanded, Weapon.OneHanded,
-                new Vector3(600, 80), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "TwoHanded Attack", clips.TwoHanded, Weapon.TwoHanded,
                 new Vector3(600, 160), startAt: 0f, exitAt: 0.85f);
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
                 new Vector3(600, 240), startAt: SpellCastStart, exitAt: SpellCastExit);
 
             BuildBow(sm, free, clips, bowAim);
+            BuildOneHandedCombo(sm, free, clips);
+        }
+
+        /// <summary>
+        /// 片手武器の 4 段コンボ。素材の振りが 1 つしかないので、2 段目は左右反転、4 段目は両手武器の重い振りで代用する。
+        /// どの段からでも、次の段の ComboStep で Attack が立てば途中から切り替わる（先行入力で繋がる）。
+        /// </summary>
+        private static void BuildOneHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            var states = new AnimatorState[OneHandedComboSteps];
+            for (int i = 0; i < states.Length; i++)
+            {
+                bool finisher = i == states.Length - 1;
+                AnimatorState state = sm.AddState($"OneHanded Attack {i + 1}", new Vector3(900, -40 + 80 * i));
+                state.motion = finisher ? clips.TwoHanded : clips.OneHanded;
+                state.mirror = i % 2 == 1;
+                state.speedParameterActive = true;
+                state.speedParameter = AttackSpeedParam;
+                states[i] = state;
+
+                Transition(state, free, 0.25f, exitTime: 0.85f);
+            }
+
+            for (int i = 0; i < states.Length; i++)
+            {
+                AddComboEntry(free, states[i], i);
+                int previous = (i + states.Length - 1) % states.Length;
+                AddComboEntry(states[previous], states[i], i);
+            }
+        }
+
+        // ---- Action: パックのクリップを全身で再生する ----
+
+        /// <summary>
+        /// 一番上に重ねる全身の層。None（Motion 無し）の間は下の層がそのまま見える。
+        /// どこからでも「PlayAction かつ Action=n」で n の動きへ入り直す（同じ動きなら頭から）。
+        /// 抜け方: Action が n でなくなったら抜ける。ループしない動き（Death を除く）は終わり際にも勝手に抜ける。
+        /// </summary>
+        private static void BuildActionLayer(AnimatorController controller, ClipSet clips)
+        {
+            controller.AddLayer("Action");
+            AnimatorControllerLayer[] layers = controller.layers;
+            int index = layers.Length - 1;
+            layers[index].blendingMode = AnimatorLayerBlendingMode.Override;
+            layers[index].defaultWeight = 1f;
+            controller.layers = layers;
+
+            AnimatorStateMachine sm = layers[index].stateMachine;
+            sm.entryPosition = new Vector3(20, 200);
+            sm.anyStatePosition = new Vector3(20, 60);
+            sm.exitPosition = new Vector3(20, 400);
+
+            AnimatorState none = sm.AddState(CharacterAction.None.ToString(), new Vector3(300, 200));
+            sm.defaultState = none;
+
+            for (int i = 0; i < ActionClips.Length; i++)
+            {
+                (CharacterAction action, _, _) = ActionClips[i];
+                AnimationClip clip = clips.Actions[i];
+                AnimatorState state = sm.AddState(action.ToString(), new Vector3(650 + 260 * (i / 12), -100 + 60 * (i % 12)));
+                state.motion = clip;
+
+                AnimatorStateTransition enter = sm.AddAnyStateTransition(state);
+                enter.hasFixedDuration = true;
+                enter.duration = 0.12f;
+                enter.hasExitTime = false;
+                enter.canTransitionToSelf = true;
+                enter.AddCondition(AnimatorConditionMode.If, 0, PlayActionParam);
+                enter.AddCondition(AnimatorConditionMode.Equals, (int)action, ActionParam);
+
+                AnimatorStateTransition cancel = Transition(state, none, 0.2f);
+                cancel.AddCondition(AnimatorConditionMode.NotEqual, (int)action, ActionParam);
+
+                if (!clip.isLooping && !HoldAtEnd.Contains(action)) Transition(state, none, 0.2f, exitTime: 0.9f);
+            }
+        }
+
+        private static void AddComboEntry(AnimatorState from, AnimatorState to, int step)
+        {
+            AnimatorStateTransition t = Transition(from, to, 0.08f);
+            t.AddCondition(AnimatorConditionMode.If, 0, AttackParam);
+            t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.OneHanded, WeaponTypeParam);
+            t.AddCondition(AnimatorConditionMode.Equals, step, ComboStepParam);
         }
 
         private static void AddOneShotAttack(AnimatorStateMachine sm, AnimatorState free, string name,
@@ -369,6 +519,7 @@ namespace TpsDungeon.Player.Editor
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
             public AnimationClip Punch, OneHanded, TwoHanded, SpellCast, BowShot;
+            public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
 
@@ -388,6 +539,9 @@ namespace TpsDungeon.Player.Editor
                 TwoHanded = Load(BlinkCombat + "MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");
+
+                Actions = new AnimationClip[ActionClips.Length];
+                for (int i = 0; i < ActionClips.Length; i++) Actions[i] = Load(BlinkPack + ActionClips[i].file, ActionClips[i].clip);
 
                 missing = string.Join(", ", _missing);
                 return _missing.Count == 0;

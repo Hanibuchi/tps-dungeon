@@ -16,5 +16,8 @@ namespace TpsDungeon.Interaction
 
         /// <summary>情報欄に出す絵。無ければ null。</summary>
         Texture2D DetailIcon { get; }
+
+        /// <summary>絵を収める窪みの下地の色（武器のランクなど）。null なら既定の地のまま。</summary>
+        Color? DetailBackground { get; }
     }
 }

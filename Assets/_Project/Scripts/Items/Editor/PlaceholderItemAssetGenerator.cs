@@ -17,8 +17,8 @@ namespace TpsDungeon.Items.Editor
     public static class PlaceholderItemAssetGenerator
     {
         public const string ItemsFolder = "Assets/_Project/Items";
-        private const string IconsFolder = ItemsFolder + "/Icons";
-        private const string PrefabsFolder = "Assets/_Project/Prefabs/Items";
+        internal const string IconsFolder = ItemsFolder + "/Icons";
+        internal const string PrefabsFolder = "Assets/_Project/Prefabs/Items";
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
 
         private const int IconSize = 64;
@@ -28,7 +28,7 @@ namespace TpsDungeon.Items.Editor
 
         private static readonly Color Outline = new Color32(18, 14, 11, 255);
 
-        private sealed class Spec
+        internal sealed class Spec
         {
             public string Id;
             public string Name;
@@ -172,7 +172,7 @@ namespace TpsDungeon.Items.Editor
 
         // ---- 拾える物のプレハブ ------------------------------------------
 
-        private static ItemPickup BuildPickupPrefab(Spec spec, ItemDefinition definition)
+        internal static ItemPickup BuildPickupPrefab(Spec spec, ItemDefinition definition)
         {
             var root = new GameObject($"Pickup_{spec.Id}");
 
@@ -194,13 +194,13 @@ namespace TpsDungeon.Items.Editor
             return prefab.GetComponent<ItemPickup>();
         }
 
-        private static void Part(GameObject parent, PrimitiveType type, Material material, Vector3 position, Vector3 scale)
+        internal static void Part(GameObject parent, PrimitiveType type, Material material, Vector3 position, Vector3 scale)
         {
             Part(parent, type, material, position, scale, Quaternion.identity);
         }
 
         /// <summary>見た目だけの部品。当たり判定はルートの箱に任せるので、プリミティブのコライダは外す。</summary>
-        private static void Part(GameObject parent, PrimitiveType type, Material material, Vector3 position, Vector3 scale, Quaternion rotation)
+        internal static void Part(GameObject parent, PrimitiveType type, Material material, Vector3 position, Vector3 scale, Quaternion rotation)
         {
             GameObject part = GameObject.CreatePrimitive(type);
             Object.DestroyImmediate(part.GetComponent<Collider>());
@@ -210,7 +210,7 @@ namespace TpsDungeon.Items.Editor
             part.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
-        private static Material Material(string name, Color color)
+        internal static Material Material(string name, Color color)
         {
             string path = $"{MaterialsFolder}/{name}.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -233,7 +233,7 @@ namespace TpsDungeon.Items.Editor
         /// 形を符号付き距離（内側が負、ピクセル単位）で重ねて描く。全体の外周に暗い縁を付け、境目は 1px でぼかす。
         /// 座標は左下が原点。
         /// </summary>
-        private static Texture2D WriteIcon(Spec spec)
+        internal static Texture2D WriteIcon(Spec spec)
         {
             var pixels = new Color[IconSize * IconSize];
             for (int y = 0; y < IconSize; y++)
@@ -254,9 +254,16 @@ namespace TpsDungeon.Items.Editor
             var texture = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false);
             texture.SetPixels(pixels);
             texture.Apply();
-            string path = $"{IconsFolder}/Icon_{spec.Id}.png";
-            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Texture2D icon = SaveIcon(texture, spec.Id);
             Object.DestroyImmediate(texture);
+            return icon;
+        }
+
+        /// <summary>絵を Icons/Icon_{id}.png に書き出し、UI 向けの設定で取り込んだアセットを返す。</summary>
+        internal static Texture2D SaveIcon(Texture2D texture, string id)
+        {
+            string path = $"{IconsFolder}/Icon_{id}.png";
+            File.WriteAllBytes(path, texture.EncodeToPNG());
 
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -283,12 +290,12 @@ namespace TpsDungeon.Items.Editor
             return rgb;
         }
 
-        private static Func<Vector2, float> Circle(Vector2 center, float radius)
+        internal static Func<Vector2, float> Circle(Vector2 center, float radius)
         {
             return p => Vector2.Distance(p, center) - radius;
         }
 
-        private static Func<Vector2, float> Box(Vector2 center, Vector2 half)
+        internal static Func<Vector2, float> Box(Vector2 center, Vector2 half)
         {
             return p =>
             {
@@ -297,13 +304,13 @@ namespace TpsDungeon.Items.Editor
             };
         }
 
-        private static Func<Vector2, float> Rhombus(Vector2 center, float halfWidth, float halfHeight)
+        internal static Func<Vector2, float> Rhombus(Vector2 center, float halfWidth, float halfHeight)
         {
             float scale = halfWidth * halfHeight / Mathf.Sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
             return p => (Mathf.Abs(p.x - center.x) / halfWidth + Mathf.Abs(p.y - center.y) / halfHeight - 1f) * scale;
         }
 
-        private static Func<Vector2, float> Rotated(Func<Vector2, float> shape, Vector2 pivot, float degrees)
+        internal static Func<Vector2, float> Rotated(Func<Vector2, float> shape, Vector2 pivot, float degrees)
         {
             float rad = -degrees * Mathf.Deg2Rad;
             float cos = Mathf.Cos(rad);
@@ -315,14 +322,14 @@ namespace TpsDungeon.Items.Editor
             };
         }
 
-        private static Func<Vector2, float> Subtract(Func<Vector2, float> shape, Func<Vector2, float> hole)
+        internal static Func<Vector2, float> Subtract(Func<Vector2, float> shape, Func<Vector2, float> hole)
         {
             return p => Mathf.Max(shape(p), -hole(p));
         }
 
         // ---- 共通 --------------------------------------------------------
 
-        private static T LoadOrCreate<T>(string path) where T : ScriptableObject
+        internal static T LoadOrCreate<T>(string path) where T : ScriptableObject
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset != null) return asset;
@@ -332,7 +339,7 @@ namespace TpsDungeon.Items.Editor
             return asset;
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path)) return;
 

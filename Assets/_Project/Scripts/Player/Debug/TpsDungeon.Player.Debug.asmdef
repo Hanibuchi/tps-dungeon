@@ -2,7 +2,8 @@
     "name": "TpsDungeon.Player.Debug",
     "rootNamespace": "TpsDungeon.Player.DebugTools",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "TpsDungeon.Player"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

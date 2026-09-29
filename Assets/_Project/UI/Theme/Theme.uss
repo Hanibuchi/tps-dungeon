@@ -559,6 +559,16 @@
     scale: 1 1;
 }
 
+/* ランクの下地（武器のレア度）。中心が濃く外へ薄れる光を ItemSlot.SetItem が背景の絵として敷く。 */
+.slot__rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
 /* 内側の細い線。枠も石板と揃える。 */
 .slot__inner {
     position: absolute;
@@ -616,6 +626,8 @@
     border-color: var(--brass-dim);
     align-items: center;
     justify-content: center;
+    /* ランクの光（ItemSlot.SetRankGlow）を窪み一杯に広げる。 */
+    -unity-background-scale-mode: stretch-to-fill;
 }
 
 .item-details__icon {

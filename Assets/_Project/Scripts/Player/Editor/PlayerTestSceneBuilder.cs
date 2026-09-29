@@ -143,6 +143,32 @@ namespace TpsDungeon.Player.Editor
             return true;
         }
 
+        /// <summary>
+        /// 入口の部屋の扉を 1 つくぐった先のセルの中心と、入口へ向かう向きを返す。敵を置いて試し斬りするのに使う。
+        /// </summary>
+        internal static bool TryFindBeyondEntrance(FloorConfig config, out Vector3 center, out Vector3 towardEntrance)
+        {
+            center = Vector3.zero;
+            towardEntrance = Vector3.forward;
+
+            FloorLayout layout = FloorLayoutGenerator.Generate(config.BuildParams(), FloorSeed);
+            if (layout == null || layout.Rooms.Count == 0) return false;
+
+            RoomInstance room = layout.RoomAt(layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0);
+            if (room == null) return false;
+
+            foreach (PlacedSocket socket in room.UsedSockets())
+            {
+                GridPos exit = socket.ExitCell;
+                center = new Vector3((exit.X + 0.5f) * config.cellSize, 0f, (exit.Y + 0.5f) * config.cellSize);
+                var inside = new Vector3((socket.Cell.X + 0.5f) * config.cellSize, 0f, (socket.Cell.Y + 0.5f) * config.cellSize);
+                towardEntrance = (inside - center).normalized;
+                return true;
+            }
+
+            return false;
+        }
+
         private static void CreateLighting()
         {
             var light = new GameObject("Directional Light");
