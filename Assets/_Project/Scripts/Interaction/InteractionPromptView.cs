@@ -93,7 +93,7 @@ namespace TpsDungeon.Interaction
                     Texture2D icon = source.DetailIcon;
                     detailsIcon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
                     detailsIcon.style.display = icon != null ? DisplayStyle.Flex : DisplayStyle.None;
-                    if (detailsIcon.parent != null) detailsIcon.parent.style.backgroundColor = ItemSlot.Tint(source.DetailBackground);
+                    ItemSlot.SetRankGlow(detailsIcon.parent, source.DetailBackground);
                 }
             }
 

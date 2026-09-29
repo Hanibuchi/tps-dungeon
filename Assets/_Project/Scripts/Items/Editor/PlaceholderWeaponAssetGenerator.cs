@@ -37,6 +37,16 @@ namespace TpsDungeon.Items.Editor
         /// <summary>モデルを撮った絵の大きさ（px）。枠と情報欄は 64px なので、高解像度の画面でも粗くならないよう倍で撮る。</summary>
         private const int IconSize = 128;
 
+        /// <summary>
+        /// 絵の周りに付ける縁取りの色。枠の地は暗い石で、鉄や黒い刃は溶けてしまうので、古い紙色の明るい線で輪郭を立てる。
+        /// </summary>
+        private static readonly Color OutlineColor = new Color32(236, 226, 206, 255);
+
+        /// <summary>縁取りの太さ（撮った絵の px）。この内側は濃く、外へ <see cref="OutlineSoftness"/> px かけて消える。枠では半分の大きさで出る。</summary>
+        private const float OutlineWidth = 2.5f;
+
+        private const float OutlineSoftness = 1.5f;
+
         /// <summary>背景の透明が残らないときに撮り直す、抜き取り用の背景色。</summary>
         private static readonly Color KeyColor = new Color(1f, 0f, 1f, 1f);
 
@@ -433,7 +443,7 @@ namespace TpsDungeon.Items.Editor
                 var camera = cameraObject.AddComponent<Camera>();
                 camera.scene = scene;
                 camera.orthographic = true;
-                camera.orthographicSize = Mathf.Max(bounds.extents.x, bounds.extents.y) * 1.08f;
+                camera.orthographicSize = Mathf.Max(bounds.extents.x, bounds.extents.y) * 1.12f; // 縁取りが切れない余白を残す
                 camera.nearClipPlane = 0.01f;
                 camera.farClipPlane = 20f;
                 camera.allowHDR = false;
@@ -443,6 +453,8 @@ namespace TpsDungeon.Items.Editor
 
                 AddLight(scene, Quaternion.Euler(35f, -30f, 0f), 1.2f);
                 AddLight(scene, Quaternion.Euler(-20f, 150f, 0f), 0.5f);
+                // カメラの側から弱く当て、黒っぽい刃でも面の形が読めるようにする。
+                AddLight(scene, Quaternion.Euler(10f, 10f, 0f), 0.6f);
 
                 Texture2D texture = Capture(camera, rt, Color.clear);
                 // URP が背景の透明を残さなかったら、抜き取り色で撮り直して色で抜く。
@@ -452,6 +464,8 @@ namespace TpsDungeon.Items.Editor
                     texture = Capture(camera, rt, KeyColor);
                     KeyOut(texture);
                 }
+
+                AddOutline(texture);
 
                 Texture2D icon = Gen.SaveIcon(texture, spec.Id);
                 Object.DestroyImmediate(texture);
@@ -503,6 +517,52 @@ namespace TpsDungeon.Items.Editor
                 pixels[i] = new Color(c.r, c.g, c.b, alpha);
             }
             texture.SetPixels(pixels);
+            texture.Apply();
+        }
+
+        /// <summary>
+        /// 絵の不透明な部分の周りに <see cref="OutlineColor"/> の縁を敷き、その上に元の絵を重ねる。
+        /// 縁の濃さは、不透明な画素までの距離で決める（<see cref="OutlineWidth"/> まで濃く、そこから薄れる）。
+        /// </summary>
+        private static void AddOutline(Texture2D texture)
+        {
+            int w = texture.width;
+            int h = texture.height;
+            Color[] pixels = texture.GetPixels();
+            var result = new Color[pixels.Length];
+            int reach = Mathf.CeilToInt(OutlineWidth + OutlineSoftness);
+
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                // 近くの画素の不透明さを距離で割り引いた最大値 = 縁の濃さ。
+                float edge = 0f;
+                for (int dy = -reach; dy <= reach; dy++)
+                for (int dx = -reach; dx <= reach; dx++)
+                {
+                    int sx = x + dx;
+                    int sy = y + dy;
+                    if (sx < 0 || sy < 0 || sx >= w || sy >= h) continue;
+
+                    float a = pixels[sy * w + sx].a;
+                    if (a <= edge) continue;
+
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    float falloff = 1f - Mathf.Clamp01((distance - OutlineWidth) / OutlineSoftness);
+                    edge = Mathf.Max(edge, a * falloff);
+                }
+
+                Color outline = OutlineColor;
+                outline.a = edge;
+                Color top = pixels[y * w + x];
+                // top を outline の上に重ねる（ストレートアルファ）。
+                float alpha = top.a + outline.a * (1f - top.a);
+                Color rgb = alpha > 0f ? (top * top.a + outline * outline.a * (1f - top.a)) / alpha : Color.clear;
+                rgb.a = alpha;
+                result[y * w + x] = rgb;
+            }
+
+            texture.SetPixels(result);
             texture.Apply();
         }
 

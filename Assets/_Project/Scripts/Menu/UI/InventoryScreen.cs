@@ -442,8 +442,8 @@ namespace TpsDungeon.Menu.UI
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null
                     ? new StyleBackground(item.Icon)
                     : new StyleBackground(StyleKeyword.None);
-                // 絵を収める窪みをランクの色で塗る。
-                if (detailsIcon.parent != null) detailsIcon.parent.style.backgroundColor = ItemSlot.Tint(RankColor(item));
+                // 絵を収める窪みに、ランクの色の光を敷く。
+                ItemSlot.SetRankGlow(detailsIcon.parent, RankColor(item));
             }
         }
 
