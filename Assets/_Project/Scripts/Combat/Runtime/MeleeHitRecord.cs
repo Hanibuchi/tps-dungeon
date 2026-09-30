@@ -1,4 +1,5 @@
 using TpsDungeon.Enemies;
+using UnityEngine;
 
 namespace TpsDungeon.Combat
 {
@@ -35,7 +36,10 @@ namespace TpsDungeon.Combat
 
         public readonly bool IsCritical;
 
-        public MeleeHitRecord(MeleeHitKind kind, EnemyHealth enemy, int step, int damage, int dealt, bool isCritical)
+        /// <summary>当たった場所（ワールド）。ダメージの数字をここに出す。</summary>
+        public readonly Vector3 Point;
+
+        public MeleeHitRecord(MeleeHitKind kind, EnemyHealth enemy, int step, int damage, int dealt, bool isCritical, Vector3 point)
         {
             Kind = kind;
             Enemy = enemy;
@@ -43,6 +47,7 @@ namespace TpsDungeon.Combat
             Damage = damage;
             Dealt = dealt;
             IsCritical = isCritical;
+            Point = point;
         }
     }
 }
