@@ -11,7 +11,6 @@ namespace TpsDungeon.Combat
         private const int SampleRate = 44100;
 
         private static readonly Dictionary<int, AudioClip> comboThuds = new Dictionary<int, AudioClip>();
-        private static AudioClip criticalClang;
 
         /// <summary>コンボ count 段目（1 始まり）の合図。ToneSynth.ComboTopStep から先は同じ音。</summary>
         public static AudioClip ComboThud(int count)
@@ -22,16 +21,6 @@ namespace TpsDungeon.Combat
             clip = Create($"Synth Combo {key}", ToneSynth.ComboThud(SampleRate, key));
             comboThuds[key] = clip;
             return clip;
-        }
-
-        /// <summary>クリティカルの「キィン」。</summary>
-        public static AudioClip CriticalClang
-        {
-            get
-            {
-                if (criticalClang == null) criticalClang = Create("Synth Critical", ToneSynth.CriticalClang(SampleRate));
-                return criticalClang;
-            }
         }
 
         private static AudioClip Create(string name, float[] samples)

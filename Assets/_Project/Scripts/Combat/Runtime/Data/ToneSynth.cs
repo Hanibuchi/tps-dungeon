@@ -6,7 +6,6 @@ namespace TpsDungeon.Combat
     /// 効果音の波形をその場で作る（素材を使わない音）。UnityEngine に依存しない。モノラル、-1〜1 の float。
     ///
     ///   ComboThud … コンボの段が上がった合図。低い「ドン」。段が進むほど少しずつ高く、倍音と頭の雑音を足して硬くする
-    ///   CriticalClang … クリティカルの「キィン」。金属の棒のような非整数倍音と、頭の短い雑音
     /// </summary>
     public static class ToneSynth
     {
@@ -17,7 +16,6 @@ namespace TpsDungeon.Combat
         public const int ComboTopStep = 11;
 
         public const float ComboThudDuration = 0.22f;
-        public const float CriticalClangDuration = 0.4f;
 
         // 出来上がりの一番大きいところをこの大きさに揃える（割れないように少し下げる）。
         private const float Peak = 0.9f;
@@ -43,24 +41,6 @@ namespace TpsDungeon.Combat
 
         /// <summary>コンボ count 段目の、1 段目から上がった半音の数（0〜ComboTopStep - 1）。</summary>
         private static int ComboLevel(int count) => Math.Min(Math.Max(count, 1), ComboTopStep) - 1;
-
-        /// <summary>クリティカルの「キィン」。</summary>
-        public static float[] CriticalClang(int sampleRate)
-        {
-            const float fundamental = 1480f;
-            var samples = new float[SampleCount(sampleRate, CriticalClangDuration)];
-            // 両端の自由な棒の倍音の比（1 : 2.76 : 5.40 : 8.93）。高い倍音ほど早く消える。
-            AddPartial(samples, sampleRate, fundamental, 1f, 9f);
-            AddPartial(samples, sampleRate, fundamental * 2.76f, 0.6f, 14f);
-            AddPartial(samples, sampleRate, fundamental * 5.40f, 0.35f, 22f);
-            AddPartial(samples, sampleRate, fundamental * 8.93f, 0.2f, 32f);
-            // 打った瞬間の「カッ」。
-            AddNoise(samples, sampleRate, 0.8f, 0.012f);
-
-            ApplyAttack(samples, sampleRate, 0.001f);
-            Normalize(samples);
-            return samples;
-        }
 
         private static int SampleCount(int sampleRate, float seconds) => Math.Max(1, (int)(Math.Max(1, sampleRate) * seconds));
 

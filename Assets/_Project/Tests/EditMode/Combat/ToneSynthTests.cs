@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace TpsDungeon.Combat.Tests
 {
-    /// <summary>生成する効果音（コンボの合図・クリティカル）の波形を確かめる。</summary>
+    /// <summary>生成する効果音（コンボの合図）の波形を確かめる。</summary>
     public sealed class ToneSynthTests
     {
         private const int Rate = 44100;
@@ -26,13 +26,12 @@ namespace TpsDungeon.Combat.Tests
         public void 長さのとおりで_割れず_無音でもない()
         {
             AssertWave(ToneSynth.ComboThud(Rate, 3), ToneSynth.ComboThudDuration);
-            AssertWave(ToneSynth.CriticalClang(Rate), ToneSynth.CriticalClangDuration);
         }
 
         [Test]
-        public void クリティカルの音は毎回同じ()
+        public void コンボの合図は毎回同じ()
         {
-            CollectionAssert.AreEqual(ToneSynth.CriticalClang(Rate), ToneSynth.CriticalClang(Rate));
+            CollectionAssert.AreEqual(ToneSynth.ComboThud(Rate, 4), ToneSynth.ComboThud(Rate, 4));
         }
 
         private static void AssertWave(float[] samples, float seconds)

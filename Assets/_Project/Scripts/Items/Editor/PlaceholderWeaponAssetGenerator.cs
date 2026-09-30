@@ -63,6 +63,8 @@ namespace TpsDungeon.Items.Editor
         public const string PunchSwingSoundPath = ArmsSounds + "パンチ素振り.mp3";
         public const string PunchHitSoundPath = ArmsSounds + "打撃1.mp3";
         public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
+        // クリティカルは命中の音に重ねるので、命中（剣で斬る）とは別の鋭い斬撃。
+        public const string CriticalHitSoundPath = ArmsSounds + "刀で斬る5.mp3";
         public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";

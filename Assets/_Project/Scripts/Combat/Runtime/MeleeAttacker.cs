@@ -63,7 +63,7 @@ namespace TpsDungeon.Combat
         [SerializeField, Min(0.01f)]
         private float criticalHitEffectScale = 1f;
 
-        [SerializeField, Tooltip("クリティカルのとき、命中の音に重ねて鳴らす音（1 振り 1 回）。未設定なら生成した「キィン」。")]
+        [SerializeField, Tooltip("クリティカルのとき、命中の音に重ねて鳴らす音（任意、1 振り 1 回）。")]
         private AudioClip criticalHitSound;
 
         [SerializeField, Range(0f, 1f)]
@@ -507,7 +507,7 @@ namespace TpsDungeon.Combat
             if (critical && !criticalSoundThisSwing)
             {
                 criticalSoundThisSwing = true;
-                PlaySound(criticalHitSound != null ? criticalHitSound : SynthSounds.CriticalClang, point, criticalHitSoundVolume);
+                PlaySound(criticalHitSound, point, criticalHitSoundVolume);
             }
 
             hits++;
