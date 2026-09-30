@@ -72,8 +72,8 @@ namespace TpsDungeon.Combat
         [SerializeField, Min(0f), Tooltip("コンボが切れて待ちが明けてから、コンボボーナスの段数を持ち越す秒数。この間に振り始めれば続く。")]
         private float comboKeepTime = 0.5f;
 
-        [SerializeField, Range(0f, 1f), Tooltip("コンボボーナスの段が上がったときの合図（生成した音。段が進むほど高い）の大きさ。")]
-        private float comboSoundVolume = 0.5f;
+        [SerializeField, Range(0f, 1f), Tooltip("コンボボーナスの段が上がったときの合図（生成した低い「ドン」。段が進むほど高く硬い）の大きさ。振りや命中の音の下に控えめに。")]
+        private float comboSoundVolume = 0.3f;
 
         [SerializeField, Tooltip("爆発のエンチャントで出す見た目（任意）。出して数秒で消す。")]
         private GameObject explosionEffect;
@@ -394,7 +394,7 @@ namespace TpsDungeon.Combat
             // 段数はこの段を含めて続けて当てた数（数字に添える COMBO と同じ）。上乗せが乗り始める 2 から鳴らし、2 を 1 段目の高さにする。
             int count = ComboCount;
             if (hits > 0 && count >= 2 && GameAudio.Instance != null)
-                GameAudio.Instance.PlaySe(SynthSounds.ComboChime(count - 1), comboSoundVolume);
+                GameAudio.Instance.PlaySe(SynthSounds.ComboThud(count - 1), comboSoundVolume);
         }
 
         /// <summary>段の振りのエフェクトと音。当たっても外れても出す。</summary>

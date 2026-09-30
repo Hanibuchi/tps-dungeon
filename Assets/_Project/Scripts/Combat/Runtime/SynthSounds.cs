@@ -10,17 +10,17 @@ namespace TpsDungeon.Combat
     {
         private const int SampleRate = 44100;
 
-        private static readonly Dictionary<int, AudioClip> comboChimes = new Dictionary<int, AudioClip>();
+        private static readonly Dictionary<int, AudioClip> comboThuds = new Dictionary<int, AudioClip>();
         private static AudioClip criticalClang;
 
         /// <summary>コンボ count 段目（1 始まり）の合図。ToneSynth.ComboTopStep から先は同じ音。</summary>
-        public static AudioClip ComboChime(int count)
+        public static AudioClip ComboThud(int count)
         {
             int key = Mathf.Clamp(count, 1, ToneSynth.ComboTopStep);
-            if (comboChimes.TryGetValue(key, out AudioClip clip) && clip != null) return clip;
+            if (comboThuds.TryGetValue(key, out AudioClip clip) && clip != null) return clip;
 
-            clip = Create($"Synth Combo {key}", ToneSynth.ComboChime(SampleRate, key));
-            comboChimes[key] = clip;
+            clip = Create($"Synth Combo {key}", ToneSynth.ComboThud(SampleRate, key));
+            comboThuds[key] = clip;
             return clip;
         }
 

@@ -14,9 +14,10 @@ namespace TpsDungeon.Combat.Tests
             for (int i = 1; i < ToneSynth.ComboTopStep; i++)
                 Assert.Greater(ToneSynth.ComboFrequency(i + 1), ToneSynth.ComboFrequency(i));
 
-            // 2 オクターブ上で止まる。
+            // 1 段で半音ずつ、10 半音上で止まる。
+            Assert.AreEqual(ToneSynth.ComboBaseFrequency * (float)System.Math.Pow(2.0, 1.0 / 12.0), ToneSynth.ComboFrequency(2), 1e-3f);
             float top = ToneSynth.ComboFrequency(ToneSynth.ComboTopStep);
-            Assert.AreEqual(ToneSynth.ComboBaseFrequency * 4f, top, 0.01f);
+            Assert.AreEqual(ToneSynth.ComboBaseFrequency * (float)System.Math.Pow(2.0, 10.0 / 12.0), top, 0.01f);
             Assert.AreEqual(top, ToneSynth.ComboFrequency(100), 1e-3f);
             Assert.AreEqual(ToneSynth.ComboFrequency(1), ToneSynth.ComboFrequency(0), 1e-3f);
         }
@@ -24,7 +25,7 @@ namespace TpsDungeon.Combat.Tests
         [Test]
         public void 長さのとおりで_割れず_無音でもない()
         {
-            AssertWave(ToneSynth.ComboChime(Rate, 3), ToneSynth.ComboChimeDuration);
+            AssertWave(ToneSynth.ComboThud(Rate, 3), ToneSynth.ComboThudDuration);
             AssertWave(ToneSynth.CriticalClang(Rate), ToneSynth.CriticalClangDuration);
         }
 
