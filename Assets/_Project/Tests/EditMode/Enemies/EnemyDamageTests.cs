@@ -58,6 +58,26 @@ namespace TpsDungeon.Enemies.Tests
         }
 
         [Test]
+        public void Immortal_NeverDiesAndRefills()
+        {
+            int died = 0, lastDealt = 0;
+            health.Damaged += (_, __, dealt) => lastDealt = dealt;
+            health.Died += _ => died++;
+            health.SetImmortal(true);
+
+            Assert.AreEqual(20, health.TakeDamage(20));
+            Assert.AreEqual(10, health.CurrentHp);
+
+            Assert.AreEqual(25, health.TakeDamage(25), "残り HP ではなく最大 HP まで受ける");
+            Assert.AreEqual(25, lastDealt);
+            Assert.AreEqual(30, health.CurrentHp, "尽きたら満タンに戻る");
+
+            Assert.AreEqual(30, health.TakeDamage(999), "最大 HP より大きな一撃は最大 HP まで");
+            Assert.IsFalse(health.IsDead);
+            Assert.AreEqual(0, died);
+        }
+
+        [Test]
         public void Stun_LastsItsDuration()
         {
             Assert.IsTrue(reaction.Apply(DamageReaction.Stun));
