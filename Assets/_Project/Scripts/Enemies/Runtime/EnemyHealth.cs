@@ -15,6 +15,9 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(1), Tooltip("最大 HP。値は仮。")]
         private int maxHp = 30;
 
+        [SerializeField, Tooltip("デバッグ用。倒れず、HP が尽きる一撃を受けたら満タンに戻る。スタン・気絶・ノックバックを好きな最大 HP で試すときに使う。")]
+        private bool immortal;
+
         private int currentHp = -1;
 
         public int MaxHp => Mathf.Max(1, maxHp);
@@ -30,6 +33,8 @@ namespace TpsDungeon.Enemies
         }
 
         public bool IsDead => CurrentHp <= 0;
+
+        public bool Immortal => immortal;
 
         /// <summary>
         /// ダメージを受けた。dealt は実際に減った量（残り HP より大きな一撃でも残り HP まで）。
@@ -50,8 +55,10 @@ namespace TpsDungeon.Enemies
         {
             if (damage.Amount <= 0 || IsDead) return 0;
 
-            int dealt = Mathf.Min(damage.Amount, currentHp);
+            // 死なないときは残り HP に関係なく満タンのときと同じだけ受けたことにする（スタン・気絶の起きやすさを揃えるため）。
+            int dealt = Mathf.Min(damage.Amount, immortal ? MaxHp : currentHp);
             currentHp -= dealt;
+            if (immortal && currentHp <= 0) currentHp = MaxHp;
 
             Damaged?.Invoke(this, damage, dealt);
             if (currentHp <= 0) Died?.Invoke(this);
@@ -63,6 +70,12 @@ namespace TpsDungeon.Enemies
         {
             maxHp = Mathf.Max(1, value);
             currentHp = maxHp;
+        }
+
+        /// <summary>死なないようにする（デバッグ用）。外すとき HP が残っていればそのまま。</summary>
+        public void SetImmortal(bool value)
+        {
+            immortal = value;
         }
 
         /// <summary>使い回す（プール）ときに満タンへ戻す。</summary>

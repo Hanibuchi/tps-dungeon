@@ -43,6 +43,7 @@ namespace TpsDungeon.Combat.Editor
         [SerializeField] private float dummyDistance = 2f;
         [SerializeField] private float dummySpacing = 1.5f;
         [SerializeField] private int dummyHp = 99999;
+        [SerializeField] private bool dummyImmortal;
         [SerializeField] private bool logToConsole;
 
         // 武器種ごとの個数（並びは武器種の AllowedEnchantments と同じ）。武器を替えて戻っても残す。
@@ -366,6 +367,12 @@ namespace TpsDungeon.Combat.Editor
             dummyDistance = Mathf.Max(0.5f, EditorGUILayout.FloatField(layout == DummyLayout.囲む ? "半径 (m)" : "最初の的まで (m)", dummyDistance));
             if (layout != DummyLayout.囲む) dummySpacing = Mathf.Max(0.3f, EditorGUILayout.FloatField("間隔 (m)", dummySpacing));
             dummyHp = Mathf.Max(1, EditorGUILayout.IntField("HP", dummyHp));
+            bool immortal = EditorGUILayout.Toggle(new GUIContent("死なない", "HP が尽きる一撃で満タンに戻る。HP を低くしてスタン・気絶・ノックバックを試すときに。"), dummyImmortal);
+            if (immortal != dummyImmortal)
+            {
+                dummyImmortal = immortal;
+                ForEachDummy(d => d.SetImmortal(immortal));
+            }
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -408,7 +415,11 @@ namespace TpsDungeon.Combat.Editor
                 Quaternion facing = toPlayer.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(toPlayer) : Quaternion.identity;
                 GameObject dummy = Instantiate(dummyPrefab, position, facing, root.transform);
                 dummy.name = $"的{i + 1}";
-                foreach (EnemyHealth health in dummy.GetComponentsInChildren<EnemyHealth>()) health.SetMaxHp(dummyHp);
+                foreach (EnemyHealth health in dummy.GetComponentsInChildren<EnemyHealth>())
+                {
+                    health.SetMaxHp(dummyHp);
+                    health.SetImmortal(dummyImmortal);
+                }
             }
         }
 
