@@ -72,7 +72,7 @@ MonoBehaviour:
   followUpEffectScale: 0.7
   slamShake: 0.35
   followUpShakeRatio: 0.4
-  heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
+  heldLocalPosition: {x: -0.1, y: -0.21, z: -0.05}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1

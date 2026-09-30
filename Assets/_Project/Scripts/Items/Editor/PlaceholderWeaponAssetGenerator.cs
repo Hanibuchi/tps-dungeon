@@ -56,6 +56,8 @@ namespace TpsDungeon.Items.Editor
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
         public const string SwordSwingSoundPath = ArmsSounds + "剣の素振り2.mp3";
+        // 両手剣の振りは片手剣と別の風切り。
+        public const string GreatswordSwingSoundPath = ArmsSounds + "剣の素振り1.mp3";
         public const string SwordHitSoundPath = ArmsSounds + "剣で斬る2.mp3";
         public const string SwordFinisherSoundPath = ArmsSounds + "剣で斬る1.mp3";
         public const string PunchSwingSoundPath = ArmsSounds + "パンチ素振り.mp3";
@@ -492,12 +494,12 @@ namespace TpsDungeon.Items.Editor
 
             serialized.FindProperty("comboChainGrace").floatValue = 0.35f;
             serialized.FindProperty("comboCooldown").floatValue = 0.5f;
-            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
+            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.2f, -0.05f), Vector3.zero);
             serialized.FindProperty("swingEffect").objectReferenceValue = LoadEffect(SlashEffectPath);
             serialized.FindProperty("swingEffectScale").floatValue = 0.9f;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.8f;
-            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SwordSwingSoundPath);
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(GreatswordSwingSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.8f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -548,7 +550,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("followUpEffectScale").floatValue = 0.7f;
             serialized.FindProperty("slamShake").floatValue = 0.35f;
             serialized.FindProperty("followUpShakeRatio").floatValue = 0.4f;
-            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.1f, -0.05f), Vector3.zero);
+            SeedHeldGrip(serialized, new Vector3(-0.1f, -0.21f, -0.05f), Vector3.zero);
             // 振りの斬撃は出さない（槌なので）。着弾点に土煙・石の破片・火花・閃光を重ね、当たった敵にも閃光。
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             WriteEffectLayers(serialized.FindProperty("slamEffects"), new[]

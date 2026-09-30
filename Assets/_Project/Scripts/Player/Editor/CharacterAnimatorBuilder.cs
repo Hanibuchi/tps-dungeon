@@ -8,7 +8,7 @@ namespace TpsDungeon.Player.Editor
     /// <summary>
     /// プレイヤーの AnimatorController を組み立てる。
     /// 下半身（Base Layer）は Starter Assets の ThirdPersonController がそのまま動かせる移動とジャンプ、
-    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃、
+    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃（両手武器・ハンマーは両手で握った構え、弓は引き切った構え）、
     /// 全身の攻撃（FullBodyAttack）は足まで使う攻撃（ダッシュ突き）を振っている間だけ全身で、
     /// 全身（Action、一番上）は Blink の Animations_Starter_Pack と Kevin の Combat のクリップを、呼ばれたときだけ再生する。
     /// 生成物なので手で編集せず、構成を変えたくなったらこのファイルを直して作り直すこと。
@@ -313,9 +313,13 @@ namespace TpsDungeon.Player.Editor
             sm.exitPosition = new Vector3(20, 400);
 
             // Motion の無いステートは何も書かないので、下の層（移動の腕振り）がそのまま透ける。
-            // 近接と魔法は構えを持たず、振るときだけ上半身を奪う。
+            // 片手・素手・魔法は構えを持たず、振るときだけ上半身を奪う。
             AnimatorState free = sm.AddState("Free", new Vector3(300, 200));
             sm.defaultState = free;
+
+            // 両手で握る武器は、腕振りが透けると片手でぶら下げて見えるので、持っている間ずっと両手の構えを取る。
+            AnimatorState twoHandedStance = BuildStance(sm, free, "TwoHanded Stance", clips.TwoHandedIdle,
+                new[] { Weapon.TwoHanded, Weapon.Hammer }, new Vector3(900, 400));
 
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
                 new Vector3(600, 240), startAt: SpellCastStart, exitAt: SpellCastExit);
@@ -323,16 +327,38 @@ namespace TpsDungeon.Player.Editor
             BuildBow(sm, free, clips, bowAim);
             BuildOneHandedCombo(sm, free, clips);
             BuildUnarmedCombo(sm, free, clips);
-            BuildTwoHandedCombo(sm, free, clips);
+            BuildTwoHandedCombo(sm, free, clips, twoHandedStance);
             BuildCombo(sm, free, "Hammer", Weapon.Hammer,
-                new (Motion, bool, float)[] { (clips.TwoHanded, false, HammerSlamSpeed) }, new Vector3(1500, 80));
+                new (Motion, bool, float)[] { (clips.TwoHanded, false, HammerSlamSpeed) }, new Vector3(1500, 80), twoHandedStance);
+        }
+
+        /// <summary>
+        /// weapons のどれかを持っている間ずっと取る構え。Free から入り、どれでもなくなったら Free へ戻る。
+        /// 振り終わりもここへ戻る（BuildCombo の rest に渡す）。
+        /// </summary>
+        private static AnimatorState BuildStance(AnimatorStateMachine sm, AnimatorState free, string name,
+            AnimationClip clip, Weapon[] weapons, Vector3 position)
+        {
+            AnimatorState stance = sm.AddState(name, position);
+            stance.motion = clip;
+
+            AnimatorStateTransition t;
+            foreach (Weapon weapon in weapons)
+            {
+                t = Transition(free, stance, 0.2f);
+                t.AddCondition(AnimatorConditionMode.Equals, (int)weapon, WeaponTypeParam);
+            }
+
+            t = Transition(stance, free, 0.2f);
+            foreach (Weapon weapon in weapons) t.AddCondition(AnimatorConditionMode.NotEqual, (int)weapon, WeaponTypeParam);
+            return stance;
         }
 
         /// <summary>
         /// 両手武器の 4 段コンボ。1〜3 段目は Kevin の両手の横薙ぎ（2 段目は左右反転で返し斬り）、
         /// 4 段目は Blink の両手の振り下ろしで締める。
         /// </summary>
-        private static void BuildTwoHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        private static void BuildTwoHandedCombo(AnimatorStateMachine sm, AnimatorState free, ClipSet clips, AnimatorState stance)
         {
             var steps = new (Motion motion, bool mirror, float speed)[TwoHandedComboSteps];
             for (int i = 0; i < steps.Length; i++)
@@ -341,7 +367,7 @@ namespace TpsDungeon.Player.Editor
                 steps[i] = finisher ? (clips.TwoHanded, false, TwoHandedFinisherSpeed) : (clips.TwoHandedSweep, i % 2 == 1, TwoHandedSweepSpeed);
             }
 
-            BuildCombo(sm, free, "TwoHanded", Weapon.TwoHanded, steps, new Vector3(1200, -40));
+            BuildCombo(sm, free, "TwoHanded", Weapon.TwoHanded, steps, new Vector3(1200, -40), stance);
         }
 
         /// <summary>
@@ -371,10 +397,10 @@ namespace TpsDungeon.Player.Editor
 
         /// <summary>
         /// 段ごとのステートを並べる。どの段からでも、次の段の ComboStep で Attack が立てば途中から切り替わる（先行入力で繋がる）。
-        /// 最後の段のあとは 1 段目へ戻る。
+        /// 最後の段のあとは 1 段目へ戻る。rest（構え）を渡すと、振り終わりはそこへ戻り、そこからも振り始められる。
         /// </summary>
         private static void BuildCombo(AnimatorStateMachine sm, AnimatorState free, string name, Weapon weapon,
-            (Motion motion, bool mirror, float speed)[] steps, Vector3 position)
+            (Motion motion, bool mirror, float speed)[] steps, Vector3 position, AnimatorState rest = null)
         {
             var states = new AnimatorState[steps.Length];
             for (int i = 0; i < states.Length; i++)
@@ -387,12 +413,13 @@ namespace TpsDungeon.Player.Editor
                 state.speedParameter = AttackSpeedParam;
                 states[i] = state;
 
-                Transition(state, free, 0.25f, exitTime: 0.85f);
+                Transition(state, rest ?? free, 0.25f, exitTime: 0.85f);
             }
 
             for (int i = 0; i < states.Length; i++)
             {
                 AddComboEntry(free, states[i], weapon, i);
+                if (rest != null) AddComboEntry(rest, states[i], weapon, i);
                 int previous = (i + states.Length - 1) % states.Length;
                 if (previous != i) AddComboEntry(states[previous], states[i], weapon, i);
             }
@@ -621,7 +648,7 @@ namespace TpsDungeon.Player.Editor
         {
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
-            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, TwoHandedSweep, PolearmThrust, SpellCast, BowShot;
+            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, TwoHandedSweep, TwoHandedIdle, PolearmThrust, SpellCast, BowShot;
             public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
@@ -643,6 +670,7 @@ namespace TpsDungeon.Player.Editor
                 OneHandedThrust = Load(KevinCombat + "1H/HumanM@Attack1H01_R.fbx", "HumanM@Attack1H01_R");
                 TwoHanded = Load(BlinkCombat + "MeleeAttack_TwoHanded.fbx", "MeleeAttack_TwoHanded");
                 TwoHandedSweep = Load(KevinCombat + "2H/HumanM@Attack2H01.fbx", "HumanM@Attack2H01");
+                TwoHandedIdle = Load(KevinCombat + "2H/HumanM@CombatIdle2H01.fbx", "HumanM@CombatIdle2H01");
                 PolearmThrust = Load(KevinCombat + "Polearm/HumanM@AttackPolearm01.fbx", "HumanM@AttackPolearm01");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");
