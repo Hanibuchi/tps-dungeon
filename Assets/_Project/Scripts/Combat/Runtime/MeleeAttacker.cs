@@ -471,7 +471,7 @@ namespace TpsDungeon.Combat
             OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
             if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
             if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
-            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical));
+            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical, point));
 
             Explode(point, stats.ExplosionDamage(damage), step);
         }
@@ -496,7 +496,8 @@ namespace TpsDungeon.Combat
                 Vector3 direction = enemy.transform.position - point;
                 int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction));
                 if (logHits) Debug.Log($"爆発 → {enemy.name}: {dealt}", enemy);
-                Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Explosion, enemy, step, damage, dealt, false));
+                // 爆発の中心ではなく、巻き込んだ敵の体の上で知らせる（数字が 1 か所に重ならないように）。
+                Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Explosion, enemy, step, damage, dealt, false, overlap[i].ClosestPoint(point)));
             }
         }
 
@@ -758,7 +759,7 @@ namespace TpsDungeon.Combat
                     int dealt = enemy.TakeDamage(new DamageInfo(f.Damage, point, direction, false, f.Shape.knockback, f.ReactionScale));
                     OneShotEffect.Spawn(f.Type.HitEffect, point, Quaternion.LookRotation(direction, Vector3.up), f.Type.HitEffectScale);
                     if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}", enemy);
-                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false));
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false, point));
                 }
             }
         }
@@ -794,7 +795,7 @@ namespace TpsDungeon.Combat
                     int dealt = enemy.TakeDamage(new DamageInfo(w.Damage, point, w.Direction, false, w.Knockback, w.ReactionScale));
                     OneShotEffect.Spawn(w.Type.HitEffect, point, rotation, w.Type.HitEffectScale);
                     if (logHits) Debug.Log($"衝撃波 → {enemy.name}: {dealt}", enemy);
-                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Shockwave, enemy, w.Step, w.Damage, dealt, false));
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Shockwave, enemy, w.Step, w.Damage, dealt, false, point));
                 }
 
                 if (to >= w.Type.ShockwaveRange) shockwaves.RemoveAt(i);

@@ -90,6 +90,7 @@ GameObject:
   - component: {fileID: 2797677097111593961}
   - component: {fileID: 6992024896062732690}
   - component: {fileID: 4804521241758134090}
+  - component: {fileID: 5555794773749821019}
   m_Layer: 0
   m_Name: Game HUD
   m_TagString: Untagged
@@ -154,6 +155,20 @@ MonoBehaviour:
   attacker: {fileID: 0}
   mapToggle: {fileID: 8948942209542754525}
   player: {fileID: 3715460319869569215}
+--- !u!114 &5555794773749821019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1605216043675353633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfff13dd446424cf6b35f4a465499f85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.DamageNumberView
+  attacker: {fileID: 8189682549201205282}
+  viewCamera: {fileID: 0}
 --- !u!1 &2845389573017558099
 GameObject:
   m_ObjectHideFlags: 0

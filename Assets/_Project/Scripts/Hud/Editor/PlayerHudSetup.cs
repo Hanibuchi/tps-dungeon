@@ -1,3 +1,4 @@
+using TpsDungeon.Combat;
 using TpsDungeon.Items;
 using TpsDungeon.Player;
 using TpsDungeon.Progression;
@@ -9,7 +10,7 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに常時表示の HUD（HP・ホットバー・マップ）と、その出どころの
+    /// プレイヤーのプレハブに常時表示の HUD（HP・ホットバー・マップ・ダメージの数字）と、その出どころの
     /// PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
     public static class PlayerHudSetup
@@ -76,6 +77,10 @@ namespace TpsDungeon.Hud.Editor
                 serializedView.FindProperty("mapToggle").objectReferenceValue = mapToggle;
                 serializedView.FindProperty("player").objectReferenceValue = root.transform;
                 serializedView.ApplyModifiedPropertiesWithoutUndo();
+
+                var damageNumbers = hud.GetComponent<DamageNumberView>();
+                if (damageNumbers == null) damageNumbers = hud.gameObject.AddComponent<DamageNumberView>();
+                SetReference(damageNumbers, "attacker", root.GetComponent<MeleeAttacker>());
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Debug.Log($"HUD を組み込んだ: {PlayerPrefabPath}");

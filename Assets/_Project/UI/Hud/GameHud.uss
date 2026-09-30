@@ -375,3 +375,39 @@
     color: var(--gold);
     -unity-text-align: middle-center;
 }
+
+/* ---- ダメージの数字（DamageNumberView） ---- */
+
+/* 画面いっぱいの層。HUD の枠より奥に敷く。 */
+.damage-numbers {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* left / top に当たった場所の画面座標が入る。数字の下辺の中央をそこへ合わせる。 */
+.damage-number {
+    position: absolute;
+    translate: -50% -100%;
+    padding: 0;
+    margin: 0;
+    font-size: 32px;
+    color: var(--ink);
+    -unity-text-outline-width: 1.5px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+}
+
+.damage-number.damage-number--critical {
+    font-size: 44px;
+    color: var(--gold-bright);
+}
+
+/* エンチャント（爆発・衝撃波・追撃）の一撃。 */
+.damage-number.damage-number--minor {
+    font-size: 26px;
+    color: var(--ember);
+}

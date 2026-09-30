@@ -6,7 +6,8 @@
         "TpsDungeon.Player",
         "Unity.InputSystem",
         "TpsDungeon.Items",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Progression",
+        "TpsDungeon.Combat"
     ],
     "includePlatforms": [
         "Editor"
