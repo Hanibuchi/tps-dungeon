@@ -387,10 +387,13 @@
     bottom: 0;
 }
 
-/* left / top に当たった場所の画面座標が入る。数字の下辺の中央をそこへ合わせる。 */
+/* left / top に当たった場所の画面座標が入る。数字（と COMBO）の下辺の中央をそこへ合わせる。
+   色・大きさ・縁取りは中の数字と COMBO へ受け継がせる。 */
 .damage-number {
     position: absolute;
     translate: -50% -100%;
+    flex-direction: column;
+    align-items: center;
     padding: 0;
     margin: 0;
     font-size: 32px;
@@ -410,4 +413,29 @@
 .damage-number.damage-number--minor {
     font-size: 26px;
     color: var(--ember);
+}
+
+.damage-number__value,
+.damage-number__combo {
+    padding: 0;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* コンボボーナスが乗った 1 撃の「N COMBO」。数が増えるほど白→金→赤。 */
+.damage-number__combo {
+    margin-top: -6px;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: 1px;
+}
+
+.damage-number__combo.damage-number__combo--hot {
+    font-size: 20px;
+    color: var(--gold-bright);
+}
+
+.damage-number__combo.damage-number__combo--blazing {
+    font-size: 22px;
+    color: var(--blood-bright);
 }

@@ -9,6 +9,7 @@ namespace TpsDungeon.Hud
     /// 敵に当てたダメージの数字を、当たった場所に浮かべる。
     /// MeleeAttacker.Dealt を受けて 1 撃ごとに 1 つ出し、はじけて上がりながら消す。
     /// クリティカルは大きく金、エンチャント（爆発・衝撃波・追撃）の一撃は小さく橙（見た目は GameHud.uss の .damage-number）。
+    /// コンボボーナスが乗った 1 撃には、数字の下に「N COMBO」を添える。N が大きいほど白→金→赤。
     /// GameHudView と同じ GameObject に付けて、同じ UIDocument に描く。
     /// </summary>
     [DisallowMultipleComponent]
@@ -38,6 +39,14 @@ namespace TpsDungeon.Hud
         private const string NumberClass = "damage-number";
         private const string CriticalClass = "damage-number--critical";
         private const string MinorClass = "damage-number--minor";
+        private const string ValueClass = "damage-number__value";
+        private const string ComboClass = "damage-number__combo";
+        private const string ComboHotClass = "damage-number__combo--hot";
+        private const string ComboBlazingClass = "damage-number__combo--blazing";
+
+        /// <summary>COMBO の色が金・赤に変わる数。</summary>
+        public const int ComboHotFrom = 5;
+        public const int ComboBlazingFrom = 10;
 
         [SerializeField, Tooltip("当てたダメージの出どころ。未設定なら親から探す。")]
         private MeleeAttacker attacker;
@@ -47,7 +56,10 @@ namespace TpsDungeon.Hud
 
         private sealed class Number
         {
+            /// <summary>数字と COMBO をまとめた箱。位置・大きさ・濃さはこれに入れる。</summary>
+            public VisualElement Root;
             public Label Label;
+            public Label Combo;
             public Vector3 Origin;
             public float Age;
         }
@@ -98,11 +110,11 @@ namespace TpsDungeon.Hud
         private void OnDealt(MeleeHitRecord record)
         {
             if (record.Damage <= 0) return;
-            Show(record.Point, record.Damage, record.IsCritical, record.Kind != MeleeHitKind.Hit);
+            Show(record.Point, record.Damage, record.IsCritical, record.Kind != MeleeHitKind.Hit, record.Combo);
         }
 
-        /// <summary>world に amount の数字を出す。minor はエンチャントの一撃の小さな数字。</summary>
-        public void Show(Vector3 world, int amount, bool critical, bool minor)
+        /// <summary>world に amount の数字を出す。minor はエンチャントの一撃の小さな数字。combo が 2 以上なら「N COMBO」を添える。</summary>
+        public void Show(Vector3 world, int amount, bool critical, bool minor, int combo = 0)
         {
             if (layer == null) return;
 
@@ -111,11 +123,22 @@ namespace TpsDungeon.Hud
             number.Origin = world + new Vector3(scatter.x, 0f, scatter.y);
             number.Age = 0f;
 
-            Label label = number.Label;
-            label.text = critical ? $"{amount}!" : amount.ToString();
-            label.EnableInClassList(CriticalClass, critical);
-            label.EnableInClassList(MinorClass, minor && !critical);
-            label.BringToFront();
+            VisualElement root = number.Root;
+            number.Label.text = critical ? $"{amount}!" : amount.ToString();
+            root.EnableInClassList(CriticalClass, critical);
+            root.EnableInClassList(MinorClass, minor && !critical);
+
+            bool showCombo = combo >= 2;
+            number.Combo.style.display = showCombo ? DisplayStyle.Flex : DisplayStyle.None;
+            if (showCombo)
+            {
+                number.Combo.text = $"{combo} COMBO";
+                string tier = ComboTierClass(combo);
+                number.Combo.EnableInClassList(ComboHotClass, tier == ComboHotClass);
+                number.Combo.EnableInClassList(ComboBlazingClass, tier == ComboBlazingClass);
+            }
+
+            root.BringToFront();
             Place(number);
         }
 
@@ -133,14 +156,20 @@ namespace TpsDungeon.Hud
             }
             else
             {
+                var root = new VisualElement { pickingMode = PickingMode.Ignore };
+                root.AddToClassList(NumberClass);
+                root.AddToClassList("rpg-deco-bold");
                 var label = new Label { pickingMode = PickingMode.Ignore };
-                label.AddToClassList(NumberClass);
-                label.AddToClassList("rpg-deco-bold");
-                layer.Add(label);
-                number = new Number { Label = label };
+                label.AddToClassList(ValueClass);
+                var combo = new Label { pickingMode = PickingMode.Ignore };
+                combo.AddToClassList(ComboClass);
+                root.Add(label);
+                root.Add(combo);
+                layer.Add(root);
+                number = new Number { Root = root, Label = label, Combo = combo };
             }
 
-            number.Label.style.display = DisplayStyle.Flex;
+            number.Root.style.display = DisplayStyle.Flex;
             active.Add(number);
             return number;
         }
@@ -156,7 +185,7 @@ namespace TpsDungeon.Hud
                 number.Age += dt;
                 if (number.Age >= Lifetime)
                 {
-                    number.Label.style.display = DisplayStyle.None;
+                    number.Root.style.display = DisplayStyle.None;
                     active.RemoveAt(i);
                     idle.Push(number);
                     continue;
@@ -168,12 +197,12 @@ namespace TpsDungeon.Hud
         /// <summary>今の経過に合わせて、画面上の位置・大きさ・濃さを入れる。カメラの後ろにあれば隠す。</summary>
         private void Place(Number number)
         {
-            Label label = number.Label;
+            VisualElement root = number.Root;
             Camera cam = viewCamera != null ? viewCamera : Camera.main;
             IPanel panel = layer.panel;
             if (cam == null || panel == null)
             {
-                label.style.visibility = Visibility.Hidden;
+                root.style.visibility = Visibility.Hidden;
                 return;
             }
 
@@ -181,18 +210,22 @@ namespace TpsDungeon.Hud
             Vector3 world = number.Origin + Vector3.up * RiseAt(t);
             if (Vector3.Dot(world - cam.transform.position, cam.transform.forward) <= cam.nearClipPlane)
             {
-                label.style.visibility = Visibility.Hidden;
+                root.style.visibility = Visibility.Hidden;
                 return;
             }
 
             Vector2 position = RuntimePanelUtils.CameraTransformWorldToPanel(panel, world, cam);
-            label.style.visibility = Visibility.Visible;
-            label.style.left = position.x;
-            label.style.top = position.y;
+            root.style.visibility = Visibility.Visible;
+            root.style.left = position.x;
+            root.style.top = position.y;
             float scale = ScaleAt(number.Age);
-            label.style.scale = new Scale(new Vector3(scale, scale, 1f));
-            label.style.opacity = OpacityAt(t);
+            root.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            root.style.opacity = OpacityAt(t);
         }
+
+        /// <summary>COMBO の数 combo の色のクラス。少なければ null（白のまま）。</summary>
+        public static string ComboTierClass(int combo) =>
+            combo >= ComboBlazingFrom ? ComboBlazingClass : combo >= ComboHotFrom ? ComboHotClass : null;
 
         /// <summary>経過の割合 t（0〜1）で、出た場所から上がった高さ（m）。はじめ速く、だんだんゆっくり。</summary>
         public static float RiseAt(float t)

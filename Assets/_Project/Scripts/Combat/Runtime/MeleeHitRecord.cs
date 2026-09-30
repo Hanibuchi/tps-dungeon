@@ -39,7 +39,14 @@ namespace TpsDungeon.Combat
         /// <summary>当たった場所（ワールド）。ダメージの数字をここに出す。</summary>
         public readonly Vector3 Point;
 
-        public MeleeHitRecord(MeleeHitKind kind, EnemyHealth enemy, int step, int damage, int dealt, bool isCritical, Vector3 point)
+        /// <summary>
+        /// コンボの数（この 1 撃の段を含めて、続けて当てた段の数）。ダメージの数字に「N COMBO」と添える。
+        /// コンボボーナスの上乗せが乗っていない 1 撃（ボーナスの無い武器、コンボの頭、爆発などの段の 1 撃でないもの）は 0。
+        /// </summary>
+        public readonly int Combo;
+
+        public MeleeHitRecord(MeleeHitKind kind, EnemyHealth enemy, int step, int damage, int dealt, bool isCritical, Vector3 point,
+            int combo = 0)
         {
             Kind = kind;
             Enemy = enemy;
@@ -48,6 +55,7 @@ namespace TpsDungeon.Combat
             Dealt = dealt;
             IsCritical = isCritical;
             Point = point;
+            Combo = combo;
         }
     }
 }

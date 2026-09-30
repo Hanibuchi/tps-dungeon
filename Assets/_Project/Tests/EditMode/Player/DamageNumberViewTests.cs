@@ -26,6 +26,16 @@ namespace TpsDungeon.Player.Tests
         }
 
         [Test]
+        public void ComboColor_WarmsUpAsTheComboGrows()
+        {
+            Assert.IsNull(DamageNumberView.ComboTierClass(2));
+            Assert.IsNull(DamageNumberView.ComboTierClass(DamageNumberView.ComboHotFrom - 1));
+            Assert.AreEqual("damage-number__combo--hot", DamageNumberView.ComboTierClass(DamageNumberView.ComboHotFrom));
+            Assert.AreEqual("damage-number__combo--blazing", DamageNumberView.ComboTierClass(DamageNumberView.ComboBlazingFrom));
+            Assert.AreEqual("damage-number__combo--blazing", DamageNumberView.ComboTierClass(99));
+        }
+
+        [Test]
         public void Opacity_StaysFull_ThenFadesOverTheLastPart()
         {
             Assert.AreEqual(1f, DamageNumberView.OpacityAt(0f), 1e-5f);
