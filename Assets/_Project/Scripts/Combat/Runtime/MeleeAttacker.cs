@@ -19,6 +19,8 @@ namespace TpsDungeon.Combat
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない。
     /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
+    /// コンボボーナスの段数（ComboChain）は周をまたいで数える。空振りするか、待ちが明けて comboKeepTime 秒振らなければ途切れる。
+    /// サイズのエンチャントは判定に合わせて、振り・叩きつけ・追撃・爆発のエフェクトも大きくする。
     /// キャラのルート（CharacterController と同じ GameObject）に付ける。基礎攻撃力は同じ GameObject の CharacterProgression から読む。
     /// </summary>
     [DisallowMultipleComponent]
@@ -61,6 +63,18 @@ namespace TpsDungeon.Combat
         [SerializeField, Min(0.01f)]
         private float criticalHitEffectScale = 1f;
 
+        [SerializeField, Tooltip("クリティカルのとき、命中の音に重ねて鳴らす音（任意、1 振り 1 回）。")]
+        private AudioClip criticalHitSound;
+
+        [SerializeField, Range(0f, 1f)]
+        private float criticalHitSoundVolume = 0.7f;
+
+        [SerializeField, Min(0f), Tooltip("コンボが切れて待ちが明けてから、コンボボーナスの段数を持ち越す秒数。この間に振り始めれば続く。")]
+        private float comboKeepTime = 0.5f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("コンボボーナスの段が上がったときの合図（生成した低い「ドン」。段が進むほど高く硬い）の大きさ。振りや命中の音の下に控えめに。")]
+        private float comboSoundVolume = 0.3f;
+
         [SerializeField, Tooltip("爆発のエンチャントで出す見た目（任意）。出して数秒で消す。")]
         private GameObject explosionEffect;
 
@@ -87,6 +101,8 @@ namespace TpsDungeon.Combat
         private MeleeComboState combo;
         private MeleeWeaponStats stats;
         private bool pressQueued;
+        private readonly ComboChain chain = new ComboChain();
+        private bool criticalSoundThisSwing;
 
         private readonly HashSet<EnemyHealth> hitThisSwing = new HashSet<EnemyHealth>();
         private readonly HashSet<EnemyHealth> explosionTargets = new HashSet<EnemyHealth>();
@@ -155,6 +171,11 @@ namespace TpsDungeon.Combat
         public float CooldownFraction =>
             combo != null && combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
 
+        /// <summary>
+        /// コンボボーナスの段数（続けて当てた段の数。次の 1 撃にこの分上乗せする）。コンボボーナスの無い武器では 0。
+        /// </summary>
+        public int ComboCount => stats != null && stats.ComboBonus > 0f ? chain.Count : 0;
+
         /// <summary>走る段で走っている最中か。持ち主の歩きはこの間止めること（プレイヤーなら PlayerMeleeInput が止める）。</summary>
         public bool IsLunging => lunge != null;
 
@@ -217,6 +238,7 @@ namespace TpsDungeon.Combat
             float switchWait = equipped ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
             equipped = true;
             EndLunge();
+            chain.Reset();
 
             held = item;
             WeaponDefinition weapon = item?.Weapon;
@@ -238,6 +260,7 @@ namespace TpsDungeon.Combat
         private void Update()
         {
             float dt = Time.deltaTime;
+            chain.Tick(dt);
             TickFollowUps(dt);
             TickShockwaves(dt);
             if (lunge != null) TickLunge(dt);
@@ -254,6 +277,7 @@ namespace TpsDungeon.Combat
             ComboEvents events = combo.Tick(dt, pressed, speed);
             if ((events & ComboEvents.Hit) != 0) DealHit(swinging >= 0 ? swinging : combo.Step);
             if ((events & ComboEvents.StepStarted) != 0) BeginStep(combo.Step);
+            if ((events & ComboEvents.Ended) != 0) chain.StartTimeout(combo.CooldownRemaining + comboKeepTime);
         }
 
         // ---- 持ち替え ----
@@ -314,6 +338,8 @@ namespace TpsDungeon.Combat
         private void BeginStep(int step)
         {
             hitThisSwing.Clear();
+            criticalSoundThisSwing = false;
+            chain.CancelTimeout();
             if (faceAimOnAttack) FaceAim();
             SpawnLeadingSwingEffect(step);
 
@@ -356,23 +382,35 @@ namespace TpsDungeon.Combat
             PlaySwing(shape);
             int hits = 0;
             HitBox(step, shape, ref hits);
+            FinishSwing(step, hits);
+        }
+
+        /// <summary>段の判定を出し終えた。コンボボーナスの段数を進めるか途切れさせ、上がったら合図を鳴らす。</summary>
+        private void FinishSwing(int step, int hits)
+        {
+            chain.SwingFinished(hits);
             Swung?.Invoke(step, hits);
+
+            // 段数はこの段を含めて続けて当てた数（数字に添える COMBO と同じ）。上乗せが乗り始める 2 から鳴らし、2 を 1 段目の高さにする。
+            int count = ComboCount;
+            if (hits > 0 && count >= 2 && GameAudio.Instance != null)
+                GameAudio.Instance.PlaySe(SynthSounds.ComboThud(count - 1), comboSoundVolume);
         }
 
         /// <summary>段の振りのエフェクトと音。当たっても外れても出す。</summary>
         private void PlaySwing(MeleeComboStep shape)
         {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
-            Vector3 swingPoint = transform.TransformPoint(shape.swingEffectOffset);
+            Vector3 offset = SwingEffectOffset(shape);
+            Vector3 swingPoint = transform.TransformPoint(offset);
+            float scale = type.SwingEffectScale * SizeScale;
             // 溜めてから放つ素材は、振り始めに SpawnLeadingSwingEffect で出してあるので、ここでは音だけ。
             bool alreadySpawned = type.SwingEffectLeadTime > 0f;
             // 走る段の斬撃は、走り出しの位置に置き去りにせず体に付けて一緒に走らせる。
             if (!alreadySpawned && shape.motion == MeleeStepMotion.Lunge)
-                OneShotEffect.SpawnAttached(type.SwingEffect, transform, shape.swingEffectOffset,
-                    Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+                OneShotEffect.SpawnAttached(type.SwingEffect, transform, offset, Quaternion.Euler(shape.swingEffectEuler), scale);
             else if (!alreadySpawned)
-                OneShotEffect.Spawn(type.SwingEffect, swingPoint,
-                    transform.rotation * Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+                OneShotEffect.Spawn(type.SwingEffect, swingPoint, transform.rotation * Quaternion.Euler(shape.swingEffectEuler), scale);
             PlaySound(shape.swingSound != null ? shape.swingSound : type.SwingSound, swingPoint, type.SoundVolume);
         }
 
@@ -391,8 +429,8 @@ namespace TpsDungeon.Combat
             if (type.SwingEffectLeadTime <= 0f || type.SwingEffect == null) return;
 
             MeleeComboStep shape = type.ComboSteps[step];
-            GameObject effect = OneShotEffect.SpawnAttached(type.SwingEffect, transform, shape.swingEffectOffset,
-                Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale);
+            GameObject effect = OneShotEffect.SpawnAttached(type.SwingEffect, transform, SwingEffectOffset(shape),
+                Quaternion.Euler(shape.swingEffectEuler), type.SwingEffectScale * SizeScale);
             if (effect == null) return;
 
             foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
@@ -458,20 +496,29 @@ namespace TpsDungeon.Combat
         {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             bool critical = UnityEngine.Random.value < stats.CritChance;
-            int damage = stats.HitDamage(step);
+            int comboCount = ComboCount;
+            int damage = stats.HitDamage(step, comboCount);
             if (critical) damage = stats.ApplyCritical(damage);
 
             Vector3 direction = FlatDirection(transform.position, enemy.transform.position, transform.forward);
             int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
                 shape.knockback + stats.KnockbackBonus, ReactionScale(shape)));
             if (hits == 0 && playHitSound) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
+            if (critical && !criticalSoundThisSwing)
+            {
+                criticalSoundThisSwing = true;
+                PlaySound(criticalHitSound, point, criticalHitSoundVolume);
+            }
+
             hits++;
 
             Quaternion facing = Quaternion.LookRotation(direction, Vector3.up);
             OneShotEffect.Spawn(type.HitEffect, point, facing, type.HitEffectScale);
             if (critical) OneShotEffect.Spawn(criticalHitEffect, point, facing, criticalHitEffectScale);
-            if (logHits) Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
-            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical, point));
+            if (logHits)
+                Debug.Log($"{step + 1} 段目 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}{(comboCount > 0 ? $"（コンボ {comboCount + 1}）" : string.Empty)}", enemy);
+            // 数字に添える COMBO は、この 1 撃を含めて続けて当てた段の数。上乗せが乗っていなければ 0。
+            Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Hit, enemy, step, damage, dealt, critical, point, comboCount > 0 ? comboCount + 1 : 0));
 
             Explode(point, stats.ExplosionDamage(damage), step);
         }
@@ -483,7 +530,8 @@ namespace TpsDungeon.Combat
         {
             if (damage <= 0) return;
 
-            OneShotEffect.Spawn(explosionEffect, point, Quaternion.identity, explosionEffectScale);
+            // 半径はサイズの補正込み（MeleeWeaponStats）。見た目も同じだけ大きくする。
+            OneShotEffect.Spawn(explosionEffect, point, Quaternion.identity, explosionEffectScale * SizeScale);
             PlaySound(explosionSound, point, explosionSoundVolume);
 
             explosionTargets.Clear();
@@ -640,7 +688,7 @@ namespace TpsDungeon.Combat
 
             Lunge finished = lunge;
             lunge = null;
-            Swung?.Invoke(finished.Step, finished.Hits);
+            FinishSwing(finished.Step, finished.Hits);
         }
 
         // ---- 叩きつける（Slam） ----
@@ -652,7 +700,7 @@ namespace TpsDungeon.Combat
 
             // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に鳴らす。
             Vector3 center = SlamCenter(shape);
-            SpawnLayers(type.SlamEffects, center, transform.rotation, 1f);
+            SpawnLayers(type.SlamEffects, center, transform.rotation, SizeScale);
             ImpactShake.At(center, type.SlamShake);
             PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, center, type.SoundVolume);
 
@@ -663,7 +711,7 @@ namespace TpsDungeon.Combat
                 if (hitThisSwing.Add(enemy)) Strike(enemy, point, step, shape, ref hits, false);
             }
 
-            int baseHit = stats.HitDamage(step);
+            int baseHit = stats.HitDamage(step, ComboCount);
             Vector3 forward = transform.forward;
             foreach (float angle in SlamPattern.ShockwaveAngles(stats.ShockwaveCount, type.ShockwaveSpacingAngle))
             {
@@ -702,7 +750,7 @@ namespace TpsDungeon.Combat
                 });
             }
 
-            Swung?.Invoke(step, hits);
+            FinishSwing(step, hits);
         }
 
         /// <summary>着弾点。hitboxCenter のキャラから見た位置（前への距離はサイズで伸ばす）。</summary>
@@ -748,7 +796,7 @@ namespace TpsDungeon.Combat
                 if (f.Delay > 0f) continue;
 
                 followUps.RemoveAt(i);
-                SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale);
+                SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale * SizeScale);
                 ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
                 PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
 
@@ -830,6 +878,17 @@ namespace TpsDungeon.Combat
         private static void PlaySound(AudioClip clip, Vector3 position, float volume)
         {
             if (clip != null) GameAudio.Instance?.PlaySeAt(clip, position, volume);
+        }
+
+        /// <summary>サイズのエンチャントの倍率。判定に合わせるエフェクトにも掛ける。</summary>
+        private float SizeScale => stats != null ? stats.HitboxScale : 1f;
+
+        /// <summary>振りのエフェクトを出す位置（キャラから見たローカル）。判定の箱と同じく、前への距離をサイズで伸ばす。</summary>
+        private Vector3 SwingEffectOffset(MeleeComboStep shape)
+        {
+            Vector3 local = shape.swingEffectOffset;
+            local.z *= SizeScale;
+            return local;
         }
 
         /// <summary>段の判定の箱（ワールド）。サイズのエンチャントで大きさと前への伸びが増える。</summary>

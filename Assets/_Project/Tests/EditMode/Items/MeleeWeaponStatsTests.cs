@@ -115,14 +115,35 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void コンボボーナスは段が進むほど上乗せが増える()
+        public void コンボボーナスは続けて当てた段の数だけ上乗せが増え_上限は無い()
         {
             MeleeWeaponStats stats = Compute(100f, With(EnchantmentKind.ComboBonus, 0.1f));
 
-            Assert.AreEqual(44, stats.HitDamage(0), "1 段目は上乗せ無し");
-            Assert.AreEqual(48, stats.HitDamage(1)); // 44 × 1.1 = 48.4
-            Assert.AreEqual(53, stats.HitDamage(2)); // 44 × 1.2 = 52.8
-            Assert.AreEqual(114, stats.HitDamage(3)); // 88 × 1.3 = 114.4
+            Assert.AreEqual(0.1f, stats.ComboBonus, 1e-5f);
+            Assert.AreEqual(44, stats.HitDamage(0), "コンボ 0 は上乗せ無し");
+            Assert.AreEqual(48, stats.HitDamage(1, 1)); // 44 × 1.1 = 48.4
+            Assert.AreEqual(53, stats.HitDamage(2, 2)); // 44 × 1.2 = 52.8
+            Assert.AreEqual(114, stats.HitDamage(3, 3)); // 88 × 1.3 = 114.4
+            // 2 周目の 1 段目でも、続いていれば上乗せが乗る。
+            Assert.AreEqual(62, stats.HitDamage(0, 4)); // 44 × 1.4 = 61.6
+            Assert.AreEqual(484, stats.HitDamage(3, 45)); // 88 × 5.5
+        }
+
+        [Test]
+        public void コンボボーナスが無ければコンボを渡しても変わらない()
+        {
+            MeleeWeaponStats stats = Compute(100f);
+            Assert.AreEqual(44, stats.HitDamage(0, 10));
+        }
+
+        [Test]
+        public void サイズで爆発の半径も広がる()
+        {
+            var totals = new EnchantmentTotals();
+            totals.Add(EnchantmentKind.Size, 0.5f);
+            totals.Add(EnchantmentKind.Explosion, 0.4f, 2f);
+
+            Assert.AreEqual(3f, Compute(100f, totals).ExplosionRadius, 1e-5f);
         }
 
         [Test]
@@ -169,7 +190,7 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(1.3f, stats.HitboxScale, 1e-5f);
             Assert.AreEqual(2f, stats.KnockbackBonus, 1e-5f);
             Assert.AreEqual(1.25f, stats.ReactionScale, 1e-5f);
-            Assert.AreEqual(2.5f, stats.ExplosionRadius, 1e-5f);
+            Assert.AreEqual(2.5f * 1.3f, stats.ExplosionRadius, 1e-5f);
             Assert.AreEqual(18, stats.ExplosionDamage(44)); // 44 × 0.4 = 17.6
             Assert.AreEqual(0.1f, stats.DropRateBonus, 1e-5f);
         }

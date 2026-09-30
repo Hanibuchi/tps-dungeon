@@ -185,40 +185,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8516936782232103769, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
   m_PrefabInstance: {fileID: 5508518673633225154}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &217400775 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
-  m_PrefabInstance: {fileID: 5508518673633225154}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &217400777 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8938358473402762286, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
-  m_PrefabInstance: {fileID: 5508518673633225154}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 217400775}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e33934105ad4340e3953951bc3ec429e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.CharacterActions
---- !u!114 &217400796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 217400775}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc00d879c102d41659a601f081a08deb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Player.Debug::TpsDungeon.Player.DebugTools.CharacterActionDebugInput
-  actions: {fileID: 217400777}
-  previousKey: 11
-  nextKey: 12
-  playKey: 2
-  stopKey: 65
-  showOverlay: 1
 --- !u!1001 &223647932
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -270,6 +236,14 @@ PrefabInstance:
     - target: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       propertyPath: m_Name
       value: Blob_GreenBlob
+      objectReference: {fileID: 0}
+    - target: {fileID: 7541851688380475608, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      propertyPath: maxHp
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 7541851688380475608, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      propertyPath: immortal
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -620,6 +594,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Pickup_Weapon_StoneHammer
       objectReference: {fileID: 0}
+    - target: {fileID: 2893809788506584349, guid: 044b31f8cd597499d80c00cffbb0217e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5197793998687649270, guid: 044b31f8cd597499d80c00cffbb0217e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 203.38791
@@ -904,6 +882,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Pickup_Weapon_RustySword
       objectReference: {fileID: 0}
+    - target: {fileID: 5083947601240857451, guid: 9e83c18837cd849bdb075e80fee554b3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7858962705634872835, guid: 9e83c18837cd849bdb075e80fee554b3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 202.5
@@ -1003,6 +985,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Pickup_Weapon_WoodenRapier
       objectReference: {fileID: 0}
+    - target: {fileID: 2459454832200239732, guid: 987d9f3f197ea46c78627b94bbf570a0, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5953646718325739221, guid: 987d9f3f197ea46c78627b94bbf570a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 204.43176
@@ -1069,6 +1055,10 @@ PrefabInstance:
     - target: {fileID: 7573569210063214736, guid: 8a5b2fda45a424d4c8b5e271a8a4b242, type: 3}
       propertyPath: m_Name
       value: Pickup_Weapon_ChippedGreatsword
+      objectReference: {fileID: 0}
+    - target: {fileID: 7573569210063214736, guid: 8a5b2fda45a424d4c8b5e271a8a4b242, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8939079007633877235, guid: 8a5b2fda45a424d4c8b5e271a8a4b242, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1170,10 +1160,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4090438157950177797, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 217400796}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

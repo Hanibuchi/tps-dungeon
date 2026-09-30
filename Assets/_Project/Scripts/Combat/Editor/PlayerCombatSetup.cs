@@ -39,6 +39,9 @@ namespace TpsDungeon.Combat.Editor
                 serialized.FindProperty("criticalHitEffect").objectReferenceValue =
                     PlaceholderWeaponAssetGenerator.LoadEffect(PlaceholderWeaponAssetGenerator.CriticalHitEffectPath);
                 serialized.FindProperty("criticalHitEffectScale").floatValue = 0.4f;
+                serialized.FindProperty("criticalHitSound").objectReferenceValue =
+                    PlaceholderWeaponAssetGenerator.LoadSound(PlaceholderWeaponAssetGenerator.CriticalHitSoundPath);
+                serialized.FindProperty("criticalHitSoundVolume").floatValue = 0.7f;
                 // 素材は閃光が 17 m ほどに広がる。爆発のエンチャントの半径は 2.5 m。
                 serialized.FindProperty("explosionEffect").objectReferenceValue =
                     PlaceholderWeaponAssetGenerator.LoadEffect(PlaceholderWeaponAssetGenerator.ExplosionEffectPath);

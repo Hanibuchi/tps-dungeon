@@ -38,24 +38,26 @@ namespace TpsDungeon.Items
     /// 近接武器の実際の数値。「強さ」は DPS として定義されているので、1 撃のダメージは 1 周の時間から逆算する。
     ///
     ///   1 周の DPS の元 = 強さ ＋ 基礎攻撃力 × 係数
-    ///   段 i の 1 撃     = 元 × 1 周の時間 ÷ Σ比重 × 比重i × (1 ＋ ダメージ増加) × (1 ＋ コンボボーナス × i)
+    ///   段 i の 1 撃     = 元 × 1 周の時間 ÷ Σ比重 × 比重i × (1 ＋ ダメージ増加) × (1 ＋ コンボボーナス × 続けて当てた段の数)
     ///
+    /// 続けて当てた段の数（コンボ）は周をまたいで数え、上限は無い。数えるのは振る側（ComboChain）で、ここは受け取って掛けるだけ。
     /// 1 周の時間は速射の補正前で配るので、速射は時間だけ縮めて DPS を上げる。
     /// 衝撃波（数）・追撃（多重）・爆発は 1 撃に対する割合の上乗せで、ここの DPS には含めない。
     /// エンチャントの効果量は EnchantmentDefinition の値そのもの（例: ダメージ増加 0.15 で +15%）。
     /// </summary>
     public sealed class MeleeWeaponStats
     {
-        private readonly int[] hitDamage;
+        // 段の 1 撃（コンボの上乗せ前、丸める前）。
+        private readonly double[] rawHits;
         private readonly float[] stepDurations;
 
-        private MeleeWeaponStats(int[] hitDamage, float[] stepDurations)
+        private MeleeWeaponStats(double[] rawHits, float[] stepDurations)
         {
-            this.hitDamage = hitDamage;
+            this.rawHits = rawHits;
             this.stepDurations = stepDurations;
         }
 
-        public int StepCount => hitDamage.Length;
+        public int StepCount => rawHits.Length;
 
         /// <summary>攻撃速度の倍率（1 ＋ 速射）。モーションはこの速さで再生する。</summary>
         public float AttackSpeed { get; private set; } = 1f;
@@ -66,7 +68,10 @@ namespace TpsDungeon.Items
         public float CritChance { get; private set; }
         public float CritMultiplier { get; private set; } = 1f;
 
-        /// <summary>攻撃判定の大きさの倍率。</summary>
+        /// <summary>続けて当てた段 1 つごとの 1 撃の上乗せ（0.1 で +10%）。</summary>
+        public float ComboBonus { get; private set; }
+
+        /// <summary>攻撃判定の大きさの倍率。判定に合わせるエフェクトの大きさと、爆発の半径にも掛かる。</summary>
         public float HitboxScale { get; private set; } = 1f;
 
         /// <summary>ノックバックの上乗せ（m/s）。</summary>
@@ -78,7 +83,7 @@ namespace TpsDungeon.Items
         /// <summary>ヒット時の爆発の威力（ヒットのダメージに対する割合）。0 なら爆発しない。</summary>
         public float ExplosionRatio { get; private set; }
 
-        /// <summary>爆発の半径（m）。</summary>
+        /// <summary>爆発の半径（m、サイズの補正後）。</summary>
         public float ExplosionRadius { get; private set; }
 
         /// <summary>ドロップ率の上乗せ（0.1 で +10%）。ドロップの仕組みが読む。</summary>
@@ -93,20 +98,26 @@ namespace TpsDungeon.Items
         /// <summary>叩きつけのあと前へずらして落とす追撃の回数（「多重」の合計の切り捨て）。</summary>
         public int FollowUpCount { get; private set; }
 
-        /// <summary>段 step（0 始まり）の 1 撃（クリティカル前）。</summary>
-        public int HitDamage(int step) => step >= 0 && step < hitDamage.Length ? hitDamage[step] : 0;
+        /// <summary>段 step（0 始まり）の 1 撃（クリティカル前）。combo は続けて当てた段の数で、その分コンボボーナスを上乗せする。</summary>
+        public int HitDamage(int step, int combo = 0)
+        {
+            if (step < 0 || step >= rawHits.Length) return 0;
+
+            double scale = 1.0 + ComboBonus * (double)Math.Max(0, combo);
+            return Math.Max(1, RoundToInt(rawHits[step] * scale));
+        }
 
         /// <summary>段 step のモーション時間（秒、速射の補正後）。</summary>
         public float StepDuration(int step) => step >= 0 && step < stepDurations.Length ? stepDurations[step] : 0f;
 
-        /// <summary>クリティカル込みの平均 DPS（爆発は含めない）。表示用。</summary>
+        /// <summary>クリティカル込みの平均 DPS（爆発とコンボボーナスは含めない）。表示用。</summary>
         public float AverageDps
         {
             get
             {
                 if (CycleDuration <= 0f) return 0f;
                 long sum = 0;
-                foreach (int d in hitDamage) sum += d;
+                for (int i = 0; i < rawHits.Length; i++) sum += HitDamage(i);
                 float critFactor = 1f + CritChance * (CritMultiplier - 1f);
                 return sum * critFactor / CycleDuration;
             }
@@ -133,15 +144,13 @@ namespace TpsDungeon.Items
             float speed = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.RapidFire));
             float source = Math.Max(0f, inputs.Strength + inputs.CharacterAttack * inputs.CharacterAttackWeight);
             float damageUp = Math.Max(0f, 1f + enchant.Amount(EnchantmentKind.DamageUp));
-            float comboBonus = enchant.Amount(EnchantmentKind.ComboBonus);
 
-            var hits = new int[count];
+            var hits = new double[count];
             var scaledDurations = new float[count];
             for (int i = 0; i < count; i++)
             {
                 float share = weightSum > 0f ? Math.Max(0f, weights[i]) / weightSum : 0f;
-                double hit = source * baseCycle * share * damageUp * (1.0 + comboBonus * i);
-                hits[i] = Math.Max(1, RoundToInt(hit));
+                hits[i] = source * baseCycle * share * damageUp;
                 scaledDurations[i] = Math.Max(0f, durations[i]) / speed;
             }
 
@@ -150,17 +159,19 @@ namespace TpsDungeon.Items
             float critMultiplier = inputs.BaseCritMultiplier;
             if (inputs.CritMultiplierModifier != null) critMultiplier = inputs.CritMultiplierModifier(critMultiplier);
 
+            float hitboxScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size));
             return new MeleeWeaponStats(hits, scaledDurations)
             {
+                ComboBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.ComboBonus)),
                 AttackSpeed = speed,
                 CycleDuration = baseCycle / speed,
                 CritChance = Clamp01(critChance),
                 CritMultiplier = Math.Max(1f, critMultiplier),
-                HitboxScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size)),
+                HitboxScale = hitboxScale,
                 KnockbackBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.Knockback)),
                 ReactionScale = Math.Max(0f, 1f + enchant.Amount(EnchantmentKind.Stun)),
                 ExplosionRatio = Math.Max(0f, enchant.Amount(EnchantmentKind.Explosion)),
-                ExplosionRadius = Math.Max(0f, enchant.Secondary(EnchantmentKind.Explosion)),
+                ExplosionRadius = Math.Max(0f, enchant.Secondary(EnchantmentKind.Explosion)) * hitboxScale,
                 DropRateBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.DropUp)),
                 LungeTimeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Duration)),
                 ShockwaveCount = FloorCount(enchant.Amount(EnchantmentKind.ProjectileCount)),

@@ -265,7 +265,14 @@ namespace TpsDungeon.Combat.Editor
                 ? $"基礎攻撃力 {characterAttack:0.#}（プレイヤーの今の値）を足している"
                 : "基礎攻撃力 0 として出している（Play 中はプレイヤーの今の値を足す）");
             text.AppendLine($"1 撃（段ごと）: {string.Join(" / ", hits)}　1 周 {stats.CycleDuration:0.00} 秒");
-            text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。爆発・衝撃波・追撃は含めない）");
+            text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。爆発・衝撃波・追撃・コンボボーナスは含めない）");
+            if (stats.ComboBonus > 0f)
+            {
+                // 表示の COMBO の数 N の 1 撃には、続けて当てた N - 1 段ぶんが乗る。
+                string Example(int shown) => string.Join(" / ", Enumerable.Range(0, stats.StepCount).Select(i => stats.HitDamage(i, shown - 1)));
+                text.AppendLine($"コンボボーナス: 続けて当てた段 1 つごとに +{stats.ComboBonus:P0}（上限なし。空振りか手を止めると途切れる）");
+                text.AppendLine($"  5 COMBO のとき {Example(5)}　10 COMBO のとき {Example(10)}");
+            }
             text.AppendLine($"クリティカル: {stats.CritChance:P0} で ×{stats.CritMultiplier:0.##}");
             text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}　範囲 ×{stats.HitboxScale:0.##}　ノックバック +{stats.KnockbackBonus:0.#} m/s　スタン判定 ×{stats.ReactionScale:0.##}");
 
@@ -482,7 +489,8 @@ namespace TpsDungeon.Combat.Editor
                 string target = r.Enemy != null ? r.Enemy.name : "（消えた敵）";
                 lines.AppendLine($"{recordTimes[i] - recordTimes[0],6:0.00}s  {r.Step + 1} 段目 {KindLabel(r.Kind)} → {target}: {r.Dealt}"
                                  + (r.Dealt != r.Damage ? $"（{r.Damage} のうち）" : string.Empty)
-                                 + (r.IsCritical ? "  クリティカル" : string.Empty));
+                                 + (r.IsCritical ? "  クリティカル" : string.Empty)
+                                 + (r.Combo > 0 ? $"  {r.Combo} COMBO" : string.Empty));
             }
 
             EditorGUILayout.LabelField(lines.ToString().TrimEnd(), EditorStyles.wordWrappedMiniLabel);

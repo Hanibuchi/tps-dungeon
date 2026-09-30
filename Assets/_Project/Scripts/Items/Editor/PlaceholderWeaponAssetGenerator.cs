@@ -63,6 +63,8 @@ namespace TpsDungeon.Items.Editor
         public const string PunchSwingSoundPath = ArmsSounds + "パンチ素振り.mp3";
         public const string PunchHitSoundPath = ArmsSounds + "打撃1.mp3";
         public const string ExplosionSoundPath = ArmsSounds + "爆発2.mp3";
+        // クリティカルは命中の音に重ねるので、命中（剣で斬る）とは別の鋭い斬撃。
+        public const string CriticalHitSoundPath = ArmsSounds + "刀で斬る5.mp3";
         public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
@@ -258,7 +260,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
                 (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具や、叩きつけから走る衝撃波が 1 つ増える。"),
-                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲が 15% 広がる。"),
+                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲と、振りや爆発の大きさが 15% 広がる。"),
                 (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
                 (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える。"),
@@ -269,7 +271,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "飛び道具が 20% 速く飛ぶ。"),
                 (EnchantmentKind.Knockback, "ノックバック", 2f, 0f, "当てた敵を押し出す勢いが増す。"),
                 (EnchantmentKind.Explosion, "爆発", 0.40f, 2.5f, "当てた所で爆発し、周りの敵にダメージの 40% を与える。"),
-                (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "コンボの段が進むごとにダメージが 10% 上がる。"),
+                (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "当てるたびにダメージが 10% ずつ上がり、周をまたいでも続く。空振りか手を止めると途切れる。"),
                 (EnchantmentKind.MoveSpeed, "移動速度", 0.10f, 0f, "歩く速さが 10% 上がる。"),
                 (EnchantmentKind.Exp, "経験値", 0.10f, 0f, "得られる経験値が 10% 増える。"),
                 (EnchantmentKind.MaxHp, "体力増加", 0.10f, 0f, "最大 HP が 10% 増える。"),
