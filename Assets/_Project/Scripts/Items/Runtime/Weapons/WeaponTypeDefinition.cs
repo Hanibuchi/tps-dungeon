@@ -7,7 +7,8 @@ namespace TpsDungeon.Items
     /// <summary>
     /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
-    /// 今は近接（コンボ）の武器種だけを扱う。段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。飛び道具などを足すときは、ここに設定を足すか派生させる。
+    /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
+    /// 遠距離の武器種は rangedKind（弓・持続弓）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
     public sealed class WeaponTypeDefinition : ScriptableObject
@@ -79,8 +80,85 @@ namespace TpsDungeon.Items
         [SerializeField, Range(0f, 1f), Tooltip("追撃の着弾で揺らす強さ（本撃に対する割合）。")]
         private float followUpShakeRatio = 0.4f;
 
+        [Header("遠距離（弓・持続弓。値は仮）")]
+        [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。")]
+        private RangedAttackKind rangedKind;
+
+        [SerializeField, Min(0.05f), Tooltip("撃つ間隔（秒、速射の補正前）。1 発のダメージは 強さ × この秒数。")]
+        private float fireInterval = 0.8f;
+
+        [SerializeField, Tooltip("矢を放つ位置。キャラの足元から見たローカル位置（m）。")]
+        private Vector3 muzzleOffset = new Vector3(0f, 1.4f, 0.5f);
+
+        [SerializeField, Min(1f), Tooltip("照準を探す距離（m）。弓はこの先に何も無ければこの距離の点へ向けて撃つ。持続弓はこの水平距離までの地面に降らせる。")]
+        private float aimMaxDistance = 40f;
+
+        [SerializeField, Tooltip("飛ぶ矢の見た目（+Z が矢の先）。当たり判定はコードが持つので、見た目だけでよい。")]
+        private GameObject projectilePrefab;
+
+        [SerializeField, Min(0.1f), Tooltip("矢の速さ（m/s、弾速のエンチャントの補正前）。")]
+        private float projectileSpeed = 35f;
+
+        [SerializeField, Min(1f), Tooltip("矢が飛べる距離（m）。")]
+        private float projectileRange = 45f;
+
+        [SerializeField, Min(0.01f), Tooltip("矢の当たり判定の半径（m）。")]
+        private float projectileRadius = 0.15f;
+
+        [SerializeField, Min(0f), Tooltip("矢が当てた敵を押し出す速さ（m/s、ノックバックのエンチャントの補正前）。")]
+        private float projectileKnockback = 2f;
+
+        [SerializeField, Range(0f, 45f), Tooltip("「数」で増えた矢を、狙いを中心に左右対称に並べるときの隣との角度（度）。")]
+        private float volleySpreadAngle = 8f;
+
+        [SerializeField, Min(0f), Tooltip("「多重」の一斉射の遅れ。k 回目は本撃から k × この秒数あとに同じ向きへ放つ。")]
+        private float multishotInterval = 0.12f;
+
+        [SerializeField, Min(0f), Tooltip("ホーミングで矢が向きを変えられる速さ（度/秒）。")]
+        private float homingTurnRate = 540f;
+
+        [SerializeField, Min(0f), Tooltip("ホーミングで追う敵を探す距離（m）。矢の前にいる敵だけを追う。")]
+        private float homingRange = 12f;
+
+        [Header("矢の雨（持続弓。値は仮）")]
+        [SerializeField, Min(0.1f), Tooltip("雨の範囲の半径（m、サイズのエンチャントの補正前）。")]
+        private float rainRadius = 2.5f;
+
+        [SerializeField, Min(0.1f), Tooltip("この高さ（m）までの上下にいる敵に当てる。")]
+        private float rainHeight = 2f;
+
+        [SerializeField, Min(0f), Tooltip("雨の続く時間（秒、持続時間のエンチャントの補正前）。")]
+        private float rainDuration = 3f;
+
+        [SerializeField, Min(0.05f), Tooltip("雨がダメージを与える間隔（秒）。")]
+        private float rainTickInterval = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("撃ってから雨が降り始めるまで（秒、弾速のエンチャントで縮む）。")]
+        private float rainDelay = 0.7f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた雨を、狙った所からこの距離（m）の周りに等間隔で置く（サイズで伸びる）。")]
+        private float rainSpreadDistance = 3.5f;
+
+        [SerializeField, Min(0f), Tooltip("「多重」で同じ所にもう一度降らせる遅れ。k 回目は本撃から k × この秒数あとに降り始める。")]
+        private float rainRepeatInterval = 1f;
+
+        [SerializeField, Min(0f), Tooltip("雨の見た目で、1 秒あたりに落とす矢の数（半径 1 m あたり。広いほど多く落とす）。")]
+        private float rainArrowsPerSecond = 6f;
+
+        [SerializeField, Tooltip("範囲の円（照準の地面の円と、降っている雨の円）の線の材質。未設定なら円を出さない。")]
+        private Material rangeRingMaterial;
+
+        [SerializeField, Tooltip("降る雨の範囲の円の色。")]
+        private Color rainRingColor = new Color(1f, 0.55f, 0.2f, 0.85f);
+
+        [SerializeField, Tooltip("照準の地面の円の色。")]
+        private Color aimRingColor = new Color(1f, 1f, 1f, 0.6f);
+
         [Header("見た目")]
-        [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（右手の骨から見たローカル）。" +
+        [SerializeField, Tooltip("手に持つのを左手にする（弓）。偽なら右手。")]
+        private bool heldInLeftHand;
+
+        [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（持つ手の骨から見たローカル）。" +
             "Play 中に手の武器（Tools/TPS Dungeon/Player/手の武器を選ぶ）を Scene ビューで動かすと、ここに書き戻る。")]
         private Vector3 heldLocalPosition;
 
@@ -108,7 +186,7 @@ namespace TpsDungeon.Items
         private EffectLayer[] slamEffects = Array.Empty<EffectLayer>();
 
         [Header("効果音（未設定なら鳴らさない）")]
-        [SerializeField, Tooltip("振りの判定の瞬間に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
+        [SerializeField, Tooltip("振りの判定の瞬間（遠距離なら矢を放った瞬間）に、当たっても外れても鳴らす音（風切り）。段ごとに替えるなら MeleeComboStep.swingSound。")]
         private AudioClip swingSound;
 
         [SerializeField, Tooltip("敵に当たったときに鳴らす音。何体に当たっても 1 振りに 1 回。敵側の被弾音にも重なる。段ごとに替えるなら MeleeComboStep.hitSound。")]
@@ -130,6 +208,32 @@ namespace TpsDungeon.Items
         public float ComboChainGrace => comboChainGrace;
         public float ComboCooldown => comboCooldown;
         public bool IsMelee => comboSteps != null && comboSteps.Length > 0;
+        public RangedAttackKind RangedKind => rangedKind;
+        public bool IsRanged => rangedKind != RangedAttackKind.None;
+        public float FireInterval => fireInterval;
+        public Vector3 MuzzleOffset => muzzleOffset;
+        public float AimMaxDistance => aimMaxDistance;
+        public GameObject ProjectilePrefab => projectilePrefab;
+        public float ProjectileSpeed => projectileSpeed;
+        public float ProjectileRange => projectileRange;
+        public float ProjectileRadius => projectileRadius;
+        public float ProjectileKnockback => projectileKnockback;
+        public float VolleySpreadAngle => volleySpreadAngle;
+        public float MultishotInterval => multishotInterval;
+        public float HomingTurnRate => homingTurnRate;
+        public float HomingRange => homingRange;
+        public float RainRadius => rainRadius;
+        public float RainHeight => rainHeight;
+        public float RainDuration => rangedKind == RangedAttackKind.Rain ? rainDuration : 0f;
+        public float RainTickInterval => rainTickInterval;
+        public float RainDelay => rainDelay;
+        public float RainSpreadDistance => rainSpreadDistance;
+        public float RainRepeatInterval => rainRepeatInterval;
+        public float RainArrowsPerSecond => rainArrowsPerSecond;
+        public Material RangeRingMaterial => rangeRingMaterial;
+        public Color RainRingColor => rainRingColor;
+        public Color AimRingColor => aimRingColor;
+        public bool HeldInLeftHand => heldInLeftHand;
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Vector3 HeldLocalEuler => heldLocalEuler;
         public GameObject SwingEffect => swingEffect;

@@ -18,7 +18,7 @@ namespace TpsDungeon.Player.Editor
     ///   WeaponType (int) … <see cref="Weapon"/> の値。持ち替えたら入れる
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
     ///   ComboStep (int) … 近接武器のコンボの段（0 始まり）。Attack より先に入れる
-    ///   AttackSpeed (float) … 近接武器の振りの再生速度（速射のエンチャント）。既定 1
+    ///   AttackSpeed (float) … 近接武器の振り・弓の放して引き直すモーションの再生速度（速射のエンチャント）。既定 1
     ///   Action (int) / PlayAction (trigger) … <see cref="CharacterAction"/> の値を入れてトリガーを立てると全身で再生する（CharacterActions が叩く）
     /// </summary>
     public static class CharacterAnimatorBuilder
@@ -535,6 +535,13 @@ namespace TpsDungeon.Player.Editor
 
             AnimatorState release = sm.AddState("Bow Release", new Vector3(450, 500));
             release.motion = clips.BowShot;
+
+            // 撃つ間隔がモーションの 1 周より短いとき（速射）、RangedAttacker が AttackSpeed を上げて放す・引き直すを速める。
+            foreach (AnimatorState state in new[] { draw, release })
+            {
+                state.speedParameterActive = true;
+                state.speedParameter = AttackSpeedParam;
+            }
 
             AnimatorStateTransition t;
 

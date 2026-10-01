@@ -7,8 +7,8 @@ namespace TpsDungeon.Hud
 {
     /// <summary>
     /// 敵に当てたダメージの数字を、当たった場所に浮かべる。
-    /// MeleeAttacker.Dealt を受けて 1 撃ごとに 1 つ出し、はじけて上がりながら消す。
-    /// クリティカルは大きく金、爆発の一撃は小さく橙（見た目は GameHud.uss の .damage-number）。
+    /// MeleeAttacker.Dealt・RangedAttacker.Dealt を受けて 1 撃ごとに 1 つ出し、はじけて上がりながら消す。
+    /// クリティカルは大きく金、爆発の一撃と矢の雨の刻みは小さく橙（見た目は GameHud.uss の .damage-number）。
     /// クリティカルの 1 撃には数字の下に「Critical」を、コンボボーナスが乗った 1 撃にはその下に「N COMBO」を添える。N が大きいほど白→金→赤。
     /// GameHudView と同じ GameObject に付けて、同じ UIDocument に描く。
     /// </summary>
@@ -52,6 +52,9 @@ namespace TpsDungeon.Hud
         [SerializeField, Tooltip("当てたダメージの出どころ。未設定なら親から探す。")]
         private MeleeAttacker attacker;
 
+        [SerializeField, Tooltip("遠距離の武器で当てたダメージの出どころ。未設定なら親から探す。")]
+        private RangedAttacker ranged;
+
         [SerializeField, Tooltip("数字を画面へ写すカメラ。未設定なら Camera.main。")]
         private Camera viewCamera;
 
@@ -77,12 +80,14 @@ namespace TpsDungeon.Hud
         private void Reset()
         {
             attacker = GetComponentInParent<MeleeAttacker>();
+            ranged = GetComponentInParent<RangedAttacker>();
         }
 
         private void Awake()
         {
             document = GetComponent<UIDocument>();
             if (attacker == null) attacker = GetComponentInParent<MeleeAttacker>();
+            if (ranged == null) ranged = GetComponentInParent<RangedAttacker>();
         }
 
         private void OnEnable()
@@ -98,11 +103,13 @@ namespace TpsDungeon.Hud
             idle.Clear();
 
             if (attacker != null) attacker.Dealt += OnDealt;
+            if (ranged != null) ranged.Dealt += OnDealt;
         }
 
         private void OnDisable()
         {
             if (attacker != null) attacker.Dealt -= OnDealt;
+            if (ranged != null) ranged.Dealt -= OnDealt;
             layer?.RemoveFromHierarchy();
             layer = null;
             active.Clear();
@@ -112,7 +119,7 @@ namespace TpsDungeon.Hud
         private void OnDealt(MeleeHitRecord record)
         {
             if (record.Damage <= 0) return;
-            Show(record.Point, record.Damage, record.IsCritical, record.Kind == MeleeHitKind.Explosion, record.Combo);
+            Show(record.Point, record.Damage, record.IsCritical, record.Kind == MeleeHitKind.Explosion || record.Kind == MeleeHitKind.Tick, record.Combo);
         }
 
         /// <summary>world に amount の数字を出す。minor はエンチャントの一撃の小さな数字。combo が 2 以上なら「N COMBO」を添える。</summary>

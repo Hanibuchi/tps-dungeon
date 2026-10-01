@@ -11,13 +11,14 @@ namespace TpsDungeon.Items.Editor
 {
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
-    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）: Assets/_Project/Items/Weapons/
+    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）: Assets/_Project/Items/Weapons/
     /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 6 本（Notion の武器一覧 DB で武器種＝01 の 3 本と、02・04・05 の 1 本ずつ）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 13 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11 の 4 本）と、拾える物・手に持つ見た目のプレハブ
+    /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円の材質（RangeRing）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
-    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマー）があればそれを、無ければプリミティブの剣を使う。
+    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマー・LowPoly の弓）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
     public static class PlaceholderWeaponAssetGenerator
@@ -31,6 +32,10 @@ namespace TpsDungeon.Items.Editor
         public const string DashThrustTypePath = WeaponsFolder + "/WeaponType_02_DashThrust.asset";
         public const string TwoHandedTypePath = WeaponsFolder + "/WeaponType_04_TwoHanded.asset";
         public const string HammerTypePath = WeaponsFolder + "/WeaponType_05_Hammer.asset";
+        public const string BowTypePath = WeaponsFolder + "/WeaponType_09_Bow.asset";
+        public const string RainBowTypePath = WeaponsFolder + "/WeaponType_11_RainBow.asset";
+        public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
+        public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
         public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
         public const string FistsPath = WeaponsFolder + "/Weapon_Fists.asset";
 
@@ -66,11 +71,22 @@ namespace TpsDungeon.Items.Editor
         // クリティカルは命中の音に重ねるので、命中（剣で斬る）とは別の鋭い斬撃。
         public const string CriticalHitSoundPath = ArmsSounds + "刀で斬る5.mp3";
         public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
+        public const string BowReleaseSoundPath = ArmsSounds + "弓矢を放つ.mp3";
+        public const string ArrowHitSoundPath = ArmsSounds + "弓矢が刺さる.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
         private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
+        private const string LowPolyWeapons = "Assets/ThirdParty/3D Model/Blink/Weapons/LowPoly/FreeRPGWeapons/_PREFABS/";
+        // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
+        private const string ArrowModelPath = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/Arrow_01.prefab";
+
+        /// <summary>飛ぶ矢の見た目の長さ（m）。</summary>
+        private const float ArrowLength = 0.8f;
+
+        /// <summary>弓の見た目の長さ（m、上下の端から端）。</summary>
+        private const float BowLength = 1.2f;
 
         /// <summary>片手剣の見た目の長さ（m）。素材の大きさはまちまちなので、武器ごとの長さに合わせて縮める。</summary>
         private const float SwordLength = 0.9f;
@@ -109,6 +125,8 @@ namespace TpsDungeon.Items.Editor
             public float Length = SwordLength;
             public Color Blade;
             public Color Hilt;
+            /// <summary>真ん中を原点に置く（弓。真ん中の握りを手に持つ）。偽なら下端（剣の柄の根元）を原点に。</summary>
+            public bool CenterPivot;
         }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
@@ -122,12 +140,16 @@ namespace TpsDungeon.Items.Editor
             WriteRankTable();
             EnchantmentRollSettings roll = WriteRollSettings();
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments = WriteEnchantments();
+            Material ring = WriteRangeRingMaterial();
+            GameObject arrow = WriteArrowPrefab();
             var types = new Dictionary<string, WeaponTypeDefinition>
             {
                 [OneHandedTypePath] = WriteOneHandedType(enchantments, roll),
                 [DashThrustTypePath] = WriteDashThrustType(enchantments, roll),
                 [TwoHandedTypePath] = WriteTwoHandedType(enchantments, roll),
                 [HammerTypePath] = WriteHammerType(enchantments, roll),
+                [BowTypePath] = WriteBowType(enchantments, roll, arrow, ring),
+                [RainBowTypePath] = WriteRainBowType(enchantments, roll, arrow, ring),
             };
 
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath]);
@@ -195,6 +217,35 @@ namespace TpsDungeon.Items.Editor
                 TypePath = HammerTypePath, ModelPath = StylizedHammers + "Hammer1_1_3.prefab", Length = 1.1f,
                 Blade = new Color32(130, 125, 120, 255), Hilt = new Color32(95, 70, 45, 255),
             };
+
+            // 09 弓
+            yield return Bow("Weapon_OldBow", "古びた弓", WeaponRank.E, 3f, "弦が緩み、矢はまっすぐ飛ばない。",
+                BowTypePath, "Bow_Basic.prefab");
+            yield return Bow("Weapon_HunterBow", "狩人の弓", WeaponRank.C, 19f, "森で獣を追うために作られた、扱いやすい弓。",
+                BowTypePath, "Bow_Medium.prefab");
+            yield return Bow("Weapon_SoldierLongbow", "兵士の長弓", WeaponRank.A, 41f, "放たれた矢は、落ちた場所を炎の輪に変える。",
+                BowTypePath, "Bow_Epic.prefab", 1.35f);
+
+            // 11 持続弓
+            yield return Bow("Weapon_PoisonArrowBow", "毒矢の弓", WeaponRank.E, 6f, "降り注いだ矢が、地面にじわりと毒を残す。",
+                RainBowTypePath, "Bow_Basic.prefab");
+            yield return Bow("Weapon_ArrowRainBow", "矢雨の弓", WeaponRank.C, 23f, "一射で空を埋め、狙った地点に矢が降り続ける。",
+                RainBowTypePath, "Bow_Medium.prefab");
+            yield return Bow("Weapon_SkyPiercerLongbow", "天穿の長弓", WeaponRank.A, 40f, "天へ放たれた矢は、幾重にも分かれて落ちてくる。",
+                RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+            yield return Bow("Weapon_EndlessDownpour", "終わらぬ驟雨", WeaponRank.Unique, 23f, "一度降り始めた矢の雨は、いつまでも止むことがない。",
+                RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+        }
+
+        private static WeaponSpec Bow(string id, string name, WeaponRank rank, float strength, string description, string typePath,
+            string model, float length = BowLength)
+        {
+            return new WeaponSpec
+            {
+                Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
+                TypePath = typePath, ModelPath = LowPolyWeapons + model, Length = length, CenterPivot = true,
+                Blade = new Color32(140, 100, 60, 255), Hilt = new Color32(90, 60, 40, 255),
+            };
         }
 
         // ---- 共通のデータ ----------------------------------------------
@@ -259,16 +310,16 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具や叩きつけが 1 つ増える。叩きつけは前を中心に扇状に並ぶ。"),
-                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲と、振りや爆発の大きさが 15% 広がる。"),
-                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
-                (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけが 1 つ増える。矢と叩きつけは前を中心に扇状に、矢の雨は狙った所の周りに並ぶ。"),
+                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲（矢の雨の範囲も）と、振りや爆発の大きさが 15% 広がる。"),
+                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "矢の雨やダッシュの続く時間が 20% 延びる。"),
+                (EnchantmentKind.Pierce, "貫通", 1f, 0f, "矢が敵を 1 体多く貫く。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "少し遅れてもう一度放つ一斉射（矢の雨は同じ所にもう一度）や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
-                (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "飛び道具が敵を追う。"),
+                (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "矢が前にいる敵を追って曲がる。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
                 (EnchantmentKind.Stun, "スタン", 0.25f, 0f, "敵をスタン・気絶させやすくなる（一撃の重さ 25% 増しで判定）。"),
-                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "飛び道具が 20% 速く飛ぶ。"),
+                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "矢が 20% 速く飛ぶ。矢の雨は 20% 早く降り始める。"),
                 (EnchantmentKind.Knockback, "ノックバック", 2f, 0f, "当てた敵を押し出す勢いが増す。"),
                 (EnchantmentKind.Explosion, "爆発", 0.40f, 2.5f, "当てた所で爆発し、周りの敵にダメージの 40% を与える。"),
                 (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "当てるたびにダメージが 10% ずつ上がり、周をまたいでも続く。空振りか手を止めると途切れる。"),
@@ -562,6 +613,147 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
+        /// <summary>
+        /// 弓（09）。照準の先へ矢をまっすぐ放つ。数で扇状に増え、多重で遅れてもう一斉射、貫通・ホーミング・爆発が付く。値は仮。
+        /// 撃つ間隔 0.8 秒なので、1 発は 強さ × 0.8。
+        /// </summary>
+        private static WeaponTypeDefinition WriteBowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, GameObject arrow, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(BowTypePath);
+            SerializedObject serialized = BeginType(type, "09", "弓", 3, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
+                EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
+                EnchantmentKind.ProjectileCount, EnchantmentKind.Explosion, EnchantmentKind.Pierce, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 3 = CharacterAnimatorBuilder.Weapon.Bow
+
+            WriteRangedCommon(serialized, RangedAttackKind.Bow, 0.8f, arrow, ring);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 持続弓（11）。照準の地面へ上から矢を降らせ、半径 2.5 m に 0.5 秒ごと 3 秒間（6 刻み）ダメージ。値は仮。
+        /// 撃つ間隔 1.2 秒なので、範囲にずっと居た 1 体が受ける合計は 強さ × 1.2。数で周りに雨が増え、多重で同じ所にもう一度降る。
+        /// </summary>
+        private static WeaponTypeDefinition WriteRainBowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, GameObject arrow, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(RainBowTypePath);
+            SerializedObject serialized = BeginType(type, "11", "持続弓", 3, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Size, EnchantmentKind.Stun, EnchantmentKind.DamageUp,
+                EnchantmentKind.DropUp, EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
+                EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 3 = CharacterAnimatorBuilder.Weapon.Bow
+
+            WriteRangedCommon(serialized, RangedAttackKind.Rain, 1.2f, arrow, ring);
+            serialized.FindProperty("aimMaxDistance").floatValue = 25f;
+            serialized.FindProperty("rainRadius").floatValue = 2.5f;
+            serialized.FindProperty("rainHeight").floatValue = 2f;
+            serialized.FindProperty("rainDuration").floatValue = 3f;
+            serialized.FindProperty("rainTickInterval").floatValue = 0.5f;
+            serialized.FindProperty("rainDelay").floatValue = 0.7f;
+            serialized.FindProperty("rainSpreadDistance").floatValue = 3.5f;
+            serialized.FindProperty("rainRepeatInterval").floatValue = 1f;
+            serialized.FindProperty("rainArrowsPerSecond").floatValue = 6f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>弓・持続弓に共通の値。コンボの段は持たない（近接では振らない）。</summary>
+        private static void WriteRangedCommon(SerializedObject serialized, RangedAttackKind kind, float fireInterval, GameObject arrow,
+            Material ring)
+        {
+            serialized.FindProperty("comboSteps").arraySize = 0;
+            serialized.FindProperty("rangedKind").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(RangedAttackKind)), kind);
+            serialized.FindProperty("fireInterval").floatValue = fireInterval;
+            serialized.FindProperty("muzzleOffset").vector3Value = new Vector3(0f, 1.4f, 0.5f);
+            serialized.FindProperty("aimMaxDistance").floatValue = 40f;
+            serialized.FindProperty("projectilePrefab").objectReferenceValue = arrow;
+            serialized.FindProperty("projectileSpeed").floatValue = 35f;
+            serialized.FindProperty("projectileRange").floatValue = 45f;
+            serialized.FindProperty("projectileRadius").floatValue = 0.15f;
+            serialized.FindProperty("projectileKnockback").floatValue = 2f;
+            serialized.FindProperty("volleySpreadAngle").floatValue = 8f;
+            serialized.FindProperty("multishotInterval").floatValue = 0.12f;
+            serialized.FindProperty("homingTurnRate").floatValue = 540f;
+            serialized.FindProperty("homingRange").floatValue = 12f;
+            serialized.FindProperty("rangeRingMaterial").objectReferenceValue = ring;
+            serialized.FindProperty("heldInLeftHand").boolValue = true;
+
+            serialized.FindProperty("swingEffect").objectReferenceValue = null;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.3f;
+            WriteEffectLayers(serialized.FindProperty("slamEffects"), Array.Empty<EffectLayer>());
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(BowReleaseSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(ArrowHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
+        }
+
+        /// <summary>
+        /// 飛ぶ矢の見た目。原点が矢じりの先で、矢羽根は -Z（ArrowProjectile の決まり）。当たり判定は持たず、細い白の尾を引く。
+        /// </summary>
+        private static GameObject WriteArrowPrefab()
+        {
+            var root = new GameObject("Projectile_Arrow");
+            try
+            {
+                var source = AssetDatabase.LoadAssetAtPath<GameObject>(ArrowModelPath);
+                if (source != null)
+                {
+                    var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                    foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
+                    model.transform.SetParent(root.transform, false);
+                    // 素材は -Z が矢じりなので、裏返して +Z に向ける。
+                    model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                    if (TryMeasure(model, out Bounds raw, root.transform) && raw.size.z > 1e-4f)
+                        model.transform.localScale = Vector3.one * (ArrowLength / raw.size.z);
+                    TryMeasure(model, out Bounds placed, root.transform);
+                    model.transform.localPosition = new Vector3(-placed.center.x, -placed.center.y, -placed.max.z);
+                }
+                else
+                {
+                    Debug.LogWarning($"矢の素材が無い: {ArrowModelPath}（プリミティブで代える）");
+                    Material shaft = Gen.Material("Placeholder_ArrowShaft", new Color32(150, 90, 50, 255));
+                    Gen.Part(root, PrimitiveType.Cube, shaft, new Vector3(0f, 0f, -ArrowLength * 0.5f), new Vector3(0.02f, 0.02f, ArrowLength));
+                }
+
+                var trail = root.AddComponent<TrailRenderer>();
+                trail.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(RangeRingMaterialPath);
+                trail.time = 0.12f;
+                trail.minVertexDistance = 0.1f;
+                trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.03f), new Keyframe(1f, 0f));
+                trail.colorGradient = new Gradient
+                {
+                    colorKeys = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    alphaKeys = new[] { new GradientAlphaKey(0.6f, 0f), new GradientAlphaKey(0f, 1f) },
+                };
+                trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                trail.receiveShadows = false;
+
+                return PrefabUtility.SaveAsPrefabAsset(root, ArrowPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>範囲の円と矢の尾の線の材質。頂点色と透明をそのまま出す（Sprites/Default）。</summary>
+        private static Material WriteRangeRingMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(RangeRingMaterialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Sprites/Default")) { name = "RangeRing" };
+                AssetDatabase.CreateAsset(material, RangeRingMaterialPath);
+            }
+
+            return material;
+        }
+
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
         private static void WriteFists(WeaponTypeDefinition type)
         {
@@ -679,7 +871,7 @@ namespace TpsDungeon.Items.Editor
             // 床に落ちているときは寝かせる。
             iconSpec.BuildModel = (root, mat) =>
             {
-                root.transform.localPosition = new Vector3(0f, 0.05f, -spec.Length * 0.5f);
+                root.transform.localPosition = new Vector3(0f, 0.05f, spec.CenterPivot ? 0f : -spec.Length * 0.5f);
                 root.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 BuildSword(root, spec, mat);
             };
@@ -737,7 +929,7 @@ namespace TpsDungeon.Items.Editor
         private static void BuildSword(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
         {
             var source = string.IsNullOrEmpty(spec.ModelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
-            if (source != null && TryPlaceModel(parent, source, spec.Length)) return;
+            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot)) return;
 
             Material blade = material($"Placeholder_{spec.Id}_Blade", spec.Blade);
             Material hilt = material($"Placeholder_{spec.Id}_Hilt", spec.Hilt);
@@ -747,7 +939,7 @@ namespace TpsDungeon.Items.Editor
                 new Vector3(0.06f, spec.Length - 0.17f, 0.012f));
         }
 
-        private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength)
+        private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength, bool centered = false)
         {
             var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
@@ -772,9 +964,9 @@ namespace TpsDungeon.Items.Editor
             model.transform.localRotation = toUp;
             model.transform.localScale = Vector3.one * scale;
 
-            // 回したあとの下端を原点へ。
+            // 回したあとの下端（centered なら真ん中）を原点へ。
             TryMeasure(model, out Bounds rotated, pivot.transform);
-            model.transform.localPosition = new Vector3(-rotated.center.x, -rotated.min.y, -rotated.center.z);
+            model.transform.localPosition = new Vector3(-rotated.center.x, centered ? -rotated.center.y : -rotated.min.y, -rotated.center.z);
             return true;
         }
 

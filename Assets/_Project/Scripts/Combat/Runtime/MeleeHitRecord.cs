@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace TpsDungeon.Combat
 {
-    /// <summary>近接攻撃のダメージの出どころ。</summary>
+    /// <summary>攻撃のダメージの出どころ（近接も遠距離も）。</summary>
     public enum MeleeHitKind
     {
-        /// <summary>段の 1 撃（振り・走り・叩きつけ。数のエンチャントで増えた叩きつけも）。</summary>
+        /// <summary>段の 1 撃（振り・走り・叩きつけ。数のエンチャントで増えた叩きつけも）。弓の矢（数・多重で増えた矢も）。</summary>
         Hit,
 
         /// <summary>爆発のエンチャント。</summary>
@@ -14,15 +14,18 @@ namespace TpsDungeon.Combat
 
         /// <summary>叩きつけの追撃（多重のエンチャント）。</summary>
         FollowUp,
+
+        /// <summary>矢の雨（持続弓）の 1 刻み。</summary>
+        Tick,
     }
 
-    /// <summary>近接攻撃で敵に当てた 1 回分。MeleeAttacker.Dealt で知らせる。</summary>
+    /// <summary>攻撃で敵に当てた 1 回分。MeleeAttacker.Dealt・RangedAttacker.Dealt で知らせる。</summary>
     public readonly struct MeleeHitRecord
     {
         public readonly MeleeHitKind Kind;
         public readonly EnemyHealth Enemy;
 
-        /// <summary>出した段（0 始まり）。</summary>
+        /// <summary>出した段（0 始まり）。遠距離の武器では 0。</summary>
         public readonly int Step;
 
         /// <summary>与えようとしたダメージ（クリティカル込み）。</summary>

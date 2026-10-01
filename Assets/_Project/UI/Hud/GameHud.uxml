@@ -31,6 +31,13 @@
             </ui:VisualElement>
             <kit:OrnateFrame class="hud-frame" />
         </ui:VisualElement>
+        <ui:VisualElement name="crosshair" class="crosshair" picking-mode="Ignore">
+            <ui:VisualElement class="crosshair__tick crosshair__tick--top" picking-mode="Ignore" />
+            <ui:VisualElement class="crosshair__tick crosshair__tick--bottom" picking-mode="Ignore" />
+            <ui:VisualElement class="crosshair__tick crosshair__tick--left" picking-mode="Ignore" />
+            <ui:VisualElement class="crosshair__tick crosshair__tick--right" picking-mode="Ignore" />
+            <ui:VisualElement class="crosshair__dot" picking-mode="Ignore" />
+        </ui:VisualElement>
         <ui:VisualElement name="map-overlay" class="map-overlay" picking-mode="Ignore">
             <ui:VisualElement class="map-large" picking-mode="Ignore">
                 <ui:VisualElement class="map-large__clip" picking-mode="Ignore">

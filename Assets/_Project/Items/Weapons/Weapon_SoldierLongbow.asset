@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_SoldierLongbow
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_SoldierLongbow
+  displayName: "\u5175\u58EB\u306E\u9577\u5F13"
+  description: "\u653E\u305F\u308C\u305F\u77E2\u306F\u3001\u843D\u3061\u305F\u5834\u6240\u3092\u708E\u306E\u8F2A\u306B\u5909\u3048\u308B\u3002"
+  icon: {fileID: 2800000, guid: 3c13ddb663f4b4e8e9434576286d8a23, type: 3}
+  worldPrefab: {fileID: 612711745130677820, guid: c06ef57fa08304a97b46d4ba065addc0, type: 3}
+  rank: 4
+  strength: 41
+  weaponType: {fileID: 11400000, guid: b8c890172b57e476fb9c042ab8874056, type: 2}
+  heldModel: {fileID: 1062024453696047365, guid: adc8e5a1382904945af8431a27695196, type: 3}
