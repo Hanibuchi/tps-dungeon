@@ -31,6 +31,8 @@ namespace TpsDungeon.Combat
         // CharacterAnimatorBuilder（エディタ専用アセンブリ）が焼き込んだ値。向こうを変えたらここも揃えること。
         private const string AttackParam = "Attack";
         private const string AttackSpeedParam = "AttackSpeed";
+        private const string UpperBodyLayer = "UpperBody";
+        private static readonly int BowDrawState = Animator.StringToHash("Bow Draw");
 
         /// <summary>
         /// 弓のモーションの 1 周（Bow Release で放してから、つがえ直して Bow Draw で引き切るまで。BowShot の 13〜29F と 0〜7F、30fps）。
@@ -44,6 +46,9 @@ namespace TpsDungeon.Combat
 
         /// <summary>雨の 1 刻みの命中の音の大きさ（武器種の音量に対して）。刻みは何度も来るので控えめに。</summary>
         private const float TickHitSoundRatio = 0.4f;
+
+        /// <summary>雨の刻みごとに鳴らす降る音の大きさ（降り始めの音に対して）。</summary>
+        private const float RainTickSoundRatio = 0.5f;
 
         /// <summary>雨の 1 刻みの命中の見た目の大きさ（武器種の命中の見た目に対して）。</summary>
         private const float TickHitEffectRatio = 0.5f;
@@ -106,6 +111,12 @@ namespace TpsDungeon.Combat
 
         // 同じフレームに何本当たっても、命中・クリティカルの音は 1 回だけ鳴らす。
         private int hitSoundFrame = -1;
+        private int stickSoundFrame = -1;
+        private int rainSoundFrame = -1;
+
+        // 弓のモーションが引き絞り（Bow Draw）に入った瞬間に引き絞る音を鳴らすため、前のフレームに引き絞っていたかを覚える。
+        private int upperBodyLayer = -1;
+        private bool wasDrawing;
         private int criticalSoundFrame = -1;
 
         private readonly List<PendingVolley> volleys = new List<PendingVolley>();
@@ -228,6 +239,7 @@ namespace TpsDungeon.Combat
         private void LateUpdate()
         {
             WeaponTypeDefinition type = heldWeapon != null ? heldWeapon.WeaponType : null;
+            UpdateDrawSound(type);
             if (type == null || !Aim.HasValue)
             {
                 if (aimRing != null) aimRing.SetVisible(false);
@@ -317,7 +329,7 @@ namespace TpsDungeon.Combat
                 Vector3 arrowDirection = Quaternion.AngleAxis(angle, Vector3.up) * direction;
                 ArrowProjectile.Launch(type.ProjectilePrefab, muzzle, arrowDirection, settings,
                     (enemy, point, travel) => ArrowHit(type, shot, enemy, point, travel),
-                    point => Explode(point, shot.ExplosionDamage(shot.ShotDamage), shot));
+                    point => ArrowStuck(type, shot, point));
             }
         }
 
@@ -357,6 +369,7 @@ namespace TpsDungeon.Combat
             {
                 foreach (Vector3 center in centers)
                 {
+                    int ticks = 0;
                     ArrowRainZone.Spawn(center, new ArrowRainZone.Settings
                     {
                         Radius = radius,
@@ -368,7 +381,7 @@ namespace TpsDungeon.Combat
                         EffectRadius = type.RainEffectRadius,
                         RingMaterial = type.RangeRingMaterial,
                         RingColor = type.RainRingColor,
-                    }, (c, r, h) => RainTick(type, shot, c, r, h));
+                    }, (c, r, h) => RainTick(type, shot, c, r, h, ticks++ == 0));
                 }
             }
         }
@@ -412,9 +425,28 @@ namespace TpsDungeon.Combat
             Explode(point, shot.ExplosionDamage(damage), shot);
         }
 
-        /// <summary>雨の 1 刻み。円柱の中の生きた敵みんなに刻みのダメージ（クリティカルは毎刻み引く）。押し出しはエンチャントの分だけ。</summary>
-        private void RainTick(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 center, float radius, float height)
+        /// <summary>矢が壁や床に刺さった。刺さる音（同じフレームに何本刺さっても 1 回）と、爆発のエンチャント。</summary>
+        private void ArrowStuck(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 point)
         {
+            if (stickSoundFrame != Time.frameCount)
+            {
+                stickSoundFrame = Time.frameCount;
+                PlaySound(type.StickSound, point, type.SoundVolume * type.StickSoundVolume);
+            }
+
+            Explode(point, shot.ExplosionDamage(shot.ShotDamage), shot);
+        }
+
+        /// <summary>雨の 1 刻み。円柱の中の生きた敵みんなに刻みのダメージ（クリティカルは毎刻み引く）。押し出しはエンチャントの分だけ。</summary>
+        private void RainTick(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 center, float radius, float height, bool first)
+        {
+            // 降る音は当たっても外れても鳴らす。降り始めは大きく、あとの刻みは控えめに。同じフレームに何か所降っても 1 回。
+            if (rainSoundFrame != Time.frameCount)
+            {
+                rainSoundFrame = Time.frameCount;
+                PlaySound(type.RainSound, center, type.SoundVolume * type.RainSoundVolume * (first ? 1f : RainTickSoundRatio));
+            }
+
             foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(center, radius, height))
             {
                 bool critical = UnityEngine.Random.value < shot.CritChance;
@@ -660,9 +692,26 @@ namespace TpsDungeon.Combat
             rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
         }
 
+        /// <summary>弓のモーションが引き絞り（Bow Draw）に入った瞬間に、引き絞る音を鳴らす（持ち替えたときと、撃って引き直すとき）。</summary>
+        private void UpdateDrawSound(WeaponTypeDefinition type)
+        {
+            bool drawing = false;
+            if (type != null && animator != null && upperBodyLayer >= 0)
+            {
+                drawing = animator.GetCurrentAnimatorStateInfo(upperBodyLayer).shortNameHash == BowDrawState
+                          || (animator.IsInTransition(upperBodyLayer)
+                              && animator.GetNextAnimatorStateInfo(upperBodyLayer).shortNameHash == BowDrawState);
+            }
+
+            if (drawing && !wasDrawing) PlaySound(type.DrawSound, Muzzle(type), type.SoundVolume);
+            wasDrawing = drawing;
+        }
+
         private void CacheAnimatorParameters()
         {
             if (animator == null) return;
+
+            upperBodyLayer = animator.GetLayerIndex(UpperBodyLayer);
 
             foreach (AnimatorControllerParameter p in animator.parameters)
             {

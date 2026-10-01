@@ -67,6 +67,11 @@ MonoBehaviour:
   rainEffect: {fileID: 7957833072274404953, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
   rainEffectRadius: 4
   rainAimPitch: 35
+  drawSound: {fileID: 8300000, guid: 9fae71eb8ca8147d4955767b4d1c3872, type: 3}
+  stickSound: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
+  stickSoundVolume: 0.6
+  rainSound: {fileID: 8300000, guid: ca272340699484764b94f64887cbee73, type: 3}
+  rainSoundVolume: 0.8
   rangeRingMaterial: {fileID: 2100000, guid: d56dffd4cdb3c4f8abcb62a971009d5d, type: 2}
   rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
   aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}

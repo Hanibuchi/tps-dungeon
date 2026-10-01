@@ -154,6 +154,22 @@ namespace TpsDungeon.Items
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
 
+        [Header("遠距離の効果音（未設定なら鳴らさない。放つ音は swingSound、敵に当たった音は hitSound）")]
+        [SerializeField, Tooltip("弓を引き絞る音。弓のモーションが引き絞り（Bow Draw）に入るたびに鳴らす（持ち替えたときと、撃って引き直すとき）。")]
+        private AudioClip drawSound;
+
+        [SerializeField, Tooltip("矢が壁や床に刺さった音。")]
+        private AudioClip stickSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("壁や床に刺さった音の大きさ（武器種の音量に対して）。")]
+        private float stickSoundVolume = 0.6f;
+
+        [SerializeField, Tooltip("矢の雨が降る音。降り始めと、刻みごとに鳴らす。")]
+        private AudioClip rainSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("矢の雨が降る音の大きさ（武器種の音量に対して）。刻みごとの音はこの半分。")]
+        private float rainSoundVolume = 0.8f;
+
         [SerializeField, Tooltip("範囲の円（照準の地面の円と、降っている雨の円）の線の材質。未設定なら円を出さない。")]
         private Material rangeRingMaterial;
 
@@ -242,6 +258,11 @@ namespace TpsDungeon.Items
         public GameObject RainEffect => rainEffect;
         public float RainEffectRadius => rainEffectRadius;
         public float RainAimPitch => rainAimPitch;
+        public AudioClip DrawSound => drawSound;
+        public AudioClip StickSound => stickSound;
+        public float StickSoundVolume => stickSoundVolume;
+        public AudioClip RainSound => rainSound;
+        public float RainSoundVolume => rainSoundVolume;
         public Material RangeRingMaterial => rangeRingMaterial;
         public Color RainRingColor => rainRingColor;
         public Color AimRingColor => aimRingColor;

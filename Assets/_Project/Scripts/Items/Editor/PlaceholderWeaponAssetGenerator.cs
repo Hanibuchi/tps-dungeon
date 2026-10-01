@@ -75,6 +75,9 @@ namespace TpsDungeon.Items.Editor
         public const string DashThrustSoundPath = ArmsSounds + "居合抜き1.mp3";
         public const string BowReleaseSoundPath = ArmsSounds + "弓矢を放つ.mp3";
         public const string ArrowHitSoundPath = ArmsSounds + "弓矢が刺さる.mp3";
+        public const string BowDrawSoundPath = ArmsSounds + "弓を引き絞る1.mp3";
+        // 持続弓の雨は隕石の火の玉が降る見た目なので、炎の音を降り始めと刻みごとに鳴らす。
+        public const string RainSoundPath = ArmsSounds + "火炎魔法1.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
 
@@ -698,6 +701,12 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(BowReleaseSoundPath);
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(ArrowHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.8f;
+            serialized.FindProperty("drawSound").objectReferenceValue = LoadSound(BowDrawSoundPath);
+            // 壁や床に刺さった音は敵に当たった音と同じ素材を、少し小さく鳴らす。
+            serialized.FindProperty("stickSound").objectReferenceValue = LoadSound(ArrowHitSoundPath);
+            serialized.FindProperty("stickSoundVolume").floatValue = 0.6f;
+            serialized.FindProperty("rainSound").objectReferenceValue = kind == RangedAttackKind.Rain ? LoadSound(RainSoundPath) : null;
+            serialized.FindProperty("rainSoundVolume").floatValue = 0.8f;
         }
 
         /// <summary>
