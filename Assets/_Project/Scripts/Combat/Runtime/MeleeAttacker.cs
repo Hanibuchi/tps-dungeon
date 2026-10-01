@@ -13,7 +13,8 @@ namespace TpsDungeon.Combat
     /// <see cref="AimForward"/>（向き）を渡してもらう。プレイヤーは PlayerMeleeInput が、仲間は AI が叩く。
     /// 押すたびにコンボを 1 段ずつ進め（MeleeComboState）、段の判定の瞬間に段の当て方（MeleeComboStep.motion）で当てる:
     ///   Swing … 前方の箱の中の敵へ
-    ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ
+    ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 走り 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ。
+    ///           「多重」1 つで走る回数が 1 回増える。走り終えたら段の頭から（溜めて突き出して）もう一度走る
     ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で叩きつけが増え、持ち主を中心に扇状に並ぶ。
     ///           「多重」で叩きつけごとに、その向きへずらした追撃が遅れて落ちる（本撃と同じダメージ）
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
@@ -118,6 +119,11 @@ namespace TpsDungeon.Combat
 
         private Lunge lunge;
 
+        // 多重で走り足す残りの回数と、次に走り出すのを待っている段（待っていなければ -1）・その残り秒数。
+        private int dashesLeft;
+        private int nextDashStep = -1;
+        private float nextDashDelay;
+
         // 溜めてから放つ振りのエフェクト（SpawnLeadingSwingEffect）の、放つ粒。判定の瞬間にこちらから出す。
         private readonly List<ParticleSystem> pendingRelease = new List<ParticleSystem>();
         private readonly List<Collider> lungeIgnored = new List<Collider>();
@@ -170,10 +176,10 @@ namespace TpsDungeon.Combat
         public int ComboCount => stats != null && stats.ComboBonus > 0f ? chain.Count : 0;
 
         /// <summary>走る段で走っている最中か。持ち主の歩きはこの間止めること（プレイヤーなら PlayerMeleeInput が止める）。</summary>
-        public bool IsLunging => lunge != null;
+        public bool IsLunging => lunge != null || nextDashStep >= 0;
 
         /// <summary>走っていて、武器種が走る間の無敵を持っているか。被ダメージ側が読む。</summary>
-        public bool IsInvulnerable => lunge != null && heldWeapon != null && heldWeapon.WeaponType.InvulnerableDuringLunge;
+        public bool IsInvulnerable => IsLunging && heldWeapon != null && heldWeapon.WeaponType.InvulnerableDuringLunge;
 
         /// <summary>段を振り始めるときに体を向ける向き（水平に直して使う）。ゼロなら向きを変えない。</summary>
         public Vector3 AimForward { get; set; }
@@ -212,6 +218,7 @@ namespace TpsDungeon.Combat
 
         private void OnDisable()
         {
+            CancelExtraDashes();
             EndLunge();
             pressQueued = false;
         }
@@ -230,6 +237,7 @@ namespace TpsDungeon.Combat
             Initialize();
             float switchWait = equipped ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
             equipped = true;
+            CancelExtraDashes();
             EndLunge();
             chain.Reset();
 
@@ -256,6 +264,7 @@ namespace TpsDungeon.Combat
             chain.Tick(dt);
             TickFollowUps(dt);
             if (lunge != null) TickLunge(dt);
+            TickExtraDash(dt);
 
             bool pressed = pressQueued;
             pressQueued = false;
@@ -276,14 +285,24 @@ namespace TpsDungeon.Combat
 
         private static bool IsMelee(WeaponDefinition weapon) => weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsMelee;
 
-        /// <summary>段の時間。走る段は、持続時間のエンチャントで走る時間が延びた分だけ段も延ばす。</summary>
+        /// <summary>
+        /// 段の時間。走る段は、持続時間のエンチャントで走る時間が延びた分と、
+        /// 多重で走り足す 1 回ごとの溜め（hitTime）と走る時間を足して段を延ばす。
+        /// </summary>
         private static List<ComboStepTiming> Timings(WeaponTypeDefinition type, MeleeWeaponStats stats)
         {
             float lungeScale = stats != null ? stats.LungeTimeScale : 1f;
+            int extraDashes = stats != null ? stats.FollowUpCount : 0;
             var result = new List<ComboStepTiming>();
             foreach (MeleeComboStep step in type.ComboSteps)
             {
-                float extra = step.motion == MeleeStepMotion.Lunge ? Mathf.Max(0f, step.lungeDuration * (lungeScale - 1f)) : 0f;
+                float extra = 0f;
+                if (step.motion == MeleeStepMotion.Lunge)
+                {
+                    float lunge = Mathf.Max(0f, step.lungeDuration) * lungeScale;
+                    extra = Mathf.Max(0f, step.lungeDuration * (lungeScale - 1f)) + extraDashes * (Mathf.Max(0f, step.hitTime) + lunge);
+                }
+
                 result.Add(new ComboStepTiming(step.duration + extra, step.hitTime));
             }
 
@@ -329,12 +348,18 @@ namespace TpsDungeon.Combat
 
         private void BeginStep(int step)
         {
+            CancelExtraDashes();
             hitThisSwing.Clear();
             criticalSoundThisSwing = false;
             chain.CancelTimeout();
             if (faceAimOnAttack) FaceAim();
             SpawnLeadingSwingEffect(step);
+            PlayStepAnimation(step);
+        }
 
+        /// <summary>段のモーションを頭から流す。</summary>
+        private void PlayStepAnimation(int step)
+        {
             if (animator == null) return;
             if (hasComboStepParam) animator.SetInteger(ComboStepParam, step);
             if (hasAttackSpeedParam) animator.SetFloat(AttackSpeedParam, stats != null ? stats.AttackSpeed : 1f);
@@ -385,6 +410,7 @@ namespace TpsDungeon.Combat
             switch (shape.motion)
             {
                 case MeleeStepMotion.Lunge:
+                    dashesLeft = stats.FollowUpCount;
                     BeginLunge(step, shape);
                     break;
                 case MeleeStepMotion.Slam:
@@ -608,7 +634,50 @@ namespace TpsDungeon.Combat
 
             bool blocked = delta.sqrMagnitude > 1e-8f && moved < delta.magnitude * LungeBlockedRatio;
             bool timeUp = lunge.Remaining <= 0f && (lunge.Overrun >= LungeMaxOverrun || !InsidePassedEnemy());
-            if (timeUp || blocked) EndLunge();
+            if (!timeUp && !blocked) return;
+
+            int step = lunge.Step;
+            EndLunge();
+            QueueExtraDash(step);
+        }
+
+        /// <summary>
+        /// 多重で走り足す回数が残っていれば、段の頭からもう一度振る（向き直し・溜めのエフェクト・モーション）。
+        /// 段の判定と同じ hitTime だけ溜めたら <see cref="TickExtraDash"/> が走り出す。
+        /// </summary>
+        private void QueueExtraDash(int step)
+        {
+            if (dashesLeft <= 0 || heldWeapon == null || stats == null) return;
+
+            dashesLeft--;
+            nextDashStep = step;
+            nextDashDelay = Mathf.Max(0f, heldWeapon.WeaponType.ComboSteps[step].hitTime) / Mathf.Max(0.1f, stats.AttackSpeed);
+            hitThisSwing.Clear();
+            criticalSoundThisSwing = false;
+            if (faceAimOnAttack) FaceAim();
+            SpawnLeadingSwingEffect(step);
+            PlayStepAnimation(step);
+        }
+
+        private void TickExtraDash(float dt)
+        {
+            if (nextDashStep < 0) return;
+
+            nextDashDelay -= dt;
+            if (nextDashDelay > 0f) return;
+
+            int step = nextDashStep;
+            nextDashStep = -1;
+            if (heldWeapon == null || stats == null) return;
+
+            ReleaseLeadingEffect();
+            BeginLunge(step, heldWeapon.WeaponType.ComboSteps[step]);
+        }
+
+        private void CancelExtraDashes()
+        {
+            dashesLeft = 0;
+            nextDashStep = -1;
         }
 
         /// <summary>体を delta だけ動かし、実際に水平に進めた距離を返す。</summary>

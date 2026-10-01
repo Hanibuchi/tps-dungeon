@@ -95,7 +95,7 @@ namespace TpsDungeon.Items
         /// <summary>叩きつけを本撃の横に足す数（「数」の合計の切り捨て）。本撃と合わせて扇状に並べる。</summary>
         public int ExtraSlamCount { get; private set; }
 
-        /// <summary>叩きつけ 1 つにつき、その向きへずらして落とす追撃の回数（「多重」の合計の切り捨て）。</summary>
+        /// <summary>「多重」の合計の切り捨て。叩きつけでは 1 つにつきその向きへずらして落とす追撃の回数、走る段では走り足す回数。</summary>
         public int FollowUpCount { get; private set; }
 
         /// <summary>段 step（0 始まり）の 1 撃（クリティカル前）。combo は続けて当てた段の数で、その分コンボボーナスを上乗せする。</summary>

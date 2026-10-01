@@ -252,7 +252,7 @@ namespace TpsDungeon.Items.Editor
         private static Dictionary<EnchantmentKind, EnchantmentDefinition> WriteEnchantments()
         {
             // 効果量は仮。割合は 0.15 で +15%。効果を実装しているのは近接の武器種に付く 12 種だけ
-            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝叩きつけの数・多重＝追撃）。
+            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝叩きつけの数・多重＝追撃とダッシュの回数）。
             var specs = new (EnchantmentKind kind, string name, float amount, float secondary, string description)[]
             {
                 (EnchantmentKind.DamageUp, "ダメージ増加", 0.15f, 0f, "与えるダメージが 15% 上がる。"),
@@ -263,7 +263,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲と、振りや爆発の大きさが 15% 広がる。"),
                 (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える（叩きつけごとに、本撃と同じダメージ）。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
                 (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "飛び道具が敵を追う。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
@@ -425,7 +425,7 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// ダッシュ突き（02）。1 段で、判定の瞬間から前へ走り、走っている間ずっと前方の箱で当てる。敵はすり抜け、壁で止まる。
-        /// 持続時間のエンチャントで走る時間（＝距離）が延びる。値は仮。
+        /// 持続時間のエンチャントで走る時間（＝距離）が延び、多重のエンチャントで走る回数が増える。コンボボーナスは付かない。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteDashThrustType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
@@ -434,7 +434,7 @@ namespace TpsDungeon.Items.Editor
             SerializedObject serialized = BeginType(type, "02", "ダッシュ突き", 5, true, new[]
             {
                 EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.RapidFire,
-                EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.ComboBonus,
+                EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Multishot,
             }, enchantments, roll); // 5 = CharacterAnimatorBuilder.Weapon.DashThrust
 
             // 0.2 秒で突き出してから 0.18 秒で 5 m 走る（約 28 m/s）。走り終えて 0.37 秒で構えに戻る。

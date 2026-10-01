@@ -288,7 +288,7 @@ namespace TpsDungeon.Combat.Editor
                 string head = steps.Count > 1 ? $"{i + 1} 段目の" : string.Empty;
                 if (step.motion == MeleeStepMotion.Lunge)
                 {
-                    text.AppendLine($"{head}ダッシュ: {step.lungeDistance * stats.LungeTimeScale:0.##} m を {step.lungeDuration * stats.LungeTimeScale:0.##} 秒"
+                    text.AppendLine($"{head}ダッシュ: {step.lungeDistance * stats.LungeTimeScale:0.##} m を {step.lungeDuration * stats.LungeTimeScale:0.##} 秒 × {stats.FollowUpCount + 1} 回"
                                     + (type.LungePassesThroughEnemies ? "（敵をすり抜ける）" : "（敵で止まる）"));
                 }
                 else if (step.motion == MeleeStepMotion.Slam)
