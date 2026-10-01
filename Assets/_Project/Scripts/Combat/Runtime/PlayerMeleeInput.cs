@@ -7,14 +7,15 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// プレイヤーの入力を MeleeAttacker に渡す。攻撃キーの押下 → PressAttack、ホットバーで選んでいる物 → Equip、カメラの前 → AimForward。
+    /// プレイヤーの入力を MeleeAttacker（と、あれば RangedAttacker）に渡す。攻撃キーの押下 → PressAttack、ホットバーで選んでいる物 → Equip、
+    /// カメラの前 → AimForward、カメラの中心の線 → RangedAttacker.Aim。押下は両方に渡し、今の武器を扱える方だけが攻撃する。
     /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして、入力で走りがぶれないようにする。
     /// ThirdPersonController は CharacterController の速度から今の速さを引き継ぐので、そのままだと走りの速さで二重に進み、
     /// 走り終えてからも惰性で滑る。速さの追従（SpeedChangeRate）も一瞬にして 0 へ落とし、走り終えた次のフレームまで止めておく。
     /// ThirdPersonController は名前で探してフィールドを名前で書くので、Starter Assets のアセンブリには依存しない（GamePauser と同じ）。
-    /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory・MeleeAttacker と同じ GameObject）に付ける。
+    /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory・MeleeAttacker・RangedAttacker と同じ GameObject）に付ける。
     /// </summary>
-    // 押下をその同じフレームの MeleeAttacker.Update で使わせるため、先に回す。
+    // 押下をその同じフレームの MeleeAttacker / RangedAttacker の Update で使わせるため、先に回す。
     [DefaultExecutionOrder(-10)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeleeAttacker))]
@@ -39,6 +40,7 @@ namespace TpsDungeon.Combat
         private string attackActionName = "Player/Attack";
 
         private MeleeAttacker attacker;
+        private RangedAttacker ranged;
         private PlayerHotbar hotbar;
         private PlayerInventory inventory;
         private InputAction attackAction;
@@ -59,6 +61,7 @@ namespace TpsDungeon.Combat
         {
             if (playerInput == null) playerInput = GetComponent<PlayerInput>();
             attacker = GetComponent<MeleeAttacker>();
+            ranged = GetComponent<RangedAttacker>();
             hotbar = GetComponent<PlayerHotbar>();
             inventory = GetComponent<PlayerInventory>();
             FindLocomotion();
@@ -74,11 +77,12 @@ namespace TpsDungeon.Combat
 
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
             if (inventory != null) inventory.Changed += OnInventoryChanged;
-            attacker.Equip(Current());
+            Equip(Current(), false);
         }
 
         private void OnDisable()
         {
+            if (ranged != null) ranged.Aim = null;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             attackAction = null;
@@ -86,9 +90,15 @@ namespace TpsDungeon.Combat
         }
 
         // 枠を選び直したら、中身が同じ（空の枠どうしなど）でも持ち替えとして待たせる。
-        private void OnHotbarChanged(PlayerHotbar _) => attacker.Equip(Current(), true);
+        private void OnHotbarChanged(PlayerHotbar _) => Equip(Current(), true);
 
-        private void OnInventoryChanged(PlayerInventory _) => attacker.Equip(Current());
+        private void OnInventoryChanged(PlayerInventory _) => Equip(Current(), false);
+
+        private void Equip(ItemInstance item, bool switched)
+        {
+            attacker.Equip(item, switched);
+            if (ranged != null) ranged.Equip(item, switched);
+        }
 
         private ItemInstance Current() => hotbar != null && inventory != null ? inventory.Inventory[hotbar.SelectedIndex] : null;
 
@@ -96,10 +106,14 @@ namespace TpsDungeon.Combat
         {
             if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
             if (cameraTransform != null) attacker.AimForward = cameraTransform.forward;
+            if (ranged != null) ranged.Aim = cameraTransform != null ? new Ray(cameraTransform.position, cameraTransform.forward) : (Ray?)null;
 
             bool pressed = attackAction != null && attackAction.WasPressedThisFrame()
                            && playerInput != null && attackAction.actionMap == playerInput.currentActionMap;
-            if (pressed) attacker.PressAttack();
+            if (!pressed) return;
+
+            attacker.PressAttack();
+            if (ranged != null) ranged.PressAttack();
         }
 
         // MeleeAttacker の Update で走り出し・走り終わりが決まるので、同じフレームのうちに歩きを止める・戻す。

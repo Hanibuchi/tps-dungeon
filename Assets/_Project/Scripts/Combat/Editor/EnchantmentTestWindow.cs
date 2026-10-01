@@ -15,9 +15,9 @@ namespace TpsDungeon.Combat.Editor
     /// <summary>
     /// 武器とエンチャントの組み合わせを手早く試す窓。
     ///   1. 武器を選び、その武器種に付けられるエンチャントの個数を ± で決める（ランダムに振ることもできる）
-    ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージなど）がその場で出る
+    ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージ、弓の矢の数や雨の刻みなど）がその場で出る
     ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（個数を変えたら自動で持たせ直せる）
-    ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃に分けて記録し、実測の DPS を出す
+    ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃・雨に分けて記録し、実測の DPS を出す（近接も遠距離も）
     /// ゲーム側には何も足さない（的と持ち物は Play を止めれば消える）。
     /// </summary>
     public sealed class EnchantmentTestWindow : EditorWindow
@@ -52,6 +52,7 @@ namespace TpsDungeon.Combat.Editor
         private readonly List<float> recordTimes = new List<float>();
         private List<WeaponDefinition> weapons;
         private MeleeAttacker hooked;
+        private RangedAttacker hookedRanged;
         private Vector2 scroll;
 
         [MenuItem(MenuPath)]
@@ -111,7 +112,8 @@ namespace TpsDungeon.Combat.Editor
         {
             weapons = AssetDatabase.FindAssets("t:" + nameof(WeaponDefinition))
                 .Select(guid => AssetDatabase.LoadAssetAtPath<WeaponDefinition>(AssetDatabase.GUIDToAssetPath(guid)))
-                .Where(w => w != null && w.WeaponType != null && w.WeaponType.IsMelee && w.WeaponType.AllowedEnchantments.Count > 0)
+                .Where(w => w != null && w.WeaponType != null && (w.WeaponType.IsMelee || w.WeaponType.IsRanged)
+                            && w.WeaponType.AllowedEnchantments.Count > 0)
                 .OrderBy(w => w.WeaponType.Id).ThenBy(w => w.Rank).ThenBy(w => w.DisplayName)
                 .ToList();
             if (weapon == null && weapons.Count > 0) weapon = weapons[0];
@@ -122,7 +124,7 @@ namespace TpsDungeon.Combat.Editor
             EditorGUILayout.LabelField("武器", EditorStyles.boldLabel);
             if (weapons == null || weapons.Count == 0)
             {
-                EditorGUILayout.HelpBox("エンチャントの付く近接武器が無い（「プレースホルダの武器を生成」で作れる）。", MessageType.Info);
+                EditorGUILayout.HelpBox("エンチャントの付く武器が無い（「プレースホルダの武器を生成」で作れる）。", MessageType.Info);
                 return;
             }
 
@@ -251,6 +253,13 @@ namespace TpsDungeon.Combat.Editor
             }
 
             EnchantmentTotals totals = new ItemInstance(weapon, Chosen(type)).EnchantmentTotals();
+            if (type.IsRanged)
+            {
+                RangedWeaponStats ranged = weapon.ComputeRangedStats(totals, characterAttack, critChance, critMultiplier);
+                EditorGUILayout.HelpBox(RangedPreviewText(type, ranged, characterAttack, attacker != null), MessageType.None);
+                return;
+            }
+
             MeleeWeaponStats stats = weapon.ComputeMeleeStats(totals, characterAttack, critChance, critMultiplier);
             EditorGUILayout.HelpBox(PreviewText(type, stats, characterAttack, attacker != null), MessageType.None);
         }
@@ -303,6 +312,42 @@ namespace TpsDungeon.Combat.Editor
             return text.ToString().TrimEnd();
         }
 
+        private static string RangedPreviewText(WeaponTypeDefinition type, RangedWeaponStats stats, float characterAttack, bool fromPlayer)
+        {
+            var text = new StringBuilder();
+            text.AppendLine(fromPlayer
+                ? $"基礎攻撃力 {characterAttack:0.#}（プレイヤーの今の値）を足している"
+                : "基礎攻撃力 0 として出している（Play 中はプレイヤーの今の値を足す）");
+
+            int count = stats.ExtraProjectiles + 1;
+            int volleys = stats.MultishotCount + 1;
+            if (type.RangedKind == RangedAttackKind.Rain)
+            {
+                text.AppendLine($"雨の 1 刻み: {stats.RainTickDamage} × {stats.RainTickCount} 回（{type.RainTickInterval:0.##} 秒ごと）"
+                                + $"＝ずっと居れば {stats.RainTickDamage * stats.RainTickCount}　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。持続時間の延び・数・多重・重なりは含めない）");
+                text.AppendLine($"雨: 半径 {type.RainRadius * stats.SizeScale:0.##} m を {count} か所（狙った所に 1 つ、残りは {type.RainScatterMin * stats.SizeScale:0.#}〜{type.RainScatterMax * stats.SizeScale:0.#} m 離れたランダムな所）"
+                                + $" × {volleys} 回（{type.RainRepeatInterval:0.##} 秒ずつ遅れて同じ所に）");
+                text.AppendLine($"降り始めまで {type.RainDelay / stats.ProjectileSpeedScale:0.##} 秒　続く時間 ×{stats.DurationScale:0.##}");
+            }
+            else
+            {
+                text.AppendLine($"1 発: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。数・多重・爆発は含めない）");
+                text.AppendLine($"矢: {count} 本（1 本は照準へ、残りは {type.VolleySpreadAngle:0.#}° ずつ右左交互に） × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）"
+                                + $"　速さ {type.ProjectileSpeed * stats.ProjectileSpeedScale:0.#} m/s");
+                text.AppendLine($"貫通 {stats.PierceCount} 体　ホーミング {(stats.Homing ? "あり" : "なし")}");
+                if (stats.ExplosionRatio > 0f)
+                    text.AppendLine($"爆発: 1 本ごとに 半径 {stats.ExplosionRadius:0.#} m へ {stats.ExplosionDamage(stats.ShotDamage)}");
+            }
+
+            text.AppendLine($"クリティカル: {stats.CritChance:P0} で ×{stats.CritMultiplier:0.##}");
+            text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}　ノックバック +{stats.KnockbackBonus:0.#} m/s　スタン判定 ×{stats.ReactionScale:0.##}");
+            if (stats.DropRateBonus > 0f)
+                text.AppendLine($"ドロップ率 +{stats.DropRateBonus:P0}（ドロップの仕組みはまだ読まない）");
+            return text.ToString().TrimEnd();
+        }
+
         // ---- Play 中 ----
 
         private void DrawPlay()
@@ -331,7 +376,9 @@ namespace TpsDungeon.Combat.Editor
                 autoEquip = GUILayout.Toggle(autoEquip, "変えたらすぐ持たせ直す");
             }
 
-            EditorGUILayout.LabelField("手に持っている", attacker.HeldWeapon != null ? attacker.HeldWeapon.DisplayName : "なし");
+            RangedAttacker ranged = attacker.GetComponent<RangedAttacker>();
+            WeaponDefinition holding = ranged != null && ranged.HeldWeapon != null ? ranged.HeldWeapon : attacker.HeldWeapon;
+            EditorGUILayout.LabelField("手に持っている", holding != null ? holding.DisplayName : "なし");
 
             EditorGUILayout.Space();
             DrawDummies(attacker);
@@ -457,6 +504,7 @@ namespace TpsDungeon.Combat.Editor
                 {
                     logToConsole = log;
                     attacker.LogHits = log;
+                    if (hookedRanged != null) hookedRanged.LogHits = log;
                 }
             }
 
@@ -483,11 +531,13 @@ namespace TpsDungeon.Combat.Editor
             EditorGUILayout.HelpBox(summary.ToString(), MessageType.None);
 
             var lines = new StringBuilder();
+            bool rangedHeld = hookedRanged != null && hookedRanged.HeldWeapon != null;
             for (int i = records.Count - 1; i >= 0 && i >= records.Count - MaxRecordLines; i--)
             {
                 MeleeHitRecord r = records[i];
                 string target = r.Enemy != null ? r.Enemy.name : "（消えた敵）";
-                lines.AppendLine($"{recordTimes[i] - recordTimes[0],6:0.00}s  {r.Step + 1} 段目 {KindLabel(r.Kind)} → {target}: {r.Dealt}"
+                string step = rangedHeld ? string.Empty : $"{r.Step + 1} 段目 ";
+                lines.AppendLine($"{recordTimes[i] - recordTimes[0],6:0.00}s  {step}{KindLabel(r.Kind)} → {target}: {r.Dealt}"
                                  + (r.Dealt != r.Damage ? $"（{r.Damage} のうち）" : string.Empty)
                                  + (r.IsCritical ? "  クリティカル" : string.Empty)
                                  + (r.Combo > 0 ? $"  {r.Combo} COMBO" : string.Empty));
@@ -500,6 +550,7 @@ namespace TpsDungeon.Combat.Editor
         {
             MeleeHitKind.Explosion => "爆発",
             MeleeHitKind.FollowUp => "追撃",
+            MeleeHitKind.Tick => "雨",
             _ => "本撃",
         };
 
@@ -520,12 +571,19 @@ namespace TpsDungeon.Combat.Editor
 
             hooked.Dealt += OnDealt;
             hooked.LogHits = logToConsole;
+            hookedRanged = hooked.GetComponent<RangedAttacker>();
+            if (hookedRanged == null) return;
+
+            hookedRanged.Dealt += OnDealt;
+            hookedRanged.LogHits = logToConsole;
         }
 
         private void Unhook()
         {
             if (hooked != null) hooked.Dealt -= OnDealt;
+            if (hookedRanged != null) hookedRanged.Dealt -= OnDealt;
             hooked = null;
+            hookedRanged = null;
             ClearRecords();
         }
 

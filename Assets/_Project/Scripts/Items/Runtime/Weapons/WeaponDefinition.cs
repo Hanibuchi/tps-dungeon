@@ -14,7 +14,7 @@ namespace TpsDungeon.Items
     {
         [SerializeField] private WeaponRank rank = WeaponRank.E;
 
-        [SerializeField, Min(0f), Tooltip("強さ。近接の武器種なら DPS。")]
+        [SerializeField, Min(0f), Tooltip("強さ。近接・遠距離の武器種なら DPS。")]
         private float strength;
 
         [SerializeField] private WeaponTypeDefinition weaponType;
@@ -52,6 +52,28 @@ namespace TpsDungeon.Items
                 CharacterAttackWeight = weaponType != null ? weaponType.CharacterAttackWeight : 0f,
                 StepWeights = weights,
                 StepDurations = durations,
+                Enchantments = enchantments,
+                BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
+                BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,
+                CritChanceModifier = critChanceModifier,
+                CritMultiplierModifier = critMultiplierModifier,
+            });
+        }
+
+        /// <summary>
+        /// 遠距離武器（弓・持続弓）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
+        /// </summary>
+        public RangedWeaponStats ComputeRangedStats(EnchantmentTotals enchantments, float characterAttack,
+            Func<float, float> critChanceModifier = null, Func<float, float> critMultiplierModifier = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttack = characterAttack,
+                CharacterAttackWeight = weaponType != null ? weaponType.CharacterAttackWeight : 0f,
+                FireInterval = weaponType != null ? weaponType.FireInterval : 0f,
+                RainDuration = weaponType != null ? weaponType.RainDuration : 0f,
+                RainTickInterval = weaponType != null ? weaponType.RainTickInterval : 0f,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

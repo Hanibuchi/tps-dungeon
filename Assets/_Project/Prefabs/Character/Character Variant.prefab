@@ -153,6 +153,7 @@ MonoBehaviour:
   hotbar: {fileID: 7227348474748329602}
   inventory: {fileID: 7164853347632738234}
   attacker: {fileID: 0}
+  ranged: {fileID: 6755422925214155692}
   mapToggle: {fileID: 8948942209542754525}
   player: {fileID: 3715460319869569215}
 --- !u!114 &5555794773749821019
@@ -168,6 +169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.DamageNumberView
   attacker: {fileID: 8189682549201205282}
+  ranged: {fileID: 6755422925214155692}
   viewCamera: {fileID: 0}
 --- !u!1 &2845389573017558099
 GameObject:
@@ -442,6 +444,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2101594103091486731}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6755422925214155692}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!4 &3715460319869569215 stripped
 Transform:
@@ -670,6 +675,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Combat::TpsDungeon.Combat.PlayerMeleeInput
   playerInput: {fileID: 4090438157950177801}
   attackActionName: Player/Attack
+--- !u!114 &6755422925214155692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f793dc665d7148c28998ee27a31998b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Combat::TpsDungeon.Combat.RangedAttacker
+  animator: {fileID: 7309302257321726661}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  switchCooldown: 0.5
+  criticalHitEffect: {fileID: 4535006216103734310, guid: 98c4704d0fd7211449bcf5c451095a60, type: 3}
+  criticalHitEffectScale: 0.4
+  criticalHitSound: {fileID: 8300000, guid: 2e5179b7a23574f11b115c3ce7a4535c, type: 3}
+  criticalHitSoundVolume: 0.7
+  explosionEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+  explosionEffectScale: 0.5
+  explosionSound: {fileID: 8300000, guid: f564babe8474c49ee9ffa0693f462d80, type: 3}
+  explosionSoundVolume: 0.8
+  logHits: 0
 --- !u!114 &4090438157950177801 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}

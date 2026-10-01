@@ -20,7 +20,7 @@ namespace TpsDungeon.Combat
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
     /// 段のモーションは判定の時計と同じフレームに、段のステートへ直接 CrossFade して頭から再生する（連打してもずれていかないように）。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
-    /// 近接でない武器（弓など）はここでは振らない。
+    /// 近接でない武器（弓など）はここでは振らない（撃つのは RangedAttacker）。見た目（Animator の WeaponType と手のモデル）だけ替える。
     /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
     /// コンボボーナスの段数（ComboChain）は周をまたいで数える。空振りするか、待ちが明けて comboKeepTime 秒振らなければ途切れる。
     /// サイズのエンチャントは判定に合わせて、振り・叩きつけ・追撃・爆発のエフェクトも大きくする。
@@ -335,7 +335,9 @@ namespace TpsDungeon.Combat
 
             if (weapon == null || weapon.HeldModel == null || animator == null || !animator.isHuman) return;
 
-            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            Transform hand = animator.GetBoneTransform(weapon.WeaponType != null && weapon.WeaponType.HeldInLeftHand
+                ? HumanBodyBones.LeftHand
+                : HumanBodyBones.RightHand);
             if (hand == null) return;
 
             heldModel = Instantiate(weapon.HeldModel, hand);

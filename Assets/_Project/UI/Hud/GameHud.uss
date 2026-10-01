@@ -261,6 +261,46 @@
     translate: 0 5px;
 }
 
+/* ---- 中央: 照準（遠距離の武器を持っている間だけ） ---- */
+
+/* 画面の真ん中（カメラの中心の線が通る所）に、点と、少し離した 4 本の短い線。 */
+.crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.15s;
+}
+
+.crosshair.is-shown {
+    opacity: 1;
+}
+
+.crosshair__dot {
+    position: absolute;
+    left: -2px;
+    top: -2px;
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: rgba(255, 250, 240, 0.95);
+}
+
+.crosshair__tick {
+    position: absolute;
+    background-color: rgba(255, 250, 240, 0.85);
+    border-color: rgba(0, 0, 0, 0.55);
+    border-width: 0.5px;
+}
+
+.crosshair__tick--top { left: -1px; top: -15px; width: 2px; height: 8px; }
+.crosshair__tick--bottom { left: -1px; top: 7px; width: 2px; height: 8px; }
+.crosshair__tick--left { left: -15px; top: -1px; width: 8px; height: 2px; }
+.crosshair__tick--right { left: 7px; top: -1px; width: 8px; height: 2px; }
+
 /* ---- 右下: マップ ---- */
 
 .minimap {

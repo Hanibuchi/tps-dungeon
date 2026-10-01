@@ -81,6 +81,8 @@ namespace TpsDungeon.Hud.Editor
                 var damageNumbers = hud.GetComponent<DamageNumberView>();
                 if (damageNumbers == null) damageNumbers = hud.gameObject.AddComponent<DamageNumberView>();
                 SetReference(damageNumbers, "attacker", root.GetComponent<MeleeAttacker>());
+                SetReference(damageNumbers, "ranged", root.GetComponent<RangedAttacker>());
+                SetReference(view, "ranged", root.GetComponent<RangedAttacker>());
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Debug.Log($"HUD を組み込んだ: {PlayerPrefabPath}");

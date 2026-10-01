@@ -13,8 +13,9 @@ namespace TpsDungeon.Hud
     /// <summary>
     /// 常時表示の HUD（左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
     /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
-    /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / MeleeAttacker / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
-    /// 次に振れるまでの待ち（武器種の待ち・持ち替えの待ち）は、選んでいる枠の暗幕で見せる。
+    /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / MeleeAttacker / RangedAttacker / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
+    /// 次に振れる・撃てるまでの待ち（武器種の待ち・持ち替えの待ち）は、選んでいる枠の暗幕で見せる。
+    /// 遠距離の武器（弓など）を持っている間は、画面の中央に照準を出す。
     /// 経験値は数字を出さず、帯の伸びだけで見せる。
     /// </summary>
     [DisallowMultipleComponent]
@@ -49,6 +50,9 @@ namespace TpsDungeon.Hud
         [SerializeField, Tooltip("次に振れるまでの待ちの出どころ。未設定なら親から探す。")]
         private MeleeAttacker attacker;
 
+        [SerializeField, Tooltip("次に撃てるまでの待ちと、照準を出すか（遠距離の武器を持っているか）の出どころ。未設定なら親から探す。")]
+        private RangedAttacker ranged;
+
         [SerializeField, Tooltip("大きな地図を開いているかの出どころ。未設定なら親から探す。")]
         private PlayerMapToggle mapToggle;
 
@@ -82,6 +86,8 @@ namespace TpsDungeon.Hud
         // 今出しているアイテム名。空の枠を選んでいる間は null。
         private string shownItemName;
         private VisualElement minimapFrame;
+        private VisualElement crosshair;
+        private bool crosshairShown;
         private VisualElement mapOverlay;
 
         // 右下の小さい地図と、開いたときの大きな地図。同じ内容を縮尺（USS の --map-pixels-per-cell）だけ変えて描く。
@@ -98,6 +104,7 @@ namespace TpsDungeon.Hud
             hotbar = GetComponentInParent<PlayerHotbar>();
             inventory = GetComponentInParent<PlayerInventory>();
             attacker = GetComponentInParent<MeleeAttacker>();
+            ranged = GetComponentInParent<RangedAttacker>();
             mapToggle = GetComponentInParent<PlayerMapToggle>();
         }
 
@@ -109,6 +116,7 @@ namespace TpsDungeon.Hud
             if (hotbar == null) hotbar = GetComponentInParent<PlayerHotbar>();
             if (inventory == null) inventory = GetComponentInParent<PlayerInventory>();
             if (attacker == null) attacker = GetComponentInParent<MeleeAttacker>();
+            if (ranged == null) ranged = GetComponentInParent<RangedAttacker>();
             if (mapToggle == null) mapToggle = GetComponentInParent<PlayerMapToggle>();
             if (player == null && health != null) player = health.transform;
         }
@@ -132,6 +140,9 @@ namespace TpsDungeon.Hud
             minimapFrame = root.Q<VisualElement>("minimap");
             mapOverlay = root.Q<VisualElement>("map-overlay");
             UiTransitions.HideImmediately(mapOverlay);
+            crosshair = root.Q<VisualElement>("crosshair");
+            UiTransitions.HideImmediately(crosshair);
+            crosshairShown = false;
             lastHp = -1;
             beating = false;
             maps = root.Query<MinimapElement>().ToList().ToArray();
@@ -178,6 +189,7 @@ namespace TpsDungeon.Hud
             }
             UpdateMinimap();
             RefreshCooldown();
+            RefreshCrosshair();
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)
@@ -321,13 +333,26 @@ namespace TpsDungeon.Hud
             if (slots == null) return;
 
             int selected = hotbar != null ? hotbar.SelectedIndex : -1;
-            float fraction = attacker != null && attacker.isActiveAndEnabled ? attacker.CooldownFraction : 0f;
+            float fraction = Mathf.Max(attacker != null && attacker.isActiveAndEnabled ? attacker.CooldownFraction : 0f,
+                ranged != null && ranged.isActiveAndEnabled ? ranged.CooldownFraction : 0f);
             for (int i = 0; i < slots.Length; i++) ItemSlot.SetCooldown(slots[i], i == selected ? fraction : 0f);
 
             if (selected == cooldownSlot && shownCooldown > 0f && fraction <= 0f && selected >= 0)
                 UiTransitions.Flash(slots[selected], ItemSlot.ReadyClass, CooldownReadyFlashMs);
             cooldownSlot = selected;
             shownCooldown = fraction;
+        }
+
+        /// <summary>遠距離の武器を持っている間だけ照準を出す。大きな地図を開いている間は隠す。</summary>
+        private void RefreshCrosshair()
+        {
+            if (crosshair == null) return;
+
+            bool show = ranged != null && ranged.isActiveAndEnabled && ranged.HeldWeapon != null && (mapToggle == null || !mapToggle.IsOpen);
+            if (show == crosshairShown) return;
+
+            crosshairShown = show;
+            UiTransitions.SetShown(crosshair, show);
         }
 
         /// <summary>ホットバーの枠にアイテムの絵を入れる。ホットバーの枠はインベントリの先頭の枠。</summary>

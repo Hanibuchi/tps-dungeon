@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Combat.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに近接攻撃（実行役の MeleeAttacker と、入力を渡す PlayerMeleeInput）を組み込む。素手の武器とエフェクトもここで入れる
+    /// プレイヤーのプレハブに攻撃（近接の実行役 MeleeAttacker・遠距離の実行役 RangedAttacker と、入力を渡す PlayerMeleeInput）を組み込む。素手の武器とエフェクトもここで入れる
     /// （先に「プレースホルダの武器を生成」で素手の武器を作っておくこと）。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
@@ -15,7 +15,7 @@ namespace TpsDungeon.Combat.Editor
     {
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
 
-        [MenuItem("Tools/TPS Dungeon/Player/近接攻撃を組み込む")]
+        [MenuItem("Tools/TPS Dungeon/Player/攻撃（近接・遠距離）を組み込む")]
         public static void Setup()
         {
             var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
@@ -23,6 +23,9 @@ namespace TpsDungeon.Combat.Editor
             {
                 var attacker = root.GetComponent<MeleeAttacker>();
                 if (attacker == null) attacker = root.AddComponent<MeleeAttacker>();
+
+                var ranged = root.GetComponent<RangedAttacker>();
+                if (ranged == null) ranged = root.AddComponent<RangedAttacker>();
 
                 var input = root.GetComponent<PlayerMeleeInput>();
                 if (input == null) input = root.AddComponent<PlayerMeleeInput>();
@@ -50,14 +53,28 @@ namespace TpsDungeon.Combat.Editor
                     PlaceholderWeaponAssetGenerator.LoadSound(PlaceholderWeaponAssetGenerator.ExplosionSoundPath);
                 serialized.FindProperty("explosionSoundVolume").floatValue = 0.8f;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
+                WriteSharedEffects(serialized, ranged);
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
-                Debug.Log($"近接攻撃を組み込んだ: {PlayerPrefabPath}");
+                Debug.Log($"攻撃（近接・遠距離）を組み込んだ: {PlayerPrefabPath}");
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        /// <summary>クリティカルと爆発の見た目と音は、遠距離（RangedAttacker）も近接と同じ物を使う。</summary>
+        private static void WriteSharedEffects(SerializedObject melee, RangedAttacker ranged)
+        {
+            var serialized = new SerializedObject(ranged);
+            serialized.FindProperty("animator").objectReferenceValue = melee.FindProperty("animator").objectReferenceValue;
+            serialized.FindProperty("switchCooldown").floatValue = melee.FindProperty("switchCooldown").floatValue;
+            foreach (string name in new[] { "criticalHitEffect", "criticalHitSound", "explosionEffect", "explosionSound" })
+                serialized.FindProperty(name).objectReferenceValue = melee.FindProperty(name).objectReferenceValue;
+            foreach (string name in new[] { "criticalHitEffectScale", "criticalHitSoundVolume", "explosionEffectScale", "explosionSoundVolume" })
+                serialized.FindProperty(name).floatValue = melee.FindProperty(name).floatValue;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
