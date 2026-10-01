@@ -57,6 +57,8 @@ namespace TpsDungeon.Items.Editor
         public const string SparksEffectPath = HovlPrefabs + "Sparks/Sparks explode white.prefab";
         // 着弾点に重ねる土煙（素材は 12 m ほど）。
         public const string DustPuffEffectPath = HovlPrefabs + "Smoke effects/Dust puff.prefab";
+        // 持続弓の雨。高さ 8 m・半径 4 m の円錐から 0.15 秒ごとに 20 回隕石を落とし、着弾で石・火花・閃光が散る。
+        public const string MeteorsEffectPath = HovlPrefabs + "AoE effects/Meteors AOE.prefab";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
@@ -310,7 +312,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけが 1 つ増える。矢と叩きつけは前を中心に扇状に、矢の雨は狙った所の周りに並ぶ。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけが 1 つ増える。矢は照準の右左へ交互に開き、叩きつけは前を中心に扇状に、矢の雨は狙った所の付近に降る。"),
                 (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲（矢の雨の範囲も）と、振りや爆発の大きさが 15% 広がる。"),
                 (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "矢の雨やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "矢が敵を 1 体多く貫く。"),
@@ -634,8 +636,8 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 持続弓（11）。照準の地面へ上から矢を降らせ、半径 2.5 m に 0.5 秒ごと 3 秒間（6 刻み）ダメージ。値は仮。
-        /// 撃つ間隔 1.2 秒なので、範囲にずっと居た 1 体が受ける合計は 強さ × 1.2。数で周りに雨が増え、多重で同じ所にもう一度降る。
+        /// 持続弓（11）。照準の地面へ上から雨（見た目は Meteors AOE）を降らせ、半径 1.25 m に 0.5 秒ごと 3 秒間（6 刻み）ダメージ。値は仮。
+        /// 撃つ間隔 1.2 秒なので、範囲にずっと居た 1 体が受ける合計は 強さ × 1.2。数で付近のランダムな所に雨が増え、多重で同じ所にもう一度降る。
         /// </summary>
         private static WeaponTypeDefinition WriteRainBowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll, GameObject arrow, Material ring)
@@ -650,14 +652,18 @@ namespace TpsDungeon.Items.Editor
 
             WriteRangedCommon(serialized, RangedAttackKind.Rain, 1.2f, arrow, ring);
             serialized.FindProperty("aimMaxDistance").floatValue = 25f;
-            serialized.FindProperty("rainRadius").floatValue = 2.5f;
+            serialized.FindProperty("rainRadius").floatValue = 1.25f;
             serialized.FindProperty("rainHeight").floatValue = 2f;
             serialized.FindProperty("rainDuration").floatValue = 3f;
             serialized.FindProperty("rainTickInterval").floatValue = 0.5f;
             serialized.FindProperty("rainDelay").floatValue = 0.7f;
-            serialized.FindProperty("rainSpreadDistance").floatValue = 3.5f;
+            serialized.FindProperty("rainScatterMin").floatValue = 1.25f;
+            serialized.FindProperty("rainScatterMax").floatValue = 3f;
             serialized.FindProperty("rainRepeatInterval").floatValue = 1f;
-            serialized.FindProperty("rainArrowsPerSecond").floatValue = 6f;
+            // 隕石が半径 4 m の円錐から降る素材を、雨の半径に合わせて水平に縮めて使う。
+            serialized.FindProperty("rainEffect").objectReferenceValue = LoadEffect(MeteorsEffectPath);
+            serialized.FindProperty("rainEffectRadius").floatValue = 4f;
+            serialized.FindProperty("rainAimPitch").floatValue = 35f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }

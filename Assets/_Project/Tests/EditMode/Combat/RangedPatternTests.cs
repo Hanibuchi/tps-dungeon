@@ -1,51 +1,63 @@
+using System;
 using NUnit.Framework;
 
 namespace TpsDungeon.Combat.Tests
 {
-    /// <summary>持続弓の雨の置き場所（数）と、遅れて出す回数（多重）を確かめる。</summary>
+    /// <summary>弓の矢の向き（数）、持続弓の雨の置き場所（数）、遅れて出す回数（多重）を確かめる。</summary>
     public sealed class RangedPatternTests
     {
         [Test]
+        public void 矢が0本なら空()
+        {
+            Assert.IsEmpty(RangedPattern.VolleyAngles(0, 8f));
+            Assert.IsEmpty(RangedPattern.VolleyAngles(-1, 8f));
+        }
+
+        [Test]
+        public void 一本目は必ず照準へ_増えた分は右左交互に開く()
+        {
+            Assert.AreEqual(new[] { 0f }, RangedPattern.VolleyAngles(1, 8f));
+            Assert.AreEqual(new[] { 0f, 8f }, RangedPattern.VolleyAngles(2, 8f));
+            Assert.AreEqual(new[] { 0f, 8f, -8f }, RangedPattern.VolleyAngles(3, 8f));
+            Assert.AreEqual(new[] { 0f, 8f, -8f, 16f }, RangedPattern.VolleyAngles(4, 8f));
+            Assert.AreEqual(new[] { 0f, 8f, -8f, 16f, -16f }, RangedPattern.VolleyAngles(5, 8f));
+        }
+
+        [Test]
         public void 雨が0個なら空()
         {
-            Assert.IsEmpty(RangedPattern.RainOffsets(0, 3f));
-            Assert.IsEmpty(RangedPattern.RainOffsets(-1, 3f));
+            Assert.IsEmpty(RangedPattern.RainOffsets(0, 1f, 3f, new Random(1)));
+            Assert.IsEmpty(RangedPattern.RainOffsets(-1, 1f, 3f, new Random(1)));
         }
 
         [Test]
-        public void ひとつ目は狙った所()
+        public void ひとつ目は必ず狙った所()
         {
-            (float x, float z)[] offsets = RangedPattern.RainOffsets(1, 3f);
-            Assert.AreEqual(1, offsets.Length);
-            Assert.AreEqual(0f, offsets[0].x);
-            Assert.AreEqual(0f, offsets[0].z);
+            for (int seed = 0; seed < 20; seed++)
+            {
+                (float x, float z)[] offsets = RangedPattern.RainOffsets(4, 1f, 3f, new Random(seed));
+                Assert.AreEqual(4, offsets.Length);
+                Assert.AreEqual(0f, offsets[0].x);
+                Assert.AreEqual(0f, offsets[0].z);
+            }
         }
 
         [Test]
-        public void 増えた雨は周りの円に前から等間隔に並ぶ()
+        public void 増えた雨は狙った所から決めた距離の範囲に置く()
         {
-            (float x, float z)[] offsets = RangedPattern.RainOffsets(5, 2f);
-            Assert.AreEqual(5, offsets.Length);
-            Assert.AreEqual(0f, offsets[0].x, 1e-5f);
-            Assert.AreEqual(0f, offsets[0].z, 1e-5f);
-
-            // 前・右・後ろ・左。
-            Assert.AreEqual(0f, offsets[1].x, 1e-5f);
-            Assert.AreEqual(2f, offsets[1].z, 1e-5f);
-            Assert.AreEqual(2f, offsets[2].x, 1e-5f);
-            Assert.AreEqual(0f, offsets[2].z, 1e-5f);
-            Assert.AreEqual(0f, offsets[3].x, 1e-5f);
-            Assert.AreEqual(-2f, offsets[3].z, 1e-5f);
-            Assert.AreEqual(-2f, offsets[4].x, 1e-5f);
-            Assert.AreEqual(0f, offsets[4].z, 1e-5f);
+            var random = new Random(7);
+            for (int n = 0; n < 200; n++)
+            {
+                (float x, float z) offset = RangedPattern.RainOffset(1.25f, 3f, random);
+                float distance = (float)Math.Sqrt(offset.x * offset.x + offset.z * offset.z);
+                Assert.That(distance, Is.InRange(1.25f - 1e-4f, 3f + 1e-4f));
+            }
         }
 
         [Test]
-        public void 増えた雨がひとつなら前に置く()
+        public void 増えた雨の置き場所は種が同じなら同じ()
         {
-            (float x, float z)[] offsets = RangedPattern.RainOffsets(2, 3f);
-            Assert.AreEqual(0f, offsets[1].x, 1e-5f);
-            Assert.AreEqual(3f, offsets[1].z, 1e-5f);
+            Assert.AreEqual(RangedPattern.RainOffsets(3, 1f, 3f, new Random(42)), RangedPattern.RainOffsets(3, 1f, 3f, new Random(42)));
         }
 
         [Test]

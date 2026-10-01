@@ -8,7 +8,7 @@ namespace TpsDungeon.Combat
     /// <summary>
     /// 飛んでいる矢 1 本。重力は無く、まっすぐ（ホーミングなら敵へ曲がりながら）飛び、毎フレーム進む分だけ球を流して当たりを見る。
     /// 生きた敵に当たったら onHit を呼ぶ（1 本が同じ敵に当たるのは 1 回）。貫通の数だけ抜けて飛び続け、尽きたらそこで消える。
-    /// 敵でない物（壁・床）に当たったら刺さって、しばらくして消える。死んだ敵の体はすり抜ける。
+    /// 敵でない物（壁・床）に当たったら刺さって onStick を呼び（爆発のエンチャント用）、しばらくして消える。死んだ敵の体はすり抜ける。
     /// 見た目だけの矢（矢の雨・上へ放つ矢）は敵をすり抜けて、床に刺さるだけ。
     /// 見た目のプレハブは「原点が矢の先、柄が -Z」に置く（刺さったときに先が当たった面に来るように）。
     /// RangedAttacker が出す。シーンに置く物ではない。
@@ -56,6 +56,7 @@ namespace TpsDungeon.Combat
 
         private Settings settings;
         private Action<EnemyHealth, Vector3, Vector3> onHit;
+        private Action<Vector3> onStick;
         private Vector3 direction;
         private float remaining;
         private int pierceLeft;
@@ -67,10 +68,11 @@ namespace TpsDungeon.Combat
         private float retargetTimer;
 
         /// <summary>
-        /// visual（無ければ見た目無し）の矢を position から direction へ放つ。onHit(敵, 当たった場所, 矢の向き) は生きた敵に当たるたびに呼ぶ。
+        /// visual（無ければ見た目無し）の矢を position から direction へ放つ。onHit(敵, 当たった場所, 矢の向き) は生きた敵に当たるたびに、
+        /// onStick(刺さった場所) は敵でない物に刺さったときに呼ぶ（見た目だけの矢では呼ばない）。
         /// </summary>
         public static ArrowProjectile Launch(GameObject visual, Vector3 position, Vector3 direction, Settings settings,
-            Action<EnemyHealth, Vector3, Vector3> onHit = null)
+            Action<EnemyHealth, Vector3, Vector3> onHit = null, Action<Vector3> onStick = null)
         {
             if (direction.sqrMagnitude < 1e-8f) direction = Vector3.forward;
             direction.Normalize();
@@ -86,6 +88,7 @@ namespace TpsDungeon.Combat
             var arrow = go.AddComponent<ArrowProjectile>();
             arrow.settings = settings;
             arrow.onHit = onHit;
+            arrow.onStick = onStick;
             arrow.direction = direction;
             arrow.remaining = Mathf.Max(0f, settings.Range);
             arrow.pierceLeft = Mathf.Max(0, settings.Pierce);
@@ -145,6 +148,7 @@ namespace TpsDungeon.Combat
             stuck = true;
             transform.SetPositionAndRotation(point + direction * StuckDepth, Quaternion.LookRotation(direction, Vector3.up));
             Destroy(gameObject, StuckLifetime);
+            if (!settings.VisualOnly) onStick?.Invoke(point);
         }
 
         /// <summary>前にいる一番近い生きた敵へ、向きを毎秒 HomingTurnRate 度まで寄せる。</summary>

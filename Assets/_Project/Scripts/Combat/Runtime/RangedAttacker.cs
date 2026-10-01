@@ -12,13 +12,18 @@ namespace TpsDungeon.Combat
     /// 持たされた遠距離武器（弓・持続弓）で撃つ実行役。入力は持たず、外から <see cref="Equip"/>（持ち替え）・<see cref="PressAttack"/>（攻撃の押下）・
     /// <see cref="Aim"/>（狙いの線。プレイヤーならカメラの中心）を渡してもらう。プレイヤーは PlayerMeleeInput が叩く。
     /// 押した瞬間に、待ちが明けていれば撃つ（押しっぱなしでは撃たない）。撃つ間隔は武器種の fireInterval を速射で縮めたもの。
-    ///   弓     … 狙いの線が当たった所（無ければ射程の先）へ、矢を放つ。数で扇状に増え、多重で遅れて同じ向きへもう一斉射
+    ///   弓     … 狙いの線が当たった所（無ければ射程の先）へ、弓を持つ手から矢を放つ。数で増えた矢は照準の右左へ交互に開き（1 本は必ず照準へ）、
+    ///            多重で遅れて同じ向きへもう一斉射。爆発は敵に当たっても、壁や床に刺さっても起きる
     ///   持続弓 … 狙いの線が当たった地面（射程の水平距離まで）へ、上に矢を放ってから雨を降らせ、範囲に刻みでダメージ。
-    ///            数で狙った所の周りに雨が増え、多重で同じ所にもう一度降る。持っている間は狙う地面に範囲の円を出す
+    ///            数で増えた雨は狙った所の付近のランダムな所に、多重で同じ所にもう一度降る。持っている間は狙う地面に範囲の円を出す
+    /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
+    /// （持続弓は空へ向けて反らせる）。歩く向きへ回す ThirdPersonController より後に上書きする。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
     /// 手の見た目と Animator の WeaponType は MeleeAttacker が持ち替えで替えるので、ここは撃つことだけを受け持つ。
     /// キャラのルート（MeleeAttacker と同じ GameObject）に付ける。基礎攻撃力は同じ GameObject の CharacterProgression から読む。
     /// </summary>
+    // 体の向きを ThirdPersonController の LateUpdate（カメラの目標を回す）より先に決め、カメラが揺れないようにする。押下は PlayerMeleeInput（-10）の後で使う。
+    [DefaultExecutionOrder(-5)]
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Ranged Attacker")]
     public sealed class RangedAttacker : MonoBehaviour
@@ -51,6 +56,12 @@ namespace TpsDungeon.Combat
 
         [SerializeField, Min(0f), Tooltip("持ち替えてから撃てるまでの秒数。全武器共通（MeleeAttacker の switchCooldown と揃える）。")]
         private float switchCooldown = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("遠距離の武器に持ち替えたとき、体を狙いの方へ回す速さ（度/秒）。向き切ったあとは毎フレーム狙いに合わせ続ける。")]
+        private float aimTurnSpeed = 900f;
+
+        [SerializeField, Range(0f, 89f), Tooltip("狙いの上下に合わせて背骨を曲げる角度の上限（度）。")]
+        private float maxAimPitch = 60f;
 
         [SerializeField, Tooltip("クリティカルのとき、命中のエフェクトに重ねて出す見た目（任意）。")]
         private GameObject criticalHitEffect;
@@ -90,6 +101,9 @@ namespace TpsDungeon.Combat
         private bool pressQueued;
         private RangeRing aimRing;
 
+        // 持ち替えてから体が狙いの方へ向き切ったか。向き切るまでは aimTurnSpeed で回し、そのあとは歩く向きへ回されても毎フレーム狙いへ戻す。
+        private bool aimLocked;
+
         // 同じフレームに何本当たっても、命中・クリティカルの音は 1 回だけ鳴らす。
         private int hitSoundFrame = -1;
         private int criticalSoundFrame = -1;
@@ -98,6 +112,14 @@ namespace TpsDungeon.Combat
         private readonly HashSet<EnemyHealth> explosionTargets = new HashSet<EnemyHealth>();
         private readonly Collider[] overlap = new Collider[32];
         private readonly RaycastHit[] rayHits = new RaycastHit[32];
+        private readonly System.Random random = new System.Random();
+
+        // 背骨（下から順に曲げを分ける）と、弓を持つ腕の付け根・手。人型でなければ空・null。
+        private Transform[] spine = Array.Empty<Transform>();
+        private Transform leftUpperArm;
+        private Transform leftHand;
+        private Transform rightUpperArm;
+        private Transform rightHand;
 
         private bool hasAttackParam;
         private bool hasAttackSpeedParam;
@@ -149,6 +171,7 @@ namespace TpsDungeon.Combat
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
             CacheAnimatorParameters();
+            CacheBones();
         }
 
         private void OnDisable()
@@ -185,6 +208,7 @@ namespace TpsDungeon.Combat
             heldWeapon = weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsRanged ? weapon : null;
             stats = heldWeapon != null ? ComputeStats() : null;
             cooldownRemaining = cooldownDuration = switchWait;
+            aimLocked = false;
 
             // 弓で立てたまま残った Attack が、持ち替え先の攻撃で後から効かないように。
             if (wasRanged && animator != null && hasAttackParam) animator.ResetTrigger(AttackParam);
@@ -201,7 +225,20 @@ namespace TpsDungeon.Combat
             if (pressed && heldWeapon != null && cooldownRemaining <= 0f) Fire();
         }
 
-        private void LateUpdate() => UpdateAimRing();
+        private void LateUpdate()
+        {
+            WeaponTypeDefinition type = heldWeapon != null ? heldWeapon.WeaponType : null;
+            if (type == null || !Aim.HasValue)
+            {
+                aimRing?.SetVisible(false);
+                return;
+            }
+
+            Vector3 target = type.RangedKind == RangedAttackKind.Rain ? GroundTarget(type) : AimPoint(type);
+            float remaining = AimBody(type, target, aimLocked ? 180f : aimTurnSpeed * Time.deltaTime, true);
+            if (Mathf.Abs(remaining) < 1f) aimLocked = true;
+            UpdateAimRing(type, target);
+        }
 
         private RangedWeaponStats ComputeStats()
         {
@@ -231,7 +268,8 @@ namespace TpsDungeon.Combat
 
             bool rain = type.RangedKind == RangedAttackKind.Rain;
             Vector3 target = rain ? GroundTarget(type) : AimPoint(type);
-            FaceToward(target);
+            // 撃つ瞬間は向き切る。背骨の曲げは前のフレームの LateUpdate のものが手に残っている。
+            AimBody(type, target, 360f, false);
             PlayFireAnimation();
 
             Vector3 muzzle = Muzzle(type);
@@ -255,7 +293,7 @@ namespace TpsDungeon.Combat
             }
         }
 
-        /// <summary>一斉射 1 回。本撃と数で増えた矢を、direction を中心に扇状に放つ。</summary>
+        /// <summary>一斉射 1 回。本撃は direction へ、数で増えた矢はその右左へ交互に開いて放つ。</summary>
         private void Volley(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 direction, bool playSound)
         {
             Vector3 muzzle = Muzzle(type);
@@ -274,11 +312,12 @@ namespace TpsDungeon.Combat
                 IgnoreRoot = transform,
             };
 
-            foreach (float angle in SlamPattern.SpreadAngles(shot.ExtraProjectiles + 1, type.VolleySpreadAngle))
+            foreach (float angle in RangedPattern.VolleyAngles(shot.ExtraProjectiles + 1, type.VolleySpreadAngle))
             {
                 Vector3 arrowDirection = Quaternion.AngleAxis(angle, Vector3.up) * direction;
                 ArrowProjectile.Launch(type.ProjectilePrefab, muzzle, arrowDirection, settings,
-                    (enemy, point, travel) => ArrowHit(type, shot, enemy, point, travel));
+                    (enemy, point, travel) => ArrowHit(type, shot, enemy, point, travel),
+                    point => Explode(point, shot.ExplosionDamage(shot.ShotDamage), shot));
             }
         }
 
@@ -311,11 +350,8 @@ namespace TpsDungeon.Combat
 
             float radius = type.RainRadius * shot.SizeScale;
             float startDelay = type.RainDelay / shot.ProjectileSpeedScale;
-            Quaternion facing = Quaternion.LookRotation(toward, Vector3.up);
-            (float x, float z)[] offsets = RangedPattern.RainOffsets(shot.ExtraProjectiles + 1, type.RainSpreadDistance * shot.SizeScale);
-            var centers = new Vector3[offsets.Length];
-            for (int i = 0; i < offsets.Length; i++)
-                centers[i] = i == 0 ? target : GroundAt(target + facing * new Vector3(offsets[i].x, 0f, offsets[i].z), target.y);
+            var centers = new List<Vector3> { target };
+            for (int i = 0; i < shot.ExtraProjectiles; i++) centers.Add(ScatterPoint(type, shot, target));
 
             foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.RainRepeatInterval))
             {
@@ -328,16 +364,32 @@ namespace TpsDungeon.Combat
                         StartDelay = startDelay + delay,
                         TickInterval = type.RainTickInterval,
                         TickCount = shot.RainTickCount,
-                        ArrowsPerSecond = type.RainArrowsPerSecond * radius,
-                        ArrowPrefab = type.ProjectilePrefab,
+                        Effect = type.RainEffect,
+                        EffectRadius = type.RainEffectRadius,
                         RingMaterial = type.RangeRingMaterial,
                         RingColor = type.RainRingColor,
-                        HitMask = hitMask,
-                        IgnoreRoot = transform,
-                        Forward = toward,
                     }, (c, r, h) => RainTick(type, shot, c, r, h));
                 }
             }
+        }
+
+        /// <summary>
+        /// 数で増えた雨の置き場所。狙った所から決めた距離の範囲のランダムな所の地面。
+        /// 狙った所との間に壁があれば引き直し、5 回だめなら狙った所に重ねる。
+        /// </summary>
+        private Vector3 ScatterPoint(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 target)
+        {
+            Vector3 lift = Vector3.up * 0.5f;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                (float x, float z) = RangedPattern.RainOffset(type.RainScatterMin * shot.SizeScale, type.RainScatterMax * shot.SizeScale, random);
+                Vector3 candidate = target + new Vector3(x, 0f, z);
+                Vector3 path = candidate - target;
+                if (path.sqrMagnitude < 1e-6f || !Raycast(new Ray(target + lift, path), path.magnitude, true, out _))
+                    return GroundAt(candidate, target.y);
+            }
+
+            return target;
         }
 
         // ---- 当てる ----
@@ -503,21 +555,55 @@ namespace TpsDungeon.Combat
 
         private Ray AimRayOrForward(WeaponTypeDefinition type) => Aim ?? new Ray(Muzzle(type), transform.forward);
 
-        private Vector3 Muzzle(WeaponTypeDefinition type) => transform.TransformPoint(type.MuzzleOffset);
-
-        private void FaceToward(Vector3 target)
+        /// <summary>矢の出る所。弓を持つ手（人型でなければ武器種の muzzleOffset）。</summary>
+        private Vector3 Muzzle(WeaponTypeDefinition type)
         {
-            Vector3 forward = target - transform.position;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 1e-4f) return;
-            transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            Transform hand = type.HeldInLeftHand ? leftHand : rightHand;
+            return hand != null ? hand.position : transform.TransformPoint(type.MuzzleOffset);
         }
 
-        /// <summary>持続弓を持っている間、狙う地面に範囲の円を出す。</summary>
-        private void UpdateAimRing()
+        /// <summary>
+        /// bend なら、腕の上下の向きが狙い（持続弓は武器種の rainAimPitch）に合うよう、背骨を体の右軸まわりに曲げる（Animator の評価の後に呼ぶこと）。
+        /// そのうえで、弓を持つ腕（付け根から手）が水平に target を向くよう、体を最大 maxYaw 度回す。回し残した角度を返す。
+        /// 曲げると腕の水平の向きも少し変わるので、曲げてから回す。人型でなければ、体の前を target へ向けるだけ。
+        /// </summary>
+        private float AimBody(WeaponTypeDefinition type, Vector3 target, float maxYaw, bool bend)
         {
-            WeaponTypeDefinition type = heldWeapon != null ? heldWeapon.WeaponType : null;
-            bool show = type != null && type.RangedKind == RangedAttackKind.Rain && Aim.HasValue && type.RangeRingMaterial != null;
+            Transform shoulder = type.HeldInLeftHand ? leftUpperArm : rightUpperArm;
+            Transform hand = type.HeldInLeftHand ? leftHand : rightHand;
+            Vector3 from = shoulder != null ? shoulder.position : transform.position;
+            Vector3 arm = shoulder != null && hand != null ? hand.position - shoulder.position : transform.forward;
+
+            Vector3 toTarget = target - from;
+            if (bend && spine.Length > 0 && shoulder != null && hand != null)
+            {
+                float want = type.RangedKind == RangedAttackKind.Rain ? type.RainAimPitch : Pitch(toTarget);
+                float angle = Mathf.Clamp(want - Pitch(arm), -maxAimPitch, maxAimPitch);
+                // 体の右軸まわりの正の回転は前を下げるので、上げるときは負に回す。
+                Quaternion step = Quaternion.AngleAxis(-angle / spine.Length, transform.right);
+                foreach (Transform bone in spine) bone.rotation = step * bone.rotation;
+                arm = hand.position - shoulder.position;
+            }
+
+            Vector3 flatTarget = toTarget;
+            flatTarget.y = 0f;
+            // 足元に近すぎる狙いでは向きが定まらないので回さない。
+            if (flatTarget.sqrMagnitude <= 1f) return 0f;
+
+            float yaw = Vector3.SignedAngle(Flat(arm, transform.forward), flatTarget, Vector3.up);
+            float turn = Mathf.Clamp(yaw, -maxYaw, maxYaw);
+            transform.rotation = Quaternion.AngleAxis(turn, Vector3.up) * transform.rotation;
+            return yaw - turn;
+        }
+
+        /// <summary>水平からの仰角（度、上が正）。</summary>
+        private static float Pitch(Vector3 direction) =>
+            Mathf.Atan2(direction.y, new Vector2(direction.x, direction.z).magnitude) * Mathf.Rad2Deg;
+
+        /// <summary>持続弓を持っている間、狙う地面（target）に範囲の円を出す。</summary>
+        private void UpdateAimRing(WeaponTypeDefinition type, Vector3 target)
+        {
+            bool show = type.RangedKind == RangedAttackKind.Rain && type.RangeRingMaterial != null;
             if (!show)
             {
                 aimRing?.SetVisible(false);
@@ -527,7 +613,7 @@ namespace TpsDungeon.Combat
             if (aimRing == null) aimRing = RangeRing.Create("AimRing", type.RangeRingMaterial, type.AimRingColor);
             aimRing.SetColor(type.AimRingColor);
             aimRing.SetVisible(true);
-            aimRing.Set(GroundTarget(type), type.RainRadius * (stats != null ? stats.SizeScale : 1f));
+            aimRing.Set(target, type.RainRadius * (stats != null ? stats.SizeScale : 1f));
         }
 
         // ---- 共通 ----
@@ -554,6 +640,24 @@ namespace TpsDungeon.Combat
         private static void PlaySound(AudioClip clip, Vector3 position, float volume)
         {
             if (clip != null) GameAudio.Instance?.PlaySeAt(clip, position, volume);
+        }
+
+        private void CacheBones()
+        {
+            if (animator == null || !animator.isHuman) return;
+
+            var bones = new List<Transform>();
+            foreach (HumanBodyBones bone in new[] { HumanBodyBones.Spine, HumanBodyBones.Chest, HumanBodyBones.UpperChest })
+            {
+                Transform t = animator.GetBoneTransform(bone);
+                if (t != null) bones.Add(t);
+            }
+
+            spine = bones.ToArray();
+            leftUpperArm = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            rightUpperArm = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+            rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
         }
 
         private void CacheAnimatorParameters()

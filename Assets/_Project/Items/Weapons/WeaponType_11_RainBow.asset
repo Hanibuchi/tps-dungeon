@@ -56,14 +56,17 @@ MonoBehaviour:
   multishotInterval: 0.12
   homingTurnRate: 540
   homingRange: 12
-  rainRadius: 2.5
+  rainRadius: 1.25
   rainHeight: 2
   rainDuration: 3
   rainTickInterval: 0.5
   rainDelay: 0.7
-  rainSpreadDistance: 3.5
+  rainScatterMin: 1.25
+  rainScatterMax: 3
   rainRepeatInterval: 1
-  rainArrowsPerSecond: 6
+  rainEffect: {fileID: 7957833072274404953, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
+  rainEffectRadius: 4
+  rainAimPitch: 35
   rangeRingMaterial: {fileID: 2100000, guid: d56dffd4cdb3c4f8abcb62a971009d5d, type: 2}
   rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
   aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}

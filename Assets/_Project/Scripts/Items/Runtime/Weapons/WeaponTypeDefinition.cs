@@ -122,7 +122,7 @@ namespace TpsDungeon.Items
 
         [Header("矢の雨（持続弓。値は仮）")]
         [SerializeField, Min(0.1f), Tooltip("雨の範囲の半径（m、サイズのエンチャントの補正前）。")]
-        private float rainRadius = 2.5f;
+        private float rainRadius = 1.25f;
 
         [SerializeField, Min(0.1f), Tooltip("この高さ（m）までの上下にいる敵に当てる。")]
         private float rainHeight = 2f;
@@ -136,14 +136,23 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("撃ってから雨が降り始めるまで（秒、弾速のエンチャントで縮む）。")]
         private float rainDelay = 0.7f;
 
-        [SerializeField, Min(0f), Tooltip("「数」で増えた雨を、狙った所からこの距離（m）の周りに等間隔で置く（サイズで伸びる）。")]
-        private float rainSpreadDistance = 3.5f;
+        [SerializeField, Min(0f), Tooltip("「数」で増えた雨を置く、狙った所からの距離の下限（m、サイズで伸びる）。向きと距離はランダム。")]
+        private float rainScatterMin = 1.25f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた雨を置く、狙った所からの距離の上限（m、サイズで伸びる）。")]
+        private float rainScatterMax = 3f;
 
         [SerializeField, Min(0f), Tooltip("「多重」で同じ所にもう一度降らせる遅れ。k 回目は本撃から k × この秒数あとに降り始める。")]
         private float rainRepeatInterval = 1f;
 
-        [SerializeField, Min(0f), Tooltip("雨の見た目で、1 秒あたりに落とす矢の数（半径 1 m あたり。広いほど多く落とす）。")]
-        private float rainArrowsPerSecond = 6f;
+        [SerializeField, Tooltip("雨の見た目（任意）。降り始めに範囲の中心へ出し、雨の間だけ続ける。繰り返すバーストは雨の長さまで延ばす。")]
+        private GameObject rainEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("rainEffect の素材そのままの範囲の半径（m）。雨の半径に合うよう水平だけ縮める（縦はそのまま）。")]
+        private float rainEffectRadius = 4f;
+
+        [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
+        private float rainAimPitch = 35f;
 
         [SerializeField, Tooltip("範囲の円（照準の地面の円と、降っている雨の円）の線の材質。未設定なら円を出さない。")]
         private Material rangeRingMaterial;
@@ -227,9 +236,12 @@ namespace TpsDungeon.Items
         public float RainDuration => rangedKind == RangedAttackKind.Rain ? rainDuration : 0f;
         public float RainTickInterval => rainTickInterval;
         public float RainDelay => rainDelay;
-        public float RainSpreadDistance => rainSpreadDistance;
+        public float RainScatterMin => rainScatterMin;
+        public float RainScatterMax => rainScatterMax;
         public float RainRepeatInterval => rainRepeatInterval;
-        public float RainArrowsPerSecond => rainArrowsPerSecond;
+        public GameObject RainEffect => rainEffect;
+        public float RainEffectRadius => rainEffectRadius;
+        public float RainAimPitch => rainAimPitch;
         public Material RangeRingMaterial => rangeRingMaterial;
         public Color RainRingColor => rainRingColor;
         public Color AimRingColor => aimRingColor;

@@ -326,7 +326,7 @@ namespace TpsDungeon.Combat.Editor
                 text.AppendLine($"雨の 1 刻み: {stats.RainTickDamage} × {stats.RainTickCount} 回（{type.RainTickInterval:0.##} 秒ごと）"
                                 + $"＝ずっと居れば {stats.RainTickDamage * stats.RainTickCount}　撃つ間隔 {stats.FireInterval:0.00} 秒");
                 text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。持続時間の延び・数・多重・重なりは含めない）");
-                text.AppendLine($"雨: 半径 {type.RainRadius * stats.SizeScale:0.##} m を {count} か所（周りへ {type.RainSpreadDistance * stats.SizeScale:0.#} m）"
+                text.AppendLine($"雨: 半径 {type.RainRadius * stats.SizeScale:0.##} m を {count} か所（狙った所に 1 つ、残りは {type.RainScatterMin * stats.SizeScale:0.#}〜{type.RainScatterMax * stats.SizeScale:0.#} m 離れたランダムな所）"
                                 + $" × {volleys} 回（{type.RainRepeatInterval:0.##} 秒ずつ遅れて同じ所に）");
                 text.AppendLine($"降り始めまで {type.RainDelay / stats.ProjectileSpeedScale:0.##} 秒　続く時間 ×{stats.DurationScale:0.##}");
             }
@@ -334,7 +334,7 @@ namespace TpsDungeon.Combat.Editor
             {
                 text.AppendLine($"1 発: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");
                 text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。数・多重・爆発は含めない）");
-                text.AppendLine($"矢: {count} 本（{type.VolleySpreadAngle:0.#}° ずつ扇状に） × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）"
+                text.AppendLine($"矢: {count} 本（1 本は照準へ、残りは {type.VolleySpreadAngle:0.#}° ずつ右左交互に） × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）"
                                 + $"　速さ {type.ProjectileSpeed * stats.ProjectileSpeedScale:0.#} m/s");
                 text.AppendLine($"貫通 {stats.PierceCount} 体　ホーミング {(stats.Homing ? "あり" : "なし")}");
                 if (stats.ExplosionRatio > 0f)
