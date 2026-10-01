@@ -263,7 +263,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲と、振りや爆発の大きさが 15% 広がる。"),
                 (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える（叩きつけごとに、本撃と同じダメージ）。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
                 (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "飛び道具が敵を追う。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
@@ -510,7 +510,7 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// 叩きつけ（05）。1 段で、前方の着弾点を中心とした円に当てる。
-        /// 数のエンチャントで叩きつけが増えて持ち主を中心に 30° ずつ扇状に並び、多重のエンチャントで前へずらした追撃が遅れて落ちる。値は仮。
+        /// 数のエンチャントで叩きつけが増えて持ち主を中心に 30° ずつ扇状に並び、多重のエンチャントで叩きつけごとにその向きへずらした追撃が遅れて落ちる。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteHammerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
@@ -536,7 +536,6 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("comboChainGrace").floatValue = 0f;
             serialized.FindProperty("comboCooldown").floatValue = 0.4f;
             serialized.FindProperty("slamSpreadAngle").floatValue = 30f;
-            serialized.FindProperty("followUpDamageRatio").floatValue = 0.6f;
             serialized.FindProperty("followUpSpacing").floatValue = 1.5f;
             serialized.FindProperty("followUpInterval").floatValue = 0.18f;
             serialized.FindProperty("followUpEffectScale").floatValue = 0.7f;

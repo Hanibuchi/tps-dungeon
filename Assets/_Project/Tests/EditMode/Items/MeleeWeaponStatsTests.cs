@@ -240,16 +240,6 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void 上乗せの割合は1撃に掛けて四捨五入し_最低1()
-        {
-            Assert.AreEqual(7, MeleeWeaponStats.Share(14, 0.5f));
-            Assert.AreEqual(8, MeleeWeaponStats.Share(14, 0.6f)); // 8.4
-            Assert.AreEqual(1, MeleeWeaponStats.Share(1, 0.1f));
-            Assert.AreEqual(0, MeleeWeaponStats.Share(14, 0f));
-            Assert.AreEqual(0, MeleeWeaponStats.Share(0, 0.5f));
-        }
-
-        [Test]
         public void 新しい武器種3本の1撃_キャラ攻撃力なし()
         {
             // 木柄の刺突剣: 強さ 8、1 段 0.75 秒。

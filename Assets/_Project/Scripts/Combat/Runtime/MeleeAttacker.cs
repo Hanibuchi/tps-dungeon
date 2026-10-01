@@ -14,7 +14,8 @@ namespace TpsDungeon.Combat
     /// 押すたびにコンボを 1 段ずつ進め（MeleeComboState）、段の判定の瞬間に段の当て方（MeleeComboStep.motion）で当てる:
     ///   Swing … 前方の箱の中の敵へ
     ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ
-    ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で叩きつけが増え、持ち主を中心に扇状に並ぶ。「多重」で前へずらした追撃が遅れて落ちる
+    ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で叩きつけが増え、持ち主を中心に扇状に並ぶ。
+    ///           「多重」で叩きつけごとに、その向きへずらした追撃が遅れて落ちる（本撃と同じダメージ）
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
     /// 段のモーションは判定の時計と同じフレームに、段のステートへ直接 CrossFade して頭から再生する（連打してもずれていかないように）。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
@@ -149,6 +150,8 @@ namespace TpsDungeon.Combat
             public float Delay;
             public int Damage;
             public float ReactionScale;
+            /// <summary>着弾の音と揺れを出すか。同じ時刻に落ちる追撃（数で増えた向きの分）では 1 つだけ。</summary>
+            public bool Loud;
         }
 
         /// <summary>今振る武器（素手なら unarmedWeapon）。振れなければ null。</summary>
@@ -731,24 +734,27 @@ namespace TpsDungeon.Combat
                     Strike(enemy, point, step, shape, ref hits, false);
             }
 
-            int baseHit = stats.HitDamage(step, ComboCount);
-            Vector3 forward = transform.forward;
+            // 追撃は叩きつけ（数で増えた分も）ごとに、その向きへずらして落とす。ダメージは本撃と同じ（クリティカルは落ちたときに引く）。
+            int damage = stats.HitDamage(step, ComboCount);
+            float[] angles = SlamPattern.SpreadAngles(stats.ExtraSlamCount + 1, type.SlamSpreadAngle);
             foreach (SlamFollowUp plan in SlamPattern.FollowUps(stats.FollowUpCount, type.FollowUpSpacing, type.FollowUpInterval))
             {
-                int damage = MeleeWeaponStats.Share(baseHit, type.FollowUpDamageRatio);
-                if (damage <= 0) continue;
-
-                followUps.Add(new FollowUp
+                for (int a = 0; a < angles.Length; a++)
                 {
-                    Step = step,
-                    Type = type,
-                    Shape = shape,
-                    Center = front + forward * plan.ForwardOffset,
-                    Forward = forward,
-                    Delay = plan.Delay,
-                    Damage = damage,
-                    ReactionScale = ReactionScale(shape),
-                });
+                    Vector3 forward = Quaternion.AngleAxis(angles[a], Vector3.up) * transform.forward;
+                    followUps.Add(new FollowUp
+                    {
+                        Step = step,
+                        Type = type,
+                        Shape = shape,
+                        Center = SlamCenter(shape, angles[a]) + forward * plan.ForwardOffset,
+                        Forward = forward,
+                        Delay = plan.Delay,
+                        Damage = damage,
+                        ReactionScale = ReactionScale(shape),
+                        Loud = a == angles.Length / 2,
+                    });
+                }
             }
 
             FinishSwing(step, hits);
@@ -800,17 +806,24 @@ namespace TpsDungeon.Combat
 
                 followUps.RemoveAt(i);
                 SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale * SizeScale);
-                ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
-                PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
+                if (f.Loud)
+                {
+                    ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
+                    PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
+                }
 
                 float radius = Mathf.Max(0f, f.Shape.slamRadius) * (stats != null ? stats.HitboxScale : 1f);
                 foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(f.Center, radius, f.Shape.slamHeight))
                 {
+                    bool critical = stats != null && UnityEngine.Random.value < stats.CritChance;
+                    int damage = critical ? stats.ApplyCritical(f.Damage) : f.Damage;
+                    float knockback = f.Shape.knockback + (stats != null ? stats.KnockbackBonus : 0f);
                     Vector3 direction = FlatDirection(f.Center, enemy.transform.position, f.Forward);
-                    int dealt = enemy.TakeDamage(new DamageInfo(f.Damage, point, direction, false, f.Shape.knockback, f.ReactionScale));
+                    int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical, knockback, f.ReactionScale));
                     OneShotEffect.Spawn(f.Type.HitEffect, point, Quaternion.LookRotation(direction, Vector3.up), f.Type.HitEffectScale);
-                    if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}", enemy);
-                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false, point));
+                    if (critical) OneShotEffect.Spawn(criticalHitEffect, point, Quaternion.LookRotation(direction, Vector3.up), criticalHitEffectScale);
+                    if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, damage, dealt, critical, point));
                 }
             }
         }

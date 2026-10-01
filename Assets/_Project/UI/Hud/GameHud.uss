@@ -409,7 +409,7 @@
     color: var(--gold-bright);
 }
 
-/* エンチャント（爆発・追撃）の一撃。 */
+/* 爆発のエンチャントの一撃。 */
 .damage-number.damage-number--minor {
     font-size: 26px;
     color: var(--ember);

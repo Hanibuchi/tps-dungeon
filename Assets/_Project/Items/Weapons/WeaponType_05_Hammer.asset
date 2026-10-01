@@ -54,7 +54,6 @@ MonoBehaviour:
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
   slamSpreadAngle: 30
-  followUpDamageRatio: 0.6
   followUpSpacing: 1.5
   followUpInterval: 0.18
   followUpEffectScale: 0.7

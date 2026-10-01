@@ -296,7 +296,7 @@ namespace TpsDungeon.Combat.Editor
                     int hit = stats.HitDamage(i);
                     text.AppendLine($"{head}着弾: 半径 {step.slamRadius * stats.HitboxScale:0.##} m");
                     text.AppendLine($"  叩きつけ: {stats.ExtraSlamCount + 1} 個 × {hit}（{type.SlamSpreadAngle:0.#}° ずつ扇状に）");
-                    text.AppendLine($"  追撃: {stats.FollowUpCount} 回 × {MeleeWeaponStats.Share(hit, type.FollowUpDamageRatio)}（{type.FollowUpSpacing:0.#} m ずつ前へ）");
+                    text.AppendLine($"  追撃: {stats.FollowUpCount} 回 × 叩きつけ {stats.ExtraSlamCount + 1} 個 × {hit}（{type.FollowUpSpacing:0.#} m ずつ先へ）");
                 }
             }
 

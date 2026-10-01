@@ -23,7 +23,7 @@ namespace TpsDungeon.Combat
     ///
     ///   叩きつけ（数） … 本撃と増えた分の count 個を、持ち主を中心に、前（0°）から spacing 度ずつ左右対称に回して並べる。
     ///                    1 個なら真っ直ぐ前、2 個なら ±spacing/2
-    ///   追撃（多重） … k 回目（1 始まり）は前へ k × spacing m、本撃から k × interval 秒あと
+    ///   追撃（多重） … 叩きつけ 1 つごとに、k 回目（1 始まり）はその向きへ k × spacing m、本撃から k × interval 秒あと
     /// </summary>
     public static class SlamPattern
     {

@@ -42,7 +42,7 @@ namespace TpsDungeon.Items
     ///
     /// 続けて当てた段の数（コンボ）は周をまたいで数え、上限は無い。数えるのは振る側（ComboChain）で、ここは受け取って掛けるだけ。
     /// 1 周の時間は速射の補正前で配るので、速射は時間だけ縮めて DPS を上げる。
-    /// 増える叩きつけ（数）は本撃と同じ 1 撃を別の場所に当てる。追撃（多重）・爆発は 1 撃に対する割合の上乗せで、ここの DPS には含めない。
+    /// 増える叩きつけ（数）と追撃（多重）は本撃と同じ 1 撃を別の場所に当てる。爆発は 1 撃に対する割合の上乗せ。どれもここの DPS には含めない。
     /// エンチャントの効果量は EnchantmentDefinition の値そのもの（例: ダメージ増加 0.15 で +15%）。
     /// </summary>
     public sealed class MeleeWeaponStats
@@ -95,7 +95,7 @@ namespace TpsDungeon.Items
         /// <summary>叩きつけを本撃の横に足す数（「数」の合計の切り捨て）。本撃と合わせて扇状に並べる。</summary>
         public int ExtraSlamCount { get; private set; }
 
-        /// <summary>叩きつけのあと前へずらして落とす追撃の回数（「多重」の合計の切り捨て）。</summary>
+        /// <summary>叩きつけ 1 つにつき、その向きへずらして落とす追撃の回数（「多重」の合計の切り捨て）。</summary>
         public int FollowUpCount { get; private set; }
 
         /// <summary>段 step（0 始まり）の 1 撃（クリティカル前）。combo は続けて当てた段の数で、その分コンボボーナスを上乗せする。</summary>
@@ -178,9 +178,6 @@ namespace TpsDungeon.Items
                 FollowUpCount = FloorCount(enchant.Amount(EnchantmentKind.Multishot)),
             };
         }
-
-        /// <summary>1 撃 hit の ratio 倍（追撃）。四捨五入、ratio と hit が正なら最低 1。</summary>
-        public static int Share(int hit, float ratio) => ratio > 0f && hit > 0 ? Math.Max(1, RoundToInt(hit * (double)ratio)) : 0;
 
         /// <summary>1 撃 hit に添える爆発のダメージ。0 なら爆発しない。</summary>
         public int ExplosionDamage(int hit) =>

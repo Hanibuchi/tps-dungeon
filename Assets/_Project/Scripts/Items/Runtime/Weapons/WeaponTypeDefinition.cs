@@ -62,11 +62,8 @@ namespace TpsDungeon.Items
             "それぞれ別の判定で、重なった所の敵は重なった数だけ当たる。")]
         private float slamSpreadAngle = 30f;
 
-        [Header("追撃（Slam の段。「多重」のエンチャント 1 つで 1 回。値は仮）")]
-        [SerializeField, Min(0f), Tooltip("1 回が当てるダメージ（その段の 1 撃に対する割合）。")]
-        private float followUpDamageRatio = 0.6f;
-
-        [SerializeField, Min(0f), Tooltip("k 回目は着弾点から前へ k × この距離（m）ずらして落とす。")]
+        [Header("追撃（Slam の段。「多重」のエンチャント 1 つで、叩きつけ 1 つにつき 1 回。ダメージは本撃と同じ。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("k 回目は着弾点から、その叩きつけの向きへ k × この距離（m）ずらして落とす。")]
         private float followUpSpacing = 1.5f;
 
         [SerializeField, Min(0f), Tooltip("k 回目は本撃から k × この秒数あとに落とす。")]
@@ -141,7 +138,6 @@ namespace TpsDungeon.Items
         public bool LungePassesThroughEnemies => lungePassesThroughEnemies;
         public bool InvulnerableDuringLunge => invulnerableDuringLunge;
         public float SlamSpreadAngle => slamSpreadAngle;
-        public float FollowUpDamageRatio => followUpDamageRatio;
         public float FollowUpSpacing => followUpSpacing;
         public float FollowUpInterval => followUpInterval;
         public float FollowUpEffectScale => followUpEffectScale;
