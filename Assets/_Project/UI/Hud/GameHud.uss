@@ -409,17 +409,26 @@
     color: var(--gold-bright);
 }
 
-/* エンチャント（爆発・衝撃波・追撃）の一撃。 */
+/* 爆発のエンチャントの一撃。 */
 .damage-number.damage-number--minor {
     font-size: 26px;
     color: var(--ember);
 }
 
 .damage-number__value,
+.damage-number__critical,
 .damage-number__combo {
     padding: 0;
     margin: 0;
     white-space: nowrap;
+}
+
+/* クリティカルの 1 撃の数字の下に添える「Critical」。 */
+.damage-number__critical {
+    margin-top: -8px;
+    font-size: 20px;
+    color: var(--gold-bright);
+    letter-spacing: 1px;
 }
 
 /* コンボボーナスが乗った 1 撃の「N COMBO」。数が増えるほど白→金→赤。 */

@@ -93,8 +93,8 @@ namespace TpsDungeon.Items
 
             foreach (EnchantmentStack stack in enchantments)
             {
-                text.Append("\n・").Append(stack.Definition.DisplayName);
-                if (stack.Count > 1) text.Append(" ×").Append(stack.Count);
+                EnchantmentDefinition e = stack.Definition;
+                text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Count, e.SecondaryAmount));
             }
 
             if (!string.IsNullOrEmpty(Definition.Description)) text.Append("\n\n").Append(Definition.Description);

@@ -24,7 +24,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
   - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
   - {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
-  - {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
+  - {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   characterAttackWeight: 1
   baseCritChance: 0.05
@@ -50,14 +50,7 @@ MonoBehaviour:
   comboCooldown: 0.3
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
-  shockwaveDamageRatio: 0.5
-  shockwaveRange: 6
-  shockwaveSpeed: 14
-  shockwaveWidth: 1.2
-  shockwaveSpacingAngle: 20
-  shockwaveEffects: []
-  shockwaveEffectSpacing: 1
-  followUpDamageRatio: 0.6
+  slamSpreadAngle: 30
   followUpSpacing: 1.5
   followUpInterval: 0.18
   followUpEffectScale: 0.7

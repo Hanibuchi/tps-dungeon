@@ -50,8 +50,8 @@ namespace TpsDungeon.Items.Editor
         public const string SlamFlashEffectPath = LanaPrefabs + "Flash/Flash_ellow.prefab";
         public const string StonesEffectPath = HovlPrefabs + "Hits and explosions/Stones hit.prefab";
         public const string SparksEffectPath = HovlPrefabs + "Sparks/Sparks explode white.prefab";
-        // 衝撃波の通り道に噴き上げる土煙（素材は 12 m ほど）。
-        public const string ShockwaveDustEffectPath = HovlPrefabs + "Smoke effects/Dust puff.prefab";
+        // 着弾点に重ねる土煙（素材は 12 m ほど）。
+        public const string DustPuffEffectPath = HovlPrefabs + "Smoke effects/Dust puff.prefab";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
@@ -252,18 +252,18 @@ namespace TpsDungeon.Items.Editor
         private static Dictionary<EnchantmentKind, EnchantmentDefinition> WriteEnchantments()
         {
             // 効果量は仮。割合は 0.15 で +15%。効果を実装しているのは近接の武器種に付く 12 種だけ
-            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝衝撃波・多重＝追撃）。
+            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝叩きつけの数・多重＝追撃とダッシュの回数）。
             var specs = new (EnchantmentKind kind, string name, float amount, float secondary, string description)[]
             {
                 (EnchantmentKind.DamageUp, "ダメージ増加", 0.15f, 0f, "与えるダメージが 15% 上がる。"),
                 (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具や、叩きつけから走る衝撃波が 1 つ増える。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "飛び道具や叩きつけが 1 つ増える。叩きつけは前を中心に扇状に並ぶ。"),
                 (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲と、振りや爆発の大きさが 15% 広がる。"),
                 (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "効果やダッシュの続く時間が 20% 延びる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "飛び道具が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃が 1 つ増える。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "一度に放つ数や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
                 (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "飛び道具が敵を追う。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
@@ -425,7 +425,7 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// ダッシュ突き（02）。1 段で、判定の瞬間から前へ走り、走っている間ずっと前方の箱で当てる。敵はすり抜け、壁で止まる。
-        /// 持続時間のエンチャントで走る時間（＝距離）が延びる。値は仮。
+        /// 持続時間のエンチャントで走る時間（＝距離）が延び、多重のエンチャントで走る回数が増える。コンボボーナスは付かない。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteDashThrustType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
@@ -434,7 +434,7 @@ namespace TpsDungeon.Items.Editor
             SerializedObject serialized = BeginType(type, "02", "ダッシュ突き", 5, true, new[]
             {
                 EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.RapidFire,
-                EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.ComboBonus,
+                EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Multishot,
             }, enchantments, roll); // 5 = CharacterAnimatorBuilder.Weapon.DashThrust
 
             // 0.2 秒で突き出してから 0.18 秒で 5 m 走る（約 28 m/s）。走り終えて 0.37 秒で構えに戻る。
@@ -510,7 +510,7 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// 叩きつけ（05）。1 段で、前方の着弾点を中心とした円に当てる。
-        /// 数のエンチャントで着弾点から扇状に衝撃波が走り、多重のエンチャントで前へずらした追撃が遅れて落ちる。値は仮。
+        /// 数のエンチャントで叩きつけが増えて持ち主を中心に 30° ずつ扇状に並び、多重のエンチャントで叩きつけごとにその向きへずらした追撃が遅れて落ちる。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteHammerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
@@ -535,18 +535,7 @@ namespace TpsDungeon.Items.Editor
 
             serialized.FindProperty("comboChainGrace").floatValue = 0f;
             serialized.FindProperty("comboCooldown").floatValue = 0.4f;
-            serialized.FindProperty("shockwaveDamageRatio").floatValue = 0.5f;
-            serialized.FindProperty("shockwaveRange").floatValue = 6f;
-            serialized.FindProperty("shockwaveSpeed").floatValue = 14f;
-            serialized.FindProperty("shockwaveWidth").floatValue = 1.2f;
-            serialized.FindProperty("shockwaveSpacingAngle").floatValue = 20f;
-            WriteEffectLayers(serialized.FindProperty("shockwaveEffects"), new[]
-            {
-                new EffectLayer(LoadEffect(ShockwaveDustEffectPath), 0.13f),
-                new EffectLayer(LoadEffect(StonesEffectPath), 0.35f),
-            });
-            serialized.FindProperty("shockwaveEffectSpacing").floatValue = 0.9f;
-            serialized.FindProperty("followUpDamageRatio").floatValue = 0.6f;
+            serialized.FindProperty("slamSpreadAngle").floatValue = 30f;
             serialized.FindProperty("followUpSpacing").floatValue = 1.5f;
             serialized.FindProperty("followUpInterval").floatValue = 0.18f;
             serialized.FindProperty("followUpEffectScale").floatValue = 0.7f;
@@ -558,7 +547,7 @@ namespace TpsDungeon.Items.Editor
             WriteEffectLayers(serialized.FindProperty("slamEffects"), new[]
             {
                 new EffectLayer(LoadEffect(SlamDustEffectPath), 0.5f),
-                new EffectLayer(LoadEffect(ShockwaveDustEffectPath), 0.3f),
+                new EffectLayer(LoadEffect(DustPuffEffectPath), 0.3f),
                 new EffectLayer(LoadEffect(StonesEffectPath), 1.2f),
                 new EffectLayer(LoadEffect(SparksEffectPath), 0.9f, new Vector3(0f, 0.2f, 0f)),
                 new EffectLayer(LoadEffect(SlamFlashEffectPath), 0.1f, new Vector3(0f, 0.3f, 0f)),

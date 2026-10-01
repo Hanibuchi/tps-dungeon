@@ -58,14 +58,7 @@ MonoBehaviour:
   comboCooldown: 0.3
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
-  shockwaveDamageRatio: 0.5
-  shockwaveRange: 6
-  shockwaveSpeed: 14
-  shockwaveWidth: 1.2
-  shockwaveSpacingAngle: 20
-  shockwaveEffects: []
-  shockwaveEffectSpacing: 1
-  followUpDamageRatio: 0.6
+  slamSpreadAngle: 30
   followUpSpacing: 1.5
   followUpInterval: 0.18
   followUpEffectScale: 0.7

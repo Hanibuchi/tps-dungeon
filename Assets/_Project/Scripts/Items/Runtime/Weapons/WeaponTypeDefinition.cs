@@ -57,33 +57,13 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("走っている間は無敵（MeleeAttacker.IsInvulnerable が真になる。被ダメージ側が読む）。")]
         private bool invulnerableDuringLunge = true;
 
-        [Header("衝撃波（Slam の段。「数」のエンチャント 1 つで 1 本。値は仮）")]
-        [SerializeField, Min(0f), Tooltip("1 本が当てるダメージ（その段の 1 撃に対する割合）。")]
-        private float shockwaveDamageRatio = 0.5f;
+        [Header("数（Slam の段）")]
+        [SerializeField, Range(0f, 90f), Tooltip("「数」のエンチャント 1 つで叩きつけが 1 つ増える。本撃と合わせて、持ち主を中心に前から左右対称に、隣とこの角度（度）ずつ回して並べる。" +
+            "それぞれ別の判定で、重なった所の敵は重なった数だけ当たる。")]
+        private float slamSpreadAngle = 30f;
 
-        [SerializeField, Min(0f), Tooltip("着弾点から進む距離（m）。着弾の円の縁から走り出す。")]
-        private float shockwaveRange = 6f;
-
-        [SerializeField, Min(0.1f), Tooltip("進む速さ（m/s）。")]
-        private float shockwaveSpeed = 14f;
-
-        [SerializeField, Min(0.1f), Tooltip("判定の幅（m）。高さも同じ。")]
-        private float shockwaveWidth = 1.2f;
-
-        [SerializeField, Range(0f, 90f), Tooltip("隣り合う衝撃波の間の角度（度）。前を中心に左右対称に広げる。")]
-        private float shockwaveSpacingAngle = 20f;
-
-        [SerializeField, Tooltip("衝撃波の通り道に、一定の間隔で噴き上げる見た目（重ねて出す。任意）。")]
-        private EffectLayer[] shockwaveEffects = Array.Empty<EffectLayer>();
-
-        [SerializeField, Min(0.1f), Tooltip("通り道の見た目を出す間隔（m）。")]
-        private float shockwaveEffectSpacing = 1f;
-
-        [Header("追撃（Slam の段。「多重」のエンチャント 1 つで 1 回。値は仮）")]
-        [SerializeField, Min(0f), Tooltip("1 回が当てるダメージ（その段の 1 撃に対する割合）。")]
-        private float followUpDamageRatio = 0.6f;
-
-        [SerializeField, Min(0f), Tooltip("k 回目は着弾点から前へ k × この距離（m）ずらして落とす。")]
+        [Header("追撃（Slam の段。「多重」のエンチャント 1 つで、叩きつけ 1 つにつき 1 回。ダメージは本撃と同じ。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("k 回目は着弾点から、その叩きつけの向きへ k × この距離（m）ずらして落とす。")]
         private float followUpSpacing = 1.5f;
 
         [SerializeField, Min(0f), Tooltip("k 回目は本撃から k × この秒数あとに落とす。")]
@@ -157,14 +137,7 @@ namespace TpsDungeon.Items
         public float SwingEffectLeadTime => swingEffectLeadTime;
         public bool LungePassesThroughEnemies => lungePassesThroughEnemies;
         public bool InvulnerableDuringLunge => invulnerableDuringLunge;
-        public float ShockwaveDamageRatio => shockwaveDamageRatio;
-        public float ShockwaveRange => shockwaveRange;
-        public float ShockwaveSpeed => shockwaveSpeed;
-        public float ShockwaveWidth => shockwaveWidth;
-        public float ShockwaveSpacingAngle => shockwaveSpacingAngle;
-        public IReadOnlyList<EffectLayer> ShockwaveEffects => shockwaveEffects ?? Array.Empty<EffectLayer>();
-        public float ShockwaveEffectSpacing => shockwaveEffectSpacing;
-        public float FollowUpDamageRatio => followUpDamageRatio;
+        public float SlamSpreadAngle => slamSpreadAngle;
         public float FollowUpSpacing => followUpSpacing;
         public float FollowUpInterval => followUpInterval;
         public float FollowUpEffectScale => followUpEffectScale;

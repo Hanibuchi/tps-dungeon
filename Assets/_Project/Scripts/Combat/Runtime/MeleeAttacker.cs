@@ -13,9 +13,12 @@ namespace TpsDungeon.Combat
     /// <see cref="AimForward"/>（向き）を渡してもらう。プレイヤーは PlayerMeleeInput が、仲間は AI が叩く。
     /// 押すたびにコンボを 1 段ずつ進め（MeleeComboState）、段の判定の瞬間に段の当て方（MeleeComboStep.motion）で当てる:
     ///   Swing … 前方の箱の中の敵へ
-    ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ
-    ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で扇状に衝撃波が走り、「多重」で前へずらした追撃が遅れて落ちる
+    ///   Lunge … 前へ走り、走っている間ずっと前方の箱で当てる（同じ敵には 1 走り 1 回）。壁で止まる。敵はすり抜けるか止まるかを武器種で選ぶ。
+    ///           「多重」1 つで走る回数が 1 回増える。走り終えたら段の頭から（溜めて突き出して）もう一度走る
+    ///   Slam  … 前方の着弾点の円の中の敵へ。「数」で叩きつけが増え、持ち主を中心に扇状に並ぶ。
+    ///           「多重」で叩きつけごとに、その向きへずらした追撃が遅れて落ちる（本撃と同じダメージ）
     /// 数値とエフェクトは武器（WeaponDefinition）と武器種（WeaponTypeDefinition）から出す。
+    /// 段のモーションは判定の時計と同じフレームに、段のステートへ直接 CrossFade して頭から再生する（連打してもずれていかないように）。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない。
     /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
@@ -32,6 +35,12 @@ namespace TpsDungeon.Combat
         private const string AttackParam = "Attack";
         private const string ComboStepParam = "ComboStep";
         private const string AttackSpeedParam = "AttackSpeed";
+
+        // CharacterAnimatorBuilder.BuildCombo が付ける段のステート名「{武器名} Attack {段+1}」の武器名。添え字は AnimatorWeaponType。
+        private static readonly string[] ComboStatePrefixes = { "Unarmed", "OneHanded", "TwoHanded", null, null, "DashThrust", "Hammer" };
+
+        /// <summary>段のステートへ溶け込む秒数（CharacterAnimatorBuilder の段への遷移と同じ）。</summary>
+        private const float ComboCrossFade = 0.08f;
 
         /// <summary>走っているとき、進めた量が予定のこの割合を切ったら壁に当たったとして止める。</summary>
         private const float LungeBlockedRatio = 0.3f;
@@ -110,10 +119,14 @@ namespace TpsDungeon.Combat
 
         private Lunge lunge;
 
+        // 多重で走り足す残りの回数と、次に走り出すのを待っている段（待っていなければ -1）・その残り秒数。
+        private int dashesLeft;
+        private int nextDashStep = -1;
+        private float nextDashDelay;
+
         // 溜めてから放つ振りのエフェクト（SpawnLeadingSwingEffect）の、放つ粒。判定の瞬間にこちらから出す。
         private readonly List<ParticleSystem> pendingRelease = new List<ParticleSystem>();
         private readonly List<Collider> lungeIgnored = new List<Collider>();
-        private readonly List<Shockwave> shockwaves = new List<Shockwave>();
         private readonly List<FollowUp> followUps = new List<FollowUp>();
 
         private bool hasWeaponTypeParam;
@@ -132,22 +145,6 @@ namespace TpsDungeon.Combat
             public int Hits;
         }
 
-        /// <summary>叩きつけから扇状に走る衝撃波 1 本。</summary>
-        private sealed class Shockwave
-        {
-            public int Step;
-            public WeaponTypeDefinition Type;
-            public Vector3 Origin;
-            public Vector3 Direction;
-            public float Travelled;
-            public int Damage;
-            public float Knockback;
-            public float ReactionScale;
-            /// <summary>次に通り道の見た目を出す距離（着弾点から、m）。</summary>
-            public float NextEffectAt;
-            public readonly HashSet<EnemyHealth> Hit = new HashSet<EnemyHealth>();
-        }
-
         /// <summary>叩きつけのあとに遅れて落ちる追撃 1 回。</summary>
         private sealed class FollowUp
         {
@@ -159,6 +156,8 @@ namespace TpsDungeon.Combat
             public float Delay;
             public int Damage;
             public float ReactionScale;
+            /// <summary>着弾の音と揺れを出すか。同じ時刻に落ちる追撃（数で増えた向きの分）では 1 つだけ。</summary>
+            public bool Loud;
         }
 
         /// <summary>今振る武器（素手なら unarmedWeapon）。振れなければ null。</summary>
@@ -177,10 +176,10 @@ namespace TpsDungeon.Combat
         public int ComboCount => stats != null && stats.ComboBonus > 0f ? chain.Count : 0;
 
         /// <summary>走る段で走っている最中か。持ち主の歩きはこの間止めること（プレイヤーなら PlayerMeleeInput が止める）。</summary>
-        public bool IsLunging => lunge != null;
+        public bool IsLunging => lunge != null || nextDashStep >= 0;
 
         /// <summary>走っていて、武器種が走る間の無敵を持っているか。被ダメージ側が読む。</summary>
-        public bool IsInvulnerable => lunge != null && heldWeapon != null && heldWeapon.WeaponType.InvulnerableDuringLunge;
+        public bool IsInvulnerable => IsLunging && heldWeapon != null && heldWeapon.WeaponType.InvulnerableDuringLunge;
 
         /// <summary>段を振り始めるときに体を向ける向き（水平に直して使う）。ゼロなら向きを変えない。</summary>
         public Vector3 AimForward { get; set; }
@@ -188,7 +187,7 @@ namespace TpsDungeon.Combat
         /// <summary>判定を出し終えた。(段, 当てた敵の数)。走る段は走り終えたとき、叩きつけは本撃だけを数える。</summary>
         public event Action<int, int> Swung;
 
-        /// <summary>敵に当てた 1 回ごと（本撃・爆発・衝撃波・追撃）。試験の窓や、ダメージ表示が読む。</summary>
+        /// <summary>敵に当てた 1 回ごと（本撃・爆発・追撃）。試験の窓や、ダメージ表示が読む。</summary>
         public event Action<MeleeHitRecord> Dealt;
 
         /// <summary>当てたダメージをコンソールにも出すか（調整用）。</summary>
@@ -219,6 +218,7 @@ namespace TpsDungeon.Combat
 
         private void OnDisable()
         {
+            CancelExtraDashes();
             EndLunge();
             pressQueued = false;
         }
@@ -237,6 +237,7 @@ namespace TpsDungeon.Combat
             Initialize();
             float switchWait = equipped ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
             equipped = true;
+            CancelExtraDashes();
             EndLunge();
             chain.Reset();
 
@@ -262,8 +263,8 @@ namespace TpsDungeon.Combat
             float dt = Time.deltaTime;
             chain.Tick(dt);
             TickFollowUps(dt);
-            TickShockwaves(dt);
             if (lunge != null) TickLunge(dt);
+            TickExtraDash(dt);
 
             bool pressed = pressQueued;
             pressQueued = false;
@@ -284,14 +285,24 @@ namespace TpsDungeon.Combat
 
         private static bool IsMelee(WeaponDefinition weapon) => weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsMelee;
 
-        /// <summary>段の時間。走る段は、持続時間のエンチャントで走る時間が延びた分だけ段も延ばす。</summary>
+        /// <summary>
+        /// 段の時間。走る段は、持続時間のエンチャントで走る時間が延びた分と、
+        /// 多重で走り足す 1 回ごとの溜め（hitTime）と走る時間を足して段を延ばす。
+        /// </summary>
         private static List<ComboStepTiming> Timings(WeaponTypeDefinition type, MeleeWeaponStats stats)
         {
             float lungeScale = stats != null ? stats.LungeTimeScale : 1f;
+            int extraDashes = stats != null ? stats.FollowUpCount : 0;
             var result = new List<ComboStepTiming>();
             foreach (MeleeComboStep step in type.ComboSteps)
             {
-                float extra = step.motion == MeleeStepMotion.Lunge ? Mathf.Max(0f, step.lungeDuration * (lungeScale - 1f)) : 0f;
+                float extra = 0f;
+                if (step.motion == MeleeStepMotion.Lunge)
+                {
+                    float lunge = Mathf.Max(0f, step.lungeDuration) * lungeScale;
+                    extra = Mathf.Max(0f, step.lungeDuration * (lungeScale - 1f)) + extraDashes * (Mathf.Max(0f, step.hitTime) + lunge);
+                }
+
                 result.Add(new ComboStepTiming(step.duration + extra, step.hitTime));
             }
 
@@ -337,16 +348,49 @@ namespace TpsDungeon.Combat
 
         private void BeginStep(int step)
         {
+            CancelExtraDashes();
             hitThisSwing.Clear();
             criticalSoundThisSwing = false;
             chain.CancelTimeout();
             if (faceAimOnAttack) FaceAim();
             SpawnLeadingSwingEffect(step);
+            PlayStepAnimation(step);
+        }
 
+        /// <summary>段のモーションを頭から流す。</summary>
+        private void PlayStepAnimation(int step)
+        {
             if (animator == null) return;
             if (hasComboStepParam) animator.SetInteger(ComboStepParam, step);
             if (hasAttackSpeedParam) animator.SetFloat(AttackSpeedParam, stats != null ? stats.AttackSpeed : 1f);
-            if (hasAttackParam) animator.SetTrigger(AttackParam);
+
+            // トリガーに任せると、溶け込みの最中に立てたトリガーが残って後から効いたり、1 段しかない武器は自分の段へ戻れず
+            // 振り終わりを待ったりして、連打するほど判定より遅れていく。段のステートがあれば直接頭から流す。
+            if (TryFindComboState(step, out int layer, out int state)) animator.CrossFadeInFixedTime(state, ComboCrossFade, layer, 0f);
+            else if (hasAttackParam) animator.SetTrigger(AttackParam);
+        }
+
+        /// <summary>今の武器の段 step のステート（層と、層の名前込みのハッシュ）。Animator に無ければ偽。</summary>
+        private bool TryFindComboState(int step, out int layer, out int state)
+        {
+            layer = -1;
+            state = 0;
+            int weaponType = heldWeapon != null ? heldWeapon.WeaponType.AnimatorWeaponType : -1;
+            if (animator == null || weaponType < 0 || weaponType >= ComboStatePrefixes.Length || ComboStatePrefixes[weaponType] == null)
+                return false;
+
+            string name = $"{ComboStatePrefixes[weaponType]} Attack {step + 1}";
+            for (int i = 0; i < animator.layerCount; i++)
+            {
+                int hash = Animator.StringToHash($"{animator.GetLayerName(i)}.{name}");
+                if (!animator.HasState(i, hash)) continue;
+
+                layer = i;
+                state = hash;
+                return true;
+            }
+
+            return false;
         }
 
         private void FaceAim()
@@ -366,6 +410,7 @@ namespace TpsDungeon.Combat
             switch (shape.motion)
             {
                 case MeleeStepMotion.Lunge:
+                    dashesLeft = stats.FollowUpCount;
                     BeginLunge(step, shape);
                     break;
                 case MeleeStepMotion.Slam:
@@ -589,7 +634,50 @@ namespace TpsDungeon.Combat
 
             bool blocked = delta.sqrMagnitude > 1e-8f && moved < delta.magnitude * LungeBlockedRatio;
             bool timeUp = lunge.Remaining <= 0f && (lunge.Overrun >= LungeMaxOverrun || !InsidePassedEnemy());
-            if (timeUp || blocked) EndLunge();
+            if (!timeUp && !blocked) return;
+
+            int step = lunge.Step;
+            EndLunge();
+            QueueExtraDash(step);
+        }
+
+        /// <summary>
+        /// 多重で走り足す回数が残っていれば、段の頭からもう一度振る（向き直し・溜めのエフェクト・モーション）。
+        /// 段の判定と同じ hitTime だけ溜めたら <see cref="TickExtraDash"/> が走り出す。
+        /// </summary>
+        private void QueueExtraDash(int step)
+        {
+            if (dashesLeft <= 0 || heldWeapon == null || stats == null) return;
+
+            dashesLeft--;
+            nextDashStep = step;
+            nextDashDelay = Mathf.Max(0f, heldWeapon.WeaponType.ComboSteps[step].hitTime) / Mathf.Max(0.1f, stats.AttackSpeed);
+            hitThisSwing.Clear();
+            criticalSoundThisSwing = false;
+            if (faceAimOnAttack) FaceAim();
+            SpawnLeadingSwingEffect(step);
+            PlayStepAnimation(step);
+        }
+
+        private void TickExtraDash(float dt)
+        {
+            if (nextDashStep < 0) return;
+
+            nextDashDelay -= dt;
+            if (nextDashDelay > 0f) return;
+
+            int step = nextDashStep;
+            nextDashStep = -1;
+            if (heldWeapon == null || stats == null) return;
+
+            ReleaseLeadingEffect();
+            BeginLunge(step, heldWeapon.WeaponType.ComboSteps[step]);
+        }
+
+        private void CancelExtraDashes()
+        {
+            dashesLeft = 0;
+            nextDashStep = -1;
         }
 
         /// <summary>体を delta だけ動かし、実際に水平に進めた距離を返す。</summary>
@@ -698,67 +786,57 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             PlaySwing(shape);
 
-            // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に鳴らす。
-            Vector3 center = SlamCenter(shape);
-            SpawnLayers(type.SlamEffects, center, transform.rotation, SizeScale);
-            ImpactShake.At(center, type.SlamShake);
-            PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, center, type.SoundVolume);
+            // 叩きつけの音（武器種の命中の音）は、当たっても外れても着弾の瞬間に 1 回だけ鳴らす。揺れも 1 回。
+            Vector3 front = SlamCenter(shape, 0f);
+            ImpactShake.At(front, type.SlamShake);
+            PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, front, type.SoundVolume);
 
+            // 数のエンチャントで増えた分も本撃と合わせて、持ち主を中心に前から左右対称に回して並べる。
+            // 叩きつけごとに別の判定なので、重なった所にいる敵は重なった数だけ当たる。
             int hits = 0;
             float radius = Mathf.Max(0f, shape.slamRadius) * stats.HitboxScale;
-            foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(center, radius, shape.slamHeight))
+            foreach (float angle in SlamPattern.SpreadAngles(stats.ExtraSlamCount + 1, type.SlamSpreadAngle))
             {
-                if (hitThisSwing.Add(enemy)) Strike(enemy, point, step, shape, ref hits, false);
+                Vector3 center = SlamCenter(shape, angle);
+                SpawnLayers(type.SlamEffects, center, transform.rotation * Quaternion.AngleAxis(angle, Vector3.up), SizeScale);
+                foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(center, radius, shape.slamHeight))
+                    Strike(enemy, point, step, shape, ref hits, false);
             }
 
-            int baseHit = stats.HitDamage(step, ComboCount);
-            Vector3 forward = transform.forward;
-            foreach (float angle in SlamPattern.ShockwaveAngles(stats.ShockwaveCount, type.ShockwaveSpacingAngle))
-            {
-                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
-                var wave = new Shockwave
-                {
-                    Step = step,
-                    Type = type,
-                    Origin = center,
-                    Direction = direction,
-                    // 円の縁から走らせる。円の中の敵は本撃で叩いたので、本数ぶん重ねて当てない。
-                    Travelled = Mathf.Min(radius, type.ShockwaveRange),
-                    Damage = MeleeWeaponStats.Share(baseHit, type.ShockwaveDamageRatio),
-                    Knockback = shape.knockback * 0.5f + stats.KnockbackBonus,
-                    ReactionScale = ReactionScale(shape),
-                    NextEffectAt = Mathf.Min(radius, type.ShockwaveRange),
-                };
-                if (wave.Damage > 0) shockwaves.Add(wave);
-            }
-
+            // 追撃は叩きつけ（数で増えた分も）ごとに、その向きへずらして落とす。ダメージは本撃と同じ（クリティカルは落ちたときに引く）。
+            int damage = stats.HitDamage(step, ComboCount);
+            float[] angles = SlamPattern.SpreadAngles(stats.ExtraSlamCount + 1, type.SlamSpreadAngle);
             foreach (SlamFollowUp plan in SlamPattern.FollowUps(stats.FollowUpCount, type.FollowUpSpacing, type.FollowUpInterval))
             {
-                int damage = MeleeWeaponStats.Share(baseHit, type.FollowUpDamageRatio);
-                if (damage <= 0) continue;
-
-                followUps.Add(new FollowUp
+                for (int a = 0; a < angles.Length; a++)
                 {
-                    Step = step,
-                    Type = type,
-                    Shape = shape,
-                    Center = center + forward * plan.ForwardOffset,
-                    Forward = forward,
-                    Delay = plan.Delay,
-                    Damage = damage,
-                    ReactionScale = ReactionScale(shape),
-                });
+                    Vector3 forward = Quaternion.AngleAxis(angles[a], Vector3.up) * transform.forward;
+                    followUps.Add(new FollowUp
+                    {
+                        Step = step,
+                        Type = type,
+                        Shape = shape,
+                        Center = SlamCenter(shape, angles[a]) + forward * plan.ForwardOffset,
+                        Forward = forward,
+                        Delay = plan.Delay,
+                        Damage = damage,
+                        ReactionScale = ReactionScale(shape),
+                        Loud = a == angles.Length / 2,
+                    });
+                }
             }
 
             FinishSwing(step, hits);
         }
 
-        /// <summary>着弾点。hitboxCenter のキャラから見た位置（前への距離はサイズで伸ばす）。</summary>
-        private Vector3 SlamCenter(MeleeComboStep shape)
+        /// <summary>
+        /// 着弾点。hitboxCenter のキャラから見た位置（前への距離はサイズで伸ばす）を、持ち主を中心に angle 度（右が正）回した所。
+        /// </summary>
+        private Vector3 SlamCenter(MeleeComboStep shape, float angle)
         {
             Vector3 local = shape.hitboxCenter;
             local.z *= stats != null ? stats.HitboxScale : 1f;
-            return transform.TransformPoint(local);
+            return transform.TransformPoint(Quaternion.AngleAxis(angle, Vector3.up) * local);
         }
 
         /// <summary>center から水平に radius 以内、上下 height 以内にいる生きた敵（1 体 1 回）と、当たった場所。</summary>
@@ -797,56 +875,25 @@ namespace TpsDungeon.Combat
 
                 followUps.RemoveAt(i);
                 SpawnLayers(f.Type.SlamEffects, f.Center, Quaternion.LookRotation(f.Forward, Vector3.up), f.Type.FollowUpEffectScale * SizeScale);
-                ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
-                PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
+                if (f.Loud)
+                {
+                    ImpactShake.At(f.Center, f.Type.SlamShake * f.Type.FollowUpShakeRatio);
+                    PlaySound(f.Shape.hitSound != null ? f.Shape.hitSound : f.Type.HitSound, f.Center, f.Type.SoundVolume);
+                }
 
                 float radius = Mathf.Max(0f, f.Shape.slamRadius) * (stats != null ? stats.HitboxScale : 1f);
                 foreach ((EnemyHealth enemy, Vector3 point) in EnemiesInCircle(f.Center, radius, f.Shape.slamHeight))
                 {
+                    bool critical = stats != null && UnityEngine.Random.value < stats.CritChance;
+                    int damage = critical ? stats.ApplyCritical(f.Damage) : f.Damage;
+                    float knockback = f.Shape.knockback + (stats != null ? stats.KnockbackBonus : 0f);
                     Vector3 direction = FlatDirection(f.Center, enemy.transform.position, f.Forward);
-                    int dealt = enemy.TakeDamage(new DamageInfo(f.Damage, point, direction, false, f.Shape.knockback, f.ReactionScale));
+                    int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical, knockback, f.ReactionScale));
                     OneShotEffect.Spawn(f.Type.HitEffect, point, Quaternion.LookRotation(direction, Vector3.up), f.Type.HitEffectScale);
-                    if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}", enemy);
-                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, f.Damage, dealt, false, point));
+                    if (critical) OneShotEffect.Spawn(criticalHitEffect, point, Quaternion.LookRotation(direction, Vector3.up), criticalHitEffectScale);
+                    if (logHits) Debug.Log($"追撃 → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
+                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.FollowUp, enemy, f.Step, damage, dealt, critical, point));
                 }
-            }
-        }
-
-        private void TickShockwaves(float dt)
-        {
-            for (int i = shockwaves.Count - 1; i >= 0; i--)
-            {
-                Shockwave w = shockwaves[i];
-                float from = w.Travelled;
-                float to = Mathf.Min(w.Type.ShockwaveRange, from + w.Type.ShockwaveSpeed * dt);
-                w.Travelled = to;
-
-                // 前のフレームの先頭から今の先頭までを覆う箱。
-                float width = w.Type.ShockwaveWidth;
-                Quaternion rotation = Quaternion.LookRotation(w.Direction, Vector3.up);
-                Vector3 center = w.Origin + w.Direction * ((from + to) * 0.5f) + Vector3.up * (width * 0.5f);
-                var halfExtents = new Vector3(width * 0.5f, width * 0.5f, (to - from) * 0.5f + width * 0.25f);
-                // 通り道に一定の間隔で噴き上げて、走っていくのが見えるようにする。
-                while (w.NextEffectAt <= to + 1e-4f)
-                {
-                    SpawnLayers(w.Type.ShockwaveEffects, w.Origin + w.Direction * w.NextEffectAt, rotation, 1f);
-                    w.NextEffectAt += Mathf.Max(0.1f, w.Type.ShockwaveEffectSpacing);
-                }
-
-                int count = Physics.OverlapBoxNonAlloc(center, halfExtents, overlap, rotation, hitMask, QueryTriggerInteraction.Ignore);
-                for (int j = 0; j < count; j++)
-                {
-                    EnemyHealth enemy = overlap[j].GetComponentInParent<EnemyHealth>();
-                    if (enemy == null || enemy.IsDead || !w.Hit.Add(enemy)) continue;
-
-                    Vector3 point = overlap[j].ClosestPoint(center);
-                    int dealt = enemy.TakeDamage(new DamageInfo(w.Damage, point, w.Direction, false, w.Knockback, w.ReactionScale));
-                    OneShotEffect.Spawn(w.Type.HitEffect, point, rotation, w.Type.HitEffectScale);
-                    if (logHits) Debug.Log($"衝撃波 → {enemy.name}: {dealt}", enemy);
-                    Dealt?.Invoke(new MeleeHitRecord(MeleeHitKind.Shockwave, enemy, w.Step, w.Damage, dealt, false, point));
-                }
-
-                if (to >= w.Type.ShockwaveRange) shockwaves.RemoveAt(i);
             }
         }
 
@@ -927,7 +974,9 @@ namespace TpsDungeon.Combat
             if (shape.motion == MeleeStepMotion.Slam)
             {
                 float radius = shape.slamRadius * (stats != null ? stats.HitboxScale : 1f);
-                Gizmos.DrawWireSphere(SlamCenter(shape), radius);
+                int count = (stats != null ? stats.ExtraSlamCount : 0) + 1;
+                foreach (float angle in SlamPattern.SpreadAngles(count, heldWeapon.WeaponType.SlamSpreadAngle))
+                    Gizmos.DrawWireSphere(SlamCenter(shape, angle), radius);
                 return;
             }
 

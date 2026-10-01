@@ -6,14 +6,11 @@ namespace TpsDungeon.Combat
     /// <summary>近接攻撃のダメージの出どころ。</summary>
     public enum MeleeHitKind
     {
-        /// <summary>段の 1 撃（振り・走り・叩きつけの本撃）。</summary>
+        /// <summary>段の 1 撃（振り・走り・叩きつけ。数のエンチャントで増えた叩きつけも）。</summary>
         Hit,
 
         /// <summary>爆発のエンチャント。</summary>
         Explosion,
-
-        /// <summary>叩きつけから走る衝撃波（数のエンチャント）。</summary>
-        Shockwave,
 
         /// <summary>叩きつけの追撃（多重のエンチャント）。</summary>
         FollowUp,
