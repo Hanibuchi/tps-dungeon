@@ -688,6 +688,8 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("homingRange").floatValue = 12f;
             serialized.FindProperty("rangeRingMaterial").objectReferenceValue = ring;
             serialized.FindProperty("heldInLeftHand").boolValue = true;
+            // 左手の骨から見た弓の握り（Play 中に手の武器を動かして合わせた値）。調整済みなら触らない。
+            SeedHeldGrip(serialized, new Vector3(0.018f, 0f, 0.072f), Vector3.zero);
 
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
