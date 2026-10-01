@@ -218,24 +218,24 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void 数は衝撃波の本数_多重は追撃の回数になる()
+        public void 数は増える叩きつけの数_多重は追撃の回数になる()
         {
             MeleeWeaponStats none = Compute(100f);
-            Assert.AreEqual(0, none.ShockwaveCount);
+            Assert.AreEqual(0, none.ExtraSlamCount);
             Assert.AreEqual(0, none.FollowUpCount);
 
             var totals = new EnchantmentTotals();
             totals.Add(EnchantmentKind.ProjectileCount, 1f, 0f, 3);
             totals.Add(EnchantmentKind.Multishot, 1f, 0f, 2);
             MeleeWeaponStats stats = Compute(100f, totals);
-            Assert.AreEqual(3, stats.ShockwaveCount);
+            Assert.AreEqual(3, stats.ExtraSlamCount);
             Assert.AreEqual(2, stats.FollowUpCount);
         }
 
         [Test]
         public void 数や多重の効果量が端数なら切り捨てる()
         {
-            Assert.AreEqual(1, Compute(100f, With(EnchantmentKind.ProjectileCount, 0.5f, 3)).ShockwaveCount);
+            Assert.AreEqual(1, Compute(100f, With(EnchantmentKind.ProjectileCount, 0.5f, 3)).ExtraSlamCount);
             Assert.AreEqual(0, Compute(100f, With(EnchantmentKind.Multishot, 0.5f)).FollowUpCount);
         }
 

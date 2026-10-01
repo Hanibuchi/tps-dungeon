@@ -15,9 +15,9 @@ namespace TpsDungeon.Combat.Editor
     /// <summary>
     /// 武器とエンチャントの組み合わせを手早く試す窓。
     ///   1. 武器を選び、その武器種に付けられるエンチャントの個数を ± で決める（ランダムに振ることもできる）
-    ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・衝撃波や追撃のダメージなど）がその場で出る
+    ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージなど）がその場で出る
     ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（個数を変えたら自動で持たせ直せる）
-    ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・衝撃波・追撃に分けて記録し、実測の DPS を出す
+    ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃に分けて記録し、実測の DPS を出す
     /// ゲーム側には何も足さない（的と持ち物は Play を止めれば消える）。
     /// </summary>
     public sealed class EnchantmentTestWindow : EditorWindow
@@ -265,7 +265,7 @@ namespace TpsDungeon.Combat.Editor
                 ? $"基礎攻撃力 {characterAttack:0.#}（プレイヤーの今の値）を足している"
                 : "基礎攻撃力 0 として出している（Play 中はプレイヤーの今の値を足す）");
             text.AppendLine($"1 撃（段ごと）: {string.Join(" / ", hits)}　1 周 {stats.CycleDuration:0.00} 秒");
-            text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。爆発・衝撃波・追撃・コンボボーナスは含めない）");
+            text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。爆発・増えた叩きつけ・追撃・コンボボーナスは含めない）");
             if (stats.ComboBonus > 0f)
             {
                 // 表示の COMBO の数 N の 1 撃には、続けて当てた N - 1 段ぶんが乗る。
@@ -295,7 +295,7 @@ namespace TpsDungeon.Combat.Editor
                 {
                     int hit = stats.HitDamage(i);
                     text.AppendLine($"{head}着弾: 半径 {step.slamRadius * stats.HitboxScale:0.##} m");
-                    text.AppendLine($"  衝撃波: {stats.ShockwaveCount} 本 × {MeleeWeaponStats.Share(hit, type.ShockwaveDamageRatio)}（{type.ShockwaveRange:0.#} m 先まで）");
+                    text.AppendLine($"  叩きつけ: {stats.ExtraSlamCount + 1} 個 × {hit}（{type.SlamSpreadAngle:0.#}° ずつ扇状に）");
                     text.AppendLine($"  追撃: {stats.FollowUpCount} 回 × {MeleeWeaponStats.Share(hit, type.FollowUpDamageRatio)}（{type.FollowUpSpacing:0.#} m ずつ前へ）");
                 }
             }
@@ -499,7 +499,6 @@ namespace TpsDungeon.Combat.Editor
         private static string KindLabel(MeleeHitKind kind) => kind switch
         {
             MeleeHitKind.Explosion => "爆発",
-            MeleeHitKind.Shockwave => "衝撃波",
             MeleeHitKind.FollowUp => "追撃",
             _ => "本撃",
         };

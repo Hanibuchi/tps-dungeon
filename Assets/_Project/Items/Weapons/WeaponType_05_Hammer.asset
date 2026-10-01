@@ -53,19 +53,7 @@ MonoBehaviour:
   comboCooldown: 0.4
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
-  shockwaveDamageRatio: 0.5
-  shockwaveRange: 6
-  shockwaveSpeed: 14
-  shockwaveWidth: 1.2
-  shockwaveSpacingAngle: 20
-  shockwaveEffects:
-  - prefab: {fileID: 5610010966355794069, guid: 803ecf87f61d9fb4f84ba6319ba95c9c, type: 3}
-    scale: 0.13
-    offset: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 1758473627833946668, guid: 9b21333b068a5084ba09535839bee3c8, type: 3}
-    scale: 0.35
-    offset: {x: 0, y: 0, z: 0}
-  shockwaveEffectSpacing: 0.9
+  slamSpreadAngle: 30
   followUpDamageRatio: 0.6
   followUpSpacing: 1.5
   followUpInterval: 0.18

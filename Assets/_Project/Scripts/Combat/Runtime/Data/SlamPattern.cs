@@ -19,15 +19,16 @@ namespace TpsDungeon.Combat
     }
 
     /// <summary>
-    /// 叩きつけ（Slam の段）から出る衝撃波と追撃の並べ方。UnityEngine に依存しない。
+    /// 叩きつけ（Slam の段）の並べ方と追撃の落とし方。UnityEngine に依存しない。
     ///
-    ///   衝撃波（数） … count 本を、前（0°）を中心に spacing 度ずつ左右対称に広げる。1 本なら真っ直ぐ前、2 本なら ±spacing/2
+    ///   叩きつけ（数） … 本撃と増えた分の count 個を、持ち主を中心に、前（0°）から spacing 度ずつ左右対称に回して並べる。
+    ///                    1 個なら真っ直ぐ前、2 個なら ±spacing/2
     ///   追撃（多重） … k 回目（1 始まり）は前へ k × spacing m、本撃から k × interval 秒あと
     /// </summary>
     public static class SlamPattern
     {
-        /// <summary>衝撃波の向き。前からの水平の角度（度、右が正）を count 個。count が 0 以下なら空。</summary>
-        public static float[] ShockwaveAngles(int count, float spacingDegrees)
+        /// <summary>叩きつけの向き。前からの水平の角度（度、右が正）を count 個。count が 0 以下なら空。</summary>
+        public static float[] SpreadAngles(int count, float spacingDegrees)
         {
             if (count <= 0) return Array.Empty<float>();
 

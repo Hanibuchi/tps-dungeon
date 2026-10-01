@@ -2,28 +2,28 @@ using NUnit.Framework;
 
 namespace TpsDungeon.Combat.Tests
 {
-    /// <summary>叩きつけの衝撃波（数）と追撃（多重）の並べ方を確かめる。</summary>
+    /// <summary>叩きつけの扇（数）と追撃（多重）の並べ方を確かめる。</summary>
     public sealed class SlamPatternTests
     {
         [Test]
-        public void 衝撃波が無ければ空()
+        public void 数が0なら空()
         {
-            Assert.IsEmpty(SlamPattern.ShockwaveAngles(0, 20f));
-            Assert.IsEmpty(SlamPattern.ShockwaveAngles(-1, 20f));
+            Assert.IsEmpty(SlamPattern.SpreadAngles(0, 30f));
+            Assert.IsEmpty(SlamPattern.SpreadAngles(-1, 30f));
         }
 
         [Test]
-        public void 衝撃波1本は真っ直ぐ前()
+        public void ひとつなら真っ直ぐ前()
         {
-            Assert.AreEqual(new[] { 0f }, SlamPattern.ShockwaveAngles(1, 20f));
+            Assert.AreEqual(new[] { 0f }, SlamPattern.SpreadAngles(1, 30f));
         }
 
         [Test]
-        public void 衝撃波は前を中心に左右対称に広がる()
+        public void 前を中心に左右対称に広がる()
         {
-            Assert.AreEqual(new[] { -10f, 10f }, SlamPattern.ShockwaveAngles(2, 20f));
-            Assert.AreEqual(new[] { -20f, 0f, 20f }, SlamPattern.ShockwaveAngles(3, 20f));
-            Assert.AreEqual(new[] { -30f, -10f, 10f, 30f }, SlamPattern.ShockwaveAngles(4, 20f));
+            Assert.AreEqual(new[] { -15f, 15f }, SlamPattern.SpreadAngles(2, 30f));
+            Assert.AreEqual(new[] { -30f, 0f, 30f }, SlamPattern.SpreadAngles(3, 30f));
+            Assert.AreEqual(new[] { -45f, -15f, 15f, 45f }, SlamPattern.SpreadAngles(4, 30f));
         }
 
         [Test]

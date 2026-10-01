@@ -8,8 +8,8 @@ namespace TpsDungeon.Hud
     /// <summary>
     /// 敵に当てたダメージの数字を、当たった場所に浮かべる。
     /// MeleeAttacker.Dealt を受けて 1 撃ごとに 1 つ出し、はじけて上がりながら消す。
-    /// クリティカルは大きく金、エンチャント（爆発・衝撃波・追撃）の一撃は小さく橙（見た目は GameHud.uss の .damage-number）。
-    /// コンボボーナスが乗った 1 撃には、数字の下に「N COMBO」を添える。N が大きいほど白→金→赤。
+    /// クリティカルは大きく金、エンチャント（爆発・追撃）の一撃は小さく橙（見た目は GameHud.uss の .damage-number）。
+    /// クリティカルの 1 撃には数字の下に「Critical」を、コンボボーナスが乗った 1 撃にはその下に「N COMBO」を添える。N が大きいほど白→金→赤。
     /// GameHudView と同じ GameObject に付けて、同じ UIDocument に描く。
     /// </summary>
     [DisallowMultipleComponent]
@@ -40,6 +40,7 @@ namespace TpsDungeon.Hud
         private const string CriticalClass = "damage-number--critical";
         private const string MinorClass = "damage-number--minor";
         private const string ValueClass = "damage-number__value";
+        private const string CriticalTagClass = "damage-number__critical";
         private const string ComboClass = "damage-number__combo";
         private const string ComboHotClass = "damage-number__combo--hot";
         private const string ComboBlazingClass = "damage-number__combo--blazing";
@@ -56,9 +57,10 @@ namespace TpsDungeon.Hud
 
         private sealed class Number
         {
-            /// <summary>数字と COMBO をまとめた箱。位置・大きさ・濃さはこれに入れる。</summary>
+            /// <summary>数字と Critical と COMBO をまとめた箱。位置・大きさ・濃さはこれに入れる。</summary>
             public VisualElement Root;
             public Label Label;
+            public Label Critical;
             public Label Combo;
             public Vector3 Origin;
             public float Age;
@@ -124,9 +126,10 @@ namespace TpsDungeon.Hud
             number.Age = 0f;
 
             VisualElement root = number.Root;
-            number.Label.text = critical ? $"{amount}!" : amount.ToString();
+            number.Label.text = amount.ToString();
             root.EnableInClassList(CriticalClass, critical);
             root.EnableInClassList(MinorClass, minor && !critical);
+            number.Critical.style.display = critical ? DisplayStyle.Flex : DisplayStyle.None;
 
             bool showCombo = combo >= 2;
             number.Combo.style.display = showCombo ? DisplayStyle.Flex : DisplayStyle.None;
@@ -161,12 +164,15 @@ namespace TpsDungeon.Hud
                 root.AddToClassList("rpg-deco-bold");
                 var label = new Label { pickingMode = PickingMode.Ignore };
                 label.AddToClassList(ValueClass);
+                var criticalTag = new Label("Critical") { pickingMode = PickingMode.Ignore };
+                criticalTag.AddToClassList(CriticalTagClass);
                 var combo = new Label { pickingMode = PickingMode.Ignore };
                 combo.AddToClassList(ComboClass);
                 root.Add(label);
+                root.Add(criticalTag);
                 root.Add(combo);
                 layer.Add(root);
-                number = new Number { Root = root, Label = label, Combo = combo };
+                number = new Number { Root = root, Label = label, Critical = criticalTag, Combo = combo };
             }
 
             number.Root.style.display = DisplayStyle.Flex;
