@@ -178,7 +178,7 @@ namespace TpsDungeon.Combat
         {
             volleys.Clear();
             pressQueued = false;
-            aimRing?.SetVisible(false);
+            if (aimRing != null) aimRing.SetVisible(false);
         }
 
         private void OnDestroy()
@@ -230,7 +230,7 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon != null ? heldWeapon.WeaponType : null;
             if (type == null || !Aim.HasValue)
             {
-                aimRing?.SetVisible(false);
+                if (aimRing != null) aimRing.SetVisible(false);
                 return;
             }
 
@@ -606,7 +606,7 @@ namespace TpsDungeon.Combat
             bool show = type.RangedKind == RangedAttackKind.Rain && type.RangeRingMaterial != null;
             if (!show)
             {
-                aimRing?.SetVisible(false);
+                if (aimRing != null) aimRing.SetVisible(false);
                 return;
             }
 
