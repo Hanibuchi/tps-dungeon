@@ -26,8 +26,6 @@ namespace TpsDungeon.Combat.Editor
 
                 var ranged = root.GetComponent<RangedAttacker>();
                 if (ranged == null) ranged = root.AddComponent<RangedAttacker>();
-                // 左手の弓を構えている間、カメラを左肩へ寄せて引き絞りを見せる。
-                if (root.GetComponent<RangedCameraShoulder>() == null) root.AddComponent<RangedCameraShoulder>();
 
                 var input = root.GetComponent<PlayerMeleeInput>();
                 if (input == null) input = root.AddComponent<PlayerMeleeInput>();
