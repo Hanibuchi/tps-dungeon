@@ -11,6 +11,7 @@ namespace TpsDungeon.Combat
     /// 敵でない物（壁・床）に当たったら刺さって onStick を呼び（爆発のエンチャント用）、しばらくして消える。死んだ敵の体はすり抜ける。
     /// 見た目だけの矢（矢の雨・上へ放つ矢）は敵をすり抜けて、床に刺さるだけ。
     /// 見た目のプレハブは「原点が矢の先、柄が -Z」に置く（刺さったときに先が当たった面に来るように）。
+    /// 投擲では手に持つ武器の見た目をそのまま飛ばし（Settings.HeldModelVisual）、寝かせて縦に回す（Settings.SpinRate）。
     /// RangedAttacker が出す。シーンに置く物ではない。
     /// </summary>
     [AddComponentMenu("")]
@@ -52,9 +53,20 @@ namespace TpsDungeon.Combat
 
             /// <summary>見た目だけ（敵に当てない）。</summary>
             public bool VisualOnly;
+
+            /// <summary>
+            /// 見た目が手に持つ武器の見た目（握りが原点で長い向きが +Y）。投擲で使う。長い向きを飛ぶ向きへ寝かせ、
+            /// 真ん中を先から半分の長さだけ後ろに置く（回らなければ先が当たった面に来て、回っても刺さったときに面へ食い込んで見える）。
+            /// </summary>
+            public bool HeldModelVisual;
+
+            /// <summary>見た目を縦に回す速さ（度/秒、上を前へ倒す向き）。刺さったら止まる。0 なら回さない。</summary>
+            public float SpinRate;
         }
 
         private Settings settings;
+        // 回す見た目の節点（HeldModelVisual のときだけ）。ルートの向きは毎フレーム飛ぶ向きに合わせ直すので、回すのはこの子。
+        private Transform spinPivot;
         private Action<EnemyHealth, Vector3, Vector3> onHit;
         private Action<Vector3> onStick;
         private Vector3 direction;
@@ -77,15 +89,24 @@ namespace TpsDungeon.Combat
             if (direction.sqrMagnitude < 1e-8f) direction = Vector3.forward;
             direction.Normalize();
 
-            var go = new GameObject("Arrow");
+            var go = new GameObject(settings.HeldModelVisual ? "Thrown" : "Arrow");
             go.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, Vector3.up));
+            Transform pivot = null;
             if (visual != null)
             {
-                GameObject model = Instantiate(visual, go.transform, false);
+                if (settings.HeldModelVisual)
+                {
+                    pivot = new GameObject("Spin").transform;
+                    pivot.SetParent(go.transform, false);
+                }
+
+                GameObject model = Instantiate(visual, pivot != null ? pivot : go.transform, false);
                 foreach (Collider c in model.GetComponentsInChildren<Collider>()) Destroy(c);
+                if (pivot != null) LayAlongTravel(model.transform, pivot);
             }
 
             var arrow = go.AddComponent<ArrowProjectile>();
+            arrow.spinPivot = pivot;
             arrow.settings = settings;
             arrow.onHit = onHit;
             arrow.onStick = onStick;
@@ -138,8 +159,52 @@ namespace TpsDungeon.Combat
             }
 
             transform.SetPositionAndRotation(position + direction * step, Quaternion.LookRotation(direction, Vector3.up));
+            if (spinPivot != null && settings.SpinRate != 0f)
+                spinPivot.localRotation = Quaternion.AngleAxis(settings.SpinRate * dt, Vector3.right) * spinPivot.localRotation;
             remaining -= step;
             if (remaining <= 0f) Destroy(gameObject);
+        }
+
+        /// <summary>
+        /// 手に持つ見た目（長い向きが +Y）を、長い向きが飛ぶ向き（+Z）になるよう寝かせ、真ん中を pivot に合わせる。
+        /// pivot は先から半分の長さだけ後ろ（-Z）に置き、回らなければ前の端が矢の先（ルートの原点）に来る。
+        /// </summary>
+        private static void LayAlongTravel(Transform model, Transform pivot)
+        {
+            model.localRotation = Quaternion.Euler(90f, 0f, 0f) * model.localRotation;
+            if (!TryMeasure(model, pivot, out Bounds bounds)) return;
+
+            model.localPosition -= bounds.center;
+            pivot.localPosition = new Vector3(0f, 0f, -bounds.extents.z);
+        }
+
+        /// <summary>model のメッシュを合わせた境界を space の座標系で測る。</summary>
+        private static bool TryMeasure(Transform model, Transform space, out Bounds bounds)
+        {
+            bounds = default;
+            bool any = false;
+            Matrix4x4 toSpace = space.worldToLocalMatrix;
+            foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh == null) continue;
+
+                Matrix4x4 matrix = toSpace * filter.transform.localToWorldMatrix;
+                Bounds local = filter.sharedMesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 corner = local.center + Vector3.Scale(local.extents,
+                        new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                    Vector3 p = matrix.MultiplyPoint3x4(corner);
+                    if (!any)
+                    {
+                        bounds = new Bounds(p, Vector3.zero);
+                        any = true;
+                    }
+                    else bounds.Encapsulate(p);
+                }
+            }
+
+            return any;
         }
 
         /// <summary>壁や床に刺さって止まる。</summary>

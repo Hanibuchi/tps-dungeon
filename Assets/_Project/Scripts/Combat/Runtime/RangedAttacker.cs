@@ -20,10 +20,12 @@ namespace TpsDungeon.Combat
     ///            当てた敵から近くのまだ当てていない敵へ次々と飛び移る。数で飛び移る回数が増え、多重で遅れてもう一度放つ。敵が居なければ照準の先へ空撃ち
     ///   連置   … 照準の水平の向きへ、足元の少し先から地面に沿って範囲に当たる結晶を手前から順に走らせる（1 列は同じ敵に 1 回）。壁で止まる。
     ///            数で扇状に列が増え、持続時間で列が伸び、多重で同じ向きへもう一列
+    ///   投擲   … 弓と同じく照準の先へまっすぐ飛ばす。飛ぶのは手に持った武器の見た目そのもので、武器ごとの速さで縦に回る。
+    ///            腕を振り切る瞬間に放ち、放してから次が投げられるまで手を空にする
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
-    /// （持続弓は空へ向けて反らせる。杖は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
+    /// （持続弓は空へ向けて反らせる。杖と投擲は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
     /// 杖は手の武器の見た目の子の "Tip"（杖の先）から放つ。無ければ持つ手から。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
     /// 手の見た目と Animator の WeaponType は MeleeAttacker が持ち替えで替えるので、ここは撃つことだけを受け持つ。
@@ -50,6 +52,12 @@ namespace TpsDungeon.Combat
         /// 撃つ間隔がこれより短いと置いていかれるので、その分だけ速めて流す。
         /// </summary>
         private const float BowCycleSeconds = (16f + 7f) / 30f;
+
+        /// <summary>
+        /// 投げのモーションの 1 周（Kevin の Attack1H01_R、1.1 秒を CharacterAnimatorBuilder が 1.5 倍で流し、0.85 で構えへ戻り始める）。
+        /// 撃つ間隔がこれより短いと置いていかれるので、その分だけ速めて流す。放す瞬間（castDelay）も同じだけ早める。
+        /// </summary>
+        private const float ThrowCycleSeconds = 1.1f * 0.85f / 1.5f;
 
         /// <summary>持続弓で上に放つ見た目の矢の速さ（m/s）と、飛ぶ距離（m）。</summary>
         private const float UpShotSpeed = 40f;
@@ -107,6 +115,10 @@ namespace TpsDungeon.Combat
         private bool logHits;
 
         private CharacterProgression progression;
+        // 手の武器の見た目を持っている役（投擲で手を空にするのに使う）。
+        private MeleeAttacker melee;
+        // 投擲で手の武器を消している間は真。待ちが明けて投げ残りも無くなったら出し直す。
+        private bool handEmptied;
         private bool initialized;
         private bool equipped;
         private ItemInstance held;
@@ -246,6 +258,7 @@ namespace TpsDungeon.Combat
             initialized = true;
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
+            melee = GetComponent<MeleeAttacker>();
             CacheAnimatorParameters();
             CacheBones();
         }
@@ -255,6 +268,7 @@ namespace TpsDungeon.Combat
             volleys.Clear();
             scheduled.Clear();
             StopFlame(false);
+            if (handEmptied) SetHandEmpty(false);
             pressQueued = false;
             AttackHeld = false;
             if (aimRing != null) aimRing.SetVisible(false);
@@ -283,6 +297,8 @@ namespace TpsDungeon.Combat
             volleys.Clear();
             scheduled.Clear();
             StopFlame(false);
+            // 手の見た目は MeleeAttacker が持ち替えで作り直すので、消していた印だけ戻す。
+            handEmptied = false;
             staffTip = null;
             staffTipSearched = false;
 
@@ -303,6 +319,7 @@ namespace TpsDungeon.Combat
             cooldownRemaining = Mathf.Max(0f, cooldownRemaining - dt);
             TickVolleys(dt);
             TickScheduled(dt);
+            if (handEmptied && cooldownRemaining <= 0f && volleys.Count == 0 && scheduled.Count == 0) SetHandEmpty(false);
 
             bool pressed = pressQueued;
             pressQueued = false;
@@ -369,6 +386,15 @@ namespace TpsDungeon.Combat
                     PlaySound(type.SwingSound, muzzle, type.SoundVolume);
                     FireRain(type, shot, muzzle, target);
                     break;
+                case RangedAttackKind.Throw:
+                    // 腕を振り切る瞬間に、その瞬間の照準へ投げる。速射でモーションを速めた分だけ早く放す。持ち替えたら Equip が予定ごと消す。
+                    Schedule(type.CastDelay / ThrowAnimationSpeed(), () =>
+                    {
+                        Vector3 hand = Muzzle(type);
+                        PlaySound(type.SwingSound, hand, type.SoundVolume);
+                        FireBow(type, shot, hand, AimPoint(type));
+                    });
+                    break;
                 case RangedAttackKind.Chain:
                 case RangedAttackKind.Line:
                     // 杖は撃ち出しのモーションで突き出す瞬間に放つ。持ち替えたら Equip が予定ごと消す。
@@ -407,6 +433,11 @@ namespace TpsDungeon.Combat
             Vector3 muzzle = Muzzle(type);
             if (playSound) PlaySound(type.SwingSound, muzzle, type.SoundVolume);
 
+            // 投擲は手に持った武器の見た目を飛ばし、手からは消す。
+            bool thrown = type.IsThrow && heldWeapon != null && heldWeapon.HeldModel != null;
+            GameObject visual = thrown ? heldWeapon.HeldModel : type.ProjectilePrefab;
+            if (type.IsThrow) SetHandEmpty(true);
+
             var settings = new ArrowProjectile.Settings
             {
                 Speed = type.ProjectileSpeed * shot.ProjectileSpeedScale,
@@ -418,12 +449,14 @@ namespace TpsDungeon.Combat
                 HomingRange = type.HomingRange,
                 HitMask = hitMask,
                 IgnoreRoot = transform,
+                HeldModelVisual = thrown,
+                SpinRate = thrown ? heldWeapon.ThrownSpinRate : 0f,
             };
 
             foreach (float angle in RangedPattern.VolleyAngles(shot.ExtraProjectiles + 1, type.VolleySpreadAngle))
             {
                 Vector3 arrowDirection = Quaternion.AngleAxis(angle, Vector3.up) * direction;
-                ArrowProjectile.Launch(type.ProjectilePrefab, muzzle, arrowDirection, settings,
+                ArrowProjectile.Launch(visual, muzzle, arrowDirection, settings,
                     (enemy, point, travel) => ArrowHit(type, shot, enemy, point, travel),
                     point => ArrowStuck(type, shot, point));
             }
@@ -913,6 +946,13 @@ namespace TpsDungeon.Combat
             return direction.normalized;
         }
 
+        /// <summary>投擲で手の武器の見た目を消す・出し直す。</summary>
+        private void SetHandEmpty(bool empty)
+        {
+            handEmptied = empty;
+            if (melee != null) melee.SetHeldModelVisible(!empty);
+        }
+
         private void SetCasting(bool casting)
         {
             if (animator != null && hasCastingParam) animator.SetBool(CastingParam, casting);
@@ -1167,13 +1207,13 @@ namespace TpsDungeon.Combat
         /// <summary>
         /// bend なら、腕の上下の向きが狙い（持続弓は武器種の rainAimPitch）に合うよう、背骨を体の右軸まわりに曲げる（Animator の評価の後に呼ぶこと）。
         /// そのうえで、弓を持つ腕（付け根から手）が水平に target を向くよう、体を最大 maxYaw 度回す。回し残した角度を返す。
-        /// 曲げると腕の水平の向きも少し変わるので、曲げてから回す。人型でないか杖なら、体の前を target へ向けるだけ。
+        /// 曲げると腕の水平の向きも少し変わるので、曲げてから回す。人型でないか杖・投擲なら、体の前を target へ向けるだけ。
         /// </summary>
         private float AimBody(WeaponTypeDefinition type, Vector3 target, float maxYaw, bool bend)
         {
-            // 杖は腕の向きが構えで変わるので、腕ではなく体の前を狙いへ向け、背骨も曲げない。
-            Transform shoulder = type.IsStaff ? null : type.HeldInLeftHand ? leftUpperArm : rightUpperArm;
-            Transform hand = type.IsStaff ? null : type.HeldInLeftHand ? leftHand : rightHand;
+            // 杖は腕の向きが構えで変わり、投擲は腕を振るので、腕ではなく体の前を狙いへ向け、背骨も曲げない。
+            Transform shoulder = type.FacesBodyToAim ? null : type.HeldInLeftHand ? leftUpperArm : rightUpperArm;
+            Transform hand = type.FacesBodyToAim ? null : type.HeldInLeftHand ? leftHand : rightHand;
             Vector3 from = shoulder != null ? shoulder.position : transform.position;
             Vector3 arm = shoulder != null && hand != null ? hand.position - shoulder.position : transform.forward;
 
@@ -1224,10 +1264,18 @@ namespace TpsDungeon.Combat
         private void PlayFireAnimation()
         {
             if (animator == null) return;
-            bool bow = !heldWeapon.WeaponType.IsStaff;
-            if (bow && hasAttackSpeedParam) animator.SetFloat(AttackSpeedParam, Mathf.Max(1f, BowCycleSeconds / Mathf.Max(0.01f, stats.FireInterval)));
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            if (hasAttackSpeedParam)
+            {
+                if (type.IsThrow) animator.SetFloat(AttackSpeedParam, ThrowAnimationSpeed());
+                else if (!type.IsStaff) animator.SetFloat(AttackSpeedParam, Mathf.Max(1f, BowCycleSeconds / Mathf.Max(0.01f, stats.FireInterval)));
+            }
+
             if (hasAttackParam) animator.SetTrigger(AttackParam);
         }
+
+        /// <summary>投げのモーションを流す速さ（撃つ間隔が 1 周より短い分だけ速める）。</summary>
+        private float ThrowAnimationSpeed() => Mathf.Max(1f, ThrowCycleSeconds / Mathf.Max(0.01f, stats != null ? stats.FireInterval : 1f));
 
         private static Vector3 Flat(Vector3 direction, Vector3 fallback)
         {

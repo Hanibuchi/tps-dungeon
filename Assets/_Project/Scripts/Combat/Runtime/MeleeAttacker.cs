@@ -37,7 +37,7 @@ namespace TpsDungeon.Combat
         private const string AttackSpeedParam = "AttackSpeed";
 
         // CharacterAnimatorBuilder.BuildCombo が付ける段のステート名「{武器名} Attack {段+1}」の武器名。添え字は AnimatorWeaponType。
-        private static readonly string[] ComboStatePrefixes = { "Unarmed", "OneHanded", "TwoHanded", null, null, "DashThrust", "Hammer" };
+        private static readonly string[] ComboStatePrefixes = { "Unarmed", "OneHanded", "TwoHanded", null, null, "DashThrust", "Hammer", null };
 
         /// <summary>段のステートへ溶け込む秒数（CharacterAnimatorBuilder の段への遷移と同じ）。</summary>
         private const float ComboCrossFade = 0.08f;
@@ -326,6 +326,14 @@ namespace TpsDungeon.Combat
             EnchantmentTotals enchantments = held != null && held.Weapon == heldWeapon ? held.EnchantmentTotals() : EnchantmentTotals.Empty;
             float attack = progression != null ? progression.BaseAttack : 0f;
             return heldWeapon.ComputeMeleeStats(enchantments, attack, critChance, critMultiplier);
+        }
+
+        /// <summary>
+        /// 手の武器の見た目を出す・消す（投擲で、投げてから次が投げられるまで手を空にする）。持ち替えると見た目は作り直されて出る。
+        /// </summary>
+        public void SetHeldModelVisible(bool visible)
+        {
+            if (heldModel != null && heldModel.activeSelf != visible) heldModel.SetActive(visible);
         }
 
         private void AttachHeldModel(WeaponDefinition weapon)

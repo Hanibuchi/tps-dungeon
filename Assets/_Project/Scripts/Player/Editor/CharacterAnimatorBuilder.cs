@@ -8,7 +8,7 @@ namespace TpsDungeon.Player.Editor
     /// <summary>
     /// プレイヤーの AnimatorController を組み立てる。
     /// 下半身（Base Layer）は Starter Assets の ThirdPersonController がそのまま動かせる移動とジャンプ、
-    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃（両手武器・ハンマーは両手で握った構え、両手杖は長柄の構え、弓は引き切った構え）、
+    /// 上半身（UpperBody）は持っている武器ごとの構えと攻撃（両手武器・ハンマーは両手で握った構え、両手杖は長柄の構え、弓は引き切った構え、投擲は右手の振り抜き）、
     /// 全身の攻撃（FullBodyAttack）は足まで使う攻撃（ダッシュ突き）を振っている間だけ全身で、
     /// 全身（Action、一番上）は Blink の Animations_Starter_Pack と Kevin の Combat のクリップを、呼ばれたときだけ再生する。
     /// 生成物なので手で編集せず、構成を変えたくなったらこのファイルを直して作り直すこと。
@@ -38,6 +38,7 @@ namespace TpsDungeon.Player.Editor
             Magic = 4,
             DashThrust = 5,
             Hammer = 6,
+            Throw = 7,
         }
 
         public const string SpeedParam = "Speed";
@@ -73,6 +74,10 @@ namespace TpsDungeon.Player.Editor
         // Kevin の長柄の突き（AttackPolearm01、30fps・41F）は 12F（0.4 秒）で伸び切る → 2 倍で 0.2 秒。走り出しに合わせて速く突く。
         // 同じクリップは全身の動き（CharacterAction.KevinAttackPolearm）でも再生できる。
         private const float DashThrustSpeed = 2f;
+        // 投擲は Kevin の右手の突き（Attack1H01_R、1.1 秒）を投げに見立てる。腕が伸び切る 0.33 秒を 1.5 倍で 0.22 秒にし、
+        // 武器種 28 の castDelay（放す瞬間）と揃える。RangedAttacker.ThrowCycleSeconds もこの速さで数えている。
+        private const float ThrowSpeed = 1.5f;
+        private const float ThrowExit = 0.85f;
 
         private const string StarterAnimations = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Character/Animations/";
         private const string BlinkPack = "Assets/ThirdParty/3D Model/Blink/Character/Animations/Animations_Starter_Pack/";
@@ -330,6 +335,7 @@ namespace TpsDungeon.Player.Editor
             BuildMagic(sm, free, clips, staffStance);
 
             BuildBow(sm, free, clips, bowAim);
+            BuildThrow(sm, free, clips);
             BuildOneHandedCombo(sm, free, clips);
             BuildUnarmedCombo(sm, free, clips);
             BuildTwoHandedCombo(sm, free, clips, twoHandedStance);
@@ -590,6 +596,31 @@ namespace TpsDungeon.Player.Editor
                 t = Transition(state, free, 0.2f);
                 t.AddCondition(AnimatorConditionMode.NotEqual, (int)Weapon.Bow, WeaponTypeParam);
             }
+        }
+
+        /// <summary>
+        /// 投擲は構えを持たず（片手武器と同じく腕振りが透ける）、Attack で右手を前へ振り抜いて投げ、終わったら Free へ戻る。
+        /// 振っている途中でも次の Attack で頭から振り直す（速射で撃つ間隔が短いとき）。
+        /// </summary>
+        private static void BuildThrow(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            AnimatorState thrown = sm.AddState("Throw", new Vector3(300, 560));
+            thrown.motion = clips.OneHandedThrust;
+            thrown.speed = ThrowSpeed; // 速射で RangedAttacker が上げる AttackSpeed はこれに掛かる
+            thrown.speedParameterActive = true;
+            thrown.speedParameter = AttackSpeedParam;
+
+            AnimatorStateTransition t;
+            foreach (AnimatorState from in new[] { free, thrown })
+            {
+                t = Transition(from, thrown, 0.05f);
+                t.AddCondition(AnimatorConditionMode.If, 0, AttackParam);
+                t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.Throw, WeaponTypeParam);
+            }
+
+            Transition(thrown, free, 0.25f, exitTime: ThrowExit);
+            t = Transition(thrown, free, 0.2f);
+            t.AddCondition(AnimatorConditionMode.NotEqual, (int)Weapon.Throw, WeaponTypeParam);
         }
 
         /// <summary>
