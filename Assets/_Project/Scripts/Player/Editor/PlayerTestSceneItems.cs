@@ -1,3 +1,4 @@
+using System.Linq;
 using TpsDungeon.Items;
 using TpsDungeon.Items.Editor;
 using TpsDungeon.Map.Authoring;
@@ -53,6 +54,13 @@ namespace TpsDungeon.Player.Editor
             new Vector3(-0.8f, 0f, -2.1f),
             new Vector3(0.9f, 0f, 2.1f),
             new Vector3(0.9f, 0f, -2.2f),
+        };
+
+        /// <summary>お守りと盾を 1 つずつ置く場所（片手剣と一緒に試せるよう、武器の近く）。</summary>
+        private static readonly Vector3[] GearOffsets =
+        {
+            new Vector3(0.8f, 0f, -0.9f),
+            new Vector3(0.8f, 0f, 0.9f),
         };
 
         [MenuItem("Tools/TPS Dungeon/Player/確認用シーンに仮アイテムを置く")]
@@ -115,6 +123,20 @@ namespace TpsDungeon.Player.Editor
                     var pickup = (GameObject)PrefabUtility.InstantiatePrefab(weapons[i].WorldPrefab.gameObject, scene);
                     pickup.transform.SetParent(root.transform, false);
                     pickup.transform.SetPositionAndRotation(center + WeaponOffsets[i], Quaternion.Euler(0f, 60f + 45f * i, 0f));
+                }
+
+                // お守り・盾はいちばんランクの低いものを 1 つずつ。
+                var gear = new[]
+                {
+                    weapons.Where(w => w.WeaponType != null && w.WeaponType.IsCharm).OrderBy(w => w.Rank).FirstOrDefault(),
+                    weapons.Where(w => w.WeaponType != null && w.WeaponType.IsShield).OrderBy(w => w.Rank).FirstOrDefault(),
+                };
+                for (int i = 0; i < gear.Length && i < GearOffsets.Length; i++)
+                {
+                    if (gear[i] == null || gear[i].WorldPrefab == null) continue;
+                    var pickup = (GameObject)PrefabUtility.InstantiatePrefab(gear[i].WorldPrefab.gameObject, scene);
+                    pickup.transform.SetParent(root.transform, false);
+                    pickup.transform.SetPositionAndRotation(center + GearOffsets[i], Quaternion.Euler(0f, 30f + 50f * i, 0f));
                 }
 
                 enemyNote = PlaceEnemies(scene, config);

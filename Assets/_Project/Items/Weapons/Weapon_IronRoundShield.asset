@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_IronRoundShield
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_IronRoundShield
+  displayName: "\u9244\u306E\u5186\u76FE"
+  description: "\u6253\u3061\u8FBC\u307E\u308C\u305F\u5203\u3092\u3001\u920D\u3044\u97F3\u3068\u3068\u3082\u306B\u53D7\u3051\u6D41\u3059\u3002"
+  icon: {fileID: 2800000, guid: 2e00086b63ce74517a252497bd449f8c, type: 3}
+  worldPrefab: {fileID: 4324833798157485102, guid: eed49565e814c4440b555d99cb3fb196, type: 3}
+  rank: 1
+  strength: 18
+  weaponType: {fileID: 11400000, guid: 06c4f5a3557ad4ad1b1002dbd2e26a59, type: 2}
+  heldModel: {fileID: 3537748194816390831, guid: bdbc73717e2d04830895d1c5a65652b2, type: 3}
+  fixedEnchantments: []

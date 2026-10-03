@@ -107,6 +107,7 @@ namespace TpsDungeon.Combat
         private bool logHits;
 
         private CharacterProgression progression;
+        private PlayerGear gear;
         private bool initialized;
         private bool equipped;
         private ItemInstance held;
@@ -246,6 +247,7 @@ namespace TpsDungeon.Combat
             initialized = true;
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
+            gear = GetComponent<PlayerGear>();
             CacheAnimatorParameters();
             CacheBones();
         }
@@ -342,7 +344,9 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
-            EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : EnchantmentTotals.Empty;
+            EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : new EnchantmentTotals();
+            // ホットバーのお守り・盾のクリティカル率・ドロップ増加・数・多重を足す（素手でも）。
+            if (gear != null) enchantments.AddAll(gear.CurrentBonuses().WeaponTotals);
             float attack = progression != null ? progression.BaseAttack : 0f;
             return heldWeapon.ComputeRangedStats(enchantments, attack, critChance, critMultiplier);
         }

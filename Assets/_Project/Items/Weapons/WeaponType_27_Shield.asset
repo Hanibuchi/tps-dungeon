@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
+  m_Name: WeaponType_27_Shield
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
+  id: 27
+  displayName: "\u76FE"
+  animatorWeaponType: 0
+  canUseShield: 0
+  passiveGear: 2
+  allowedEnchantments:
+  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+  - {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+  - {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+  - {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+  - {fileID: 11400000, guid: 110e8a9663832464899287dfd020844a, type: 2}
+  - {fileID: 11400000, guid: a8be9e798afa14595b309ac6316a0645, type: 2}
+  - {fileID: 11400000, guid: 7482280d5b8b54cf58f9c2eca6d3cbad, type: 2}
+  - {fileID: 11400000, guid: 821576565a89f483695f511caccc63e5, type: 2}
+  - {fileID: 11400000, guid: e713955dcbe5e48679852a593e2add05, type: 2}
+  enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  characterAttackWeight: 1
+  baseCritChance: 0.05
+  baseCritMultiplier: 1.5
+  comboSteps: []
+  comboChainGrace: 0.25
+  comboCooldown: 0.3
+  lungePassesThroughEnemies: 1
+  invulnerableDuringLunge: 1
+  slamSpreadAngle: 30
+  followUpSpacing: 1.5
+  followUpInterval: 0.18
+  followUpEffectScale: 0.7
+  slamShake: 0
+  followUpShakeRatio: 0.4
+  rangedKind: 0
+  fireInterval: 0.8
+  muzzleOffset: {x: 0, y: 1.4, z: 0.5}
+  aimMaxDistance: 40
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 35
+  projectileRange: 45
+  projectileRadius: 0.15
+  projectileKnockback: 2
+  volleySpreadAngle: 8
+  multishotInterval: 0.12
+  homingTurnRate: 540
+  homingRange: 12
+  rainRadius: 1.25
+  rainHeight: 2
+  rainDuration: 3
+  rainTickInterval: 0.5
+  rainDelay: 0.7
+  rainScatterMin: 1.25
+  rainScatterMax: 3
+  rainRepeatInterval: 1
+  rainEffect: {fileID: 0}
+  rainEffectRadius: 4
+  rainAimPitch: 35
+  castDelay: 0.12
+  chainAimAngle: 10
+  chainJumps: 3
+  chainJumpsPerCount: 2
+  chainRange: 6
+  chainJumpDelay: 0.06
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.55, g: 0.75, b: 1, a: 1}
+  boltWidth: 0.06
+  boltDuration: 0.2
+  lineStartDistance: 1.2
+  lineSpacing: 1.1
+  linePillarCount: 8
+  lineInterval: 0.05
+  lineRadius: 0.9
+  lineHeight: 2
+  lineSpreadAngle: 20
+  lineRepeatInterval: 0.45
+  lineEffect: {fileID: 0}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
+  flameDuration: 2.4
+  flameTickInterval: 0.2
+  flameRange: 6
+  flameAngle: 14
+  flameBaseRadius: 0.25
+  flameSpreadAngle: 25
+  flameHomingAngle: 40
+  flameHomingTurnRate: 120
+  flameEffect: {fileID: 0}
+  flameEffectLength: 6
+  flameSoundInterval: 0.6
+  drawSound: {fileID: 0}
+  stickSound: {fileID: 0}
+  stickSoundVolume: 0.6
+  rainSound: {fileID: 0}
+  rainSoundVolume: 0.8
+  rangeRingMaterial: {fileID: 0}
+  rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
+  aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}
+  heldInLeftHand: 1
+  heldLocalPosition: {x: 0.105, y: 0.02, z: -0.063999996}
+  heldLocalEuler: {x: 16, y: -179, z: 147.3}
+  swingEffect: {fileID: 0}
+  swingEffectScale: 1
+  swingEffectLeadTime: 0
+  hitEffect: {fileID: 0}
+  hitEffectScale: 1
+  slamEffects: []
+  swingSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  soundVolume: 1

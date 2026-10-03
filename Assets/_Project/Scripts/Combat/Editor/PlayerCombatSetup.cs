@@ -1,5 +1,6 @@
 using TpsDungeon.Items;
 using TpsDungeon.Items.Editor;
+using TpsDungeon.Player;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,7 +8,8 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Combat.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに攻撃（近接の実行役 MeleeAttacker・遠距離の実行役 RangedAttacker と、入力を渡す PlayerMeleeInput）を組み込む。素手の武器とエフェクトもここで入れる
+    /// プレイヤーのプレハブに攻撃（近接の実行役 MeleeAttacker・遠距離の実行役 RangedAttacker と、入力を渡す PlayerMeleeInput）を組み込む。
+    /// お守り・盾の効果（PlayerGear・PlayerLocomotionSpeed）と盾の見た目（HeldShieldView）もここで入れる。素手の武器とエフェクトもここで入れる
     /// （先に「プレースホルダの武器を生成」で素手の武器を作っておくこと）。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
     /// </summary>
@@ -26,6 +28,15 @@ namespace TpsDungeon.Combat.Editor
 
                 var ranged = root.GetComponent<RangedAttacker>();
                 if (ranged == null) ranged = root.AddComponent<RangedAttacker>();
+
+                // お守り・盾の効果（移動速度は PlayerLocomotionSpeed 経由）と、効いている盾を左手に持たせる見た目。
+                if (root.GetComponent<PlayerLocomotionSpeed>() == null) root.AddComponent<PlayerLocomotionSpeed>();
+                if (root.GetComponent<PlayerGear>() == null) root.AddComponent<PlayerGear>();
+                var shieldView = root.GetComponent<HeldShieldView>();
+                if (shieldView == null) shieldView = root.AddComponent<HeldShieldView>();
+                var serializedShield = new SerializedObject(shieldView);
+                serializedShield.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();
+                serializedShield.ApplyModifiedPropertiesWithoutUndo();
 
                 var input = root.GetComponent<PlayerMeleeInput>();
                 if (input == null) input = root.AddComponent<PlayerMeleeInput>();

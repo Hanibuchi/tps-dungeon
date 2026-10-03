@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_RustyBell
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_RustyBell
+  displayName: "\u9306\u3073\u305F\u9234"
+  description: "\u304B\u3059\u304B\u306B\u9CF4\u308A\u7D9A\u3051\u3001\u6301\u3061\u4E3B\u306E\u6B69\u307F\u3092\u8EFD\u304F\u3059\u308B\u3002"
+  icon: {fileID: 2800000, guid: 195b894c701264d07bbe46dd3540b404, type: 3}
+  worldPrefab: {fileID: 831886021360164659, guid: a0aeae916902447b8ad836680a4c5081, type: 3}
+  rank: 0
+  strength: 4
+  weaponType: {fileID: 11400000, guid: 5673020636b184ac1873a7f4672c733b, type: 2}
+  heldModel: {fileID: 4241722795125020500, guid: fb7aa7a17749846acb3eeffc75d408ed, type: 3}
+  fixedEnchantments: []

@@ -7,6 +7,7 @@ namespace TpsDungeon.Progression
     /// キャラ 1 人分のレベル・経験値と、そこから決まる MaxHP・基礎攻撃力。主人公にも仲間にも同じものを付ける。
     /// MaxHP は同じ GameObject の <see cref="IHealthPool"/>（主人公なら PlayerHealth）に書き込むので、HP の表示はそちらの通知で追従する。
     /// 経験値はふつう PartyProgression.GrantExp から全員に同じ量が配られる（倍率はそこで掛かる）。
+    /// 装備（お守り・盾の体力増加）の上乗せは <see cref="SetGearMaxHpPercent"/> で受け、パーティの補正のあとに掛ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Character Progression")]
@@ -23,6 +24,7 @@ namespace TpsDungeon.Progression
         private LevelProgress progress;
         private IHealthPool health;
         private ProgressionModifiers modifiers;
+        private float gearMaxHpPercent;
         private int maxHp;
         private float baseAttack;
 
@@ -154,6 +156,19 @@ namespace TpsDungeon.Progression
             ApplyStats(HpUpdate.AddIncrease);
         }
 
+        /// <summary>
+        /// 装備による MaxHP の上乗せ（0.1 で +10%）。付け外しでは減っている分（最大 − 今）を保つので、付け直して回復することはない。
+        /// </summary>
+        public void SetGearMaxHpPercent(float percent)
+        {
+            EnsureInitialized();
+            percent = Mathf.Max(0f, percent);
+            if (percent.Equals(gearMaxHpPercent)) return;
+
+            gearMaxHpPercent = percent;
+            ApplyStats(HpUpdate.KeepMissing);
+        }
+
         private void EnsureInitialized()
         {
             if (progress != null) return;
@@ -183,6 +198,9 @@ namespace TpsDungeon.Progression
 
             /// <summary>現在 HP を最大にする。</summary>
             Fill,
+
+            /// <summary>減っている分（最大 − 今）を保つ。最低 1 は残す（装備の付け外し）。</summary>
+            KeepMissing,
         }
 
         /// <summary>今のレベルと補正から MaxHP・基礎攻撃力を出し直し、体力に書き込む。</summary>
@@ -194,7 +212,8 @@ namespace TpsDungeon.Progression
             StatModifier attackModifier = modifiers != null ? modifiers.BaseAttack : StatModifier.None;
 
             int oldMax = maxHp;
-            int newMax = Mathf.Max(1, (int)Math.Round(hpModifier.Apply(curve.MaxHp(level)), MidpointRounding.AwayFromZero));
+            double hp = hpModifier.Apply(curve.MaxHp(level)) * (1.0 + gearMaxHpPercent);
+            int newMax = Mathf.Max(1, (int)Math.Round(hp, MidpointRounding.AwayFromZero));
             float oldAttack = baseAttack;
             float newAttack = (float)attackModifier.Apply(curve.BaseAttack(level));
 
@@ -203,9 +222,19 @@ namespace TpsDungeon.Progression
 
             if (Health != null)
             {
-                int current = hpUpdate == HpUpdate.Fill
-                    ? newMax
-                    : Health.CurrentHp + Mathf.Max(0, newMax - Health.MaxHp);
+                int current;
+                switch (hpUpdate)
+                {
+                    case HpUpdate.Fill:
+                        current = newMax;
+                        break;
+                    case HpUpdate.KeepMissing:
+                        current = Health.CurrentHp <= 0 ? 0 : Mathf.Max(1, newMax - (Health.MaxHp - Health.CurrentHp));
+                        break;
+                    default:
+                        current = Health.CurrentHp + Mathf.Max(0, newMax - Health.MaxHp);
+                        break;
+                }
                 Health.SetMaxAndCurrent(newMax, current);
             }
 

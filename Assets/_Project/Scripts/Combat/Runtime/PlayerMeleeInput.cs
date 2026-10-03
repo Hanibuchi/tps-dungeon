@@ -1,4 +1,3 @@
-using System.Reflection;
 using TpsDungeon.Items;
 using TpsDungeon.Player;
 using UnityEngine;
@@ -10,10 +9,9 @@ namespace TpsDungeon.Combat
     /// プレイヤーの入力を MeleeAttacker（と、あれば RangedAttacker）に渡す。攻撃キーの押下 → PressAttack、ホットバーで選んでいる物 → Equip、
     /// カメラの前 → AimForward、カメラの中心の線 → RangedAttacker.Aim、押している間 → RangedAttacker.AttackHeld（炎の杖が読む）。
     /// 押下は両方に渡し、今の武器を扱える方だけが攻撃する。
-    /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして、入力で走りがぶれないようにする。
+    /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして（PlayerLocomotionSpeed.Locked）、入力で走りがぶれないようにする。
     /// ThirdPersonController は CharacterController の速度から今の速さを引き継ぐので、そのままだと走りの速さで二重に進み、
     /// 走り終えてからも惰性で滑る。速さの追従（SpeedChangeRate）も一瞬にして 0 へ落とし、走り終えた次のフレームまで止めておく。
-    /// ThirdPersonController は名前で探してフィールドを名前で書くので、Starter Assets のアセンブリには依存しない（GamePauser と同じ）。
     /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory・MeleeAttacker・RangedAttacker と同じ GameObject）に付ける。
     /// </summary>
     // 押下をその同じフレームの MeleeAttacker / RangedAttacker の Update で使わせるため、先に回す。
@@ -23,14 +21,6 @@ namespace TpsDungeon.Combat
     [AddComponentMenu("TPS Dungeon/Player Melee Input")]
     public sealed class PlayerMeleeInput : MonoBehaviour
     {
-        private const string LocomotionTypeName = "ThirdPersonController";
-        private static readonly (string field, float locked)[] LocomotionLocks =
-        {
-            ("MoveSpeed", 0f),
-            ("SprintSpeed", 0f),
-            ("SpeedChangeRate", 1e6f),
-        };
-
         /// <summary>走り終えてから歩きを戻すまでのフレーム数。最後に走ったフレームの速度を ThirdPersonController に拾わせない。</summary>
         private const int UnlockDelayFrames = 1;
 
@@ -47,10 +37,7 @@ namespace TpsDungeon.Combat
         private InputAction attackAction;
         private Transform cameraTransform;
 
-        private Component locomotion;
-        private FieldInfo[] locomotionFields;
-        private float[] savedSpeeds;
-        private bool locomotionLocked;
+        private PlayerLocomotionSpeed locomotion;
         private int framesSinceLunge = int.MaxValue;
 
         private void Reset()
@@ -65,7 +52,8 @@ namespace TpsDungeon.Combat
             ranged = GetComponent<RangedAttacker>();
             hotbar = GetComponent<PlayerHotbar>();
             inventory = GetComponent<PlayerInventory>();
-            FindLocomotion();
+            locomotion = GetComponent<PlayerLocomotionSpeed>();
+            if (locomotion == null) locomotion = gameObject.AddComponent<PlayerLocomotionSpeed>();
         }
 
         private void OnEnable()
@@ -130,43 +118,9 @@ namespace TpsDungeon.Combat
             SetLocomotionLocked(framesSinceLunge <= UnlockDelayFrames);
         }
 
-        private void FindLocomotion()
-        {
-            foreach (Component component in GetComponents<Component>())
-            {
-                if (component == null || component.GetType().Name != LocomotionTypeName) continue;
-
-                var fields = new FieldInfo[LocomotionLocks.Length];
-                for (int i = 0; i < fields.Length; i++)
-                {
-                    fields[i] = component.GetType().GetField(LocomotionLocks[i].field, BindingFlags.Public | BindingFlags.Instance);
-                    if (fields[i] == null || fields[i].FieldType != typeof(float)) return;
-                }
-
-                locomotion = component;
-                locomotionFields = fields;
-                savedSpeeds = new float[fields.Length];
-                return;
-            }
-        }
-
         private void SetLocomotionLocked(bool locked)
         {
-            if (locked == locomotionLocked || locomotion == null) return;
-
-            locomotionLocked = locked;
-            for (int i = 0; i < locomotionFields.Length; i++)
-            {
-                if (locked)
-                {
-                    savedSpeeds[i] = (float)locomotionFields[i].GetValue(locomotion);
-                    locomotionFields[i].SetValue(locomotion, LocomotionLocks[i].locked);
-                }
-                else
-                {
-                    locomotionFields[i].SetValue(locomotion, savedSpeeds[i]);
-                }
-            }
+            if (locomotion != null) locomotion.Locked = locked;
         }
     }
 }

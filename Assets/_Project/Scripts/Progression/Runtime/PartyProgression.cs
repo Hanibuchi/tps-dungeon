@@ -33,6 +33,8 @@ namespace TpsDungeon.Progression
         private bool granting;
         private bool leveledWhileGranting;
 
+        private float gearExpBonus;
+
         /// <summary>今動いているパーティ。無ければ null。</summary>
         public static PartyProgression Current { get; private set; }
 
@@ -40,6 +42,15 @@ namespace TpsDungeon.Progression
 
         /// <summary>経験値倍率などの補正。永続アップグレードがここに値を入れる。</summary>
         public ProgressionModifiers Modifiers => modifiers;
+
+        /// <summary>
+        /// 装備（お守り・盾の経験値）による経験値の上乗せ（0.1 で +10%）。永続アップグレードの倍率に掛け足す。PlayerGear が書き込む。
+        /// </summary>
+        public float GearExpBonus
+        {
+            get => gearExpBonus;
+            set => gearExpBonus = Mathf.Max(0f, value);
+        }
 
         public bool AutoSave
         {
@@ -145,7 +156,7 @@ namespace TpsDungeon.Progression
         /// </summary>
         public int GrantExp(int baseAmount)
         {
-            int amount = modifiers.ApplyExp(baseAmount);
+            int amount = modifiers.ApplyExp(baseAmount, 1f + gearExpBonus);
             if (amount <= 0) return 0;
 
             // 足している途中でレベルアップの購読者がメンバーを増減させても崩れないように写してから回す。

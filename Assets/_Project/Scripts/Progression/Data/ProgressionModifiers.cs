@@ -79,11 +79,15 @@ namespace TpsDungeon.Progression
             Changed?.Invoke(this);
         }
 
-        /// <summary>倍率を掛けた獲得量。四捨五入し、倍率が正なら最低 1 は入る。</summary>
-        public int ApplyExp(int amount)
+        /// <summary>
+        /// 倍率を掛けた獲得量。四捨五入し、倍率が正なら最低 1 は入る。
+        /// extraMultiplier は外から掛け足す倍率（装備の経験値の上乗せなど）。
+        /// </summary>
+        public int ApplyExp(int amount, float extraMultiplier = 1f)
         {
-            if (amount <= 0 || ExpMultiplier <= 0f) return 0;
-            double value = Math.Round(amount * (double)ExpMultiplier, MidpointRounding.AwayFromZero);
+            double multiplier = (double)ExpMultiplier * Math.Max(0f, extraMultiplier);
+            if (amount <= 0 || multiplier <= 0.0) return 0;
+            double value = Math.Round(amount * multiplier, MidpointRounding.AwayFromZero);
             if (value >= int.MaxValue) return int.MaxValue;
             return Math.Max(1, (int)value);
         }

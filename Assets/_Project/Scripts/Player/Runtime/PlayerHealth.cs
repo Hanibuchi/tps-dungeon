@@ -8,6 +8,7 @@ namespace TpsDungeon.Player
     /// プレイヤーの体力。値を持って増減させ、変わったら知らせるだけ。
     /// 死亡やダメージ演出はまだ無く、HUD がこれを読んで表示する。
     /// 最大 HP はレベルに応じて CharacterProgression が <see cref="SetMaxAndCurrent"/> で書き込む（Inspector の値は初期値）。
+    /// 受けるダメージの倍率（盾）と毎秒の回復（自然回復）は装備（PlayerGear）が書き込む。
     /// プレイヤーのルートに付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -20,6 +21,8 @@ namespace TpsDungeon.Player
         [SerializeField, Min(0), Tooltip("開始時の HP。最大を超えた分は切り捨てる。")]
         private int currentHp = 100;
 
+        private float regenCarry;
+
         public int MaxHp => maxHp;
         public int CurrentHp => currentHp;
 
@@ -27,6 +30,12 @@ namespace TpsDungeon.Player
         public float Fraction => maxHp > 0 ? (float)currentHp / maxHp : 0f;
 
         public bool IsDead => currentHp <= 0;
+
+        /// <summary>受けるダメージに掛ける倍率（1 で減らない）。盾が書き込む。</summary>
+        public float DamageTaken { get; set; } = 1f;
+
+        /// <summary>毎秒の回復量。自然回復のエンチャントが書き込む。端数はためて 1 になったら回復する。</summary>
+        public float RegenPerSecond { get; set; }
 
         public event Action<PlayerHealth> Changed;
 
@@ -36,11 +45,34 @@ namespace TpsDungeon.Player
             currentHp = Mathf.Clamp(currentHp, 0, maxHp);
         }
 
-        /// <summary>amount だけ減らす。負の値は無視する（回復は Heal で）。</summary>
+        private void Update()
+        {
+            if (RegenPerSecond <= 0f || IsDead || currentHp >= maxHp)
+            {
+                regenCarry = 0f;
+                return;
+            }
+
+            regenCarry += RegenPerSecond * Time.deltaTime;
+            int heal = Mathf.FloorToInt(regenCarry);
+            if (heal <= 0) return;
+
+            regenCarry -= heal;
+            Heal(heal);
+        }
+
+        /// <summary>amount に <see cref="DamageTaken"/> を掛けて減らす（四捨五入、最低 1）。負の値は無視する（回復は Heal で）。</summary>
         public void Damage(int amount)
         {
             if (amount <= 0) return;
-            SetCurrent(currentHp - amount);
+            SetCurrent(currentHp - ReducedDamage(amount, DamageTaken));
+        }
+
+        /// <summary>amount に倍率 taken を掛けたダメージ。四捨五入し、最低 1 は入る。</summary>
+        public static int ReducedDamage(int amount, float taken)
+        {
+            if (amount <= 0) return 0;
+            return Mathf.Max(1, Mathf.RoundToInt(amount * Mathf.Clamp01(taken)));
         }
 
         /// <summary>amount だけ回復する。最大を超えない。</summary>

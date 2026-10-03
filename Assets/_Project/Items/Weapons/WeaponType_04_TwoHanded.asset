@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\u4E21\u624B\u8FD1\u8DDD\u96E2"
   animatorWeaponType: 2
   canUseShield: 0
+  passiveGear: 0
   allowedEnchantments:
   - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
   - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}

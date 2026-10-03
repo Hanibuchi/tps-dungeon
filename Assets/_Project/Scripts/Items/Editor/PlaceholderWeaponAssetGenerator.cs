@@ -12,15 +12,16 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
-    ///   19（電撃）・20（範囲連置）・21（火炎放射器）: Assets/_Project/Items/Weapons/
+    ///   19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 25 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 32 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、27 の 4 本）と、拾える物・手に持つ見た目のプレハブ
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
     /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
-    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖・LowPoly の弓と杖）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
+    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖と盾・LowPoly の弓と杖と盾）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
+    /// お守りは GanzSe の装身具（耳飾り・ペンダント・首飾り）。
     /// 杖の手に持つ見た目には、杖の先に "Tip"（WeaponTypeDefinition.StaffTipName）を置く。雷・棘・炎はそこから出る。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
@@ -40,6 +41,8 @@ namespace TpsDungeon.Items.Editor
         public const string LightningTypePath = WeaponsFolder + "/WeaponType_19_Lightning.asset";
         public const string SpikeLineTypePath = WeaponsFolder + "/WeaponType_20_SpikeLine.asset";
         public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_21_Flamethrower.asset";
+        public const string CharmTypePath = WeaponsFolder + "/WeaponType_26_Charm.asset";
+        public const string ShieldTypePath = WeaponsFolder + "/WeaponType_27_Shield.asset";
         public const string CrystalLinePrefabPath = Gen.PrefabsFolder + "/Effect_CrystalLine.prefab";
         public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
@@ -112,6 +115,8 @@ namespace TpsDungeon.Items.Editor
         private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
         private const string LowPolyWeapons = "Assets/ThirdParty/3D Model/Blink/Weapons/LowPoly/FreeRPGWeapons/_PREFABS/";
         private const string StylizedStaves = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Staves/_PrefabsStaves/";
+        private const string StylizedShields = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Shields/_PrefabsShields/";
+        private const string Accessories = "Assets/ThirdParty/3D Model/URP GanzSe Free Character Accessories/Prefabs/";
         // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
         private const string ArrowModelPath = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/Arrow_01.prefab";
 
@@ -127,6 +132,12 @@ namespace TpsDungeon.Items.Editor
         /// <summary>杖の見た目の長さ（m）と、下端から握る所までの長さ（m）。</summary>
         private const float StaffLength = 1.5f;
         private const float StaffGrip = 0.55f;
+
+        /// <summary>盾の見た目の大きさ（m、いちばん長い辺）。城壁の大盾だけ大きくする。</summary>
+        private const float ShieldLength = 0.65f;
+
+        /// <summary>お守りの見た目の大きさ（m、いちばん長い辺）。</summary>
+        private const float CharmLength = 0.2f;
 
         /// <summary>拾える物の判定の幅と高さ（m）。奥行きは武器の長さに合わせる。</summary>
         private static readonly Vector2 PickupVolume = new Vector2(0.35f, 0.3f);
@@ -170,6 +181,8 @@ namespace TpsDungeon.Items.Editor
             public bool Flip;
             /// <summary>手に持つ見た目の先（Length − Grip の高さ）に "Tip" を置く（杖）。</summary>
             public bool StaffTip;
+            /// <summary>絵を撮るとき裏返す（盾は素材の -Z が裏の持ち手なので、表を撮るために回す）。</summary>
+            public bool IconBackside;
             /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
         }
@@ -198,6 +211,8 @@ namespace TpsDungeon.Items.Editor
                 [LightningTypePath] = WriteLightningType(enchantments, roll, ring),
                 [SpikeLineTypePath] = WriteSpikeLineType(enchantments, roll, WriteCrystalLinePrefab()),
                 [FlamethrowerTypePath] = WriteFlamethrowerType(enchantments, roll, WriteFlamePrefab()),
+                [CharmTypePath] = WriteCharmType(enchantments, roll),
+                [ShieldTypePath] = WriteShieldType(enchantments, roll),
             };
 
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
@@ -317,6 +332,26 @@ namespace TpsDungeon.Items.Editor
             yield return Staff("Weapon_PurgatoryRoar", "煉獄の咆哮", WeaponRank.Unique, 15f, "吐き出す炎は壁となり、前にあるものすべてを飲み込む。",
                 FlamethrowerTypePath, StylizedStaves + "Staff2_2_6.prefab",
                 EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
+
+            // お守り（26）。強さは今は使わない（ランクの目安）。
+            yield return Gear("Weapon_RustyBell", "錆びた鈴", WeaponRank.E, 4f, "かすかに鳴り続け、持ち主の歩みを軽くする。",
+                CharmTypePath, Accessories + "FCA_Earring_Type1_Color1.prefab", CharmLength);
+            yield return Gear("Weapon_OldTalisman", "古びた護符", WeaponRank.D, 14f, "文字はもう読めないが、効き目だけは残っている。",
+                CharmTypePath, Accessories + "FCA_Pendant_Type1_Color1.prefab", CharmLength);
+            yield return Gear("Weapon_EmeraldNecklace", "翠玉の首飾り", WeaponRank.C, 24f, "石が濁るたび、災いをひとつ肩代わりしている。",
+                CharmTypePath, Accessories + "FCA_Necklace_Type1_Color3.prefab", CharmLength * 1.5f);
+
+            // 盾（27）。強さは防御力。
+            yield return Gear("Weapon_WoodenShield", "木の盾", WeaponRank.E, 6f, "板を打ちつけただけの盾。無いよりはましだ。",
+                ShieldTypePath, StylizedShields + "Shield3_1_1.prefab", ShieldLength);
+            yield return Gear("Weapon_IronRoundShield", "鉄の円盾", WeaponRank.D, 18f, "打ち込まれた刃を、鈍い音とともに受け流す。",
+                ShieldTypePath, StylizedShields + "Shield2_1_2.prefab", ShieldLength);
+            yield return Gear("Weapon_RampartShield", "城壁の大盾", WeaponRank.B, 30f, "構えれば、そこが一人分の城壁になる。",
+                ShieldTypePath, LowPolyWeapons + "Shield_Medium.prefab", ShieldLength * 1.3f);
+            // ユニークの固定エンチャントは仮。
+            yield return Gear("Weapon_UnfallingHolyShield", "不落の聖盾", WeaponRank.Unique, 18f, "傷を受けるそばから、盾の輝きが持ち主を癒していく。",
+                ShieldTypePath, LowPolyWeapons + "Shield_Epic.prefab", ShieldLength,
+                EnchantmentKind.Regen, EnchantmentKind.Regen, EnchantmentKind.Regen, EnchantmentKind.Defense);
         }
 
         private static WeaponSpec Staff(string id, string name, WeaponRank rank, float strength, string description, string typePath,
@@ -327,6 +362,19 @@ namespace TpsDungeon.Items.Editor
                 Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
                 TypePath = typePath, ModelPath = modelPath, Length = StaffLength, Grip = StaffGrip, StaffTip = true,
                 Blade = new Color32(120, 90, 60, 255), Hilt = new Color32(80, 55, 35, 255),
+                FixedEnchantments = fixedEnchantments,
+            };
+        }
+
+        /// <summary>お守り・盾。真ん中を原点に置く（手のひらに真ん中が来る）。</summary>
+        private static WeaponSpec Gear(string id, string name, WeaponRank rank, float strength, string description, string typePath,
+            string modelPath, float length, params EnchantmentKind[] fixedEnchantments)
+        {
+            return new WeaponSpec
+            {
+                Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
+                TypePath = typePath, ModelPath = modelPath, Length = length, CenterPivot = true, IconBackside = typePath == ShieldTypePath,
+                Blade = new Color32(150, 120, 80, 255), Hilt = new Color32(90, 70, 50, 255),
                 FixedEnchantments = fixedEnchantments,
             };
         }
@@ -563,6 +611,53 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("baseCritChance").floatValue = 0.05f;
             serialized.FindProperty("baseCritMultiplier").floatValue = 1.5f;
             return serialized;
+        }
+
+        /// <summary>
+        /// お守り（26）。振らず、ホットバーに入れておくだけで効く（PlayerGear）。選んでいる間は素手で殴り、手には持たせる。
+        /// </summary>
+        private static WeaponTypeDefinition WriteCharmType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(CharmTypePath);
+            SerializedObject serialized = BeginType(type, "26", "お守り", 0, false, new[]
+            {
+                EnchantmentKind.MoveSpeed, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount,
+                EnchantmentKind.Multishot, EnchantmentKind.Exp, EnchantmentKind.MaxHp, EnchantmentKind.Regen,
+            }, enchantments, roll); // 0 = CharacterAnimatorBuilder.Weapon.Unarmed
+            WritePassiveGear(serialized, PassiveGear.Charm, false);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 盾（27）。ホットバーに入れて、片手武器（canUseShield）を持っている間だけ効く。強さが防御力で、
+        /// 受けるダメージ × 100 / (100 + 防御力)。効いている間は左手に持たせる（HeldShieldView）。
+        /// </summary>
+        private static WeaponTypeDefinition WriteShieldType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(ShieldTypePath);
+            SerializedObject serialized = BeginType(type, "27", "盾", 0, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount, EnchantmentKind.Multishot,
+                EnchantmentKind.Exp, EnchantmentKind.MoveSpeed, EnchantmentKind.MaxHp, EnchantmentKind.Defense,
+                EnchantmentKind.Regen,
+            }, enchantments, roll);
+            WritePassiveGear(serialized, PassiveGear.Shield, true);
+            // 左の前腕の外側に、前腕に沿って立て、面を体の外へ向ける（片手剣の構えで合わせた）。Play 中に Scene ビューで動かすと書き戻る。
+            SeedHeldGrip(serialized, new Vector3(-0.12f, -0.052f, -0.086f), new Vector3(16f, 181f, 258f));
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>振らない装備の武器種にする。攻撃欄（コンボ・遠距離）は空にする。</summary>
+        private static void WritePassiveGear(SerializedObject serialized, PassiveGear gear, bool leftHand)
+        {
+            serialized.FindProperty("passiveGear").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(PassiveGear)), gear);
+            serialized.FindProperty("comboSteps").arraySize = 0;
+            serialized.FindProperty("rangedKind").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(RangedAttackKind)), RangedAttackKind.None);
+            serialized.FindProperty("heldInLeftHand").boolValue = leftHand;
         }
 
         /// <summary>手に持つ位置が未調整（両方ゼロ）なら、片手剣と同じ握りを仮に入れる。調整済みなら触らない。</summary>
@@ -1455,7 +1550,7 @@ namespace TpsDungeon.Items.Editor
 
                 // 刃の平たい面を画面に向ける（横幅の広い軸を X に）。少しひねって立体に見せ、45° 傾けて右上へ刃を伸ばす。
                 Bounds upright = RendererBounds(model);
-                float face = upright.size.z > upright.size.x ? 90f : 0f;
+                float face = (upright.size.z > upright.size.x ? 90f : 0f) + (spec.IconBackside ? 180f : 0f);
                 pivot.transform.localRotation = Quaternion.Euler(0f, face, 0f);
                 model.transform.rotation = Quaternion.Euler(0f, 0f, -45f) * Quaternion.Euler(0f, 25f, 0f);
 
