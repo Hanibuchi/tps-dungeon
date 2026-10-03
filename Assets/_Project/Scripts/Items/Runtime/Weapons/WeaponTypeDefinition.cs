@@ -8,7 +8,7 @@ namespace TpsDungeon.Items
     /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
     /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
-    /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
+    /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎・投擲）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
     /// お守り・盾の武器種は passiveGear を持ち、振らずに持っているだけで効く（PlayerGear）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
@@ -161,8 +161,8 @@ namespace TpsDungeon.Items
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
 
-        [Header("杖（雷・連置。値は仮）")]
-        [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間に合わせる。狙いは放つ瞬間のもの。炎には効かない。")]
+        [Header("杖（雷・連置）と投擲。値は仮")]
+        [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間（投擲は腕を振り切る瞬間）に合わせる。狙いは放つ瞬間のもの。炎には効かない。投擲は速射でモーションを速めた分だけ縮む。")]
         private float castDelay = 0.12f;
 
         [Header("連鎖する雷（電撃。値は仮）")]
@@ -403,6 +403,15 @@ namespace TpsDungeon.Items
 
         /// <summary>杖（雷・連置・炎）か。弓と違って、腕ではなく体の前を狙いへ向け、杖の先（手の武器の Tip）から放つ。</summary>
         public bool IsStaff => rangedKind == RangedAttackKind.Chain || rangedKind == RangedAttackKind.Line || rangedKind == RangedAttackKind.Flame;
+
+        /// <summary>投擲か。手に持った武器の見た目そのものを投げ、投げてから次が投げられるまで手を空にする。</summary>
+        public bool IsThrow => rangedKind == RangedAttackKind.Throw;
+
+        /// <summary>
+        /// 狙うとき、腕ではなく体の前を狙いへ向けるか（背骨も曲げない）。杖は構えで腕の向きが変わり、投擲は腕を振るので、
+        /// 弓のように腕を狙いへ向けると体がぶれる。
+        /// </summary>
+        public bool FacesBodyToAim => IsStaff || IsThrow;
 
         /// <summary>雷が最初の敵から飛び移る回数。extraProjectiles は「数」の合計の切り捨て（RangedWeaponStats.ExtraProjectiles）。</summary>
         public int ChainJumpsFor(int extraProjectiles) => Mathf.Max(0, chainJumps + Mathf.Max(0, extraProjectiles) * chainJumpsPerCount);

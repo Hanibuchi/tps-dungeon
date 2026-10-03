@@ -12,9 +12,10 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
-    ///   19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）: Assets/_Project/Items/Weapons/
+    ///   19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 32 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、27 の 4 本）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 36 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、27 の 4 本、
+    ///   28 の 3 本と、一覧に無い 28 の石ころ）と、拾える物・手に持つ見た目のプレハブ
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
     /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
@@ -43,6 +44,7 @@ namespace TpsDungeon.Items.Editor
         public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_21_Flamethrower.asset";
         public const string CharmTypePath = WeaponsFolder + "/WeaponType_26_Charm.asset";
         public const string ShieldTypePath = WeaponsFolder + "/WeaponType_27_Shield.asset";
+        public const string ThrowTypePath = WeaponsFolder + "/WeaponType_28_Throw.asset";
         public const string CrystalLinePrefabPath = Gen.PrefabsFolder + "/Effect_CrystalLine.prefab";
         public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
@@ -104,6 +106,9 @@ namespace TpsDungeon.Items.Editor
         public const string LightningSoundPath = ArmsSounds + "雷魔法1.mp3";
         public const string IceSoundPath = ArmsSounds + "氷魔法2.mp3";
         public const string FlameSoundPath = ArmsSounds + "火炎魔法1.mp3";
+        public const string ThrowSoundPath = ArmsSounds + "ナイフを投げる.mp3";
+        // 投げた物が壁や床に当たった音。
+        public const string ThrownStickSoundPath = ArmsSounds + "雪玉をぶつける.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
         // ユニークが床に落ちた音（捨てたときも）。
@@ -117,8 +122,10 @@ namespace TpsDungeon.Items.Editor
         private const string StylizedStaves = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Staves/_PrefabsStaves/";
         private const string StylizedShields = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Shields/_PrefabsShields/";
         private const string Accessories = "Assets/ThirdParty/3D Model/URP GanzSe Free Character Accessories/Prefabs/";
+        private const string StylizedDaggers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Daggers/_PrefabsDaggers/";
+        private const string PandazolePrefabs = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/";
         // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
-        private const string ArrowModelPath = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/Arrow_01.prefab";
+        private const string ArrowModelPath = PandazolePrefabs + "Arrow_01.prefab";
 
         /// <summary>飛ぶ矢の見た目の長さ（m）。</summary>
         private const float ArrowLength = 0.8f;
@@ -185,6 +192,12 @@ namespace TpsDungeon.Items.Editor
             public bool IconBackside;
             /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
+            /// <summary>投擲で投げたとき縦に回る速さ（度/秒）。0 なら回らない。</summary>
+            public float ThrownSpinRate;
+            /// <summary>投擲で投げたとき、壁や床に刺さらず跳ね返る（石）。</summary>
+            public bool ThrownBounces;
+            /// <summary>素材の色を使わず、この色の無地で塗る（Pandazole の石はパレットの白いところを使っていて雪玉に見えるため）。</summary>
+            public Color? Tint;
         }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
@@ -213,6 +226,7 @@ namespace TpsDungeon.Items.Editor
                 [FlamethrowerTypePath] = WriteFlamethrowerType(enchantments, roll, WriteFlamePrefab()),
                 [CharmTypePath] = WriteCharmType(enchantments, roll),
                 [ShieldTypePath] = WriteShieldType(enchantments, roll),
+                [ThrowTypePath] = WriteThrowType(enchantments, roll, ring),
             };
 
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
@@ -352,6 +366,31 @@ namespace TpsDungeon.Items.Editor
             yield return Gear("Weapon_UnfallingHolyShield", "不落の聖盾", WeaponRank.Unique, 18f, "傷を受けるそばから、盾の輝きが持ち主を癒していく。",
                 ShieldTypePath, LowPolyWeapons + "Shield_Epic.prefab", ShieldLength,
                 EnchantmentKind.Regen, EnchantmentKind.Regen, EnchantmentKind.Regen, EnchantmentKind.Defense);
+            // 28 投擲。手に持った見た目をそのまま投げる。ナイフと手斧は縦に回り、投槍は先を前へ向けてまっすぐ飛ぶ。
+            // 石は Notion の武器一覧に無い（調達した素材の「投擲（石…）」に合わせて足した）。刺さらずに跳ね返って転がる。強さは仮。
+            var stone = Thrown("Weapon_ThrowingStone", "石ころ", WeaponRank.E, 6f, "道端で拾った手ごろな石。当たれば痛い。",
+                PandazolePrefabs + "Rock_01.prefab", 0.14f, 0f, 720f);
+            stone.CenterPivot = true;
+            stone.ThrownBounces = true;
+            stone.Tint = new Color32(120, 114, 106, 255);
+            yield return stone;
+            yield return Thrown("Weapon_ThrowingKnife", "投げナイフ", WeaponRank.D, 18f, "軽く、速く、数を投げるためだけに研がれている。",
+                StylizedDaggers + "Dagger1_3_5.prefab", 0.35f, 0.05f, 1080f, flip: true);
+            yield return Thrown("Weapon_HandAxe", "手斧", WeaponRank.A, 38f, "回転しながら飛び、重さのまま食い込む。",
+                LowPolyWeapons + "Axe1H_Medium.prefab", 0.55f, 0.08f, 900f);
+            yield return Thrown("Weapon_ThunderJavelin", "雷鳴の投槍", WeaponRank.S, 58f, "投げ放つと同時に、空気が裂けて鳴る。",
+                LowPolyWeapons + "Spear1H_Epic.prefab", 1.4f, 0.6f, 0f);
+        }
+
+        private static WeaponSpec Thrown(string id, string name, WeaponRank rank, float strength, string description, string modelPath,
+            float length, float grip, float spinRate, bool flip = false)
+        {
+            return new WeaponSpec
+            {
+                Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
+                TypePath = ThrowTypePath, ModelPath = modelPath, Length = length, Grip = grip, Flip = flip, ThrownSpinRate = spinRate,
+                Blade = new Color32(190, 196, 204, 255), Hilt = new Color32(90, 60, 40, 255),
+            };
         }
 
         private static WeaponSpec Staff(string id, string name, WeaponRank rank, float strength, string description, string typePath,
@@ -863,6 +902,43 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
+        // ---- 武器種 28（投擲） ----------------------------------------------
+
+        /// <summary>
+        /// 投擲（28）。右手に持った武器を、腕を振り切る瞬間（押して 0.22 秒、Kevin の右手の突きを 1.5 倍）に照準の先へまっすぐ投げる。
+        /// 飛ぶのは武器の手に持つ見た目そのもので、投げてから次が投げられるまで手は空になる。数で扇状に増え、多重で遅れてもう一投、
+        /// 貫通・ホーミングは弓と同じ。爆発は付かない。値は仮。撃つ間隔 0.7 秒なので、1 投は 強さ × 0.7。
+        /// </summary>
+        private static WeaponTypeDefinition WriteThrowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(ThrowTypePath);
+            SerializedObject serialized = BeginType(type, "28", "投擲", 7, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
+                EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
+                EnchantmentKind.ProjectileCount, EnchantmentKind.Pierce, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw
+
+            // 飛ぶ見た目は武器ごとの手に持つ見た目を使うので、武器種の矢は持たない。
+            WriteRangedCommon(serialized, RangedAttackKind.Throw, 0.7f, null, ring);
+            serialized.FindProperty("heldInLeftHand").boolValue = false;
+            serialized.FindProperty("castDelay").floatValue = 0.22f;
+            serialized.FindProperty("projectileSpeed").floatValue = 28f;
+            serialized.FindProperty("projectileRange").floatValue = 35f;
+            serialized.FindProperty("projectileRadius").floatValue = 0.2f;
+            serialized.FindProperty("projectileKnockback").floatValue = 2.5f;
+            // 右手の骨から見た握る所（杖と同じく、指は骨の −X へ伸び、拳を通る軸が +Y）。調整済みなら触らない。
+            SeedHeldGrip(serialized, new Vector3(-0.09f, 0f, -0.02f), Vector3.zero);
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.4f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(ThrowSoundPath);
+            serialized.FindProperty("stickSound").objectReferenceValue = LoadSound(ThrownStickSoundPath);
+            serialized.FindProperty("drawSound").objectReferenceValue = null;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
         // ---- 武器種 19 / 20 / 21（両手杖） ----------------------------------------------
 
         /// <summary>
@@ -1153,7 +1229,7 @@ namespace TpsDungeon.Items.Editor
             collision.radiusScale = 0.3f;
         }
 
-        /// <summary>弓・持続弓に共通の値。コンボの段は持たない（近接では振らない）。</summary>
+        /// <summary>遠距離（弓・持続弓・杖・投擲）に共通の値。コンボの段は持たない（近接では振らない）。</summary>
         private static void WriteRangedCommon(SerializedObject serialized, RangedAttackKind kind, float fireInterval, GameObject arrow,
             Material ring)
         {
@@ -1408,6 +1484,8 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("strength").floatValue = spec.Strength;
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = held;
+            serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
+            serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
             SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
             fixedList.arraySize = spec.FixedEnchantments.Length;
             for (int i = 0; i < spec.FixedEnchantments.Length; i++)
@@ -1458,7 +1536,21 @@ namespace TpsDungeon.Items.Editor
         private static void BuildSword(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
         {
             var source = string.IsNullOrEmpty(spec.ModelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
-            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot, spec.Grip, spec.Flip)) return;
+            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot, spec.Grip, spec.Flip))
+            {
+                if (spec.Tint.HasValue)
+                {
+                    Material tint = material($"Placeholder_{spec.Id}_Tint", spec.Tint.Value);
+                    foreach (Renderer r in parent.GetComponentsInChildren<Renderer>())
+                    {
+                        var shared = new Material[r.sharedMaterials.Length];
+                        for (int i = 0; i < shared.Length; i++) shared[i] = tint;
+                        r.sharedMaterials = shared;
+                    }
+                }
+
+                return;
+            }
 
             Material blade = material($"Placeholder_{spec.Id}_Blade", spec.Blade);
             Material hilt = material($"Placeholder_{spec.Id}_Hilt", spec.Hilt);
