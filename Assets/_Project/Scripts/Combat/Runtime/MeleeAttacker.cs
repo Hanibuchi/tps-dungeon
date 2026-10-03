@@ -100,6 +100,7 @@ namespace TpsDungeon.Combat
         private bool logHits;
 
         private CharacterProgression progression;
+        private PlayerGear gear;
         private CharacterController characterController;
 
         private bool initialized;
@@ -212,6 +213,7 @@ namespace TpsDungeon.Combat
             initialized = true;
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
+            gear = GetComponent<PlayerGear>();
             characterController = GetComponent<CharacterController>();
             CacheAnimatorParameters();
         }
@@ -243,7 +245,8 @@ namespace TpsDungeon.Combat
 
             held = item;
             WeaponDefinition weapon = item?.Weapon;
-            bool isWeapon = weapon != null && weapon.WeaponType != null;
+            // お守り・盾は振らないので、宝石などと同じく素手で殴る（構えも素手）。見た目は手に持たせる。
+            bool isWeapon = weapon != null && weapon.WeaponType != null && !weapon.WeaponType.IsPassiveGear;
             heldWeapon = IsMelee(weapon) ? weapon : !isWeapon && IsMelee(unarmedWeapon) ? unarmedWeapon : null;
 
             stats = heldWeapon != null ? ComputeStats() : null;
@@ -323,7 +326,9 @@ namespace TpsDungeon.Combat
             }
 
             // 素手で殴っているとき、手の物のエンチャントは乗せない。
-            EnchantmentTotals enchantments = held != null && held.Weapon == heldWeapon ? held.EnchantmentTotals() : EnchantmentTotals.Empty;
+            EnchantmentTotals enchantments = held != null && held.Weapon == heldWeapon ? held.EnchantmentTotals() : new EnchantmentTotals();
+            // ホットバーのお守り・盾のクリティカル率・ドロップ増加・数・多重を足す（素手でも）。
+            if (gear != null) enchantments.AddAll(gear.CurrentBonuses().WeaponTotals);
             float attack = progression != null ? progression.BaseAttack : 0f;
             return heldWeapon.ComputeMeleeStats(enchantments, attack, critChance, critMultiplier);
         }

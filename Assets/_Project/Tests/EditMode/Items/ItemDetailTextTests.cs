@@ -54,5 +54,40 @@ namespace TpsDungeon.Items.Tests
                 Object.DestroyImmediate(item);
             }
         }
+
+        [Test]
+        public void 盾は攻撃力の代わりに防御力と効き方を出し_お守りは強さを出さない()
+        {
+            var shield = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var charm = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var shieldType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var charmType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            try
+            {
+                typeof(WeaponTypeDefinition).GetField("passiveGear", Private).SetValue(shieldType, PassiveGear.Shield);
+                typeof(WeaponTypeDefinition).GetField("passiveGear", Private).SetValue(charmType, PassiveGear.Charm);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(shield, 18f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(shield, shieldType);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(charm, 14f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(charm, charmType);
+
+                string shieldText = new ItemInstance(shield).DetailText();
+                Assert.AreEqual("防御力 18", shieldText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", shieldText);
+                StringAssert.Contains("片手武器を持っている間だけ効く", shieldText);
+
+                string charmText = new ItemInstance(charm).DetailText();
+                StringAssert.DoesNotContain("攻撃力", charmText);
+                StringAssert.DoesNotContain("14", charmText);
+                StringAssert.Contains("ホットバーに入れておくだけで効く", charmText);
+            }
+            finally
+            {
+                Object.DestroyImmediate(shield);
+                Object.DestroyImmediate(charm);
+                Object.DestroyImmediate(shieldType);
+                Object.DestroyImmediate(charmType);
+            }
+        }
     }
 }

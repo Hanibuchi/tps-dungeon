@@ -118,6 +118,30 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void GearMaxHp_KeepsMissingHp()
+        {
+            health.Damage(30); // 70 / 100
+
+            character.SetGearMaxHpPercent(0.2f);
+            Assert.AreEqual(120, health.MaxHp);
+            Assert.AreEqual(90, health.CurrentHp, "減っている 30 を保つ");
+
+            character.SetGearMaxHpPercent(0f);
+            Assert.AreEqual(100, health.MaxHp);
+            Assert.AreEqual(70, health.CurrentHp, "付け外しで回復しない");
+        }
+
+        [Test]
+        public void GearMaxHp_RemovingNeverKills()
+        {
+            character.SetGearMaxHpPercent(0.5f); // 150 / 150
+            health.Damage(149); // 1 / 150
+
+            character.SetGearMaxHpPercent(0f);
+            Assert.AreEqual(1, health.CurrentHp, "外しても最低 1 は残す");
+        }
+
+        [Test]
         public void CaptureAndRestore_RoundTrip()
         {
             character.AddExp(355); // Lv5 + 55

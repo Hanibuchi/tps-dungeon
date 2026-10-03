@@ -37,6 +37,30 @@ namespace TpsDungeon.Items
             stacks[i] += count;
         }
 
+        /// <summary>other の全部を足し込む（お守り・盾のエンチャントを手の武器に乗せるとき）。</summary>
+        public void AddAll(EnchantmentTotals other)
+        {
+            if (other == null) return;
+
+            for (int i = 0; i < KindCount; i++)
+            {
+                amounts[i] += other.amounts[i];
+                secondaries[i] = Math.Max(secondaries[i], other.secondaries[i]);
+                stacks[i] += other.stacks[i];
+            }
+        }
+
+        /// <summary>other のうち kind の分だけを足し込む。</summary>
+        public void AddKind(EnchantmentTotals other, EnchantmentKind kind)
+        {
+            if (other == null || !IsValid(kind)) return;
+
+            int i = (int)kind;
+            amounts[i] += other.amounts[i];
+            secondaries[i] = Math.Max(secondaries[i], other.secondaries[i]);
+            stacks[i] += other.stacks[i];
+        }
+
         private static bool IsValid(EnchantmentKind kind) => (int)kind >= 0 && (int)kind < KindCount;
     }
 }

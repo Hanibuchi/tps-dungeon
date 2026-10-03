@@ -115,6 +115,7 @@ namespace TpsDungeon.Combat
         private bool logHits;
 
         private CharacterProgression progression;
+        private PlayerGear gear;
         // 手の武器の見た目を持っている役（投擲で手を空にするのに使う）。
         private MeleeAttacker melee;
         // 投擲で手の武器を消している間は真。待ちが明けて投げ残りも無くなったら出し直す。
@@ -258,6 +259,7 @@ namespace TpsDungeon.Combat
             initialized = true;
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
+            gear = GetComponent<PlayerGear>();
             melee = GetComponent<MeleeAttacker>();
             CacheAnimatorParameters();
             CacheBones();
@@ -359,7 +361,9 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
-            EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : EnchantmentTotals.Empty;
+            EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : new EnchantmentTotals();
+            // ホットバーのお守り・盾のクリティカル率・ドロップ増加・数・多重を足す（素手でも）。
+            if (gear != null) enchantments.AddAll(gear.CurrentBonuses().WeaponTotals);
             float attack = progression != null ? progression.BaseAttack : 0f;
             return heldWeapon.ComputeRangedStats(enchantments, attack, critChance, critMultiplier);
         }

@@ -82,6 +82,7 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
+        /// 盾は攻撃力の代わりに防御力を、お守りは強さを出さない。お守り・盾は効き方を一行添える。
         /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
         /// </summary>
         public string DetailText()
@@ -93,7 +94,9 @@ namespace TpsDungeon.Items
             string rank = WeaponRanks.Label(weapon.Rank);
             if (TryGetRankColor(out Color color)) rank = $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{rank}</color>";
             text.Append("ランク ").Append(rank);
-            text.Append($"\n攻撃力 {weapon.Strength:0.#}");
+            WeaponTypeDefinition type = weapon.WeaponType;
+            if (type != null && type.IsShield) text.Append($"\n防御力 {weapon.Strength:0.#}");
+            else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {weapon.Strength:0.#}");
 
             foreach (EnchantmentStack stack in enchantments)
             {
@@ -101,8 +104,19 @@ namespace TpsDungeon.Items
                 text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Count, e.SecondaryAmount));
             }
 
+            string usage = GearUsage(type);
+            if (!string.IsNullOrEmpty(usage)) text.Append("\n\n").Append(usage);
             if (!string.IsNullOrEmpty(Definition.Description)) text.Append("\n\n").Append(Definition.Description);
             return text.ToString();
+        }
+
+        /// <summary>お守り・盾の効き方の一行。それ以外は空。</summary>
+        private static string GearUsage(WeaponTypeDefinition type)
+        {
+            if (type == null) return string.Empty;
+            if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
+            if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";
+            return string.Empty;
         }
 
         private static EnchantmentStack[] Group(IEnumerable<EnchantmentDefinition> source)

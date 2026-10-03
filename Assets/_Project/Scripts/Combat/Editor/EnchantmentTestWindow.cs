@@ -112,7 +112,7 @@ namespace TpsDungeon.Combat.Editor
         {
             weapons = AssetDatabase.FindAssets("t:" + nameof(WeaponDefinition))
                 .Select(guid => AssetDatabase.LoadAssetAtPath<WeaponDefinition>(AssetDatabase.GUIDToAssetPath(guid)))
-                .Where(w => w != null && w.WeaponType != null && (w.WeaponType.IsMelee || w.WeaponType.IsRanged)
+                .Where(w => w != null && w.WeaponType != null && (w.WeaponType.IsMelee || w.WeaponType.IsRanged || w.WeaponType.IsPassiveGear)
                             && w.WeaponType.AllowedEnchantments.Count > 0)
                 .OrderBy(w => w.WeaponType.Id).ThenBy(w => w.Rank).ThenBy(w => w.DisplayName)
                 .ToList();
@@ -253,6 +253,12 @@ namespace TpsDungeon.Combat.Editor
             }
 
             EnchantmentTotals totals = new ItemInstance(weapon, Chosen(type)).EnchantmentTotals();
+            if (type.IsPassiveGear)
+            {
+                EditorGUILayout.HelpBox(GearPreviewText(type, totals), MessageType.None);
+                return;
+            }
+
             if (type.IsRanged)
             {
                 RangedWeaponStats ranged = weapon.ComputeRangedStats(totals, characterAttack, critChance, critMultiplier);
@@ -262,6 +268,24 @@ namespace TpsDungeon.Combat.Editor
 
             MeleeWeaponStats stats = weapon.ComputeMeleeStats(totals, characterAttack, critChance, critMultiplier);
             EditorGUILayout.HelpBox(PreviewText(type, stats, characterAttack, attacker != null), MessageType.None);
+        }
+
+        /// <summary>お守り・盾 1 つだけをホットバーに入れたときの効果（盾は片手武器を持っている間）。</summary>
+        private string GearPreviewText(WeaponTypeDefinition type, EnchantmentTotals totals)
+        {
+            var slot = new GearSlot(type.PassiveGear, weapon.Strength, totals);
+            GearBonuses bonuses = GearBonuses.Compute(new[] { slot }, true);
+            EnchantmentTotals w = bonuses.WeaponTotals;
+
+            var text = new StringBuilder();
+            text.AppendLine(type.IsShield
+                ? "ホットバーに入れて、片手武器を持っている間だけ効く。持たせると選んでいる枠に入るので、別の枠で片手武器を選ぶこと。"
+                : "ホットバーに入れておくだけで効く。");
+            if (type.IsShield) text.AppendLine($"防御力 {weapon.Strength:0.#} → 受けるダメージ ×{bonuses.DamageTaken:0.##}（敵の攻撃はまだ無い）");
+            text.AppendLine($"手の武器に足す: クリティカル率 +{w.Amount(EnchantmentKind.CritChance):P0}　数 +{w.Amount(EnchantmentKind.ProjectileCount):0.#}"
+                            + $"　多重 +{w.Amount(EnchantmentKind.Multishot):0.#}　ドロップ率 +{w.Amount(EnchantmentKind.DropUp):P0}");
+            text.AppendLine($"最大 HP +{bonuses.MaxHpPercent:P0}　移動速度 +{bonuses.MoveSpeedPercent:P0}　経験値 +{bonuses.ExpPercent:P0}　自然回復 {bonuses.RegenPerSecond:0.#}/秒");
+            return text.ToString().TrimEnd();
         }
 
         private string PreviewText(WeaponTypeDefinition type, MeleeWeaponStats stats, float characterAttack, bool fromPlayer)

@@ -104,6 +104,15 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void Modifiers_ApplyExpExtraMultiplier()
+        {
+            var modifiers = new ProgressionModifiers();
+            modifiers.SetExpMultiplier(1.5f);
+            Assert.AreEqual(18, modifiers.ApplyExp(10, 1.2f), "1.5 × 1.2 = 1.8 倍");
+            Assert.AreEqual(0, modifiers.ApplyExp(10, 0f));
+        }
+
+        [Test]
         public void Modifiers_ApplyExpMultiplier()
         {
             var modifiers = new ProgressionModifiers();

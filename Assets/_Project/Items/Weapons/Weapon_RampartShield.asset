@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_RampartShield
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_RampartShield
+  displayName: "\u57CE\u58C1\u306E\u5927\u76FE"
+  description: "\u69CB\u3048\u308C\u3070\u3001\u305D\u3053\u304C\u4E00\u4EBA\u5206\u306E\u57CE\u58C1\u306B\u306A\u308B\u3002"
+  icon: {fileID: 2800000, guid: baa5df0092ef9428ea993a6ab6112026, type: 3}
+  worldPrefab: {fileID: 4733836570701696713, guid: 8339b3f6930dc4628aae95c159ba06bb, type: 3}
+  rank: 3
+  strength: 30
+  weaponType: {fileID: 11400000, guid: 06c4f5a3557ad4ad1b1002dbd2e26a59, type: 2}
+  heldModel: {fileID: 2041607406512869821, guid: 4bc9a1aa743954fe9bb80d3b40ad9087, type: 3}
+  fixedEnchantments: []

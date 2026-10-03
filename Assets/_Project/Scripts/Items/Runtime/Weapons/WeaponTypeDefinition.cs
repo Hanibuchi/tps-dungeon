@@ -9,6 +9,7 @@ namespace TpsDungeon.Items
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
     /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
     /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎・投擲）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
+    /// お守り・盾の武器種は passiveGear を持ち、振らずに持っているだけで効く（PlayerGear）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
     public sealed class WeaponTypeDefinition : ScriptableObject
@@ -24,8 +25,11 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("キャラの Animator の WeaponType に入れる値（CharacterAnimatorBuilder.Weapon）。")]
         private int animatorWeaponType;
 
-        [SerializeField, Tooltip("盾（武器種 27）の防御が効くか。片手武器なら真。盾はまだ無い。")]
+        [SerializeField, Tooltip("盾（武器種 27）の防御が効くか。片手武器なら真。")]
         private bool canUseShield;
+
+        [SerializeField, Tooltip("振らずに持っているだけで効く装備（お守り・盾）か。そうなら攻撃欄は使わず、選んでいる間は素手で殴る。")]
+        private PassiveGear passiveGear;
 
         [Header("エンチャント")]
         [SerializeField, Tooltip("この武器種に付けられるエンチャント。")]
@@ -329,6 +333,10 @@ namespace TpsDungeon.Items
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
         public int AnimatorWeaponType => animatorWeaponType;
         public bool CanUseShield => canUseShield;
+        public PassiveGear PassiveGear => passiveGear;
+        public bool IsCharm => passiveGear == PassiveGear.Charm;
+        public bool IsShield => passiveGear == PassiveGear.Shield;
+        public bool IsPassiveGear => passiveGear != PassiveGear.None;
         public IReadOnlyList<EnchantmentDefinition> AllowedEnchantments => allowedEnchantments;
         public EnchantmentRollSettings EnchantmentRoll => enchantmentRoll;
         public float CharacterAttackWeight => characterAttackWeight;

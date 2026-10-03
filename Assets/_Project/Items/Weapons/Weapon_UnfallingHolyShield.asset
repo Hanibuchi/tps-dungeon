@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_UnfallingHolyShield
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_UnfallingHolyShield
+  displayName: "\u4E0D\u843D\u306E\u8056\u76FE"
+  description: "\u50B7\u3092\u53D7\u3051\u308B\u305D\u3070\u304B\u3089\u3001\u76FE\u306E\u8F1D\u304D\u304C\u6301\u3061\u4E3B\u3092\u7652\u3057\u3066\u3044\u304F\u3002"
+  icon: {fileID: 2800000, guid: ed5fc72f015be400ca40dc19f638e904, type: 3}
+  worldPrefab: {fileID: 3235019718935778804, guid: 4db4930d0c3c84bb4928f0b21781586d, type: 3}
+  rank: 6
+  strength: 18
+  weaponType: {fileID: 11400000, guid: 06c4f5a3557ad4ad1b1002dbd2e26a59, type: 2}
+  heldModel: {fileID: 475797246903453896, guid: a01095fcf5cf746a6842413972064cb2, type: 3}
+  fixedEnchantments:
+  - {fileID: 11400000, guid: e713955dcbe5e48679852a593e2add05, type: 2}
+  - {fileID: 11400000, guid: e713955dcbe5e48679852a593e2add05, type: 2}
+  - {fileID: 11400000, guid: e713955dcbe5e48679852a593e2add05, type: 2}
+  - {fileID: 11400000, guid: 821576565a89f483695f511caccc63e5, type: 2}
