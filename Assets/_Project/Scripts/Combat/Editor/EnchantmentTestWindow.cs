@@ -357,7 +357,8 @@ namespace TpsDungeon.Combat.Editor
             {
                 text.AppendLine($"1 発: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");
                 text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。数・多重・爆発は含めない）");
-                text.AppendLine($"矢: {count} 本（1 本は照準へ、残りは {type.VolleySpreadAngle:0.#}° ずつ右左交互に） × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）"
+                // 投擲は弓と同じ飛び方で、手に持った武器を投げる。
+                text.AppendLine($"{(type.IsThrow ? "投げる数" : "矢")}: {count} 本（1 本は照準へ、残りは {type.VolleySpreadAngle:0.#}° ずつ右左交互に） × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）"
                                 + $"　速さ {type.ProjectileSpeed * stats.ProjectileSpeedScale:0.#} m/s");
                 text.AppendLine($"貫通 {stats.PierceCount} 体　ホーミング {(stats.Homing ? "あり" : "なし")}");
                 if (stats.ExplosionRatio > 0f)
