@@ -21,3 +21,4 @@ MonoBehaviour:
   strength: 23
   weaponType: {fileID: 11400000, guid: a9aaf9221ad85494e9a8900e31335817, type: 2}
   heldModel: {fileID: 3798973567781349531, guid: 0b43fb54fdd2641eea0c5c388da23f1a, type: 3}
+  fixedEnchantments: []

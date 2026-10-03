@@ -1,3 +1,4 @@
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Interaction;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace TpsDungeon.Items
     /// コライダを持つ GameObject（か、その親）に付ける。拾われたら自分ごと消える。
     /// シーンに置いたものは定義だけを持ち、初めて見られたときに個体を作る（武器ならこのときエンチャントが決まる）。
     /// 捨てたものは個体ごと渡されるので、エンチャントは捨てる前のまま。
+    /// ユニークなど光の設定があるランクの武器は、床にあるあいだ光をまとう（<see cref="WeaponAura"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Item Pickup")]
@@ -49,6 +51,24 @@ namespace TpsDungeon.Items
                 instance = value;
                 definition = value != null ? value.Definition : null;
             }
+        }
+
+        /// <summary>
+        /// 床に落ちた音を鳴らす（ランク表で音を決めたランクの武器だけ。今はユニーク）。
+        /// 床に出した側が呼ぶ。シーンに最初から置いてある物は鳴らさない。
+        /// </summary>
+        public void PlayDropSound()
+        {
+            WeaponDefinition weapon = Definition as WeaponDefinition;
+            WeaponRankTable table = WeaponRankTable.Default;
+            if (weapon == null || table == null || !table.TryGet(weapon.Rank, out WeaponRankTable.Entry style)) return;
+            if (style.dropSound != null) GameAudio.Instance?.PlaySeAt(style.dropSound, transform.position, style.dropSoundVolume);
+        }
+
+        private void Start()
+        {
+            // 捨てたときは Instantiate の後に個体を渡すので、Awake ではまだ定義が入っていない。
+            if (Definition is WeaponDefinition weapon) WeaponAura.Attach(gameObject, weapon.Rank);
         }
 
         public string PromptLabel => lastInventory != null && !lastInventory.Inventory.HasSpace ? fullLabel : pickupLabel;

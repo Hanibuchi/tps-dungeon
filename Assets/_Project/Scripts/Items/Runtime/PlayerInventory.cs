@@ -93,6 +93,7 @@ namespace TpsDungeon.Items
             ItemPickup pickup = Instantiate(item.WorldPrefab, position, rotation);
             pickup.name = item.WorldPrefab.name;
             pickup.Instance = item;
+            pickup.PlayDropSound();
             return true;
         }
 
