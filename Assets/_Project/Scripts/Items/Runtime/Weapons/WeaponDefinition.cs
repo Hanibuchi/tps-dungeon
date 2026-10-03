@@ -26,6 +26,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("投擲の武器種で投げたとき、手に持つ見た目が縦に回る速さ（度/秒）。0 なら回らずに先を前へ向けて飛ぶ（投槍）。投擲でなければ使わない。")]
         private float thrownSpinRate;
 
+        [SerializeField, Tooltip("投擲の武器種で投げたとき、壁や床に刺さらずに跳ね返って転がる（石）。投擲でなければ使わない。")]
+        private bool thrownBounces;
+
         [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べると重ねがけになる。ユニーク以外では使わない。")]
         private List<EnchantmentDefinition> fixedEnchantments = new List<EnchantmentDefinition>();
 
@@ -34,6 +37,7 @@ namespace TpsDungeon.Items
         public WeaponTypeDefinition WeaponType => weaponType;
         public GameObject HeldModel => heldModel;
         public float ThrownSpinRate => thrownSpinRate;
+        public bool ThrownBounces => thrownBounces;
         public IReadOnlyList<EnchantmentDefinition> FixedEnchantments => fixedEnchantments;
 
         /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>

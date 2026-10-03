@@ -14,7 +14,7 @@ namespace TpsDungeon.Items.Editor
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
     ///   19（電撃）・20（範囲連置）・21（火炎放射器）・28（投擲）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 28 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、28 の 3 本）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 29 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、28 の 3 本と、一覧に無い 28 の石ころ）と、拾える物・手に持つ見た目のプレハブ
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
     /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
@@ -117,8 +117,9 @@ namespace TpsDungeon.Items.Editor
         private const string LowPolyWeapons = "Assets/ThirdParty/3D Model/Blink/Weapons/LowPoly/FreeRPGWeapons/_PREFABS/";
         private const string StylizedStaves = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Staves/_PrefabsStaves/";
         private const string StylizedDaggers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Daggers/_PrefabsDaggers/";
+        private const string PandazolePrefabs = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/";
         // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
-        private const string ArrowModelPath = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/Arrow_01.prefab";
+        private const string ArrowModelPath = PandazolePrefabs + "Arrow_01.prefab";
 
         /// <summary>飛ぶ矢の見た目の長さ（m）。</summary>
         private const float ArrowLength = 0.8f;
@@ -179,6 +180,10 @@ namespace TpsDungeon.Items.Editor
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
             /// <summary>投擲で投げたとき縦に回る速さ（度/秒）。0 なら回らない。</summary>
             public float ThrownSpinRate;
+            /// <summary>投擲で投げたとき、壁や床に刺さらず跳ね返る（石）。</summary>
+            public bool ThrownBounces;
+            /// <summary>素材の色を使わず、この色の無地で塗る（Pandazole の石はパレットの白いところを使っていて雪玉に見えるため）。</summary>
+            public Color? Tint;
         }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
@@ -327,6 +332,13 @@ namespace TpsDungeon.Items.Editor
                 EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
 
             // 28 投擲。手に持った見た目をそのまま投げる。ナイフと手斧は縦に回り、投槍は先を前へ向けてまっすぐ飛ぶ。
+            // 石は Notion の武器一覧に無い（調達した素材の「投擲（石…）」に合わせて足した）。刺さらずに跳ね返って転がる。強さは仮。
+            var stone = Thrown("Weapon_ThrowingStone", "石ころ", WeaponRank.E, 6f, "道端で拾った手ごろな石。当たれば痛い。",
+                PandazolePrefabs + "Rock_01.prefab", 0.14f, 0f, 720f);
+            stone.CenterPivot = true;
+            stone.ThrownBounces = true;
+            stone.Tint = new Color32(120, 114, 106, 255);
+            yield return stone;
             yield return Thrown("Weapon_ThrowingKnife", "投げナイフ", WeaponRank.D, 18f, "軽く、速く、数を投げるためだけに研がれている。",
                 StylizedDaggers + "Dagger1_3_5.prefab", 0.35f, 0.05f, 1080f, flip: true);
             yield return Thrown("Weapon_HandAxe", "手斧", WeaponRank.A, 38f, "回転しながら飛び、重さのまま食い込む。",
@@ -1378,6 +1390,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = held;
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
+            serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
             SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
             fixedList.arraySize = spec.FixedEnchantments.Length;
             for (int i = 0; i < spec.FixedEnchantments.Length; i++)
@@ -1428,7 +1441,21 @@ namespace TpsDungeon.Items.Editor
         private static void BuildSword(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
         {
             var source = string.IsNullOrEmpty(spec.ModelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
-            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot, spec.Grip, spec.Flip)) return;
+            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot, spec.Grip, spec.Flip))
+            {
+                if (spec.Tint.HasValue)
+                {
+                    Material tint = material($"Placeholder_{spec.Id}_Tint", spec.Tint.Value);
+                    foreach (Renderer r in parent.GetComponentsInChildren<Renderer>())
+                    {
+                        var shared = new Material[r.sharedMaterials.Length];
+                        for (int i = 0; i < shared.Length; i++) shared[i] = tint;
+                        r.sharedMaterials = shared;
+                    }
+                }
+
+                return;
+            }
 
             Material blade = material($"Placeholder_{spec.Id}_Blade", spec.Blade);
             Material hilt = material($"Placeholder_{spec.Id}_Hilt", spec.Hilt);

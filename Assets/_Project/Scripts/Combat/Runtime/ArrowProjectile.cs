@@ -12,6 +12,7 @@ namespace TpsDungeon.Combat
     /// 見た目だけの矢（矢の雨・上へ放つ矢）は敵をすり抜けて、床に刺さるだけ。
     /// 見た目のプレハブは「原点が矢の先、柄が -Z」に置く（刺さったときに先が当たった面に来るように）。
     /// 投擲では手に持つ武器の見た目をそのまま飛ばし（Settings.HeldModelVisual）、寝かせて縦に回す（Settings.SpinRate）。
+    /// 石のように刺さらない物（Settings.Bounce）は、壁や床で跳ね返って転がる。
     /// RangedAttacker が出す。シーンに置く物ではない。
     /// </summary>
     [AddComponentMenu("")]
@@ -22,6 +23,12 @@ namespace TpsDungeon.Combat
 
         /// <summary>刺さるときに面へめり込ませる深さ（m）。</summary>
         private const float StuckDepth = 0.12f;
+
+        /// <summary>跳ね返るとき、当たる前の速さのうち残す割合。</summary>
+        private const float BounceRestitution = 0.25f;
+
+        /// <summary>跳ね返った物を置くレイヤー（Ignore Raycast）。転がっている間に照準や矢を遮らないように。</summary>
+        private const int BounceLayer = 2;
 
         /// <summary>ホーミングで追う敵を選び直す間隔（秒）。</summary>
         private const float RetargetInterval = 0.15f;
@@ -62,11 +69,16 @@ namespace TpsDungeon.Combat
 
             /// <summary>見た目を縦に回す速さ（度/秒、上を前へ倒す向き）。刺さったら止まる。0 なら回さない。</summary>
             public float SpinRate;
+
+            /// <summary>壁や床に刺さらず、跳ね返って転がる（石）。onStick は同じく呼ぶ。</summary>
+            public bool Bounce;
         }
 
         private Settings settings;
         // 回す見た目の節点（HeldModelVisual のときだけ）。ルートの向きは毎フレーム飛ぶ向きに合わせ直すので、回すのはこの子。
         private Transform spinPivot;
+        // 見た目の半分の長さ（HeldModelVisual のときだけ）。跳ね返った物の当たりの半径に使う。
+        private float visualHalfLength;
         private Action<EnemyHealth, Vector3, Vector3> onHit;
         private Action<Vector3> onStick;
         private Vector3 direction;
@@ -92,6 +104,7 @@ namespace TpsDungeon.Combat
             var go = new GameObject(settings.HeldModelVisual ? "Thrown" : "Arrow");
             go.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, Vector3.up));
             Transform pivot = null;
+            float halfLength = 0f;
             if (visual != null)
             {
                 if (settings.HeldModelVisual)
@@ -102,11 +115,12 @@ namespace TpsDungeon.Combat
 
                 GameObject model = Instantiate(visual, pivot != null ? pivot : go.transform, false);
                 foreach (Collider c in model.GetComponentsInChildren<Collider>()) Destroy(c);
-                if (pivot != null) LayAlongTravel(model.transform, pivot);
+                if (pivot != null) halfLength = LayAlongTravel(model.transform, pivot);
             }
 
             var arrow = go.AddComponent<ArrowProjectile>();
             arrow.spinPivot = pivot;
+            arrow.visualHalfLength = halfLength;
             arrow.settings = settings;
             arrow.onHit = onHit;
             arrow.onStick = onStick;
@@ -154,7 +168,9 @@ namespace TpsDungeon.Combat
                     continue;
                 }
 
-                Stick(hit.distance <= 0f ? position : hit.point);
+                Vector3 surface = hit.distance <= 0f ? position : hit.point;
+                if (settings.Bounce) BounceOff(surface, hit.distance <= 0f ? -direction : hit.normal);
+                else Stick(surface);
                 return;
             }
 
@@ -167,15 +183,23 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// 手に持つ見た目（長い向きが +Y）を、長い向きが飛ぶ向き（+Z）になるよう寝かせ、真ん中を pivot に合わせる。
-        /// pivot は先から半分の長さだけ後ろ（-Z）に置き、回らなければ前の端が矢の先（ルートの原点）に来る。
+        /// pivot は先から半分の長さだけ後ろ（-Z）に置き、回らなければ前の端が矢の先（ルートの原点）に来る。半分の長さを返す。
         /// </summary>
-        private static void LayAlongTravel(Transform model, Transform pivot)
+        private static float LayAlongTravel(Transform model, Transform pivot)
         {
             model.localRotation = Quaternion.Euler(90f, 0f, 0f) * model.localRotation;
-            if (!TryMeasure(model, pivot, out Bounds bounds)) return;
+            if (!TryMeasure(model, pivot, out Bounds bounds)) return 0f;
+
+            // 縦に回す軸（X）に厚みの向きを合わせ、平たい面（斧の頭・刃）が縦の面の中で回るようにする。
+            if (bounds.extents.y < bounds.extents.x)
+            {
+                model.localRotation = Quaternion.Euler(0f, 0f, 90f) * model.localRotation;
+                TryMeasure(model, pivot, out bounds);
+            }
 
             model.localPosition -= bounds.center;
             pivot.localPosition = new Vector3(0f, 0f, -bounds.extents.z);
+            return bounds.extents.z;
         }
 
         /// <summary>model のメッシュを合わせた境界を space の座標系で測る。</summary>
@@ -205,6 +229,28 @@ namespace TpsDungeon.Combat
             }
 
             return any;
+        }
+
+        /// <summary>
+        /// 壁や床に当たって跳ね返る。ここからは物理に任せて転がし、しばらくして消す。
+        /// </summary>
+        private void BounceOff(Vector3 point, Vector3 normal)
+        {
+            stuck = true;
+            float radius = Mathf.Max(0.01f, visualHalfLength > 0f ? Mathf.Min(settings.Radius, visualHalfLength) : settings.Radius);
+            // 見た目の真ん中（回す節点）が当たりの球の真ん中に来るよう、ルートを当たった面から浮かせる。
+            Vector3 center = point + normal * radius;
+            transform.position = spinPivot != null ? center - (spinPivot.position - transform.position) : center;
+            gameObject.layer = BounceLayer;
+            var sphere = gameObject.AddComponent<SphereCollider>();
+            sphere.radius = radius;
+            if (spinPivot != null) sphere.center = spinPivot.localPosition;
+            var body = gameObject.AddComponent<Rigidbody>();
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            body.linearVelocity = Vector3.Reflect(direction * settings.Speed, normal) * BounceRestitution;
+            body.angularVelocity = spinPivot != null ? transform.right * settings.SpinRate * Mathf.Deg2Rad * BounceRestitution : Vector3.zero;
+            Destroy(gameObject, StuckLifetime);
+            if (!settings.VisualOnly) onStick?.Invoke(point);
         }
 
         /// <summary>壁や床に刺さって止まる。</summary>

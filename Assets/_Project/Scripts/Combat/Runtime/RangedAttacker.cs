@@ -451,6 +451,7 @@ namespace TpsDungeon.Combat
                 IgnoreRoot = transform,
                 HeldModelVisual = thrown,
                 SpinRate = thrown ? heldWeapon.ThrownSpinRate : 0f,
+                Bounce = thrown && heldWeapon.ThrownBounces,
             };
 
             foreach (float angle in RangedPattern.VolleyAngles(shot.ExtraProjectiles + 1, type.VolleySpreadAngle))
