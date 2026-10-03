@@ -25,6 +25,12 @@ namespace TpsDungeon.Items
         /// <summary>矢の雨がダメージを与える間隔（秒）。</summary>
         public float RainTickInterval;
 
+        /// <summary>炎を吐き続けられる時間（秒、持続時間の補正前）。炎を吐かない武器種では 0。</summary>
+        public float FlameDuration;
+
+        /// <summary>炎がダメージを与える間隔（秒、速射の補正前）。</summary>
+        public float FlameTickInterval;
+
         public EnchantmentTotals Enchantments;
 
         /// <summary>補正前のクリティカル率（0〜1）とクリティカル倍率。</summary>
@@ -46,16 +52,22 @@ namespace TpsDungeon.Items
     ///
     /// 矢の雨（持続弓）は、範囲にずっと居た 1 体が受ける合計が 1 発になるように、補正前の刻みの数で割って毎刻み与える。
     /// 持続時間のエンチャントは 1 刻みの量はそのままで刻みを増やす（合計が増える）。
+    ///
+    /// 炎（火炎放射器）は、吐き続けられる時間と、吐き終えてからの待ち（撃つ間隔）を合わせた 1 周で 強さ × 1 周 になるよう、
+    /// 補正前の刻みの数で割って毎刻み与える（炎の中にずっと居た 1 体が受ける DPS がおよそ強さになる）。
+    /// 速射は刻みの間隔と待ちの両方を縮め、持続時間は吐ける時間を延ばして刻みを増やす。
     /// </summary>
     public sealed class RangedWeaponStats
     {
         private readonly double rawShot;
         private readonly int baseRainTicks;
+        private readonly double rawFlameTick;
 
-        private RangedWeaponStats(double rawShot, int baseRainTicks)
+        private RangedWeaponStats(double rawShot, int baseRainTicks, double rawFlameTick)
         {
             this.rawShot = rawShot;
             this.baseRainTicks = baseRainTicks;
+            this.rawFlameTick = rawFlameTick;
         }
 
         /// <summary>攻撃速度の倍率（1 ＋ 速射）。</summary>
@@ -85,10 +97,10 @@ namespace TpsDungeon.Items
         /// <summary>ドロップ率の上乗せ（0.1 で +10%）。ドロップの仕組みが読む。</summary>
         public float DropRateBonus { get; private set; }
 
-        /// <summary>同時に放つ矢・同時に降らせる雨を本撃の横に足す数（「数」の合計の切り捨て）。</summary>
+        /// <summary>同時に放つ矢・降らせる雨・連ねる列・吐く炎の筋を本撃の横に足す数（「数」の合計の切り捨て）。雷は飛び移る回数を増やす。</summary>
         public int ExtraProjectiles { get; private set; }
 
-        /// <summary>「多重」の合計の切り捨て。弓は遅れて放つ一斉射の回数、持続弓は同じ所にもう一度降らせる回数。</summary>
+        /// <summary>「多重」の合計の切り捨て。弓は遅れて放つ一斉射の回数、持続弓は同じ所にもう一度降らせる回数、雷と連置は遅れてもう一度放つ回数。</summary>
         public int MultishotCount { get; private set; }
 
         /// <summary>矢が貫ける敵の数（「貫通」の合計の切り捨て）。0 なら最初の敵で止まる。</summary>
@@ -97,13 +109,13 @@ namespace TpsDungeon.Items
         /// <summary>矢が敵を追うか（ホーミングが 1 つでも付いている）。</summary>
         public bool Homing { get; private set; }
 
-        /// <summary>矢の速さの倍率（1 ＋ 弾速）。雨は降り始めるまでの時間がこの分縮む。</summary>
+        /// <summary>矢の速さの倍率（1 ＋ 弾速）。雨は降り始めるまでの時間がこの分縮み、炎は届く距離がこの分伸びる。</summary>
         public float ProjectileSpeedScale { get; private set; } = 1f;
 
-        /// <summary>範囲の大きさの倍率（1 ＋ サイズ）。雨の半径と爆発の半径に掛かる。</summary>
+        /// <summary>範囲の大きさの倍率（1 ＋ サイズ）。雨の半径・爆発の半径・炎の太さに掛かる。</summary>
         public float SizeScale { get; private set; } = 1f;
 
-        /// <summary>雨の続く時間の倍率（1 ＋ 持続時間）。</summary>
+        /// <summary>続く時間の倍率（1 ＋ 持続時間）。雨の長さ・炎を吐ける時間・連置の列の長さに掛かる。</summary>
         public float DurationScale { get; private set; } = 1f;
 
         /// <summary>雨がダメージを与える回数（持続時間の補正後）。雨を降らせない武器種では 0。</summary>
@@ -112,11 +124,35 @@ namespace TpsDungeon.Items
         /// <summary>雨の 1 刻みのダメージ（クリティカル前）。四捨五入、最低 1。雨を降らせない武器種では 0。</summary>
         public int RainTickDamage => baseRainTicks > 0 ? Math.Max(1, RoundToInt(rawShot / baseRainTicks)) : 0;
 
-        /// <summary>クリティカル込みの平均 DPS（1 体に 1 本ずつ当たるとして。数・多重・爆発は含めない）。表示用。</summary>
+        /// <summary>炎を吐き続けられる時間（秒、持続時間の補正後）。炎を吐かない武器種では 0。</summary>
+        public float FlameDuration { get; private set; }
+
+        /// <summary>炎がダメージを与える間隔（秒、速射の補正後）。</summary>
+        public float FlameTickInterval { get; private set; }
+
+        /// <summary>吐き続けたときに炎がダメージを与える回数（持続時間・速射の補正後）。炎を吐かない武器種では 0。</summary>
+        public int FlameTickCount { get; private set; }
+
+        /// <summary>炎の 1 刻みのダメージ（クリティカル前）。四捨五入、最低 1。炎を吐かない武器種では 0。</summary>
+        public int FlameTickDamage => rawFlameTick > 0 ? Math.Max(1, RoundToInt(rawFlameTick)) : 0;
+
+        /// <summary>
+        /// クリティカル込みの平均 DPS（1 体に 1 本ずつ当たるとして。数・多重・爆発は含めない）。表示用。
+        /// 炎は吐き続けて待つ 1 周の平均（持続時間の延びは含めない）。
+        /// </summary>
         public float AverageDps
         {
             get
             {
+                if (FlameTickCount > 0)
+                {
+                    float burn = FlameDuration / DurationScale;
+                    float cycle = burn + FireInterval;
+                    if (cycle <= 0f || FlameTickInterval <= 0f) return 0f;
+                    float flameCrit = 1f + CritChance * (CritMultiplier - 1f);
+                    return FlameTickDamage * (burn / FlameTickInterval) * flameCrit / cycle;
+                }
+
                 if (FireInterval <= 0f) return 0f;
                 float critFactor = 1f + CritChance * (CritMultiplier - 1f);
                 int perShot = baseRainTicks > 0 ? RainTickDamage * baseRainTicks : ShotDamage;
@@ -150,8 +186,22 @@ namespace TpsDungeon.Items
             float critMultiplier = inputs.BaseCritMultiplier;
             if (inputs.CritMultiplierModifier != null) critMultiplier = inputs.CritMultiplierModifier(critMultiplier);
 
+            // 炎は 吐ける時間 ＋ 待ち の 1 周ぶんを、補正前の刻みで割る。
+            double flameTick = 0;
+            int flameTicks = 0;
+            float flameDuration = 0f;
+            float flameInterval = 0f;
+            int baseFlameTicks = TickCount(inputs.FlameDuration, inputs.FlameTickInterval);
+            if (baseFlameTicks > 0)
+            {
+                flameTick = (double)source * (baseInterval + inputs.FlameDuration) * damageUp / baseFlameTicks;
+                flameDuration = inputs.FlameDuration * durationScale;
+                flameInterval = inputs.FlameTickInterval / speed;
+                flameTicks = TickCount(flameDuration, flameInterval);
+            }
+
             float sizeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size));
-            return new RangedWeaponStats(shot, baseTicks)
+            return new RangedWeaponStats(shot, baseTicks, flameTick)
             {
                 AttackSpeed = speed,
                 FireInterval = baseInterval / speed,
@@ -170,6 +220,9 @@ namespace TpsDungeon.Items
                 SizeScale = sizeScale,
                 DurationScale = durationScale,
                 RainTickCount = ticks,
+                FlameDuration = flameDuration,
+                FlameTickInterval = flameInterval,
+                FlameTickCount = flameTicks,
             };
         }
 

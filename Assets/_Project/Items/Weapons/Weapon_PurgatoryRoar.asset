@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_PurgatoryRoar
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_PurgatoryRoar
+  displayName: "\u7149\u7344\u306E\u5486\u54EE"
+  description: "\u5410\u304D\u51FA\u3059\u708E\u306F\u58C1\u3068\u306A\u308A\u3001\u524D\u306B\u3042\u308B\u3082\u306E\u3059\u3079\u3066\u3092\u98F2\u307F\u8FBC\u3080\u3002"
+  icon: {fileID: 2800000, guid: 1a574cdb047eb4fa5bfa10c5fc75cac3, type: 3}
+  worldPrefab: {fileID: 2421143967200687180, guid: 8118cb4a9c5e1408cb09bdc88283657e, type: 3}
+  rank: 6
+  strength: 15
+  weaponType: {fileID: 11400000, guid: 3066173a20f774f98a798aa2a60ffe3d, type: 2}
+  heldModel: {fileID: 163207975101091275, guid: dde5bbb5793d64a02a7311bbd58763c0, type: 3}
+  fixedEnchantments:
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+  - {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+  - {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}

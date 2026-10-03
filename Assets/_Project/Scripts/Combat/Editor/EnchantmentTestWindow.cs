@@ -330,6 +330,29 @@ namespace TpsDungeon.Combat.Editor
                                 + $" × {volleys} 回（{type.RainRepeatInterval:0.##} 秒ずつ遅れて同じ所に）");
                 text.AppendLine($"降り始めまで {type.RainDelay / stats.ProjectileSpeedScale:0.##} 秒　続く時間 ×{stats.DurationScale:0.##}");
             }
+            else if (type.RangedKind == RangedAttackKind.Chain)
+            {
+                text.AppendLine($"1 体に: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。飛び移り・多重は含めない）");
+                text.AppendLine($"雷: 照準から {type.ChainAimAngle:0.#}° 以内の敵へ放ち、{type.ChainRange:0.#} m 以内の次の敵へ {type.ChainJumpsFor(stats.ExtraProjectiles)} 回飛び移る"
+                                + $" × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）");
+            }
+            else if (type.RangedKind == RangedAttackKind.Line)
+            {
+                int pillars = type.LinePillarsFor(stats.DurationScale);
+                text.AppendLine($"1 体に: {stats.ShotDamage}（1 列で 1 回）　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。数・多重は含めない）");
+                text.AppendLine($"列: 半径 {type.LineRadius:0.##} m を {pillars} 個（{type.LineSpacing:0.##} m おき、約 {type.LineStartDistance + (pillars - 1) * type.LineSpacing:0.#} m 先まで）"
+                                + $" × {count} 列（{type.LineSpreadAngle:0.#}° ずつ扇状に） × {volleys} 回（{type.LineRepeatInterval:0.##} 秒ずつ遅れて）");
+            }
+            else if (type.RangedKind == RangedAttackKind.Flame)
+            {
+                text.AppendLine($"炎の 1 刻み: {stats.FlameTickDamage} × {stats.FlameTickCount} 回（{stats.FlameTickInterval:0.###} 秒ごと、最長 {stats.FlameDuration:0.##} 秒）"
+                                + $"　吐き切ったら {stats.FireInterval:0.00} 秒待つ（途中で離せば吐いた割合だけ）");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。吐き続けて待つ 1 周の平均。持続時間の延び・数は含めない）");
+                text.AppendLine($"炎: 届く距離 {type.FlameRange * stats.ProjectileSpeedScale:0.#} m　広がり {type.FlameAngle * stats.SizeScale:0.#}°"
+                                + $" × {count} 筋（{type.FlameSpreadAngle:0.#}° ずつ扇状に）　ホーミング {(stats.Homing ? "あり" : "なし")}");
+            }
             else
             {
                 text.AppendLine($"1 発: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");

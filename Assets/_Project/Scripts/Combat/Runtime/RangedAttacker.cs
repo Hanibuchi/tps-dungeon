@@ -9,15 +9,22 @@ using UnityEngine;
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// 持たされた遠距離武器（弓・持続弓）で撃つ実行役。入力は持たず、外から <see cref="Equip"/>（持ち替え）・<see cref="PressAttack"/>（攻撃の押下）・
-    /// <see cref="Aim"/>（狙いの線。プレイヤーならカメラの中心）を渡してもらう。プレイヤーは PlayerMeleeInput が叩く。
-    /// 押した瞬間に、待ちが明けていれば撃つ（押しっぱなしでは撃たない）。撃つ間隔は武器種の fireInterval を速射で縮めたもの。
+    /// 持たされた遠距離武器（弓・持続弓・杖）で撃つ実行役。入力は持たず、外から <see cref="Equip"/>（持ち替え）・<see cref="PressAttack"/>（攻撃の押下）・
+    /// <see cref="AttackHeld"/>（押している間。炎だけが読む）・<see cref="Aim"/>（狙いの線。プレイヤーならカメラの中心）を渡してもらう。プレイヤーは PlayerMeleeInput が叩く。
+    /// 押した瞬間に、待ちが明けていれば撃つ（押しっぱなしでは撃たない。炎は押している間ずっと吐く）。撃つ間隔は武器種の fireInterval を速射で縮めたもの。
     ///   弓     … 狙いの線が当たった所（無ければ射程の先）へ、弓を持つ手から矢を放つ。数で増えた矢は照準の右左へ交互に開き（1 本は必ず照準へ）、
     ///            多重で遅れて同じ向きへもう一斉射。爆発は敵に当たっても、壁や床に刺さっても起きる
     ///   持続弓 … 狙いの線が当たった地面（射程の水平距離まで）へ、上に矢を放ってから雨を降らせ、範囲に刻みでダメージ。
     ///            数で増えた雨は狙った所の付近のランダムな所に、多重で同じ所にもう一度降る。持っている間は狙う地面に範囲の円を出す
+    ///   雷     … 照準の線に近い敵（決めた角度の中で照準にいちばん近く、杖の先から見通せる敵）へ杖の先から雷を放ち、
+    ///            当てた敵から近くのまだ当てていない敵へ次々と飛び移る。数で飛び移る回数が増え、多重で遅れてもう一度放つ。敵が居なければ照準の先へ空撃ち
+    ///   連置   … 照準の水平の向きへ、足元の少し先から地面に沿って範囲に当たる結晶を手前から順に走らせる（1 列は同じ敵に 1 回）。壁で止まる。
+    ///            数で扇状に列が増え、持続時間で列が伸び、多重で同じ向きへもう一列
+    ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
+    ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
-    /// （持続弓は空へ向けて反らせる）。歩く向きへ回す ThirdPersonController より後に上書きする。
+    /// （持続弓は空へ向けて反らせる。杖は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
+    /// 杖は手の武器の見た目の子の "Tip"（杖の先）から放つ。無ければ持つ手から。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
     /// 手の見た目と Animator の WeaponType は MeleeAttacker が持ち替えで替えるので、ここは撃つことだけを受け持つ。
     /// キャラのルート（MeleeAttacker と同じ GameObject）に付ける。基礎攻撃力は同じ GameObject の CharacterProgression から読む。
@@ -32,7 +39,11 @@ namespace TpsDungeon.Combat
         private const string AttackParam = "Attack";
         private const string AttackSpeedParam = "AttackSpeed";
         private const string UpperBodyLayer = "UpperBody";
+        private const string CastingParam = "Casting";
         private static readonly int BowDrawState = Animator.StringToHash("Bow Draw");
+
+        /// <summary>炎を止めてから、出ている炎の粒が消えるまで見た目を残す秒数。</summary>
+        private const float FlameLingerTime = 1.2f;
 
         /// <summary>
         /// 弓のモーションの 1 周（Bow Release で放してから、つがえ直して Bow Draw で引き切るまで。BowShot の 13〜29F と 0〜7F、30fps）。
@@ -120,8 +131,11 @@ namespace TpsDungeon.Combat
         private int criticalSoundFrame = -1;
 
         private readonly List<PendingVolley> volleys = new List<PendingVolley>();
+        private readonly List<Scheduled> scheduled = new List<Scheduled>();
         private readonly HashSet<EnemyHealth> explosionTargets = new HashSet<EnemyHealth>();
         private readonly Collider[] overlap = new Collider[32];
+        // 雷の狙いと炎は遠くまで探すので、床や壁の当たりも多く拾う。
+        private readonly Collider[] wideOverlap = new Collider[256];
         private readonly RaycastHit[] rayHits = new RaycastHit[32];
         private readonly System.Random random = new System.Random();
 
@@ -134,6 +148,35 @@ namespace TpsDungeon.Combat
 
         private bool hasAttackParam;
         private bool hasAttackSpeedParam;
+        private bool hasCastingParam;
+
+        // 杖の先。持ち替えで見た目が作り直されるので、持ち替えたら探し直す。
+        private Transform staffTip;
+        private bool staffTipSearched;
+
+        // 炎を吐いている間の状態。
+        private bool burning;
+        private RangedWeaponStats burnStats;
+        private int ticksLeft;
+        private float burnElapsed;
+        private float flameTickTimer;
+        private float flameSoundTimer;
+        private readonly List<FlameJet> jets = new List<FlameJet>();
+
+        /// <summary>遅れて起こすこと 1 つ（雷の飛び移り・多重の雷・連置の 1 つずつ）。</summary>
+        private sealed class Scheduled
+        {
+            public float Delay;
+            public Action Run;
+        }
+
+        /// <summary>吐いている炎の筋 1 本。Angle は照準からの水平の角度、Direction は今の向き。</summary>
+        private sealed class FlameJet
+        {
+            public float Angle;
+            public Vector3 Direction;
+            public GameObject Effect;
+        }
 
         /// <summary>多重で遅れて放つ一斉射 1 回。</summary>
         private sealed class PendingVolley
@@ -150,13 +193,35 @@ namespace TpsDungeon.Combat
         /// <summary>今持っている遠距離武器の数値（持ち替えか撃った時点のもの）。持っていなければ null。</summary>
         public RangedWeaponStats Stats => stats;
 
-        /// <summary>次に撃てるまでの待ちの残りの割合（1 で待ち始め、0 で撃てる）。</summary>
-        public float CooldownFraction => cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
+        /// <summary>
+        /// 次に撃てるまでの待ちの残りの割合（1 で待ち始め、0 で撃てる）。
+        /// 炎を吐いている間は、吐ける量のうち使った割合（0 で吐き始め、1 で吐き切る）。吐き切ればそのまま 1 から待ちが減っていき、
+        /// 途中で離せば使った割合の所から減っていくので、ホットバーの暗幕が途切れずに伸びて縮む。
+        /// </summary>
+        public float CooldownFraction => burning ? FlameUsedFraction
+            : cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
+
+        /// <summary>今吐いている炎の、吐ける量のうち使った割合。吐いていなければ 0。</summary>
+        private float FlameUsedFraction
+        {
+            get
+            {
+                if (!burning || burnStats == null) return 0f;
+                float length = burnStats.FlameTickCount * burnStats.FlameTickInterval;
+                return length > 0f ? Mathf.Clamp01(burnElapsed / length) : 1f;
+            }
+        }
 
         /// <summary>狙いの線（プレイヤーならカメラの中心）。null なら体の前へ撃ち、持続弓の照準の円も出さない。</summary>
         public Ray? Aim { get; set; }
 
-        /// <summary>敵に当てた 1 回ごと（矢・爆発・雨の刻み）。ダメージ表示や試験の窓が読む。</summary>
+        /// <summary>攻撃を押し続けているか。炎はこれが真の間吐き続ける（押した瞬間は <see cref="PressAttack"/> でも始まる）。</summary>
+        public bool AttackHeld { get; set; }
+
+        /// <summary>炎を吐いているか。</summary>
+        public bool IsBurning => burning;
+
+        /// <summary>敵に当てた 1 回ごと（矢・爆発・雨の刻み・雷・連置・炎の刻み）。ダメージ表示や試験の窓が読む。</summary>
         public event Action<MeleeHitRecord> Dealt;
 
         /// <summary>当てたダメージをコンソールにも出すか（調整用）。</summary>
@@ -188,7 +253,10 @@ namespace TpsDungeon.Combat
         private void OnDisable()
         {
             volleys.Clear();
+            scheduled.Clear();
+            StopFlame(false);
             pressQueued = false;
+            AttackHeld = false;
             if (aimRing != null) aimRing.SetVisible(false);
         }
 
@@ -213,6 +281,10 @@ namespace TpsDungeon.Combat
             bool wasRanged = heldWeapon != null;
             equipped = true;
             volleys.Clear();
+            scheduled.Clear();
+            StopFlame(false);
+            staffTip = null;
+            staffTipSearched = false;
 
             held = item;
             WeaponDefinition weapon = item?.Weapon;
@@ -230,10 +302,14 @@ namespace TpsDungeon.Combat
             float dt = Time.deltaTime;
             cooldownRemaining = Mathf.Max(0f, cooldownRemaining - dt);
             TickVolleys(dt);
+            TickScheduled(dt);
 
             bool pressed = pressQueued;
             pressQueued = false;
-            if (pressed && heldWeapon != null && cooldownRemaining <= 0f) Fire();
+            if (heldWeapon == null) return;
+
+            if (heldWeapon.WeaponType.RangedKind == RangedAttackKind.Flame) UpdateFlame(dt, pressed || AttackHeld);
+            else if (pressed && cooldownRemaining <= 0f) Fire();
         }
 
         private void LateUpdate()
@@ -250,6 +326,7 @@ namespace TpsDungeon.Combat
             float remaining = AimBody(type, target, aimLocked ? 180f : aimTurnSpeed * Time.deltaTime, true);
             if (Mathf.Abs(remaining) < 1f) aimLocked = true;
             UpdateAimRing(type, target);
+            if (burning) UpdateJets(type, target, Time.deltaTime);
         }
 
         private RangedWeaponStats ComputeStats()
@@ -285,9 +362,28 @@ namespace TpsDungeon.Combat
             PlayFireAnimation();
 
             Vector3 muzzle = Muzzle(type);
-            PlaySound(type.SwingSound, muzzle, type.SoundVolume);
-            if (rain) FireRain(type, stats, muzzle, target);
-            else FireBow(type, stats, muzzle, target);
+            RangedWeaponStats shot = stats;
+            switch (type.RangedKind)
+            {
+                case RangedAttackKind.Rain:
+                    PlaySound(type.SwingSound, muzzle, type.SoundVolume);
+                    FireRain(type, shot, muzzle, target);
+                    break;
+                case RangedAttackKind.Chain:
+                case RangedAttackKind.Line:
+                    // 杖は撃ち出しのモーションで突き出す瞬間に放つ。持ち替えたら Equip が予定ごと消す。
+                    Schedule(type.CastDelay, () =>
+                    {
+                        PlaySound(type.SwingSound, Muzzle(type), type.SoundVolume);
+                        if (type.RangedKind == RangedAttackKind.Chain) FireChain(type, shot);
+                        else FireLine(type, shot);
+                    });
+                    break;
+                default:
+                    PlaySound(type.SwingSound, muzzle, type.SoundVolume);
+                    FireBow(type, shot, muzzle, target);
+                    break;
+            }
         }
 
         private void FireBow(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 muzzle, Vector3 target)
@@ -403,6 +499,457 @@ namespace TpsDungeon.Combat
             }
 
             return target;
+        }
+
+        // ---- 雷（電撃） ----
+
+        /// <summary>雷を放つ。多重で遅れて同じ狙いの線へもう一度（そのとき改めて敵を選ぶ）。</summary>
+        private void FireChain(WeaponTypeDefinition type, RangedWeaponStats shot)
+        {
+            Ray aim = AimRayOrForward(type);
+            foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.MultishotInterval))
+            {
+                if (delay <= 0f) CastChain(type, shot, aim, false);
+                else Schedule(delay, () => CastChain(type, shot, aim, true));
+            }
+        }
+
+        /// <summary>雷 1 回。狙いの敵が居れば当てて飛び移らせ、居なければ照準の先へ空撃ち（見た目だけ）。</summary>
+        private void CastChain(WeaponTypeDefinition type, RangedWeaponStats shot, Ray aim, bool playSound)
+        {
+            Vector3 from = Muzzle(type);
+            if (playSound) PlaySound(type.SwingSound, from, type.SoundVolume);
+
+            EnemyHealth first = AimedEnemy(type, aim, from, out Vector3 point);
+            if (first == null)
+            {
+                float distance = type.AimMaxDistance + Vector3.Distance(aim.origin, from);
+                Vector3 end = Raycast(aim, distance, false, out RaycastHit hit) ? hit.point : aim.GetPoint(distance);
+                LightningBolt.Spawn(from, end, type.BoltMaterial, type.BoltColor, type.BoltWidth, type.BoltDuration,
+                    StaffTip(type.HeldInLeftHand ? leftHand : rightHand));
+                OneShotEffect.Spawn(type.HitEffect, end, Quaternion.identity, type.HitEffectScale * 0.6f);
+                return;
+            }
+
+            ChainHit(type, shot, from, first, point, new HashSet<EnemyHealth>(), type.ChainJumpsFor(shot.ExtraProjectiles),
+                StaffTip(type.HeldInLeftHand ? leftHand : rightHand));
+        }
+
+        /// <summary>from から enemy へ雷を走らせて当て、残りの回数があれば少し遅れて近くの次の敵へ飛び移る。</summary>
+        private void ChainHit(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 from, EnemyHealth enemy, Vector3 point,
+            HashSet<EnemyHealth> struck, int jumpsLeft, Transform anchor = null)
+        {
+            struck.Add(enemy);
+            LightningBolt.Spawn(from, point, type.BoltMaterial, type.BoltColor, type.BoltWidth, type.BoltDuration, anchor);
+            if (!enemy.IsDead) DealHit(type, shot, enemy, point, point - from, MeleeHitKind.Hit, shot.ShotDamage, 1f, 1f, "雷");
+            if (jumpsLeft <= 0) return;
+
+            Schedule(type.ChainJumpDelay, () =>
+            {
+                EnemyHealth next = NearestEnemy(point, type.ChainRange, struck, out Vector3 nextPoint);
+                if (next != null) ChainHit(type, shot, point, next, nextPoint, struck, jumpsLeft - 1);
+            });
+        }
+
+        /// <summary>
+        /// 雷の最初の的。杖の先から aimMaxDistance 以内で、狙いの線からの角度が chainAimAngle 以内、杖の先から見通せる生きた敵のうち、
+        /// 角度がいちばん小さい敵（同じなら近い方）。point はその体の真ん中。
+        /// </summary>
+        private EnemyHealth AimedEnemy(WeaponTypeDefinition type, Ray aim, Vector3 from, out Vector3 point)
+        {
+            point = default;
+            EnemyHealth best = null;
+            float bestAngle = float.MaxValue;
+            float bestDistance = float.MaxValue;
+            int count = Physics.OverlapSphereNonAlloc(from, type.AimMaxDistance, wideOverlap, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                Vector3 center = wideOverlap[i].bounds.center;
+                Vector3 toCenter = center - aim.origin;
+                float angle = Vector3.Angle(aim.direction, toCenter);
+                float distance = Vector3.Distance(from, center);
+                if (angle > type.ChainAimAngle || distance > type.AimMaxDistance) continue;
+                if (angle > bestAngle + 0.01f || (Mathf.Abs(angle - bestAngle) <= 0.01f && distance >= bestDistance)) continue;
+                if (!InSight(from, center)) continue;
+
+                best = enemy;
+                bestAngle = angle;
+                bestDistance = distance;
+                point = center;
+            }
+
+            return best;
+        }
+
+        /// <summary>from から range 以内で、いちばん近い、exclude に無い、見通せる生きた敵。point はその体の真ん中。</summary>
+        private EnemyHealth NearestEnemy(Vector3 from, float range, HashSet<EnemyHealth> exclude, out Vector3 point)
+        {
+            point = default;
+            EnemyHealth best = null;
+            float bestDistance = float.MaxValue;
+            int count = Physics.OverlapSphereNonAlloc(from, range, wideOverlap, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
+                if (enemy == null || enemy.IsDead || exclude.Contains(enemy)) continue;
+
+                Vector3 center = wideOverlap[i].bounds.center;
+                float distance = Vector3.Distance(from, center);
+                if (distance > range || distance >= bestDistance || !InSight(from, center)) continue;
+
+                best = enemy;
+                bestDistance = distance;
+                point = center;
+            }
+
+            return best;
+        }
+
+        /// <summary>a から b の手前まで、壁や床（敵と撃った本人は除く）に遮られていないか。</summary>
+        private bool InSight(Vector3 a, Vector3 b)
+        {
+            Vector3 path = b - a;
+            float length = path.magnitude;
+            return length < 0.3f || !Raycast(new Ray(a, path), length - 0.25f, true, out _);
+        }
+
+        // ---- 連置（範囲連置） ----
+
+        /// <summary>照準の水平の向きへ列を出す。数で扇状に列が増え、多重で同じ向きへもう一列。</summary>
+        private void FireLine(WeaponTypeDefinition type, RangedWeaponStats shot)
+        {
+            Vector3 forward = Flat(AimRayOrForward(type).direction, transform.forward);
+            int pillars = type.LinePillarsFor(shot.DurationScale);
+            foreach (float angle in RangedPattern.VolleyAngles(shot.ExtraProjectiles + 1, type.LineSpreadAngle))
+            {
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * forward;
+                foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.LineRepeatInterval))
+                {
+                    if (delay <= 0f) CastLine(type, shot, direction, pillars, false);
+                    else Schedule(delay, () => CastLine(type, shot, direction, pillars, true));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 1 列。足元から direction へ lineStartDistance 先を 1 つ目に、lineSpacing ずつ離して手前から順に当てる。
+        /// 膝の高さで壁に当たったら、その手前で止める。1 列は同じ敵に 1 回だけ当たる。
+        /// 見た目（lineEffect）は列の頭から列の長さだけ走らせ、当たりはその見た目が届く時刻に出す（無ければ lineInterval ずつ遅らせる）。
+        /// </summary>
+        private void CastLine(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 direction, int pillars, bool playSound)
+        {
+            Vector3 origin = transform.position;
+            if (playSound) PlaySound(type.SwingSound, origin, type.SoundVolume);
+
+            float reach = type.LineStartDistance + (pillars - 1) * type.LineSpacing;
+            if (Raycast(new Ray(origin + Vector3.up * 0.5f, direction), reach + 0.3f, true, out RaycastHit wall))
+                reach = wall.distance - 0.3f;
+
+            int count = 0;
+            while (count < pillars && type.LineStartDistance + count * type.LineSpacing <= reach) count++;
+            if (count == 0) return;
+
+            // 見た目は 1 つ目の半間隔手前から、最後の 1 つの半間隔先まで。
+            float length = count * type.LineSpacing;
+            if (type.LineEffect != null)
+            {
+                Vector3 head = origin + direction * (type.LineStartDistance - type.LineSpacing * 0.5f);
+                SpawnLineEffect(type, GroundAt(head + Vector3.up * 1.5f, head.y), direction, length);
+            }
+
+            var struck = new HashSet<EnemyHealth>();
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 point = origin + direction * (type.LineStartDistance + i * type.LineSpacing);
+                float delay = type.LineEffect != null ? type.LineEffectTravelTime * (i + 0.5f) / count : i * type.LineInterval;
+                if (delay <= 0f) Pillar(type, shot, point, struck);
+                else Schedule(delay, () => Pillar(type, shot, point, struck));
+            }
+        }
+
+        /// <summary>
+        /// 列の見た目を head から direction へ length だけ走らせる。素材は +X へ lineEffectLength 走るので、+X を direction に合わせ、
+        /// 根の粒の速さ（届く秒数は変えない）と、原点から離れて置かれた終わりの飾りの位置を length に合わせて伸び縮みさせる。
+        /// </summary>
+        private static void SpawnLineEffect(WeaponTypeDefinition type, Vector3 head, Vector3 direction, float length)
+        {
+            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up) * Quaternion.Euler(0f, -90f, 0f);
+            GameObject effect = OneShotEffect.Spawn(type.LineEffect, head, rotation);
+            if (effect == null) return;
+
+            float ratio = length / Mathf.Max(0.1f, type.LineEffectLength);
+            if (effect.TryGetComponent(out ParticleSystem root))
+            {
+                ParticleSystem.MainModule main = root.main;
+                main.startSpeedMultiplier *= ratio;
+            }
+
+            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
+            {
+                Transform t = particles.transform;
+                if (t != effect.transform && t.localPosition.x > 1f) t.localPosition = Vector3.Scale(t.localPosition, new Vector3(ratio, 1f, 1f));
+            }
+        }
+
+        /// <summary>point の真下の地面を中心に、範囲の中のまだこの列に当たっていない敵に当てる。</summary>
+        private void Pillar(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 point, HashSet<EnemyHealth> struck)
+        {
+            // 上りの段でも段の上で当たるよう、少し上から地面を探す。
+            Vector3 ground = GroundAt(point + Vector3.up * 1.5f, point.y);
+            foreach ((EnemyHealth enemy, Vector3 hitPoint) in EnemiesInCircle(ground, type.LineRadius, type.LineHeight))
+            {
+                if (!struck.Add(enemy)) continue;
+                DealHit(type, shot, enemy, hitPoint, enemy.transform.position - ground, MeleeHitKind.Hit, shot.ShotDamage, 1f, 1f, "連置");
+            }
+        }
+
+        // ---- 炎（火炎放射器） ----
+
+        /// <summary>wants（押した・押している）の間、待ちが明けていれば吐き始め、吐き続ける。離すか時間が尽きたら止めて、吐いた割合だけ待たせる。</summary>
+        private void UpdateFlame(float dt, bool wants)
+        {
+            WeaponTypeDefinition type = heldWeapon.WeaponType;
+            if (!burning)
+            {
+                if (wants && cooldownRemaining <= 0f) StartFlame(type);
+                return;
+            }
+
+            // 刻みの頭に当て、刻みを使い切ってその刻みの間隔が過ぎたら止まる（吐く長さ ＝ 刻みの数 × 間隔）。
+            burnElapsed += dt;
+            flameTickTimer -= dt;
+            if (!wants || (ticksLeft <= 0 && flameTickTimer <= 0f))
+            {
+                StopFlame(true);
+                return;
+            }
+
+            while (ticksLeft > 0 && flameTickTimer <= 0f)
+            {
+                ticksLeft--;
+                FlameTick(type, burnStats);
+                flameTickTimer += Mathf.Max(0.02f, burnStats.FlameTickInterval);
+            }
+
+            flameSoundTimer -= dt;
+            if (flameSoundTimer <= 0f)
+            {
+                PlaySound(type.SwingSound, Muzzle(type), type.SoundVolume);
+                flameSoundTimer += Mathf.Max(0.05f, type.FlameSoundInterval);
+            }
+        }
+
+        private void StartFlame(WeaponTypeDefinition type)
+        {
+            stats = burnStats = ComputeStats();
+            burning = true;
+            ticksLeft = burnStats.FlameTickCount;
+            burnElapsed = 0f;
+            flameTickTimer = 0f;
+            flameSoundTimer = 0f;
+
+            Vector3 target = AimPoint(type);
+            AimBody(type, target, 360f, false);
+            SetCasting(true);
+
+            Vector3 muzzle = Muzzle(type);
+            Vector3 aim = AimDirection(muzzle, target);
+            foreach (float angle in RangedPattern.VolleyAngles(burnStats.ExtraProjectiles + 1, type.FlameSpreadAngle))
+            {
+                var jet = new FlameJet { Angle = angle, Direction = Quaternion.AngleAxis(angle, Vector3.up) * aim };
+                if (type.FlameEffect != null)
+                {
+                    jet.Effect = Instantiate(type.FlameEffect, muzzle, Quaternion.LookRotation(jet.Direction));
+                    foreach (ParticleSystem particles in jet.Effect.GetComponentsInChildren<ParticleSystem>())
+                    {
+                        ParticleSystem.MainModule main = particles.main;
+                        main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                    }
+                }
+
+                jets.Add(jet);
+            }
+
+            UpdateJets(type, target, 0f);
+        }
+
+        /// <summary>
+        /// 炎を止める。cooldown なら 撃つ間隔 × 吐いた割合 だけ待たせる（吐き切れば撃つ間隔まるごと。持ち替えや無効化のときは待たせない）。
+        /// 待ちの長さは撃つ間隔のまま残りだけ縮めるので、待ちの割合は吐いた割合から始まる。
+        /// </summary>
+        private void StopFlame(bool cooldown)
+        {
+            if (!burning) return;
+
+            float used = FlameUsedFraction;
+            burning = false;
+            SetCasting(false);
+            foreach (FlameJet jet in jets)
+            {
+                if (jet.Effect == null) continue;
+                foreach (ParticleSystem particles in jet.Effect.GetComponentsInChildren<ParticleSystem>())
+                    particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+                foreach (Light light in jet.Effect.GetComponentsInChildren<Light>()) light.enabled = false;
+                Destroy(jet.Effect, FlameLingerTime);
+            }
+
+            jets.Clear();
+            if (cooldown && burnStats != null)
+            {
+                cooldownDuration = burnStats.FireInterval;
+                cooldownRemaining = burnStats.FireInterval * used;
+            }
+        }
+
+        /// <summary>
+        /// 炎の筋の向きを照準（target）に合わせ、見た目を杖の先へ置く。ホーミングなら筋の向きの近くの敵へ、決めた速さで曲げる。
+        /// 見た目は届く距離に合わせて伸ばし、太さはサイズで広げる。
+        /// </summary>
+        private void UpdateJets(WeaponTypeDefinition type, Vector3 target, float dt)
+        {
+            if (burnStats == null) return;
+
+            Vector3 muzzle = Muzzle(type);
+            Vector3 aim = AimDirection(muzzle, target);
+            float range = type.FlameRange * burnStats.ProjectileSpeedScale;
+            foreach (FlameJet jet in jets)
+            {
+                Vector3 want = Quaternion.AngleAxis(jet.Angle, Vector3.up) * aim;
+                if (burnStats.Homing && HomingTarget(muzzle, want, range, type.FlameHomingAngle, out Vector3 enemyPoint))
+                {
+                    want = (enemyPoint - muzzle).normalized;
+                    jet.Direction = dt > 0f
+                        ? Vector3.RotateTowards(jet.Direction, want, type.FlameHomingTurnRate * Mathf.Deg2Rad * dt, 0f)
+                        : want;
+                }
+                else
+                {
+                    // 照準へは遅れずに付いていく（曲がっていた筋も同じ速さで戻す）。
+                    jet.Direction = dt > 0f && burnStats.Homing
+                        ? Vector3.RotateTowards(jet.Direction, want, type.FlameHomingTurnRate * Mathf.Deg2Rad * dt, 0f)
+                        : want;
+                }
+
+                if (jet.Effect == null) continue;
+                float length = range / Mathf.Max(0.1f, type.FlameEffectLength);
+                float width = length * burnStats.SizeScale;
+                jet.Effect.transform.SetPositionAndRotation(muzzle, Quaternion.LookRotation(jet.Direction));
+                jet.Effect.transform.localScale = new Vector3(width, width, length);
+            }
+        }
+
+        /// <summary>炎の 1 刻み。筋ごとに、壁までの円錐（杖の先で flameBaseRadius、先へ広がりの角度で太る）の中の生きた敵に当てる。</summary>
+        private void FlameTick(WeaponTypeDefinition type, RangedWeaponStats shot)
+        {
+            Vector3 muzzle = Muzzle(type);
+            float range = type.FlameRange * shot.ProjectileSpeedScale;
+            float spread = Mathf.Tan(Mathf.Clamp(type.FlameAngle * shot.SizeScale, 1f, 80f) * Mathf.Deg2Rad);
+            float baseRadius = type.FlameBaseRadius * shot.SizeScale;
+
+            foreach (FlameJet jet in jets)
+            {
+                Vector3 direction = jet.Direction;
+                float reach = Raycast(new Ray(muzzle, direction), range, true, out RaycastHit wall) ? wall.distance : range;
+
+                explosionTargets.Clear();
+                int count = Physics.OverlapSphereNonAlloc(muzzle, reach + baseRadius + spread * reach, wideOverlap, hitMask,
+                    QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < count; i++)
+                {
+                    EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
+                    if (enemy == null || enemy.IsDead || explosionTargets.Contains(enemy)) continue;
+
+                    // 体の真ん中に近い、炎の中心の線上の点から測った、体のいちばん近い所。
+                    Vector3 center = wideOverlap[i].bounds.center;
+                    Vector3 onAxis = muzzle + direction * Mathf.Clamp(Vector3.Dot(center - muzzle, direction), 0f, reach);
+                    Vector3 point = wideOverlap[i].ClosestPoint(onAxis);
+                    Vector3 offset = point - muzzle;
+                    float along = Vector3.Dot(offset, direction);
+                    if (along < -0.3f || along > reach) continue;
+
+                    float apart = (offset - direction * along).magnitude;
+                    if (apart > baseRadius + spread * Mathf.Max(0f, along)) continue;
+
+                    explosionTargets.Add(enemy);
+                    DealHit(type, shot, enemy, point, direction, MeleeHitKind.Tick, shot.FlameTickDamage,
+                        TickHitEffectRatio, TickHitSoundRatio, "炎");
+                }
+            }
+
+            explosionTargets.Clear();
+        }
+
+        /// <summary>muzzle から direction の angle 度以内・range 以内で、見通せる生きた敵のうち向きにいちばん近い敵の体の真ん中。</summary>
+        private bool HomingTarget(Vector3 muzzle, Vector3 direction, float range, float angle, out Vector3 point)
+        {
+            point = default;
+            float best = float.MaxValue;
+            int count = Physics.OverlapSphereNonAlloc(muzzle, range, wideOverlap, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                Vector3 center = wideOverlap[i].bounds.center;
+                float a = Vector3.Angle(direction, center - muzzle);
+                if (a > angle || a >= best || !InSight(muzzle, center)) continue;
+
+                best = a;
+                point = center;
+            }
+
+            return best < float.MaxValue;
+        }
+
+        /// <summary>杖の先から照準の点への向き。照準が杖の先に近すぎるか後ろなら、狙いの線の向き。</summary>
+        private Vector3 AimDirection(Vector3 muzzle, Vector3 target)
+        {
+            Vector3 direction = target - muzzle;
+            Vector3 fallback = Aim.HasValue ? Aim.Value.direction : transform.forward;
+            if (direction.sqrMagnitude < 0.25f || Vector3.Dot(direction, fallback) <= 0f) direction = fallback;
+            return direction.normalized;
+        }
+
+        private void SetCasting(bool casting)
+        {
+            if (animator != null && hasCastingParam) animator.SetBool(CastingParam, casting);
+        }
+
+        // ---- 遅れて起こすこと ----
+
+        private void Schedule(float delay, Action run) => scheduled.Add(new Scheduled { Delay = delay, Run = run });
+
+        private void TickScheduled(float dt)
+        {
+            // 起こした中でさらに足されることがある（雷の飛び移り）ので、今ある分だけを見る。足された物は次のフレームから数える。
+            for (int i = scheduled.Count - 1; i >= 0; i--) scheduled[i].Delay -= dt;
+
+            for (int i = 0; i < scheduled.Count; i++)
+            {
+                Scheduled s = scheduled[i];
+                if (s.Delay > 0f) continue;
+
+                scheduled.RemoveAt(i--);
+                s.Run();
+            }
+        }
+
+        /// <summary>杖の雷・連置・炎の 1 撃。クリティカルを引いて当て、見た目と音を出し、Dealt で知らせる。</summary>
+        private void DealHit(WeaponTypeDefinition type, RangedWeaponStats shot, EnemyHealth enemy, Vector3 point, Vector3 travel,
+            MeleeHitKind kind, int damage, float effectRatio, float soundRatio, string label)
+        {
+            bool critical = UnityEngine.Random.value < shot.CritChance;
+            if (critical) damage = shot.ApplyCritical(damage);
+
+            Vector3 direction = Flat(travel, transform.forward);
+            float knockback = (kind == MeleeHitKind.Tick ? 0f : type.ProjectileKnockback) + shot.KnockbackBonus;
+            int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical, knockback, shot.ReactionScale));
+            PlayHitFeedback(type, point, direction, critical, effectRatio, soundRatio);
+            if (logHits) Debug.Log($"{label} → {enemy.name}: {dealt}{(critical ? "（クリティカル）" : string.Empty)}", enemy);
+            Dealt?.Invoke(new MeleeHitRecord(kind, enemy, 0, damage, dealt, critical, point));
         }
 
         // ---- 当てる ----
@@ -587,22 +1134,46 @@ namespace TpsDungeon.Combat
 
         private Ray AimRayOrForward(WeaponTypeDefinition type) => Aim ?? new Ray(Muzzle(type), transform.forward);
 
-        /// <summary>矢の出る所。弓を持つ手（人型でなければ武器種の muzzleOffset）。</summary>
+        /// <summary>矢の出る所。弓を持つ手、杖なら杖の先（人型でなければ武器種の muzzleOffset）。</summary>
         private Vector3 Muzzle(WeaponTypeDefinition type)
         {
             Transform hand = type.HeldInLeftHand ? leftHand : rightHand;
+            if (type.IsStaff)
+            {
+                Transform tip = StaffTip(hand);
+                if (tip != null) return tip.position;
+            }
+
             return hand != null ? hand.position : transform.TransformPoint(type.MuzzleOffset);
+        }
+
+        /// <summary>手の武器の見た目の中の杖の先（<see cref="WeaponTypeDefinition.StaffTipName"/>）。持ち替えたら 1 回だけ探し直す。</summary>
+        private Transform StaffTip(Transform hand)
+        {
+            if (staffTip != null) return staffTip;
+            if (staffTipSearched || hand == null) return null;
+
+            staffTipSearched = true;
+            foreach (Transform child in hand.GetComponentsInChildren<Transform>())
+            {
+                if (child.name != WeaponTypeDefinition.StaffTipName) continue;
+                staffTip = child;
+                break;
+            }
+
+            return staffTip;
         }
 
         /// <summary>
         /// bend なら、腕の上下の向きが狙い（持続弓は武器種の rainAimPitch）に合うよう、背骨を体の右軸まわりに曲げる（Animator の評価の後に呼ぶこと）。
         /// そのうえで、弓を持つ腕（付け根から手）が水平に target を向くよう、体を最大 maxYaw 度回す。回し残した角度を返す。
-        /// 曲げると腕の水平の向きも少し変わるので、曲げてから回す。人型でなければ、体の前を target へ向けるだけ。
+        /// 曲げると腕の水平の向きも少し変わるので、曲げてから回す。人型でないか杖なら、体の前を target へ向けるだけ。
         /// </summary>
         private float AimBody(WeaponTypeDefinition type, Vector3 target, float maxYaw, bool bend)
         {
-            Transform shoulder = type.HeldInLeftHand ? leftUpperArm : rightUpperArm;
-            Transform hand = type.HeldInLeftHand ? leftHand : rightHand;
+            // 杖は腕の向きが構えで変わるので、腕ではなく体の前を狙いへ向け、背骨も曲げない。
+            Transform shoulder = type.IsStaff ? null : type.HeldInLeftHand ? leftUpperArm : rightUpperArm;
+            Transform hand = type.IsStaff ? null : type.HeldInLeftHand ? leftHand : rightHand;
             Vector3 from = shoulder != null ? shoulder.position : transform.position;
             Vector3 arm = shoulder != null && hand != null ? hand.position - shoulder.position : transform.forward;
 
@@ -653,7 +1224,8 @@ namespace TpsDungeon.Combat
         private void PlayFireAnimation()
         {
             if (animator == null) return;
-            if (hasAttackSpeedParam) animator.SetFloat(AttackSpeedParam, Mathf.Max(1f, BowCycleSeconds / Mathf.Max(0.01f, stats.FireInterval)));
+            bool bow = !heldWeapon.WeaponType.IsStaff;
+            if (bow && hasAttackSpeedParam) animator.SetFloat(AttackSpeedParam, Mathf.Max(1f, BowCycleSeconds / Mathf.Max(0.01f, stats.FireInterval)));
             if (hasAttackParam) animator.SetTrigger(AttackParam);
         }
 
@@ -717,6 +1289,7 @@ namespace TpsDungeon.Combat
             {
                 if (p.name == AttackParam) hasAttackParam = true;
                 else if (p.name == AttackSpeedParam) hasAttackSpeedParam = true;
+                else if (p.name == CastingParam) hasCastingParam = true;
             }
         }
     }

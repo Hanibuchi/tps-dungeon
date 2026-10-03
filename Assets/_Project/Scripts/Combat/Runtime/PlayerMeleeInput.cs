@@ -8,7 +8,8 @@ namespace TpsDungeon.Combat
 {
     /// <summary>
     /// プレイヤーの入力を MeleeAttacker（と、あれば RangedAttacker）に渡す。攻撃キーの押下 → PressAttack、ホットバーで選んでいる物 → Equip、
-    /// カメラの前 → AimForward、カメラの中心の線 → RangedAttacker.Aim。押下は両方に渡し、今の武器を扱える方だけが攻撃する。
+    /// カメラの前 → AimForward、カメラの中心の線 → RangedAttacker.Aim、押している間 → RangedAttacker.AttackHeld（炎の杖が読む）。
+    /// 押下は両方に渡し、今の武器を扱える方だけが攻撃する。
     /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして、入力で走りがぶれないようにする。
     /// ThirdPersonController は CharacterController の速度から今の速さを引き継ぐので、そのままだと走りの速さで二重に進み、
     /// 走り終えてからも惰性で滑る。速さの追従（SpeedChangeRate）も一瞬にして 0 へ落とし、走り終えた次のフレームまで止めておく。
@@ -82,7 +83,11 @@ namespace TpsDungeon.Combat
 
         private void OnDisable()
         {
-            if (ranged != null) ranged.Aim = null;
+            if (ranged != null)
+            {
+                ranged.Aim = null;
+                ranged.AttackHeld = false;
+            }
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             attackAction = null;
@@ -108,8 +113,10 @@ namespace TpsDungeon.Combat
             if (cameraTransform != null) attacker.AimForward = cameraTransform.forward;
             if (ranged != null) ranged.Aim = cameraTransform != null ? new Ray(cameraTransform.position, cameraTransform.forward) : (Ray?)null;
 
-            bool pressed = attackAction != null && attackAction.WasPressedThisFrame()
-                           && playerInput != null && attackAction.actionMap == playerInput.currentActionMap;
+            bool listening = attackAction != null && playerInput != null && attackAction.actionMap == playerInput.currentActionMap;
+            if (ranged != null) ranged.AttackHeld = listening && attackAction.IsPressed();
+
+            bool pressed = listening && attackAction.WasPressedThisFrame();
             if (!pressed) return;
 
             attacker.PressAttack();

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_EmberStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_EmberStaff
+  displayName: "\u7A2E\u706B\u306E\u6756"
+  description: "\u5148\u7AEF\u304B\u3089\u3001\u7D30\u304F\u983C\u308A\u306A\u3044\u708E\u304C\u4F38\u3073\u308B\u3002"
+  icon: {fileID: 2800000, guid: 053c48c631a0d498e8554f8ff91544ca, type: 3}
+  worldPrefab: {fileID: 3854168520251788537, guid: 5fa8b3f25842c42e396b40c0d381091d, type: 3}
+  rank: 1
+  strength: 15
+  weaponType: {fileID: 11400000, guid: 3066173a20f774f98a798aa2a60ffe3d, type: 2}
+  heldModel: {fileID: 8624933903920311930, guid: 15134198c044e4845a5c8cc4d08c7206, type: 3}
+  fixedEnchantments: []

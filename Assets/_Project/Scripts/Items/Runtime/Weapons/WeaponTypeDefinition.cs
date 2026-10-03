@@ -8,11 +8,14 @@ namespace TpsDungeon.Items
     /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
     /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
-    /// 遠距離の武器種は rangedKind（弓・持続弓）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
+    /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
     public sealed class WeaponTypeDefinition : ScriptableObject
     {
+        /// <summary>杖の手に持つ見た目の中で、杖の先に置く目印の名前。杖の雷・連置・炎はここから出る。</summary>
+        public const string StaffTipName = "Tip";
+
         [SerializeField, Tooltip("武器種の番号（Notion の武器種データの番号。例: 01）。")]
         private string id;
 
@@ -81,10 +84,10 @@ namespace TpsDungeon.Items
         private float followUpShakeRatio = 0.4f;
 
         [Header("遠距離（弓・持続弓。値は仮）")]
-        [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。")]
+        [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。杖（雷・連置・炎）もここ。")]
         private RangedAttackKind rangedKind;
 
-        [SerializeField, Min(0.05f), Tooltip("撃つ間隔（秒、速射の補正前）。1 発のダメージは 強さ × この秒数。")]
+        [SerializeField, Min(0.05f), Tooltip("撃つ間隔（秒、速射の補正前）。1 発のダメージは 強さ × この秒数。炎は吐き切ってからの待ちで、吐ける時間と合わせた 1 周で 強さ × 1 周。")]
         private float fireInterval = 0.8f;
 
         [SerializeField, Tooltip("矢を放つ位置。キャラの足元から見たローカル位置（m）。")]
@@ -153,6 +156,108 @@ namespace TpsDungeon.Items
 
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
+
+        [Header("杖（雷・連置。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間に合わせる。狙いは放つ瞬間のもの。炎には効かない。")]
+        private float castDelay = 0.12f;
+
+        [Header("連鎖する雷（電撃。値は仮）")]
+        [SerializeField, Range(0f, 45f), Tooltip("照準の線からこの角度（度）以内にいる敵のうち、いちばん照準に近い敵へ放つ。居なければ照準の先へ空撃ち。")]
+        private float chainAimAngle = 10f;
+
+        [SerializeField, Min(0), Tooltip("最初の敵に当ててから、次の敵へ飛び移る回数（数のエンチャントの補正前）。")]
+        private int chainJumps = 3;
+
+        [SerializeField, Min(0), Tooltip("「数」のエンチャント 1 つで増える、飛び移る回数。")]
+        private int chainJumpsPerCount = 2;
+
+        [SerializeField, Min(0.5f), Tooltip("当てた敵から、この距離（m）以内でいちばん近い、まだ当てていない敵へ飛び移る。")]
+        private float chainRange = 6f;
+
+        [SerializeField, Min(0f), Tooltip("1 回飛び移るのにかかる秒数。")]
+        private float chainJumpDelay = 0.06f;
+
+        [SerializeField, Tooltip("雷の線の材質（頂点色と透明をそのまま出すもの）。未設定なら線を出さない。")]
+        private Material boltMaterial;
+
+        [SerializeField, Tooltip("雷の線の色。芯は白く、この色の光をまとう。")]
+        private Color boltColor = new Color(0.55f, 0.75f, 1f, 1f);
+
+        [SerializeField, Min(0.005f), Tooltip("雷の芯の太さ（m）。光はこの 4 倍。")]
+        private float boltWidth = 0.06f;
+
+        [SerializeField, Min(0.02f), Tooltip("雷の線が見えている秒数。")]
+        private float boltDuration = 0.2f;
+
+        [Header("地面から連ねて出す（範囲連置。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("1 つ目を出す、足元から照準の向きへの距離（m）。")]
+        private float lineStartDistance = 1.2f;
+
+        [SerializeField, Min(0.1f), Tooltip("隣り合う 1 つとの間隔（m）。")]
+        private float lineSpacing = 1.1f;
+
+        [SerializeField, Min(1), Tooltip("1 列に出す数（持続時間のエンチャントの補正前）。壁に当たったらそこで止める。")]
+        private int linePillarCount = 8;
+
+        [SerializeField, Min(0f), Tooltip("隣り合う 1 つを出す遅れ（秒）。手前から順に出る。lineEffect があるときは使わず、見た目が届く時刻に合わせる。")]
+        private float lineInterval = 0.05f;
+
+        [SerializeField, Min(0.1f), Tooltip("1 つが当たる範囲の半径（m）。1 列は同じ敵に 1 回だけ当たる。")]
+        private float lineRadius = 0.9f;
+
+        [SerializeField, Min(0.1f), Tooltip("この高さ（m）までの上下にいる敵に当てる。")]
+        private float lineHeight = 2f;
+
+        [SerializeField, Range(0f, 90f), Tooltip("「数」で増えた列を、照準の向きを中心に右左交互に開くときの隣との角度（度）。")]
+        private float lineSpreadAngle = 20f;
+
+        [SerializeField, Min(0f), Tooltip("「多重」でもう一列出す遅れ。k 回目は本撃から k × この秒数あとに、同じ向きへ頭から出す。")]
+        private float lineRepeatInterval = 0.45f;
+
+        [SerializeField, Tooltip("1 列の見た目（任意）。根の粒が原点から +X へ走り、通り道に結晶などを残す 1 回きりの素材（Crystals front attack を 1 本にしたもの）。" +
+            "列の頭に、列の向きへ +X を合わせて出し、根の粒の速さと終わりの飾りの位置を列の長さに合わせて伸び縮みさせる。")]
+        private GameObject lineEffect;
+
+        [SerializeField, Min(0.1f), Tooltip("lineEffect の素材そのままの列の長さ（m）。")]
+        private float lineEffectLength = 7.8f;
+
+        [SerializeField, Min(0.01f), Tooltip("lineEffect が列の端まで届く秒数（根の粒の寿命）。当たりもこの速さで手前から順に出す。")]
+        private float lineEffectTravelTime = 0.32f;
+
+        [Header("炎（火炎放射器。値は仮）")]
+        [SerializeField, Min(0.1f), Tooltip("押し続けて炎を吐ける時間（秒、持続時間のエンチャントの補正前）。この時間を刻みの間隔で割った回数だけ刻んだら止まる。" +
+            "離せばそこで止まり、止まってから 撃つ間隔 × 吐いた割合 だけ待つ（吐き切れば撃つ間隔まるごと）。")]
+        private float flameDuration = 2.4f;
+
+        [SerializeField, Min(0.05f), Tooltip("炎がダメージを与える間隔（秒、速射の補正前）。")]
+        private float flameTickInterval = 0.2f;
+
+        [SerializeField, Min(0.5f), Tooltip("炎が届く距離（m、弾速のエンチャントの補正前）。壁があればそこまで。")]
+        private float flameRange = 6f;
+
+        [SerializeField, Range(1f, 60f), Tooltip("炎の広がり（中心の線からの角度、度、サイズのエンチャントの補正前）。")]
+        private float flameAngle = 14f;
+
+        [SerializeField, Min(0f), Tooltip("杖の先での炎の太さ（半径、m）。先へ行くほど広がりの角度で太くなる。")]
+        private float flameBaseRadius = 0.25f;
+
+        [SerializeField, Range(0f, 90f), Tooltip("「数」で増えた炎の筋を、照準の向きを中心に右左交互に開くときの隣との角度（度）。")]
+        private float flameSpreadAngle = 25f;
+
+        [SerializeField, Range(0f, 90f), Tooltip("ホーミングで、炎の筋の向きからこの角度（度）以内の敵へ曲げる。")]
+        private float flameHomingAngle = 40f;
+
+        [SerializeField, Min(0f), Tooltip("ホーミングで炎の筋が向きを変えられる速さ（度/秒）。")]
+        private float flameHomingTurnRate = 120f;
+
+        [SerializeField, Tooltip("吐いている間の炎の見た目（任意。+Z へ吐くループする素材）。筋ごとに 1 つ出し、杖の先で向きを合わせ続ける。")]
+        private GameObject flameEffect;
+
+        [SerializeField, Min(0.1f), Tooltip("flameEffect の素材そのままの炎が届く距離（m）。届く距離に合わせて伸び縮みさせる。")]
+        private float flameEffectLength = 6f;
+
+        [SerializeField, Min(0.05f), Tooltip("吐いている間、放つ音（swingSound）をこの秒数ごとに鳴らし直す。")]
+        private float flameSoundInterval = 0.6f;
 
         [Header("遠距離の効果音（未設定なら鳴らさない。放つ音は swingSound、敵に当たった音は hitSound）")]
         [SerializeField, Tooltip("弓を引き絞る音。弓のモーションが引き絞り（Bow Draw）に入るたびに鳴らす（持ち替えたときと、撃って引き直すとき）。")]
@@ -258,6 +363,44 @@ namespace TpsDungeon.Items
         public GameObject RainEffect => rainEffect;
         public float RainEffectRadius => rainEffectRadius;
         public float RainAimPitch => rainAimPitch;
+        public float CastDelay => castDelay;
+        public float ChainAimAngle => chainAimAngle;
+        public float ChainRange => chainRange;
+        public float ChainJumpDelay => chainJumpDelay;
+        public Material BoltMaterial => boltMaterial;
+        public Color BoltColor => boltColor;
+        public float BoltWidth => boltWidth;
+        public float BoltDuration => boltDuration;
+        public float LineStartDistance => lineStartDistance;
+        public float LineSpacing => lineSpacing;
+        public float LineInterval => lineInterval;
+        public float LineRadius => lineRadius;
+        public float LineHeight => lineHeight;
+        public float LineSpreadAngle => lineSpreadAngle;
+        public float LineRepeatInterval => lineRepeatInterval;
+        public GameObject LineEffect => lineEffect;
+        public float LineEffectLength => lineEffectLength;
+        public float LineEffectTravelTime => lineEffectTravelTime;
+        public float FlameDuration => rangedKind == RangedAttackKind.Flame ? flameDuration : 0f;
+        public float FlameTickInterval => flameTickInterval;
+        public float FlameRange => flameRange;
+        public float FlameAngle => flameAngle;
+        public float FlameBaseRadius => flameBaseRadius;
+        public float FlameSpreadAngle => flameSpreadAngle;
+        public float FlameHomingAngle => flameHomingAngle;
+        public float FlameHomingTurnRate => flameHomingTurnRate;
+        public GameObject FlameEffect => flameEffect;
+        public float FlameEffectLength => flameEffectLength;
+        public float FlameSoundInterval => flameSoundInterval;
+
+        /// <summary>杖（雷・連置・炎）か。弓と違って、腕ではなく体の前を狙いへ向け、杖の先（手の武器の Tip）から放つ。</summary>
+        public bool IsStaff => rangedKind == RangedAttackKind.Chain || rangedKind == RangedAttackKind.Line || rangedKind == RangedAttackKind.Flame;
+
+        /// <summary>雷が最初の敵から飛び移る回数。extraProjectiles は「数」の合計の切り捨て（RangedWeaponStats.ExtraProjectiles）。</summary>
+        public int ChainJumpsFor(int extraProjectiles) => Mathf.Max(0, chainJumps + Mathf.Max(0, extraProjectiles) * chainJumpsPerCount);
+
+        /// <summary>連置の 1 列に出す数。durationScale は持続時間の倍率（RangedWeaponStats.DurationScale）。</summary>
+        public int LinePillarsFor(float durationScale) => Mathf.Max(1, Mathf.RoundToInt(linePillarCount * Mathf.Max(0.1f, durationScale)));
         public AudioClip DrawSound => drawSound;
         public AudioClip StickSound => stickSound;
         public float StickSoundVolume => stickSoundVolume;
