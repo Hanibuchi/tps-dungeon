@@ -67,6 +67,39 @@ MonoBehaviour:
   rainEffect: {fileID: 7957833072274404953, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
   rainEffectRadius: 4
   rainAimPitch: 35
+  castDelay: 0.12
+  chainAimAngle: 10
+  chainJumps: 3
+  chainJumpsPerCount: 2
+  chainRange: 6
+  chainJumpDelay: 0.06
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.55, g: 0.75, b: 1, a: 1}
+  boltWidth: 0.06
+  boltDuration: 0.2
+  lineStartDistance: 1.2
+  lineSpacing: 1.1
+  linePillarCount: 8
+  lineInterval: 0.05
+  lineRadius: 0.9
+  lineHeight: 2
+  lineSpreadAngle: 20
+  lineRepeatInterval: 0.45
+  pillarPrefab: {fileID: 0}
+  pillarScale: 1
+  pillarBurstEffect: {fileID: 0}
+  pillarBurstEffectScale: 0.5
+  flameDuration: 2.5
+  flameTickInterval: 0.2
+  flameRange: 6
+  flameAngle: 14
+  flameBaseRadius: 0.25
+  flameSpreadAngle: 25
+  flameHomingAngle: 40
+  flameHomingTurnRate: 120
+  flameEffect: {fileID: 0}
+  flameEffectLength: 6
+  flameSoundInterval: 0.6
   drawSound: {fileID: 8300000, guid: 9fae71eb8ca8147d4955767b4d1c3872, type: 3}
   stickSound: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stickSoundVolume: 0.6

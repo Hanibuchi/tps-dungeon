@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_EarthSplitterStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_EarthSplitterStaff
+  displayName: "\u5927\u5730\u88C2\u306E\u6756"
+  description: "\u5730\u9762\u304C\u6CE2\u6253\u3061\u3001\u88C2\u3051\u76EE\u304C\u6575\u306E\u5217\u3092\u98F2\u307F\u8FBC\u3080\u3002"
+  icon: {fileID: 2800000, guid: 6a3fbeb38728740be9dbcd3483b94f2d, type: 3}
+  worldPrefab: {fileID: 502243369152378496, guid: 9c291ccdf75e445e8a4ee02eb3a9efce, type: 3}
+  rank: 5
+  strength: 51
+  weaponType: {fileID: 11400000, guid: 01c325f8eba28488391b940415c86734, type: 2}
+  heldModel: {fileID: 5094361033324123725, guid: 9dd5f8e30922b457fa0035cc92c9e6d8, type: 3}
+  fixedEnchantments: []

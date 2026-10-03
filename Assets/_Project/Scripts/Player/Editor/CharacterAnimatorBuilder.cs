@@ -19,6 +19,7 @@ namespace TpsDungeon.Player.Editor
     ///   Attack (trigger) … 攻撃を始めた瞬間に立てる。弓なら立てた瞬間に矢を放つ姿勢に入る
     ///   ComboStep (int) … 近接武器のコンボの段（0 始まり）。Attack より先に入れる
     ///   AttackSpeed (float) … 近接武器の振り・弓の放して引き直すモーションの再生速度（速射のエンチャント）。既定 1
+    ///   Casting (bool) … 杖で炎を吐いている間だけ真。上半身で詠唱し続ける（CastingLoop）
     ///   Action (int) / PlayAction (trigger) … <see cref="CharacterAction"/> の値を入れてトリガーを立てると全身で再生する（CharacterActions が叩く）
     /// </summary>
     public static class CharacterAnimatorBuilder
@@ -48,6 +49,7 @@ namespace TpsDungeon.Player.Editor
         public const string AttackParam = "Attack";
         public const string ComboStepParam = "ComboStep";
         public const string AttackSpeedParam = "AttackSpeed";
+        public const string CastingParam = "Casting";
         public const string ActionParam = CharacterActions.ActionParam;
         public const string PlayActionParam = CharacterActions.PlayActionParam;
 
@@ -220,6 +222,7 @@ namespace TpsDungeon.Player.Editor
                 type = AnimatorControllerParameterType.Float,
                 defaultFloat = 1f,
             });
+            controller.AddParameter(CastingParam, AnimatorControllerParameterType.Bool);
             controller.AddParameter(ActionParam, AnimatorControllerParameterType.Int);
             controller.AddParameter(PlayActionParam, AnimatorControllerParameterType.Trigger);
         }
@@ -323,6 +326,7 @@ namespace TpsDungeon.Player.Editor
 
             AddOneShotAttack(sm, free, "Magic Attack", clips.SpellCast, Weapon.Magic,
                 new Vector3(600, 240), startAt: SpellCastStart, exitAt: SpellCastExit);
+            BuildMagicChannel(sm, free, clips);
 
             BuildBow(sm, free, clips, bowAim);
             BuildOneHandedCombo(sm, free, clips);
@@ -521,6 +525,32 @@ namespace TpsDungeon.Player.Editor
         }
 
         /// <summary>
+        /// 杖で炎を吐いている間（Casting）は、上半身で詠唱し続ける（CastingLoop）。止めたら Free へ戻る。
+        /// 撃ち出しのモーション（Magic Attack）の途中でも Casting が立ったら乗り換える。
+        /// </summary>
+        private static void BuildMagicChannel(AnimatorStateMachine sm, AnimatorState free, ClipSet clips)
+        {
+            AnimatorState channel = sm.AddState("Magic Channel", new Vector3(600, 120));
+            channel.motion = clips.CastingLoop;
+
+            AnimatorStateTransition t = Transition(free, channel, 0.15f);
+            t.AddCondition(AnimatorConditionMode.If, 0, CastingParam);
+            t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.Magic, WeaponTypeParam);
+
+            foreach (ChildAnimatorState child in sm.states)
+            {
+                if (child.state.name != "Magic Attack") continue;
+                t = Transition(child.state, channel, 0.15f);
+                t.AddCondition(AnimatorConditionMode.If, 0, CastingParam);
+            }
+
+            t = Transition(channel, free, 0.2f);
+            t.AddCondition(AnimatorConditionMode.IfNot, 0, CastingParam);
+            t = Transition(channel, free, 0.2f);
+            t.AddCondition(AnimatorConditionMode.NotEqual, (int)Weapon.Magic, WeaponTypeParam);
+        }
+
+        /// <summary>
         /// 弓は持っている間ずっと引き切って構え、Attack で放す瞬間から再生する。
         /// 放したあとは次の矢をつがえ（クリップ末尾）、引き直して（Draw）また構えに戻る。
         /// </summary>
@@ -655,7 +685,7 @@ namespace TpsDungeon.Player.Editor
         {
             public AnimationClip Idle, Walk, Run;
             public AnimationClip JumpStart, InAir, JumpLand, WalkLand, RunLand;
-            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, TwoHandedSweep, TwoHandedIdle, PolearmThrust, SpellCast, BowShot;
+            public AnimationClip Punch, PunchLeft, OneHanded, OneHandedThrust, TwoHanded, TwoHandedSweep, TwoHandedIdle, PolearmThrust, SpellCast, CastingLoop, BowShot;
             public AnimationClip[] Actions;
 
             private readonly List<string> _missing = new List<string>();
@@ -680,6 +710,7 @@ namespace TpsDungeon.Player.Editor
                 TwoHandedIdle = Load(KevinCombat + "2H/HumanM@CombatIdle2H01.fbx", "HumanM@CombatIdle2H01");
                 PolearmThrust = Load(KevinCombat + "Polearm/HumanM@AttackPolearm01.fbx", "HumanM@AttackPolearm01");
                 SpellCast = Load(BlinkCombat + "SpellCast.fbx", "SpellCast");
+                CastingLoop = Load(BlinkCombat + "CastingLoop.fbx", "CastingLoop");
                 BowShot = Load(BlinkCombat + "BowShot.fbx", "BowShot");
 
                 Actions = new AnimationClip[ActionClips.Length];

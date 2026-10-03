@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_ChargedStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_ChargedStaff
+  displayName: "\u5E2F\u96FB\u3057\u305F\u6756"
+  description: "\u89E6\u308C\u305F\u6575\u304B\u3089\u6575\u3078\u3001\u706B\u82B1\u304C\u77ED\u304F\u98DB\u3073\u79FB\u308B\u3002"
+  icon: {fileID: 2800000, guid: d3afc799b033b464893ccbcf6d337258, type: 3}
+  worldPrefab: {fileID: 1418371157856300559, guid: ffa69c615515c45d99a44592e29a3926, type: 3}
+  rank: 0
+  strength: 10
+  weaponType: {fileID: 11400000, guid: 233f22a66ee9347f7ba1520276c939e9, type: 2}
+  heldModel: {fileID: 7795563029485351693, guid: 040ce0df04a1d4692b38fa849aba7ea7, type: 3}
+  fixedEnchantments: []

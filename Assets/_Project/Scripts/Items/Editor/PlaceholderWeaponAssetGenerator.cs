@@ -11,14 +11,17 @@ namespace TpsDungeon.Items.Editor
 {
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
-    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）: Assets/_Project/Items/Weapons/
+    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
+    ///   19（電撃）・20（範囲連置）・21（火炎放射器）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 13 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11 の 4 本）と、拾える物・手に持つ見た目のプレハブ
-    /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円の材質（RangeRing）
+    /// - 武器 25 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ）と、拾える物・手に持つ見た目のプレハブ
+    /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
+    /// - 範囲連置の地面から突き出る氷の棘（Pillar_IceSpike）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
-    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマー・LowPoly の弓）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
+    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖・LowPoly の弓と杖）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
+    /// 杖の手に持つ見た目には、杖の先に "Tip"（WeaponTypeDefinition.StaffTipName）を置く。雷・棘・炎はそこから出る。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
     public static class PlaceholderWeaponAssetGenerator
@@ -34,6 +37,11 @@ namespace TpsDungeon.Items.Editor
         public const string HammerTypePath = WeaponsFolder + "/WeaponType_05_Hammer.asset";
         public const string BowTypePath = WeaponsFolder + "/WeaponType_09_Bow.asset";
         public const string RainBowTypePath = WeaponsFolder + "/WeaponType_11_RainBow.asset";
+        public const string LightningTypePath = WeaponsFolder + "/WeaponType_19_Lightning.asset";
+        public const string SpikeLineTypePath = WeaponsFolder + "/WeaponType_20_SpikeLine.asset";
+        public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_21_Flamethrower.asset";
+        public const string IceSpikePrefabPath = Gen.PrefabsFolder + "/Pillar_IceSpike.prefab";
+        public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
         public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
         public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
@@ -60,6 +68,18 @@ namespace TpsDungeon.Items.Editor
         public const string DustPuffEffectPath = HovlPrefabs + "Smoke effects/Dust puff.prefab";
         // 持続弓の雨。高さ 8 m・半径 4 m の円錐から 0.15 秒ごとに 20 回隕石を落とし、着弾で石・火花・閃光が散る。
         public const string MeteorsEffectPath = HovlPrefabs + "AoE effects/Meteors AOE.prefab";
+        // 雷が当たった所の閃光と火花（素材は 3 m ほど）。
+        public const string ElectroHitEffectPath = HovlPrefabs + "Hits and explosions/Electro hit.prefab";
+        // 棘が突き出た根元に散る雪と氷の粒（素材は 3 m ほど）。
+        public const string SnowHitEffectPath = HovlPrefabs + "Hits and explosions/Snow hit.prefab";
+        // 炎が当たった所の火花。
+        public const string FireHitEffectPath = HovlPrefabs + "Sparks/Sparks explode red.prefab";
+        // 氷の棘の形（高さ 3.7 m・幅 1.5 m ほど、原点が真ん中）と材質。
+        private const string CrystalMeshPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Models/Crystal1.fbx";
+        private const string CrystalMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Crystal1.mat";
+        // 炎の粒の絵（煙の柔らかい塊を、色を時間で変えて炎に見せる）と、火の粉の点。
+        private const string FlameMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Smoke26.mat";
+        private const string EmberMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Point.mat";
 
         // 効果音ラボの音はどれも頭の無音が 0.07 秒以下なので、判定の瞬間に鳴らしてもずれない。
         private const string ArmsSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
@@ -79,6 +99,9 @@ namespace TpsDungeon.Items.Editor
         public const string BowDrawSoundPath = ArmsSounds + "弓を引き絞る1.mp3";
         // 持続弓の雨は隕石の火の玉が降る見た目なので、炎の音を降り始めと刻みごとに鳴らす。
         public const string RainSoundPath = ArmsSounds + "火炎魔法1.mp3";
+        public const string LightningSoundPath = ArmsSounds + "雷魔法1.mp3";
+        public const string IceSoundPath = ArmsSounds + "氷魔法2.mp3";
+        public const string FlameSoundPath = ArmsSounds + "火炎魔法1.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
         // ユニークが床に落ちた音（捨てたときも）。
@@ -89,6 +112,7 @@ namespace TpsDungeon.Items.Editor
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
         private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
         private const string LowPolyWeapons = "Assets/ThirdParty/3D Model/Blink/Weapons/LowPoly/FreeRPGWeapons/_PREFABS/";
+        private const string StylizedStaves = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Staves/_PrefabsStaves/";
         // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
         private const string ArrowModelPath = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/Arrow_01.prefab";
 
@@ -100,6 +124,10 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>片手剣の見た目の長さ（m）。素材の大きさはまちまちなので、武器ごとの長さに合わせて縮める。</summary>
         private const float SwordLength = 0.9f;
+
+        /// <summary>杖の見た目の長さ（m）と、下端から握る所までの長さ（m）。</summary>
+        private const float StaffLength = 1.5f;
+        private const float StaffGrip = 0.55f;
 
         /// <summary>拾える物の判定の幅と高さ（m）。奥行きは武器の長さに合わせる。</summary>
         private static readonly Vector2 PickupVolume = new Vector2(0.35f, 0.3f);
@@ -135,8 +163,14 @@ namespace TpsDungeon.Items.Editor
             public float Length = SwordLength;
             public Color Blade;
             public Color Hilt;
-            /// <summary>真ん中を原点に置く（弓。真ん中の握りを手に持つ）。偽なら下端（剣の柄の根元）を原点に。</summary>
+            /// <summary>真ん中を原点に置く（弓。真ん中の握りを手に持つ）。偽なら下端（剣の柄の根元）から Grip 上がった所を原点に。</summary>
             public bool CenterPivot;
+            /// <summary>CenterPivot でないとき、下端から握る所までの長さ（m）。剣は 0（柄の根元を握る）、杖は少し上を握る。</summary>
+            public float Grip;
+            /// <summary>素材の上下を入れ替える（いちばん長い軸を +Y にしたとき、先が下を向く素材）。</summary>
+            public bool Flip;
+            /// <summary>手に持つ見た目の先（Length − Grip の高さ）に "Tip" を置く（杖）。</summary>
+            public bool StaffTip;
             /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
         }
@@ -162,6 +196,9 @@ namespace TpsDungeon.Items.Editor
                 [HammerTypePath] = WriteHammerType(enchantments, roll),
                 [BowTypePath] = WriteBowType(enchantments, roll, arrow, ring),
                 [RainBowTypePath] = WriteRainBowType(enchantments, roll, arrow, ring),
+                [LightningTypePath] = WriteLightningType(enchantments, roll, ring),
+                [SpikeLineTypePath] = WriteSpikeLineType(enchantments, roll, WriteIceSpikePrefab()),
+                [FlamethrowerTypePath] = WriteFlamethrowerType(enchantments, roll, WriteFlamePrefab()),
             };
 
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
@@ -248,6 +285,51 @@ namespace TpsDungeon.Items.Editor
             // ユニークなので固定のエンチャントが付くが、何を付けるかはまだ決めていない（今は何も付かない）。
             yield return Bow("Weapon_EndlessDownpour", "終わらぬ驟雨", WeaponRank.Unique, 23f, "一度降り始めた矢の雨は、いつまでも止むことがない。",
                 RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+
+            // 19 電撃。ユニークは飛び移りを大きく増やす（数 ×3 で 3 ＋ 6 回）。固定のエンチャントは仮。
+            yield return Staff("Weapon_ChargedStaff", "帯電した杖", WeaponRank.E, 10f, "触れた敵から敵へ、火花が短く飛び移る。",
+                LightningTypePath, LowPolyWeapons + "Staff_Basic.prefab");
+            yield return Staff("Weapon_ThunderStaff", "雷撃の杖", WeaponRank.B, 29f, "走った稲光が、群れをまとめて焼き払う。",
+                LightningTypePath, LowPolyWeapons + "Staff_Medium.prefab");
+            yield return Staff("Weapon_StormEmperorStaff", "嵐帝の杖", WeaponRank.S, 48f, "一度放てば、雷は獲物を残らず数え上げる。",
+                LightningTypePath, LowPolyWeapons + "Staff_Epic.prefab");
+            yield return Staff("Weapon_ThunderGodPike", "雷神の鉾杖", WeaponRank.Unique, 48f, "放たれた雷は尽きることなく、敵から敵へと渡り続ける。",
+                LightningTypePath, StylizedStaves + "Staff5_1_1.prefab",
+                EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
+
+            // 20 範囲連置。ユニークは列を増やして延ばす（数 ×2 で 3 列、持続時間 ×2 で 1.4 倍の長さ）。固定のエンチャントは仮。
+            yield return Staff("Weapon_StoneSpikeStaff", "石棘の杖", WeaponRank.D, 13f, "地面から石の棘が、まっすぐ連なって突き出す。",
+                SpikeLineTypePath, LowPolyWeapons + "Staff_Basic.prefab");
+            yield return Staff("Weapon_IceFangStaff", "氷牙の杖", WeaponRank.B, 32f, "足元から氷の牙が次々と生え、敵を追い立てる。",
+                SpikeLineTypePath, LowPolyWeapons + "Staff_Medium.prefab");
+            yield return Staff("Weapon_EarthSplitterStaff", "大地裂の杖", WeaponRank.S, 51f, "地面が波打ち、裂け目が敵の列を飲み込む。",
+                SpikeLineTypePath, LowPolyWeapons + "Staff_Epic.prefab");
+            yield return Staff("Weapon_IcePrisonScepter", "氷獄の王笏", WeaponRank.Unique, 32f, "地を這う氷の列が幾筋も伸び、逃げ場を塞いでいく。",
+                SpikeLineTypePath, StylizedStaves + "Staff4_1_1.prefab",
+                EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.Duration, EnchantmentKind.Duration);
+
+            // 21 火炎放射器。ユニークは炎を壁のように広げる（サイズ ×3・数 ×2）。固定のエンチャントは仮。
+            yield return Staff("Weapon_EmberStaff", "種火の杖", WeaponRank.D, 15f, "先端から、細く頼りない炎が伸びる。",
+                FlamethrowerTypePath, LowPolyWeapons + "Staff_Basic.prefab");
+            yield return Staff("Weapon_HellfireStaff", "業火の杖", WeaponRank.B, 35f, "押さえている間、炎は途切れず前方を舐める。",
+                FlamethrowerTypePath, LowPolyWeapons + "Staff_Medium.prefab");
+            yield return Staff("Weapon_DragonBreathStaff", "竜息の杖", WeaponRank.S, 55f, "杖の口から、竜の吐息と同じ熱がほとばしる。",
+                FlamethrowerTypePath, LowPolyWeapons + "Staff_Epic.prefab");
+            yield return Staff("Weapon_PurgatoryRoar", "煉獄の咆哮", WeaponRank.Unique, 15f, "吐き出す炎は壁となり、前にあるものすべてを飲み込む。",
+                FlamethrowerTypePath, StylizedStaves + "Staff2_2_6.prefab",
+                EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
+        }
+
+        private static WeaponSpec Staff(string id, string name, WeaponRank rank, float strength, string description, string typePath,
+            string modelPath, params EnchantmentKind[] fixedEnchantments)
+        {
+            return new WeaponSpec
+            {
+                Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
+                TypePath = typePath, ModelPath = modelPath, Length = StaffLength, Grip = StaffGrip, StaffTip = true,
+                Blade = new Color32(120, 90, 60, 255), Hilt = new Color32(80, 55, 35, 255),
+                FixedEnchantments = fixedEnchantments,
+            };
         }
 
         private static WeaponSpec Bow(string id, string name, WeaponRank rank, float strength, string description, string typePath,
@@ -331,16 +413,16 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
                 (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
                 (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけが 1 つ増える。矢は照準の右左へ交互に開き、叩きつけは前を中心に扇状に、矢の雨は狙った所の付近に降る。"),
-                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲（矢の雨の範囲も）と、振りや爆発の大きさが 15% 広がる。"),
-                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "矢の雨やダッシュの続く時間が 20% 延びる。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけ・連ねる列・炎の筋が 1 つ増える。矢は照準の右左へ交互に開き、叩きつけと列と炎は前を中心に扇状に、矢の雨は狙った所の付近に降る。雷は飛び移る回数が増える。"),
+                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲（矢の雨の範囲と炎の太さも）と、振りや爆発の大きさが 15% 広がる。"),
+                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "矢の雨やダッシュ、炎を吐ける時間が 20% 延び、地面から連ねる列が 20% 長くなる。"),
                 (EnchantmentKind.Pierce, "貫通", 1f, 0f, "矢が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "少し遅れてもう一度放つ一斉射（矢の雨は同じ所にもう一度）や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "少し遅れてもう一度放つ一斉射（矢の雨は同じ所にもう一度、雷と地面から連ねる列も）や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
                 (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
-                (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "矢が前にいる敵を追って曲がる。"),
+                (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "矢や炎が前にいる敵を追って曲がる。"),
                 (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
                 (EnchantmentKind.Stun, "スタン", 0.25f, 0f, "敵をスタン・気絶させやすくなる（一撃の重さ 25% 増しで判定）。"),
-                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "矢が 20% 速く飛ぶ。矢の雨は 20% 早く降り始める。"),
+                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "矢が 20% 速く飛ぶ。矢の雨は 20% 早く降り始め、炎は 20% 遠くまで届く。"),
                 (EnchantmentKind.Knockback, "ノックバック", 2f, 0f, "当てた敵を押し出す勢いが増す。"),
                 (EnchantmentKind.Explosion, "爆発", 0.40f, 2.5f, "当てた所で爆発し、周りの敵にダメージの 40% を与える。"),
                 (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "当てるたびにダメージが 10% ずつ上がり、周をまたいでも続く。空振りか手を止めると途切れる。"),
@@ -687,6 +769,320 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
+        // ---- 武器種 19 / 20 / 21（両手杖） ----------------------------------------------
+
+        /// <summary>
+        /// 杖（雷・連置・炎）に共通の値。弓と同じ遠距離の欄を使い、Animator は魔法（撃ち出しは SpellCast、炎は CastingLoop）。
+        /// 右手で握り、照準へは体の前を向ける。矢は飛ばさないので矢の見た目と弓の音は外す。
+        /// </summary>
+        private static void WriteStaffCommon(SerializedObject serialized, RangedAttackKind kind, float fireInterval, Material ring)
+        {
+            WriteRangedCommon(serialized, kind, fireInterval, null, ring);
+            serialized.FindProperty("heldInLeftHand").boolValue = false;
+            // 撃ち出し（SpellCast の溜めの終わりから再生）で杖を突き出すのは押してから 0.1 秒あたり。
+            serialized.FindProperty("castDelay").floatValue = 0.12f;
+            // 右手の骨から見た杖の握る所（指は骨の −X へ伸び、拳を通る軸が +Y。手のひらの真ん中は −X に 0.08 m ほど）。調整済みなら触らない。
+            SeedHeldGrip(serialized, new Vector3(-0.09f, 0f, -0.02f), Vector3.zero);
+            serialized.FindProperty("drawSound").objectReferenceValue = null;
+            serialized.FindProperty("stickSound").objectReferenceValue = null;
+            serialized.FindProperty("rainSound").objectReferenceValue = null;
+        }
+
+        /// <summary>
+        /// 電撃（19）。照準から 10° 以内の、いちばん照準に近い敵へ雷を放ち、6 m 以内の次の敵へ 3 回飛び移る（4 体まで）。値は仮。
+        /// 撃つ間隔 0.9 秒なので、1 体あたり 強さ × 0.9。数 1 つで 2 回多く飛び移り、多重で 0.25 秒遅れてもう一度放つ。
+        /// </summary>
+        private static WeaponTypeDefinition WriteLightningType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(LightningTypePath);
+            SerializedObject serialized = BeginType(type, "19", "電撃", 4, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
+                EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 4 = CharacterAnimatorBuilder.Weapon.Magic
+
+            WriteStaffCommon(serialized, RangedAttackKind.Chain, 0.9f, ring);
+            serialized.FindProperty("aimMaxDistance").floatValue = 20f;
+            serialized.FindProperty("projectileKnockback").floatValue = 1f;
+            serialized.FindProperty("multishotInterval").floatValue = 0.25f;
+            serialized.FindProperty("chainAimAngle").floatValue = 10f;
+            serialized.FindProperty("chainJumps").intValue = 3;
+            serialized.FindProperty("chainJumpsPerCount").intValue = 2;
+            serialized.FindProperty("chainRange").floatValue = 6f;
+            serialized.FindProperty("chainJumpDelay").floatValue = 0.06f;
+            serialized.FindProperty("boltMaterial").objectReferenceValue = ring;
+            serialized.FindProperty("boltColor").colorValue = new Color(0.55f, 0.75f, 1f, 1f);
+            serialized.FindProperty("boltWidth").floatValue = 0.06f;
+            serialized.FindProperty("boltDuration").floatValue = 0.2f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(ElectroHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.5f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(LightningSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = null; // 放つ雷の音が当たった音を兼ねる
+            serialized.FindProperty("soundVolume").floatValue = 0.7f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 範囲連置（20）。照準の向きへ、1.2 m 先から 1.1 m ずつ 0.05 秒おきに 8 本、氷の棘を突き出す（約 9 m）。1 本は半径 0.9 m に当たり、
+        /// 1 列は同じ敵に 1 回だけ。撃つ間隔 1.0 秒なので、1 体あたり 強さ × 1.0。数で 20° ずつ扇状に列が増え、持続時間で列が伸び、
+        /// 多重で 0.45 秒遅れてもう一列。値は仮。
+        /// </summary>
+        private static WeaponTypeDefinition WriteSpikeLineType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, GameObject spike)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(SpikeLineTypePath);
+            SerializedObject serialized = BeginType(type, "20", "範囲連置", 4, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
+                EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.ProjectileCount,
+                EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 4 = CharacterAnimatorBuilder.Weapon.Magic
+
+            WriteStaffCommon(serialized, RangedAttackKind.Line, 1.0f, null);
+            serialized.FindProperty("projectileKnockback").floatValue = 3f;
+            serialized.FindProperty("lineStartDistance").floatValue = 1.2f;
+            serialized.FindProperty("lineSpacing").floatValue = 1.1f;
+            serialized.FindProperty("linePillarCount").intValue = 8;
+            serialized.FindProperty("lineInterval").floatValue = 0.05f;
+            serialized.FindProperty("lineRadius").floatValue = 0.9f;
+            serialized.FindProperty("lineHeight").floatValue = 2f;
+            serialized.FindProperty("lineSpreadAngle").floatValue = 20f;
+            serialized.FindProperty("lineRepeatInterval").floatValue = 0.45f;
+            serialized.FindProperty("pillarPrefab").objectReferenceValue = spike;
+            serialized.FindProperty("pillarScale").floatValue = 1f;
+            serialized.FindProperty("pillarBurstEffect").objectReferenceValue = LoadEffect(SnowHitEffectPath);
+            serialized.FindProperty("pillarBurstEffectScale").floatValue = 0.35f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.4f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(IceSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(SwordHitSoundPath);
+            serialized.FindProperty("soundVolume").floatValue = 0.7f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 火炎放射器（21）。押している間、杖の先から照準へ 6 m・広がり 14° の炎を最長 2.4 秒吐き、0.2 秒ごとにダメージ。止まったら 1.0 秒待つ。
+        /// 吐き続けて待つ 1 周（3.4 秒）で 強さ × 3.4 を 12 刻みに分けて与える（炎の中にずっと居ればおよそ 強さ の DPS）。値は仮。
+        /// </summary>
+        private static WeaponTypeDefinition WriteFlamethrowerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, GameObject flame)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(FlamethrowerTypePath);
+            SerializedObject serialized = BeginType(type, "21", "火炎放射器", 4, false, new[]
+            {
+                EnchantmentKind.CritChance, EnchantmentKind.Size, EnchantmentKind.Stun, EnchantmentKind.DamageUp,
+                EnchantmentKind.DropUp, EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.ProjectileSpeed,
+                EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 4 = CharacterAnimatorBuilder.Weapon.Magic
+
+            WriteStaffCommon(serialized, RangedAttackKind.Flame, 1.0f, null);
+            serialized.FindProperty("aimMaxDistance").floatValue = 20f;
+            serialized.FindProperty("flameDuration").floatValue = 2.4f;
+            serialized.FindProperty("flameTickInterval").floatValue = 0.2f;
+            serialized.FindProperty("flameRange").floatValue = 6f;
+            serialized.FindProperty("flameAngle").floatValue = 14f;
+            serialized.FindProperty("flameBaseRadius").floatValue = 0.25f;
+            serialized.FindProperty("flameSpreadAngle").floatValue = 25f;
+            serialized.FindProperty("flameHomingAngle").floatValue = 40f;
+            serialized.FindProperty("flameHomingTurnRate").floatValue = 120f;
+            serialized.FindProperty("flameEffect").objectReferenceValue = flame;
+            serialized.FindProperty("flameEffectLength").floatValue = FlameLength;
+            serialized.FindProperty("flameSoundInterval").floatValue = 0.6f;
+            serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(FireHitEffectPath);
+            serialized.FindProperty("hitEffectScale").floatValue = 0.25f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(FlameSoundPath);
+            serialized.FindProperty("hitSound").objectReferenceValue = null; // 吐いている音が当たった音を兼ねる
+            serialized.FindProperty("soundVolume").floatValue = 0.6f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 地面から突き出る氷の棘。Hovl の結晶を、真ん中に高い 1 本と、根元に傾けた低い 2 本で組む（原点が根元、+Y が上）。
+        /// GroundSpike が突き出して引っ込めて消す。結晶の素材が無ければ水色の箱で代える。
+        /// </summary>
+        private static GameObject WriteIceSpikePrefab()
+        {
+            var root = new GameObject("Pillar_IceSpike");
+            try
+            {
+                root.AddComponent<TpsDungeon.Combat.GroundSpike>();
+                Mesh mesh = null;
+                foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(CrystalMeshPath))
+                    if (asset is Mesh m) mesh = m;
+                var material = AssetDatabase.LoadAssetAtPath<Material>(CrystalMaterialPath);
+
+                // (高さ m, 根元のずれ, 傾き)
+                var crystals = new (float height, Vector3 offset, Vector3 euler)[]
+                {
+                    (1.5f, Vector3.zero, new Vector3(0f, 0f, 4f)),
+                    (0.9f, new Vector3(0.28f, 0f, 0.1f), new Vector3(8f, 40f, -24f)),
+                    (0.7f, new Vector3(-0.25f, 0f, -0.15f), new Vector3(-10f, 110f, 22f)),
+                };
+
+                foreach ((float height, Vector3 offset, Vector3 euler) in crystals)
+                {
+                    var part = new GameObject("Crystal");
+                    part.transform.SetParent(root.transform, false);
+                    part.transform.localPosition = offset;
+                    part.transform.localRotation = Quaternion.Euler(euler);
+                    if (mesh != null && material != null)
+                    {
+                        // 根元が原点に来るよう、縮めてから下端の分だけ持ち上げる。
+                        float scale = height / Mathf.Max(0.01f, mesh.bounds.size.y);
+                        var model = new GameObject("Mesh");
+                        model.transform.SetParent(part.transform, false);
+                        model.transform.localScale = Vector3.one * scale;
+                        model.transform.localPosition = Vector3.up * (-mesh.bounds.min.y * scale);
+                        model.AddComponent<MeshFilter>().sharedMesh = mesh;
+                        var renderer = model.AddComponent<MeshRenderer>();
+                        renderer.sharedMaterial = material;
+                        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+                    else
+                    {
+                        Gen.Part(part, PrimitiveType.Cube, Gen.Material("Placeholder_IceSpike", new Color32(150, 210, 255, 255)),
+                            new Vector3(0f, height * 0.5f, 0f), new Vector3(height * 0.25f, height, height * 0.25f));
+                    }
+                }
+
+                if (mesh == null || material == null) Debug.LogWarning($"氷の結晶の素材が無い: {CrystalMeshPath}（箱で代える）");
+                return PrefabUtility.SaveAsPrefabAsset(root, IceSpikePrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>炎の素材そのままの届く距離（m）。粒は秒速 15 m で 0.4 秒飛ぶ。</summary>
+        private const float FlameLength = 6f;
+
+        /// <summary>
+        /// 吐いている炎。+Z へ円錐（広がり 14°）に柔らかい塊を吹き出し、白黄 → 橙 → 赤 → 暗い煙に色を変えながら膨らませる。
+        /// 粒は世界に置いて流す（杖を振ると炎がしなる）。壁や床に当たったら止まる。火の粉と、杖の先の橙の明かりを添える。
+        /// </summary>
+        private static GameObject WriteFlamePrefab()
+        {
+            var root = new GameObject("Effect_Flame");
+            try
+            {
+                var flameMaterial = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
+                var emberMaterial = AssetDatabase.LoadAssetAtPath<Material>(EmberMaterialPath);
+                if (flameMaterial == null) Debug.LogWarning($"炎の材質が無い: {FlameMaterialPath}");
+
+                const float lifetime = 0.4f;
+                ParticleSystem flame = AddParticles(root, "Flame", flameMaterial);
+                ParticleSystem.MainModule main = flame.main;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(lifetime * 0.8f, lifetime);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(FlameLength / lifetime * 0.9f, FlameLength / lifetime);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.25f, 0.4f);
+                main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.maxParticles = 400;
+                ParticleSystem.EmissionModule emission = flame.emission;
+                emission.rateOverTime = 140f;
+                ParticleSystem.ShapeModule shape = flame.shape;
+                shape.shapeType = ParticleSystemShapeType.Cone;
+                shape.angle = 14f;
+                shape.radius = 0.05f;
+                ParticleSystem.SizeOverLifetimeModule size = flame.sizeOverLifetime;
+                size.enabled = true;
+                size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.6f), new Keyframe(0.5f, 3.2f), new Keyframe(1f, 5f)));
+                ParticleSystem.RotationOverLifetimeModule spin = flame.rotationOverLifetime;
+                spin.enabled = true;
+                spin.z = new ParticleSystem.MinMaxCurve(-3f, 3f);
+                ParticleSystem.ColorOverLifetimeModule color = flame.colorOverLifetime;
+                color.enabled = true;
+                color.color = new Gradient
+                {
+                    colorKeys = new[]
+                    {
+                        new GradientColorKey(new Color(1f, 0.95f, 0.7f), 0f),
+                        new GradientColorKey(new Color(1f, 0.65f, 0.15f), 0.25f),
+                        new GradientColorKey(new Color(0.95f, 0.25f, 0.05f), 0.6f),
+                        new GradientColorKey(new Color(0.25f, 0.08f, 0.04f), 1f),
+                    },
+                    alphaKeys = new[]
+                    {
+                        new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.1f), new GradientAlphaKey(0.8f, 0.6f), new GradientAlphaKey(0f, 1f),
+                    },
+                };
+                AddWallCollision(flame);
+
+                ParticleSystem embers = AddParticles(root, "Embers", emberMaterial);
+                ParticleSystem.MainModule emberMain = embers.main;
+                emberMain.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
+                emberMain.startSpeed = new ParticleSystem.MinMaxCurve(8f, 14f);
+                emberMain.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.07f);
+                emberMain.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.8f, 0.3f), new Color(1f, 0.4f, 0.1f));
+                emberMain.gravityModifier = -0.3f;
+                emberMain.maxParticles = 200;
+                ParticleSystem.EmissionModule emberEmission = embers.emission;
+                emberEmission.rateOverTime = 40f;
+                ParticleSystem.ShapeModule emberShape = embers.shape;
+                emberShape.shapeType = ParticleSystemShapeType.Cone;
+                emberShape.angle = 20f;
+                emberShape.radius = 0.05f;
+                embers.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.Stretch;
+                embers.GetComponent<ParticleSystemRenderer>().lengthScale = 3f;
+                AddWallCollision(embers);
+
+                var lightObject = new GameObject("Light");
+                lightObject.transform.SetParent(root.transform, false);
+                lightObject.transform.localPosition = new Vector3(0f, 0f, 1f);
+                var light = lightObject.AddComponent<Light>();
+                light.type = LightType.Point;
+                light.color = new Color(1f, 0.55f, 0.2f);
+                light.range = 6f;
+                light.intensity = 3f;
+                light.shadows = LightShadows.None;
+
+                return PrefabUtility.SaveAsPrefabAsset(root, FlamePrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>parent の下に、+Z へ吹く、世界に置いて流すループの粒を作る。</summary>
+        private static ParticleSystem AddParticles(GameObject parent, string name, Material material)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var particles = go.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = true;
+            main.duration = 1f;
+            main.playOnAwake = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return particles;
+        }
+
+        /// <summary>壁や床に当たった粒は勢いを失い、早く消える（炎が壁を抜けない）。</summary>
+        private static void AddWallCollision(ParticleSystem particles)
+        {
+            ParticleSystem.CollisionModule collision = particles.collision;
+            collision.enabled = true;
+            collision.type = ParticleSystemCollisionType.World;
+            collision.mode = ParticleSystemCollisionMode.Collision3D;
+            collision.quality = ParticleSystemCollisionQuality.Low;
+            collision.dampen = 0.8f;
+            collision.bounce = 0.1f;
+            collision.lifetimeLoss = 0.5f;
+            collision.radiusScale = 0.3f;
+        }
+
         /// <summary>弓・持続弓に共通の値。コンボの段は持たない（近接では振らない）。</summary>
         private static void WriteRangedCommon(SerializedObject serialized, RangedAttackKind kind, float fireInterval, GameObject arrow,
             Material ring)
@@ -707,8 +1103,8 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("homingRange").floatValue = 12f;
             serialized.FindProperty("rangeRingMaterial").objectReferenceValue = ring;
             serialized.FindProperty("heldInLeftHand").boolValue = true;
-            // 左手の骨から見た弓の握り（Play 中に手の武器を動かして合わせた値）。調整済みなら触らない。
-            SeedHeldGrip(serialized, new Vector3(0.018f, 0f, 0.072f), Vector3.zero);
+            // 左手の骨から見た弓の握り（Play 中に手の武器を動かして合わせた値）。調整済みなら触らない。杖は WriteStaffCommon が入れる。
+            if (kind == RangedAttackKind.Bow || kind == RangedAttackKind.Rain) SeedHeldGrip(serialized, new Vector3(0.018f, 0f, 0.072f), Vector3.zero);
 
             serialized.FindProperty("swingEffect").objectReferenceValue = null;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
@@ -924,7 +1320,7 @@ namespace TpsDungeon.Items.Editor
             // 床に落ちているときは寝かせる。
             iconSpec.BuildModel = (root, mat) =>
             {
-                root.transform.localPosition = new Vector3(0f, 0.05f, spec.CenterPivot ? 0f : -spec.Length * 0.5f);
+                root.transform.localPosition = new Vector3(0f, 0.05f, spec.CenterPivot ? 0f : spec.Grip - spec.Length * 0.5f);
                 root.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 BuildSword(root, spec, mat);
             };
@@ -972,6 +1368,12 @@ namespace TpsDungeon.Items.Editor
         {
             var root = new GameObject($"Held_{spec.Id}");
             BuildSword(root, spec, Gen.Material);
+            if (spec.StaffTip)
+            {
+                var tip = new GameObject(WeaponTypeDefinition.StaffTipName);
+                tip.transform.SetParent(root.transform, false);
+                tip.transform.localPosition = Vector3.up * (spec.CenterPivot ? spec.Length * 0.5f : spec.Length - spec.Grip);
+            }
 
             string path = $"{Gen.PrefabsFolder}/{root.name}.prefab";
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -986,7 +1388,7 @@ namespace TpsDungeon.Items.Editor
         private static void BuildSword(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
         {
             var source = string.IsNullOrEmpty(spec.ModelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
-            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot)) return;
+            if (source != null && TryPlaceModel(parent, source, spec.Length, spec.CenterPivot, spec.Grip, spec.Flip)) return;
 
             Material blade = material($"Placeholder_{spec.Id}_Blade", spec.Blade);
             Material hilt = material($"Placeholder_{spec.Id}_Hilt", spec.Hilt);
@@ -996,7 +1398,8 @@ namespace TpsDungeon.Items.Editor
                 new Vector3(0.06f, spec.Length - 0.17f, 0.012f));
         }
 
-        private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength, bool centered = false)
+        private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength, bool centered = false, float grip = 0f,
+            bool flip = false)
         {
             var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
@@ -1012,6 +1415,7 @@ namespace TpsDungeon.Items.Editor
             Quaternion toUp = size.y >= size.x && size.y >= size.z ? Quaternion.identity
                 : size.x >= size.z ? Quaternion.Euler(0f, 0f, 90f)
                 : Quaternion.Euler(-90f, 0f, 0f);
+            if (flip) toUp = Quaternion.Euler(0f, 0f, 180f) * toUp;
             float length = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
             float scale = length > 1e-4f ? targetLength / length : 1f;
 
@@ -1021,9 +1425,9 @@ namespace TpsDungeon.Items.Editor
             model.transform.localRotation = toUp;
             model.transform.localScale = Vector3.one * scale;
 
-            // 回したあとの下端（centered なら真ん中）を原点へ。
+            // 回したあとの下端から grip 上がった所（centered なら真ん中）を原点へ。
             TryMeasure(model, out Bounds rotated, pivot.transform);
-            model.transform.localPosition = new Vector3(-rotated.center.x, centered ? -rotated.center.y : -rotated.min.y, -rotated.center.z);
+            model.transform.localPosition = new Vector3(-rotated.center.x, centered ? -rotated.center.y : -rotated.min.y - grip, -rotated.center.z);
             return true;
         }
 

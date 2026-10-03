@@ -2,7 +2,8 @@
     "name": "TpsDungeon.Items.Editor",
     "rootNamespace": "TpsDungeon.Items.Editor",
     "references": [
-        "TpsDungeon.Items"
+        "TpsDungeon.Items",
+        "TpsDungeon.Combat"
     ],
     "includePlatforms": [
         "Editor"

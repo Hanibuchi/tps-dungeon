@@ -15,7 +15,7 @@ namespace TpsDungeon.Combat
         /// <summary>叩きつけの追撃（多重のエンチャント）。</summary>
         FollowUp,
 
-        /// <summary>矢の雨（持続弓）の 1 刻み。</summary>
+        /// <summary>矢の雨（持続弓）と炎（火炎放射器）の 1 刻み。</summary>
         Tick,
     }
 

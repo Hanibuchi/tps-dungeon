@@ -69,7 +69,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
-        /// 遠距離武器（弓・持続弓）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
+        /// 遠距離武器（弓・持続弓・杖）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
         /// </summary>
         public RangedWeaponStats ComputeRangedStats(EnchantmentTotals enchantments, float characterAttack,
             Func<float, float> critChanceModifier = null, Func<float, float> critMultiplierModifier = null)
@@ -82,6 +82,8 @@ namespace TpsDungeon.Items
                 FireInterval = weaponType != null ? weaponType.FireInterval : 0f,
                 RainDuration = weaponType != null ? weaponType.RainDuration : 0f,
                 RainTickInterval = weaponType != null ? weaponType.RainTickInterval : 0f,
+                FlameDuration = weaponType != null ? weaponType.FlameDuration : 0f,
+                FlameTickInterval = weaponType != null ? weaponType.FlameTickInterval : 0f,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

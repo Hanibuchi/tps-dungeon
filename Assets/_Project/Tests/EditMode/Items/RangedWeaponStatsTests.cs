@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace TpsDungeon.Items.Tests
 {
-    /// <summary>遠距離武器（弓・持続弓）の数値（DPS からの 1 発の逆算、雨の刻み、エンチャント）を確かめる。</summary>
+    /// <summary>遠距離武器（弓・持続弓・炎の杖）の数値（DPS からの 1 発の逆算、雨と炎の刻み、エンチャント）を確かめる。</summary>
     public sealed class RangedWeaponStatsTests
     {
         private static RangedWeaponStats Bow(float strength, EnchantmentTotals enchantments = null, float characterAttack = 0f)
@@ -31,6 +31,22 @@ namespace TpsDungeon.Items.Tests
                 RainTickInterval = 0.5f,
                 Enchantments = enchantments,
                 BaseCritChance = 0.05f,
+                BaseCritMultiplier = 1.5f,
+            });
+        }
+
+        // 火炎放射器の仮の値: 吐ける時間 2.4 秒を 0.2 秒ごと（12 刻み）、止まってから 1.0 秒待つ。
+        private static RangedWeaponStats Flame(float strength, EnchantmentTotals enchantments = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttackWeight = 1f,
+                FireInterval = 1.0f,
+                FlameDuration = 2.4f,
+                FlameTickInterval = 0.2f,
+                Enchantments = enchantments,
+                BaseCritChance = 0f,
                 BaseCritMultiplier = 1.5f,
             });
         }
@@ -161,6 +177,56 @@ namespace TpsDungeon.Items.Tests
         public void 雨の刻みも最低1()
         {
             Assert.AreEqual(1, Rain(0.5f).RainTickDamage);
+        }
+
+        [Test]
+        public void 炎は吐ける時間と待ちの1周を補正前の刻みで割って毎刻み与える()
+        {
+            RangedWeaponStats stats = Flame(100f);
+
+            // 100 × (2.4 + 1.0) / 12 = 28.3 → 28
+            Assert.AreEqual(12, stats.FlameTickCount);
+            Assert.AreEqual(28, stats.FlameTickDamage);
+            Assert.AreEqual(2.4f, stats.FlameDuration, 1e-5f);
+            Assert.AreEqual(0.2f, stats.FlameTickInterval, 1e-5f);
+            Assert.AreEqual(1.0f, stats.FireInterval, 1e-5f);
+        }
+
+        [Test]
+        public void 炎の平均DPSは1周の平均でおよそ強さになる()
+        {
+            Assert.AreEqual(100f, Flame(100f).AverageDps, 5f);
+        }
+
+        [Test]
+        public void 持続時間は炎の1刻みを変えずに刻みを増やす()
+        {
+            RangedWeaponStats stats = Flame(100f, With(EnchantmentKind.Duration, 0.2f));
+
+            Assert.AreEqual(2.88f, stats.FlameDuration, 1e-5f);
+            Assert.AreEqual(14, stats.FlameTickCount);
+            Assert.AreEqual(Flame(100f).FlameTickDamage, stats.FlameTickDamage);
+        }
+
+        [Test]
+        public void 速射は炎の刻みと待ちを縮めて1刻みは変えない()
+        {
+            RangedWeaponStats stats = Flame(100f, With(EnchantmentKind.RapidFire, 0.25f));
+
+            Assert.AreEqual(0.16f, stats.FlameTickInterval, 1e-5f);
+            Assert.AreEqual(0.8f, stats.FireInterval, 1e-5f);
+            Assert.AreEqual(15, stats.FlameTickCount);
+            Assert.AreEqual(Flame(100f).FlameTickDamage, stats.FlameTickDamage);
+        }
+
+        [Test]
+        public void 炎を吐かない武器種では炎の刻みは0()
+        {
+            RangedWeaponStats stats = Bow(100f);
+
+            Assert.AreEqual(0, stats.FlameTickCount);
+            Assert.AreEqual(0, stats.FlameTickDamage);
+            Assert.AreEqual(0f, stats.FlameDuration);
         }
     }
 }
