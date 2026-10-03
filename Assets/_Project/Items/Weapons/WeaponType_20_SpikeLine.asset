@@ -83,10 +83,9 @@ MonoBehaviour:
   lineHeight: 2
   lineSpreadAngle: 20
   lineRepeatInterval: 0.45
-  pillarPrefab: {fileID: 320555586950482946, guid: 94b591bf66c2348f59a6ee7571593e6d, type: 3}
-  pillarScale: 1
-  pillarBurstEffect: {fileID: 4924508274929071776, guid: 0edef91621bb6b34384ccc9dbb98729c, type: 3}
-  pillarBurstEffectScale: 0.35
+  lineEffect: {fileID: 2246121969219426058, guid: a604c8ca1818b4c8f8d54957237354f6, type: 3}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
   flameDuration: 2.4
   flameTickInterval: 0.2
   flameRange: 6

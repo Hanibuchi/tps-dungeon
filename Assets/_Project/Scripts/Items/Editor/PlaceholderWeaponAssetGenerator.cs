@@ -16,7 +16,7 @@ namespace TpsDungeon.Items.Editor
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     /// - 武器 25 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ）と、拾える物・手に持つ見た目のプレハブ
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
-    /// - 範囲連置の地面から突き出る氷の棘（Pillar_IceSpike）と、火炎放射器の炎（Effect_Flame）
+    /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
@@ -40,7 +40,7 @@ namespace TpsDungeon.Items.Editor
         public const string LightningTypePath = WeaponsFolder + "/WeaponType_19_Lightning.asset";
         public const string SpikeLineTypePath = WeaponsFolder + "/WeaponType_20_SpikeLine.asset";
         public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_21_Flamethrower.asset";
-        public const string IceSpikePrefabPath = Gen.PrefabsFolder + "/Pillar_IceSpike.prefab";
+        public const string CrystalLinePrefabPath = Gen.PrefabsFolder + "/Effect_CrystalLine.prefab";
         public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
         public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
@@ -70,13 +70,12 @@ namespace TpsDungeon.Items.Editor
         public const string MeteorsEffectPath = HovlPrefabs + "AoE effects/Meteors AOE.prefab";
         // 雷が当たった所の閃光と火花（素材は 3 m ほど）。
         public const string ElectroHitEffectPath = HovlPrefabs + "Hits and explosions/Electro hit.prefab";
-        // 棘が突き出た根元に散る雪と氷の粒（素材は 3 m ほど）。
-        public const string SnowHitEffectPath = HovlPrefabs + "Hits and explosions/Snow hit.prefab";
+        // 地面を這う結晶。根の粒 7 つが +X を中心に 45° の扇へ秒速 30 m で 0.32 秒走り（約 7.8 m）、通り道に結晶・煙・石を残す。
+        public const string CrystalsFrontAttackPath = HovlPrefabs + "AoE effects/Crystals front attack.prefab";
+        private const float CrystalsFrontAttackLength = 7.8f;
+        private const float CrystalsFrontAttackTravelTime = 0.32f;
         // 炎が当たった所の火花。
         public const string FireHitEffectPath = HovlPrefabs + "Sparks/Sparks explode red.prefab";
-        // 氷の棘の形（高さ 3.7 m・幅 1.5 m ほど、原点が真ん中）と材質。
-        private const string CrystalMeshPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Models/Crystal1.fbx";
-        private const string CrystalMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Crystal1.mat";
         // 炎の粒の絵（煙の柔らかい塊を、色を時間で変えて炎に見せる）と、火の粉の点。
         private const string FlameMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Smoke26.mat";
         private const string EmberMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Point.mat";
@@ -197,7 +196,7 @@ namespace TpsDungeon.Items.Editor
                 [BowTypePath] = WriteBowType(enchantments, roll, arrow, ring),
                 [RainBowTypePath] = WriteRainBowType(enchantments, roll, arrow, ring),
                 [LightningTypePath] = WriteLightningType(enchantments, roll, ring),
-                [SpikeLineTypePath] = WriteSpikeLineType(enchantments, roll, WriteIceSpikePrefab()),
+                [SpikeLineTypePath] = WriteSpikeLineType(enchantments, roll, WriteCrystalLinePrefab()),
                 [FlamethrowerTypePath] = WriteFlamethrowerType(enchantments, roll, WriteFlamePrefab()),
             };
 
@@ -825,12 +824,13 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 範囲連置（20）。照準の向きへ、1.2 m 先から 1.1 m ずつ 0.05 秒おきに 8 本、氷の棘を突き出す（約 9 m）。1 本は半径 0.9 m に当たり、
+        /// 範囲連置（20）。照準の向きへ、1.2 m 先から 1.1 m おきに 8 か所（約 9 m）、結晶の列（Crystals front attack を 1 本にしたもの）を 0.32 秒で走らせ、
+        /// 届いた所から順に当てる。1 か所は半径 0.9 m に当たり、
         /// 1 列は同じ敵に 1 回だけ。撃つ間隔 1.0 秒なので、1 体あたり 強さ × 1.0。数で 20° ずつ扇状に列が増え、持続時間で列が伸び、
         /// 多重で 0.45 秒遅れてもう一列。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteSpikeLineType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
-            EnchantmentRollSettings roll, GameObject spike)
+            EnchantmentRollSettings roll, GameObject line)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(SpikeLineTypePath);
             SerializedObject serialized = BeginType(type, "20", "範囲連置", 4, false, new[]
@@ -850,10 +850,9 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("lineHeight").floatValue = 2f;
             serialized.FindProperty("lineSpreadAngle").floatValue = 20f;
             serialized.FindProperty("lineRepeatInterval").floatValue = 0.45f;
-            serialized.FindProperty("pillarPrefab").objectReferenceValue = spike;
-            serialized.FindProperty("pillarScale").floatValue = 1f;
-            serialized.FindProperty("pillarBurstEffect").objectReferenceValue = LoadEffect(SnowHitEffectPath);
-            serialized.FindProperty("pillarBurstEffectScale").floatValue = 0.35f;
+            serialized.FindProperty("lineEffect").objectReferenceValue = line;
+            serialized.FindProperty("lineEffectLength").floatValue = CrystalsFrontAttackLength;
+            serialized.FindProperty("lineEffectTravelTime").floatValue = CrystalsFrontAttackTravelTime;
             serialized.FindProperty("hitEffect").objectReferenceValue = LoadEffect(SwordHitEffectPath);
             serialized.FindProperty("hitEffectScale").floatValue = 0.4f;
             serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(IceSoundPath);
@@ -901,60 +900,36 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 地面から突き出る氷の棘。Hovl の結晶を、真ん中に高い 1 本と、根元に傾けた低い 2 本で組む（原点が根元、+Y が上）。
-        /// GroundSpike が突き出して引っ込めて消す。結晶の素材が無ければ水色の箱で代える。
+        /// 範囲連置の 1 列の見た目。Hovl の Crystals front attack のバリアントで、根の粒を 7 つの扇から +X へまっすぐ 1 つにする
+        /// （根の粒が通り道に結晶・煙・石を残す作りはそのまま）。列の長さへの伸び縮みは RangedAttacker が出すときにやる。
         /// </summary>
-        private static GameObject WriteIceSpikePrefab()
+        private static GameObject WriteCrystalLinePrefab()
         {
-            var root = new GameObject("Pillar_IceSpike");
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(CrystalsFrontAttackPath);
+            if (source == null)
+            {
+                Debug.LogWarning($"結晶の列の素材が無い: {CrystalsFrontAttackPath}（範囲連置は見た目なしで当たる）");
+                return null;
+            }
+
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
             try
             {
-                root.AddComponent<TpsDungeon.Combat.GroundSpike>();
-                Mesh mesh = null;
-                foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(CrystalMeshPath))
-                    if (asset is Mesh m) mesh = m;
-                var material = AssetDatabase.LoadAssetAtPath<Material>(CrystalMaterialPath);
-
-                // (高さ m, 根元のずれ, 傾き)
-                var crystals = new (float height, Vector3 offset, Vector3 euler)[]
-                {
-                    (1.5f, Vector3.zero, new Vector3(0f, 0f, 4f)),
-                    (0.9f, new Vector3(0.28f, 0f, 0.1f), new Vector3(8f, 40f, -24f)),
-                    (0.7f, new Vector3(-0.25f, 0f, -0.15f), new Vector3(-10f, 110f, 22f)),
-                };
-
-                foreach ((float height, Vector3 offset, Vector3 euler) in crystals)
-                {
-                    var part = new GameObject("Crystal");
-                    part.transform.SetParent(root.transform, false);
-                    part.transform.localPosition = offset;
-                    part.transform.localRotation = Quaternion.Euler(euler);
-                    if (mesh != null && material != null)
-                    {
-                        // 根元が原点に来るよう、縮めてから下端の分だけ持ち上げる。
-                        float scale = height / Mathf.Max(0.01f, mesh.bounds.size.y);
-                        var model = new GameObject("Mesh");
-                        model.transform.SetParent(part.transform, false);
-                        model.transform.localScale = Vector3.one * scale;
-                        model.transform.localPosition = Vector3.up * (-mesh.bounds.min.y * scale);
-                        model.AddComponent<MeshFilter>().sharedMesh = mesh;
-                        var renderer = model.AddComponent<MeshRenderer>();
-                        renderer.sharedMaterial = material;
-                        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    }
-                    else
-                    {
-                        Gen.Part(part, PrimitiveType.Cube, Gen.Material("Placeholder_IceSpike", new Color32(150, 210, 255, 255)),
-                            new Vector3(0f, height * 0.5f, 0f), new Vector3(height * 0.25f, height, height * 0.25f));
-                    }
-                }
-
-                if (mesh == null || material == null) Debug.LogWarning($"氷の結晶の素材が無い: {CrystalMeshPath}（箱で代える）");
-                return PrefabUtility.SaveAsPrefabAsset(root, IceSpikePrefabPath);
+                instance.name = "Effect_CrystalLine";
+                var root = instance.GetComponent<ParticleSystem>();
+                ParticleSystem.EmissionModule emission = root.emission;
+                ParticleSystem.Burst burst = emission.GetBurst(0);
+                burst.count = 1;
+                emission.SetBurst(0, burst);
+                // 素材は扇の幅 45° を -22.5° 回して +X を真ん中にしている。幅を 1° にして +X へそろえる。
+                ParticleSystem.ShapeModule shape = root.shape;
+                shape.arc = 1f;
+                shape.rotation = new Vector3(-90f, -0.5f, 0f);
+                return PrefabUtility.SaveAsPrefabAsset(instance, CrystalLinePrefabPath);
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(instance);
             }
         }
 

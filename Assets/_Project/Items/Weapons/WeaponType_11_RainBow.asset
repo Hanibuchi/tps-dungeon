@@ -85,10 +85,9 @@ MonoBehaviour:
   lineHeight: 2
   lineSpreadAngle: 20
   lineRepeatInterval: 0.45
-  pillarPrefab: {fileID: 0}
-  pillarScale: 1
-  pillarBurstEffect: {fileID: 0}
-  pillarBurstEffectScale: 0.5
+  lineEffect: {fileID: 0}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
   flameDuration: 2.5
   flameTickInterval: 0.2
   flameRange: 6

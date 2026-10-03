@@ -18,7 +18,7 @@ namespace TpsDungeon.Combat
     ///            数で増えた雨は狙った所の付近のランダムな所に、多重で同じ所にもう一度降る。持っている間は狙う地面に範囲の円を出す
     ///   雷     … 照準の線に近い敵（決めた角度の中で照準にいちばん近く、杖の先から見通せる敵）へ杖の先から雷を放ち、
     ///            当てた敵から近くのまだ当てていない敵へ次々と飛び移る。数で飛び移る回数が増え、多重で遅れてもう一度放つ。敵が居なければ照準の先へ空撃ち
-    ///   連置   … 照準の水平の向きへ、足元の少し先から地面に沿って範囲に当たる物を手前から順に突き出す（1 列は同じ敵に 1 回）。壁で止まる。
+    ///   連置   … 照準の水平の向きへ、足元の少し先から地面に沿って範囲に当たる結晶を手前から順に走らせる（1 列は同じ敵に 1 回）。壁で止まる。
     ///            数で扇状に列が増え、持続時間で列が伸び、多重で同じ向きへもう一列
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
@@ -618,8 +618,9 @@ namespace TpsDungeon.Combat
         }
 
         /// <summary>
-        /// 1 列。足元から direction へ lineStartDistance 先を 1 つ目に、lineSpacing ずつ離して lineInterval ずつ遅らせて出す。
+        /// 1 列。足元から direction へ lineStartDistance 先を 1 つ目に、lineSpacing ずつ離して手前から順に当てる。
         /// 膝の高さで壁に当たったら、その手前で止める。1 列は同じ敵に 1 回だけ当たる。
+        /// 見た目（lineEffect）は列の頭から列の長さだけ走らせ、当たりはその見た目が届く時刻に出す（無ければ lineInterval ずつ遅らせる）。
         /// </summary>
         private void CastLine(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 direction, int pillars, bool playSound)
         {
@@ -630,35 +631,57 @@ namespace TpsDungeon.Combat
             if (Raycast(new Ray(origin + Vector3.up * 0.5f, direction), reach + 0.3f, true, out RaycastHit wall))
                 reach = wall.distance - 0.3f;
 
-            var struck = new HashSet<EnemyHealth>();
-            for (int i = 0; i < pillars; i++)
-            {
-                float distance = type.LineStartDistance + i * type.LineSpacing;
-                if (distance > reach) break;
+            int count = 0;
+            while (count < pillars && type.LineStartDistance + count * type.LineSpacing <= reach) count++;
+            if (count == 0) return;
 
-                Vector3 point = origin + direction * distance;
-                float delay = i * type.LineInterval;
+            // 見た目は 1 つ目の半間隔手前から、最後の 1 つの半間隔先まで。
+            float length = count * type.LineSpacing;
+            if (type.LineEffect != null)
+            {
+                Vector3 head = origin + direction * (type.LineStartDistance - type.LineSpacing * 0.5f);
+                SpawnLineEffect(type, GroundAt(head + Vector3.up * 1.5f, head.y), direction, length);
+            }
+
+            var struck = new HashSet<EnemyHealth>();
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 point = origin + direction * (type.LineStartDistance + i * type.LineSpacing);
+                float delay = type.LineEffect != null ? type.LineEffectTravelTime * (i + 0.5f) / count : i * type.LineInterval;
                 if (delay <= 0f) Pillar(type, shot, point, struck);
                 else Schedule(delay, () => Pillar(type, shot, point, struck));
             }
         }
 
-        /// <summary>point の真下の地面から 1 つ突き出し、範囲の中のまだこの列に当たっていない敵に当てる。</summary>
-        private void Pillar(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 point, HashSet<EnemyHealth> struck)
+        /// <summary>
+        /// 列の見た目を head から direction へ length だけ走らせる。素材は +X へ lineEffectLength 走るので、+X を direction に合わせ、
+        /// 根の粒の速さ（届く秒数は変えない）と、原点から離れて置かれた終わりの飾りの位置を length に合わせて伸び縮みさせる。
+        /// </summary>
+        private static void SpawnLineEffect(WeaponTypeDefinition type, Vector3 head, Vector3 direction, float length)
         {
-            // 上りの段でも段の上に出るよう、少し上から地面を探す。
-            Vector3 ground = GroundAt(point + Vector3.up * 1.5f, point.y);
-            if (type.PillarPrefab != null)
+            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up) * Quaternion.Euler(0f, -90f, 0f);
+            GameObject effect = OneShotEffect.Spawn(type.LineEffect, head, rotation);
+            if (effect == null) return;
+
+            float ratio = length / Mathf.Max(0.1f, type.LineEffectLength);
+            if (effect.TryGetComponent(out ParticleSystem root))
             {
-                GameObject pillar = Instantiate(type.PillarPrefab, ground, Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
-                if (pillar.TryGetComponent(out GroundSpike spike)) spike.Scale(type.PillarScale);
-                else pillar.transform.localScale *= type.PillarScale;
-                // 自分で消えない素材を入れられても残らないように。
-                Destroy(pillar, 5f);
+                ParticleSystem.MainModule main = root.main;
+                main.startSpeedMultiplier *= ratio;
             }
 
-            OneShotEffect.Spawn(type.PillarBurstEffect, ground, Quaternion.identity, type.PillarBurstEffectScale);
+            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
+            {
+                Transform t = particles.transform;
+                if (t != effect.transform && t.localPosition.x > 1f) t.localPosition = Vector3.Scale(t.localPosition, new Vector3(ratio, 1f, 1f));
+            }
+        }
 
+        /// <summary>point の真下の地面を中心に、範囲の中のまだこの列に当たっていない敵に当てる。</summary>
+        private void Pillar(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 point, HashSet<EnemyHealth> struck)
+        {
+            // 上りの段でも段の上で当たるよう、少し上から地面を探す。
+            Vector3 ground = GroundAt(point + Vector3.up * 1.5f, point.y);
             foreach ((EnemyHealth enemy, Vector3 hitPoint) in EnemiesInCircle(ground, type.LineRadius, type.LineHeight))
             {
                 if (!struck.Add(enemy)) continue;

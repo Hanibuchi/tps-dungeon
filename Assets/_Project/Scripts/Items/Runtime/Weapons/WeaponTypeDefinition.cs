@@ -199,7 +199,7 @@ namespace TpsDungeon.Items
         [SerializeField, Min(1), Tooltip("1 列に出す数（持続時間のエンチャントの補正前）。壁に当たったらそこで止める。")]
         private int linePillarCount = 8;
 
-        [SerializeField, Min(0f), Tooltip("隣り合う 1 つを出す遅れ（秒）。手前から順に出る。")]
+        [SerializeField, Min(0f), Tooltip("隣り合う 1 つを出す遅れ（秒）。手前から順に出る。lineEffect があるときは使わず、見た目が届く時刻に合わせる。")]
         private float lineInterval = 0.05f;
 
         [SerializeField, Min(0.1f), Tooltip("1 つが当たる範囲の半径（m）。1 列は同じ敵に 1 回だけ当たる。")]
@@ -214,17 +214,15 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("「多重」でもう一列出す遅れ。k 回目は本撃から k × この秒数あとに、同じ向きへ頭から出す。")]
         private float lineRepeatInterval = 0.45f;
 
-        [SerializeField, Tooltip("地面から出る 1 つの見た目（任意。根元が原点、+Y が上）。出しっぱなしにせず、自分で引っ込んで消える物にする。")]
-        private GameObject pillarPrefab;
+        [SerializeField, Tooltip("1 列の見た目（任意）。根の粒が原点から +X へ走り、通り道に結晶などを残す 1 回きりの素材（Crystals front attack を 1 本にしたもの）。" +
+            "列の頭に、列の向きへ +X を合わせて出し、根の粒の速さと終わりの飾りの位置を列の長さに合わせて伸び縮みさせる。")]
+        private GameObject lineEffect;
 
-        [SerializeField, Min(0.01f), Tooltip("pillarPrefab の大きさの倍率。")]
-        private float pillarScale = 1f;
+        [SerializeField, Min(0.1f), Tooltip("lineEffect の素材そのままの列の長さ（m）。")]
+        private float lineEffectLength = 7.8f;
 
-        [SerializeField, Tooltip("地面から出る瞬間に根元へ重ねる見た目（任意）。")]
-        private GameObject pillarBurstEffect;
-
-        [SerializeField, Min(0.01f)]
-        private float pillarBurstEffectScale = 0.5f;
+        [SerializeField, Min(0.01f), Tooltip("lineEffect が列の端まで届く秒数（根の粒の寿命）。当たりもこの速さで手前から順に出す。")]
+        private float lineEffectTravelTime = 0.32f;
 
         [Header("炎（火炎放射器。値は仮）")]
         [SerializeField, Min(0.1f), Tooltip("押し続けて炎を吐ける時間（秒、持続時間のエンチャントの補正前）。この時間を刻みの間隔で割った回数だけ刻んだら止まる。" +
@@ -380,10 +378,9 @@ namespace TpsDungeon.Items
         public float LineHeight => lineHeight;
         public float LineSpreadAngle => lineSpreadAngle;
         public float LineRepeatInterval => lineRepeatInterval;
-        public GameObject PillarPrefab => pillarPrefab;
-        public float PillarScale => pillarScale;
-        public GameObject PillarBurstEffect => pillarBurstEffect;
-        public float PillarBurstEffectScale => pillarBurstEffectScale;
+        public GameObject LineEffect => lineEffect;
+        public float LineEffectLength => lineEffectLength;
+        public float LineEffectTravelTime => lineEffectTravelTime;
         public float FlameDuration => rangedKind == RangedAttackKind.Flame ? flameDuration : 0f;
         public float FlameTickInterval => flameTickInterval;
         public float FlameRange => flameRange;
