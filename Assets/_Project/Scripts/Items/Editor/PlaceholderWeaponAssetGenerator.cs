@@ -12,7 +12,7 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）: Assets/_Project/Items/Weapons/
-    /// - ランクの色: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
+    /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     /// - 武器 13 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11 の 4 本）と、拾える物・手に持つ見た目のプレハブ
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円の材質（RangeRing）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
@@ -35,6 +35,7 @@ namespace TpsDungeon.Items.Editor
         public const string BowTypePath = WeaponsFolder + "/WeaponType_09_Bow.asset";
         public const string RainBowTypePath = WeaponsFolder + "/WeaponType_11_RainBow.asset";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
+        public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
         public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
         public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
         public const string FistsPath = WeaponsFolder + "/Weapon_Fists.asset";
@@ -80,6 +81,10 @@ namespace TpsDungeon.Items.Editor
         public const string RainSoundPath = ArmsSounds + "火炎魔法1.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
         public const string HammerSlamSoundPath = ArmsSounds + "打撃3.mp3";
+        // ユニークが床に落ちた音（捨てたときも）。
+        public const string UniqueDropSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/きらーん2.mp3";
+        // ユニークがまとう光の粒の絵（Hovl の丸い点。灰色を透明度として読む）。
+        private const string AuraPointTexturePath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Textures/Point1.png";
 
         private const string FreeSwords = "Assets/ThirdParty/3D Model/Blink/Weapons/FreeSwords/Prefabs/";
         private const string StylizedHammers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Hammers/_PrefabsHammers/";
@@ -132,6 +137,8 @@ namespace TpsDungeon.Items.Editor
             public Color Hilt;
             /// <summary>真ん中を原点に置く（弓。真ん中の握りを手に持つ）。偽なら下端（剣の柄の根元）を原点に。</summary>
             public bool CenterPivot;
+            /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
+            public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
         }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
@@ -142,7 +149,7 @@ namespace TpsDungeon.Items.Editor
             Gen.EnsureFolder(Gen.IconsFolder);
             Gen.EnsureFolder(Gen.PrefabsFolder);
 
-            WriteRankTable();
+            WriteRankTable(WriteAuraMaterial());
             EnchantmentRollSettings roll = WriteRollSettings();
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments = WriteEnchantments();
             Material ring = WriteRangeRingMaterial();
@@ -157,7 +164,7 @@ namespace TpsDungeon.Items.Editor
                 [RainBowTypePath] = WriteRainBowType(enchantments, roll, arrow, ring),
             };
 
-            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath]);
+            foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
 
             WriteFists(WriteUnarmedType());
 
@@ -238,6 +245,7 @@ namespace TpsDungeon.Items.Editor
                 RainBowTypePath, "Bow_Medium.prefab");
             yield return Bow("Weapon_SkyPiercerLongbow", "天穿の長弓", WeaponRank.A, 40f, "天へ放たれた矢は、幾重にも分かれて落ちてくる。",
                 RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+            // ユニークなので固定のエンチャントが付くが、何を付けるかはまだ決めていない（今は何も付かない）。
             yield return Bow("Weapon_EndlessDownpour", "終わらぬ驟雨", WeaponRank.Unique, 23f, "一度降り始めた矢の雨は、いつまでも止むことがない。",
                 RainBowTypePath, "Bow_Epic.prefab", 1.35f);
         }
@@ -255,7 +263,7 @@ namespace TpsDungeon.Items.Editor
 
         // ---- 共通のデータ ----------------------------------------------
 
-        private static WeaponRankTable WriteRankTable()
+        private static WeaponRankTable WriteRankTable(Material aura)
         {
             // 前は Items/Weapons に置いていた。GUID を保ったまま Resources へ移す。
             Gen.EnsureFolder(RankTablePath.Substring(0, RankTablePath.LastIndexOf('/')));
@@ -288,6 +296,14 @@ namespace TpsDungeon.Items.Editor
                 SerializedProperty entry = list.GetArrayElementAtIndex(i);
                 entry.FindPropertyRelative("rank").enumValueIndex = RankEnumIndex(entries[i].rank);
                 entry.FindPropertyRelative("color").colorValue = color;
+
+                // 光と落ちた音はユニークだけ。光の色はランクの色を少し明るくする。
+                bool unique = entries[i].rank == WeaponRank.Unique;
+                entry.FindPropertyRelative("auraParticles").objectReferenceValue = unique ? aura : null;
+                entry.FindPropertyRelative("auraColor").colorValue = unique ? Color.Lerp(color, new Color(1f, 0.75f, 0.3f), 0.5f) : Color.clear;
+                entry.FindPropertyRelative("auraLightIntensity").floatValue = unique ? 2f : 0f;
+                entry.FindPropertyRelative("dropSound").objectReferenceValue = unique ? LoadSound(UniqueDropSoundPath) : null;
+                entry.FindPropertyRelative("dropSoundVolume").floatValue = unique ? 0.9f : 0f;
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -771,6 +787,25 @@ namespace TpsDungeon.Items.Editor
             return material;
         }
 
+        /// <summary>
+        /// ランクの光の粒の材質。加算だと明るい床の上で白く飛んでランクの色が出ないので、半透明で重ねる。色は粒の頂点色で付く。
+        /// </summary>
+        private static Material WriteAuraMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(AuraMaterialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Sprites/Default")) { name = "RankAura" };
+                AssetDatabase.CreateAsset(material, AuraMaterialPath);
+            }
+
+            var point = AssetDatabase.LoadAssetAtPath<Texture2D>(AuraPointTexturePath);
+            if (point == null) Debug.LogWarning($"光の粒の絵が無い: {AuraPointTexturePath}");
+            material.mainTexture = point;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
         private static void WriteFists(WeaponTypeDefinition type)
         {
@@ -873,7 +908,8 @@ namespace TpsDungeon.Items.Editor
 
         // ---- 武器 --------------------------------------------------------
 
-        private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type)
+        private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type,
+            Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments)
         {
             var weapon = Gen.LoadOrCreate<WeaponDefinition>($"{WeaponsFolder}/{spec.Id}.asset");
 
@@ -906,6 +942,10 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("strength").floatValue = spec.Strength;
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = held;
+            SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
+            fixedList.arraySize = spec.FixedEnchantments.Length;
+            for (int i = 0; i < spec.FixedEnchantments.Length; i++)
+                fixedList.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[spec.FixedEnchantments[i]];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

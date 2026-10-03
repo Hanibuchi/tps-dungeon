@@ -34,12 +34,16 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 定義から新しい個体を作る。武器なら武器種の候補から、決まった確率でエンチャントを振る。
+        /// ユニークは振らず、定義に書いた固定のエンチャントを付ける（何本拾っても同じ）。
         /// </summary>
         public static ItemInstance Create(ItemDefinition definition, System.Random random)
         {
             if (definition == null) return null;
 
-            WeaponTypeDefinition type = (definition as WeaponDefinition)?.WeaponType;
+            var weapon = definition as WeaponDefinition;
+            if (weapon != null && weapon.HasFixedEnchantments) return new ItemInstance(definition, weapon.FixedEnchantments);
+
+            WeaponTypeDefinition type = weapon?.WeaponType;
             if (type == null || type.EnchantmentRoll == null) return new ItemInstance(definition);
 
             IReadOnlyList<EnchantmentDefinition> candidates = type.AllowedEnchantments;

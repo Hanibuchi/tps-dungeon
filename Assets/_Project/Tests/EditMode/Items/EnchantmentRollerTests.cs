@@ -109,6 +109,64 @@ namespace TpsDungeon.Items.Tests
             }
         }
 
+        [Test]
+        public void ユニークは振らずに固定のエンチャントが付く()
+        {
+            var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var duration = ScriptableObject.CreateInstance<EnchantmentDefinition>();
+            var multishot = ScriptableObject.CreateInstance<EnchantmentDefinition>();
+            try
+            {
+                SetEnchantment(duration, EnchantmentKind.Duration, 0.2f);
+                SetEnchantment(multishot, EnchantmentKind.Multishot, 1f);
+                SetWeapon(weapon, WeaponRank.Unique, duration, duration, multishot);
+
+                for (int seed = 0; seed < 20; seed++)
+                {
+                    ItemInstance instance = ItemInstance.Create(weapon, new System.Random(seed));
+                    Assert.AreEqual(2, instance.Enchantments.Count);
+                    Assert.AreSame(duration, instance.Enchantments[0].Definition);
+                    Assert.AreEqual(2, instance.Enchantments[0].Count);
+                    Assert.AreSame(multishot, instance.Enchantments[1].Definition);
+                    Assert.AreEqual(1, instance.Enchantments[1].Count);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+                Object.DestroyImmediate(duration);
+                Object.DestroyImmediate(multishot);
+            }
+        }
+
+        [Test]
+        public void ユニーク以外では固定のエンチャントを使わない()
+        {
+            var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var duration = ScriptableObject.CreateInstance<EnchantmentDefinition>();
+            try
+            {
+                SetEnchantment(duration, EnchantmentKind.Duration, 0.2f);
+                SetWeapon(weapon, WeaponRank.S, duration);
+
+                // 武器種が無いので振る候補も無く、何も付かない。
+                Assert.IsEmpty(ItemInstance.Create(weapon, new System.Random(6)).Enchantments);
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+                Object.DestroyImmediate(duration);
+            }
+        }
+
+        private static void SetWeapon(WeaponDefinition weapon, WeaponRank rank, params EnchantmentDefinition[] fixedEnchantments)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(WeaponDefinition).GetField("rank", flags).SetValue(weapon, rank);
+            typeof(WeaponDefinition).GetField("fixedEnchantments", flags)
+                .SetValue(weapon, new System.Collections.Generic.List<EnchantmentDefinition>(fixedEnchantments));
+        }
+
         /// <summary>テストのためだけに公開の口を増やさず、シリアライズされる private フィールドへ直接入れる。</summary>
         private static void SetEnchantment(EnchantmentDefinition definition, EnchantmentKind kind, float amount)
         {

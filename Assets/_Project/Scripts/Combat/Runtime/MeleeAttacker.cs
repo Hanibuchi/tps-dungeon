@@ -344,6 +344,7 @@ namespace TpsDungeon.Combat
             heldModel.name = weapon.HeldModel.name;
             heldModel.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
             foreach (Collider c in heldModel.GetComponentsInChildren<Collider>()) Destroy(c);
+            WeaponAura.Attach(heldModel, weapon.Rank);
         }
 
         // ---- 振る ----

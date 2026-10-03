@@ -8,6 +8,7 @@ namespace TpsDungeon.Items
     /// 武器 1 種類の定義（Notion の武器一覧 DB の 1 行）。名前・説明・絵・拾える物は ItemDefinition から引き継ぐ。
     /// 「強さ」の意味は武器種によって変わる（近接なら DPS）。
     /// 付いたエンチャントは 1 本ごとに違うので、ここではなく ItemInstance が持つ。
+    /// ただしユニークは振らず、どの 1 本にも <see cref="FixedEnchantments"/> がそのまま付く。
     /// </summary>
     [CreateAssetMenu(fileName = "Weapon", menuName = "TPS Dungeon/Weapons/Weapon")]
     public sealed class WeaponDefinition : ItemDefinition
@@ -22,10 +23,17 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("手に持ったときの見た目（当たり判定の無いモデル）。未設定なら持たない。")]
         private GameObject heldModel;
 
+        [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べると重ねがけになる。ユニーク以外では使わない。")]
+        private List<EnchantmentDefinition> fixedEnchantments = new List<EnchantmentDefinition>();
+
         public WeaponRank Rank => rank;
         public float Strength => strength;
         public WeaponTypeDefinition WeaponType => weaponType;
         public GameObject HeldModel => heldModel;
+        public IReadOnlyList<EnchantmentDefinition> FixedEnchantments => fixedEnchantments;
+
+        /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>
+        public bool HasFixedEnchantments => rank == WeaponRank.Unique;
 
         /// <summary>
         /// 近接武器の数値を出す。characterAttack は持ち主の基礎攻撃力。
