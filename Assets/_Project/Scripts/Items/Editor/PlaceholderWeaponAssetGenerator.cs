@@ -863,7 +863,7 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 火炎放射器（21）。押している間、杖の先から照準へ 6 m・広がり 14° の炎を最長 2.4 秒吐き、0.2 秒ごとにダメージ。止まったら 1.0 秒待つ。
+        /// 火炎放射器（21）。押している間、杖の先から照準へ 6 m・広がり 14° の炎を最長 2.4 秒吐き、0.2 秒ごとにダメージ。吐き切ったら 1.0 秒待つ（途中で離せば吐いた割合だけ）。
         /// 吐き続けて待つ 1 周（3.4 秒）で 強さ × 3.4 を 12 刻みに分けて与える（炎の中にずっと居ればおよそ 強さ の DPS）。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteFlamethrowerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,

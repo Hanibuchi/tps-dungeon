@@ -87,7 +87,7 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。杖（雷・連置・炎）もここ。")]
         private RangedAttackKind rangedKind;
 
-        [SerializeField, Min(0.05f), Tooltip("撃つ間隔（秒、速射の補正前）。1 発のダメージは 強さ × この秒数。炎は吐き終えてからの待ちで、吐ける時間と合わせた 1 周で 強さ × 1 周。")]
+        [SerializeField, Min(0.05f), Tooltip("撃つ間隔（秒、速射の補正前）。1 発のダメージは 強さ × この秒数。炎は吐き切ってからの待ちで、吐ける時間と合わせた 1 周で 強さ × 1 周。")]
         private float fireInterval = 0.8f;
 
         [SerializeField, Tooltip("矢を放つ位置。キャラの足元から見たローカル位置（m）。")]
@@ -226,7 +226,7 @@ namespace TpsDungeon.Items
 
         [Header("炎（火炎放射器。値は仮）")]
         [SerializeField, Min(0.1f), Tooltip("押し続けて炎を吐ける時間（秒、持続時間のエンチャントの補正前）。この時間を刻みの間隔で割った回数だけ刻んだら止まる。" +
-            "離せばそこで止まり、どちらでも止まってから撃つ間隔だけ待つ。")]
+            "離せばそこで止まり、止まってから 撃つ間隔 × 吐いた割合 だけ待つ（吐き切れば撃つ間隔まるごと）。")]
         private float flameDuration = 2.4f;
 
         [SerializeField, Min(0.05f), Tooltip("炎がダメージを与える間隔（秒、速射の補正前）。")]

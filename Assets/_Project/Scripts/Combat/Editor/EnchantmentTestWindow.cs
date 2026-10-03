@@ -348,7 +348,7 @@ namespace TpsDungeon.Combat.Editor
             else if (type.RangedKind == RangedAttackKind.Flame)
             {
                 text.AppendLine($"炎の 1 刻み: {stats.FlameTickDamage} × {stats.FlameTickCount} 回（{stats.FlameTickInterval:0.###} 秒ごと、最長 {stats.FlameDuration:0.##} 秒）"
-                                + $"　止まってから {stats.FireInterval:0.00} 秒待つ");
+                                + $"　吐き切ったら {stats.FireInterval:0.00} 秒待つ（途中で離せば吐いた割合だけ）");
                 text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。吐き続けて待つ 1 周の平均。持続時間の延び・数は含めない）");
                 text.AppendLine($"炎: 届く距離 {type.FlameRange * stats.ProjectileSpeedScale:0.#} m　広がり {type.FlameAngle * stats.SizeScale:0.#}°"
                                 + $" × {count} 筋（{type.FlameSpreadAngle:0.#}° ずつ扇状に）　ホーミング {(stats.Homing ? "あり" : "なし")}");

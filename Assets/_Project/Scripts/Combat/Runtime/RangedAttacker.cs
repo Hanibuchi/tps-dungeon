@@ -20,7 +20,7 @@ namespace TpsDungeon.Combat
     ///            当てた敵から近くのまだ当てていない敵へ次々と飛び移る。数で飛び移る回数が増え、多重で遅れてもう一度放つ。敵が居なければ照準の先へ空撃ち
     ///   連置   … 照準の水平の向きへ、足元の少し先から地面に沿って範囲に当たる結晶を手前から順に走らせる（1 列は同じ敵に 1 回）。壁で止まる。
     ///            数で扇状に列が増え、持続時間で列が伸び、多重で同じ向きへもう一列
-    ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔だけ待つ。
+    ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
     /// （持続弓は空へ向けて反らせる。杖は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
@@ -158,6 +158,7 @@ namespace TpsDungeon.Combat
         private bool burning;
         private RangedWeaponStats burnStats;
         private int ticksLeft;
+        private float burnElapsed;
         private float flameTickTimer;
         private float flameSoundTimer;
         private readonly List<FlameJet> jets = new List<FlameJet>();
@@ -192,8 +193,24 @@ namespace TpsDungeon.Combat
         /// <summary>今持っている遠距離武器の数値（持ち替えか撃った時点のもの）。持っていなければ null。</summary>
         public RangedWeaponStats Stats => stats;
 
-        /// <summary>次に撃てるまでの待ちの残りの割合（1 で待ち始め、0 で撃てる）。</summary>
-        public float CooldownFraction => cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
+        /// <summary>
+        /// 次に撃てるまでの待ちの残りの割合（1 で待ち始め、0 で撃てる）。
+        /// 炎を吐いている間は、吐ける量のうち使った割合（0 で吐き始め、1 で吐き切る）。吐き切ればそのまま 1 から待ちが減っていき、
+        /// 途中で離せば使った割合の所から減っていくので、ホットバーの暗幕が途切れずに伸びて縮む。
+        /// </summary>
+        public float CooldownFraction => burning ? FlameUsedFraction
+            : cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
+
+        /// <summary>今吐いている炎の、吐ける量のうち使った割合。吐いていなければ 0。</summary>
+        private float FlameUsedFraction
+        {
+            get
+            {
+                if (!burning || burnStats == null) return 0f;
+                float length = burnStats.FlameTickCount * burnStats.FlameTickInterval;
+                return length > 0f ? Mathf.Clamp01(burnElapsed / length) : 1f;
+            }
+        }
 
         /// <summary>狙いの線（プレイヤーならカメラの中心）。null なら体の前へ撃ち、持続弓の照準の円も出さない。</summary>
         public Ray? Aim { get; set; }
@@ -691,7 +708,7 @@ namespace TpsDungeon.Combat
 
         // ---- 炎（火炎放射器） ----
 
-        /// <summary>wants（押した・押している）の間、待ちが明けていれば吐き始め、吐き続ける。離すか時間が尽きたら止めて待たせる。</summary>
+        /// <summary>wants（押した・押している）の間、待ちが明けていれば吐き始め、吐き続ける。離すか時間が尽きたら止めて、吐いた割合だけ待たせる。</summary>
         private void UpdateFlame(float dt, bool wants)
         {
             WeaponTypeDefinition type = heldWeapon.WeaponType;
@@ -702,6 +719,7 @@ namespace TpsDungeon.Combat
             }
 
             // 刻みの頭に当て、刻みを使い切ってその刻みの間隔が過ぎたら止まる（吐く長さ ＝ 刻みの数 × 間隔）。
+            burnElapsed += dt;
             flameTickTimer -= dt;
             if (!wants || (ticksLeft <= 0 && flameTickTimer <= 0f))
             {
@@ -729,6 +747,7 @@ namespace TpsDungeon.Combat
             stats = burnStats = ComputeStats();
             burning = true;
             ticksLeft = burnStats.FlameTickCount;
+            burnElapsed = 0f;
             flameTickTimer = 0f;
             flameSoundTimer = 0f;
 
@@ -757,11 +776,15 @@ namespace TpsDungeon.Combat
             UpdateJets(type, target, 0f);
         }
 
-        /// <summary>炎を止める。cooldown なら撃つ間隔だけ待たせる（持ち替えや無効化のときは待たせない）。</summary>
+        /// <summary>
+        /// 炎を止める。cooldown なら 撃つ間隔 × 吐いた割合 だけ待たせる（吐き切れば撃つ間隔まるごと。持ち替えや無効化のときは待たせない）。
+        /// 待ちの長さは撃つ間隔のまま残りだけ縮めるので、待ちの割合は吐いた割合から始まる。
+        /// </summary>
         private void StopFlame(bool cooldown)
         {
             if (!burning) return;
 
+            float used = FlameUsedFraction;
             burning = false;
             SetCasting(false);
             foreach (FlameJet jet in jets)
@@ -774,7 +797,11 @@ namespace TpsDungeon.Combat
             }
 
             jets.Clear();
-            if (cooldown && burnStats != null) cooldownRemaining = cooldownDuration = burnStats.FireInterval;
+            if (cooldown && burnStats != null)
+            {
+                cooldownDuration = burnStats.FireInterval;
+                cooldownRemaining = burnStats.FireInterval * used;
+            }
         }
 
         /// <summary>
