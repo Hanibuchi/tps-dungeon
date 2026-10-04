@@ -245,6 +245,12 @@ namespace TpsDungeon.Items.Editor
         private static readonly Color UniqueGlow = new Color(3.2f, 1.5f, 0.3f, 1f);
         private const float UniquePlainGlow = 0.35f;
 
+        /// <summary>
+        /// 光らせるマテリアルの GI の扱い。URP はこれに Realtime か Baked が入っていないと、マテリアルを検証し直したとき
+        /// （テスト実行などの再読み込み）に _EMISSION を外して光らなくする。素材パックと同じ Baked にする。
+        /// </summary>
+        private const MaterialGlobalIlluminationFlags EmissiveFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
+
         /// <summary>ユニークは同じ武器種の最上位と同じ形を、光らせて少し大きくする。</summary>
         private const float UniqueScale = 1.1f;
 
@@ -1199,6 +1205,7 @@ namespace TpsDungeon.Items.Editor
             {
                 glow.EnableKeyword("_EMISSION");
                 glow.SetColor("_EmissionColor", new Color(0.4f, 1.2f, 0.35f, 1f));
+                glow.globalIlluminationFlags = EmissiveFlags;
                 EditorUtility.SetDirty(glow);
             }
 
@@ -2150,7 +2157,7 @@ namespace TpsDungeon.Items.Editor
                             Color baseColor = glow.HasProperty("_BaseColor") ? glow.GetColor("_BaseColor") : Color.white;
                             glow.SetColor("_EmissionColor", emissionMap != null ? spec.Glow.Value : baseColor * UniquePlainGlow);
                             glow.EnableKeyword("_EMISSION");
-                            glow.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                            glow.globalIlluminationFlags = EmissiveFlags;
                         }
 
                         EditorUtility.SetDirty(glow);
@@ -2176,7 +2183,7 @@ namespace TpsDungeon.Items.Editor
                 orb.EnableKeyword("_EMISSION");
                 // 強すぎると白く飛んで色で見分けられないので、地の色と同じくらいに抑える。
                 orb.SetColor("_EmissionColor", color * 0.6f);
-                orb.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                orb.globalIlluminationFlags = EmissiveFlags;
                 EditorUtility.SetDirty(orb);
             }
 
