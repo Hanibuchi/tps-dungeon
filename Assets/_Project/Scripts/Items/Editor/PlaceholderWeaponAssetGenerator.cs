@@ -12,17 +12,19 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
-    ///   19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）: Assets/_Project/Items/Weapons/
+    ///   17（治癒持続）・19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）・30（召喚）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 36 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、27 の 4 本、
-    ///   28 の 3 本と、一覧に無い 28 の石ころ）と、拾える物・手に持つ見た目のプレハブ
+    /// - 武器 41 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02・04・05 の 1 本ずつ、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、27 の 4 本、
+    ///   28 の 3 本と、一覧に無い 28 の石ころ、17 の 1 本、30 の 4 本）と、拾える物・手に持つ見た目のプレハブ
+    /// - 召喚で呼び出す置物（Prefabs/Items/Summons/。木の人形はプリミティブ、石像・古代兵・英霊は Blink の人型を Kevin の構えの姿勢で焼いたメッシュ）と、
+    ///   治癒持続で投げる種（Projectile_HealSeed）
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
     /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
     /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖と盾・LowPoly の弓と杖と盾）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
-    /// お守りは GanzSe の装身具（耳飾り・ペンダント・首飾り）。
+    /// お守りは GanzSe の装身具（耳飾り・ペンダント・首飾り）。召喚は Daniel Riches の Books Essentials の本。
     /// 杖の手に持つ見た目には、杖の先に "Tip"（WeaponTypeDefinition.StaffTipName）を置く。雷・棘・炎はそこから出る。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
@@ -45,6 +47,11 @@ namespace TpsDungeon.Items.Editor
         public const string CharmTypePath = WeaponsFolder + "/WeaponType_26_Charm.asset";
         public const string ShieldTypePath = WeaponsFolder + "/WeaponType_27_Shield.asset";
         public const string ThrowTypePath = WeaponsFolder + "/WeaponType_28_Throw.asset";
+        public const string HealFieldTypePath = WeaponsFolder + "/WeaponType_17_HealField.asset";
+        public const string SummonTypePath = WeaponsFolder + "/WeaponType_30_Summon.asset";
+        public const string SummonsFolder = Gen.PrefabsFolder + "/Summons";
+        public const string HealSeedPrefabPath = Gen.PrefabsFolder + "/Projectile_HealSeed.prefab";
+        private const string SummonHumanMeshPath = SummonsFolder + "/Mesh_SummonHuman.asset";
         public const string CrystalLinePrefabPath = Gen.PrefabsFolder + "/Effect_CrystalLine.prefab";
         public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
@@ -81,6 +88,10 @@ namespace TpsDungeon.Items.Editor
         private const float CrystalsFrontAttackTravelTime = 0.32f;
         // 炎が当たった所の火花。
         public const string FireHitEffectPath = HovlPrefabs + "Sparks/Sparks explode red.prefab";
+        /// <summary>召喚の置物が出るときの魔法陣と、消えるときの煙。治癒の場の見た目。</summary>
+        public const string SummonCircleEffectPath = HovlPrefabs + "Magic circles/Magic circle.prefab";
+        public const string SmokePuffEffectPath = HovlPrefabs + "Smoke effects/Smoke puff.prefab";
+        public const string HealingCircleEffectPath = HovlPrefabs + "Magic circles/Healing circle.prefab";
         // 炎の粒の絵（煙の柔らかい塊を、色を時間で変えて炎に見せる）と、火の粉の点。
         private const string FlameMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Smoke26.mat";
         private const string EmberMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Point.mat";
@@ -107,6 +118,10 @@ namespace TpsDungeon.Items.Editor
         public const string IceSoundPath = ArmsSounds + "氷魔法2.mp3";
         public const string FlameSoundPath = ArmsSounds + "火炎魔法1.mp3";
         public const string ThrowSoundPath = ArmsSounds + "ナイフを投げる.mp3";
+        /// <summary>治癒持続で種を投げる音・場を張る音、召喚で置物を呼ぶ音。</summary>
+        public const string SeedThrowSoundPath = ArmsSounds + "手裏剣を投げる.mp3";
+        public const string HealSoundPath = ArmsSounds + "回復魔法1.mp3";
+        public const string SummonSoundPath = ArmsSounds + "パワーアップ.mp3";
         // 投げた物が壁や床に当たった音。
         public const string ThrownStickSoundPath = ArmsSounds + "雪玉をぶつける.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
@@ -124,6 +139,10 @@ namespace TpsDungeon.Items.Editor
         private const string Accessories = "Assets/ThirdParty/3D Model/URP GanzSe Free Character Accessories/Prefabs/";
         private const string StylizedDaggers = "Assets/ThirdParty/3D Model/Blink/Weapons/Stylized/Daggers/_PrefabsDaggers/";
         private const string PandazolePrefabs = "Assets/ThirdParty/3D Model/Pandazole_Ultimate_Pack/Pandazole Survival Crafting Pack/Prefabs/";
+        private const string BooksPrefabs = "Assets/ThirdParty/3D Model/DanielRiches/BooksEssentials/Prefabs/";
+        private const string StylizedHumanPath = "Assets/ThirdParty/3D Model/Blink/Character/Stylized/Humans/Prefabs_Humans/HumanMale_Character_Free.prefab";
+        /// <summary>石像・古代兵・英霊の置物の姿勢（Kevin の片手武器の構えの 1 フレーム）。</summary>
+        private const string SummonPoseClipPath = "Assets/ThirdParty/Animation/Kevin Iglesias/Human Animations/Animations/Male/Combat/1H/HumanM@CombatIdle1H01.fbx";
         // 矢は長さ 1.08 m で、素材の -Z に矢じり、+Z に矢羽根がある。
         private const string ArrowModelPath = PandazolePrefabs + "Arrow_01.prefab";
 
@@ -145,6 +164,14 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>お守りの見た目の大きさ（m、いちばん長い辺）。</summary>
         private const float CharmLength = 0.2f;
+
+        /// <summary>召喚の本の見た目の大きさ（m、いちばん長い辺）と、片手杖の長さ・握る所（m）。</summary>
+        private const float SummonerLength = 0.3f;
+        private const float WandLength = 0.75f;
+        private const float WandGrip = 0.12f;
+
+        /// <summary>人型の置物の背の高さ（m）。主人公（約 1.8 m）と並べて見劣りしないよう、少し大きくする。</summary>
+        private const float SummonHumanHeight = 1.95f;
 
         /// <summary>拾える物の判定の幅と高さ（m）。奥行きは武器の長さに合わせる。</summary>
         private static readonly Vector2 PickupVolume = new Vector2(0.35f, 0.3f);
@@ -198,6 +225,8 @@ namespace TpsDungeon.Items.Editor
             public bool ThrownBounces;
             /// <summary>素材の色を使わず、この色の無地で塗る（Pandazole の石はパレットの白いところを使っていて雪玉に見えるため）。</summary>
             public Color? Tint;
+            /// <summary>召喚で呼び出す置物のプレハブ。召喚でなければ null。</summary>
+            public GameObject SummonModel;
         }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
@@ -227,8 +256,11 @@ namespace TpsDungeon.Items.Editor
                 [CharmTypePath] = WriteCharmType(enchantments, roll),
                 [ShieldTypePath] = WriteShieldType(enchantments, roll),
                 [ThrowTypePath] = WriteThrowType(enchantments, roll, ring),
+                [HealFieldTypePath] = WriteHealFieldType(enchantments, roll, ring, WriteHealSeedPrefab(ring)),
+                [SummonTypePath] = WriteSummonType(enchantments, roll, ring),
             };
 
+            summonModels = WriteSummonModels();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
 
             WriteFists(WriteUnarmedType());
@@ -380,6 +412,42 @@ namespace TpsDungeon.Items.Editor
                 LowPolyWeapons + "Axe1H_Medium.prefab", 0.55f, 0.08f, 900f);
             yield return Thrown("Weapon_ThunderJavelin", "雷鳴の投槍", WeaponRank.S, 58f, "投げ放つと同時に、空気が裂けて鳴る。",
                 LowPolyWeapons + "Spear1H_Epic.prefab", 1.4f, 0.6f, 0f);
+
+            // 17 治癒持続（片手杖）。強さは毎秒の回復量。
+            yield return new WeaponSpec
+            {
+                Id = "Weapon_WorldTreeBranchStaff", Name = "世界樹の枝杖", Rank = WeaponRank.B, Strength = 30f,
+                Description = "落ちた場所に根を張り、周囲を緑の加護で満たす。",
+                TypePath = HealFieldTypePath, ModelPath = LowPolyWeapons + "Wand_Medium.prefab", Length = WandLength, Grip = WandGrip, StaffTip = true,
+                Blade = new Color32(120, 160, 80, 255), Hilt = new Color32(100, 70, 40, 255),
+            };
+
+            // 30 召喚。強さはおとりの体力の元（× 武器種の係数）。持つ見た目と置物は仮。
+            // ユニークの固定エンチャント（数 ×2・持続時間 ×1）は仮。「軍勢が」に合わせて 3 体呼ぶ。
+            SummonModels summons = summonModels;
+            // 見た目はどれも Books Essentials の閉じた本。ランクが上がるほど角金具や宝石の付いた装丁にする（木偶は飾りの無い茶、石像は青、古代兵は緑、英霊は赤）。
+            yield return Summoner("Weapon_WoodenDollWhistle", "木偶の呼び笛", WeaponRank.C, 22f, "吹くと、木でできた人形が地面から立ち上がる。",
+                "Book.prefab", summons.WoodenDoll);
+            yield return Summoner("Weapon_StoneStatueTalisman", "石像の護符", WeaponRank.A, 41f, "指定した場所に石の守り手が現れ、敵を引きつける。",
+                "Book3_2.prefab", summons.StoneStatue);
+            yield return Summoner("Weapon_AncientSoldierHorn", "古代兵の角笛", WeaponRank.S, 60f, "音に応え、朽ちぬ鎧をまとった兵が地から起き上がる。",
+                "Book4_3.prefab", summons.AncientSoldier);
+            yield return Summoner("Weapon_HeroicSpiritHorn", "英霊の号笛", WeaponRank.Unique, 60f, "呼び声に応え、いにしえの軍勢が列をなして現れる。",
+                "Book1_4.prefab", summons.HeroicSpirit,
+                EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.Duration);
+        }
+
+        /// <summary>召喚の武器（本）。model は Books Essentials のプレハブ名。真ん中を原点に置く（手のひらに本の真ん中が来る）。</summary>
+        private static WeaponSpec Summoner(string id, string name, WeaponRank rank, float strength, string description, string model,
+            GameObject summonModel, params EnchantmentKind[] fixedEnchantments)
+        {
+            return new WeaponSpec
+            {
+                Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
+                TypePath = SummonTypePath, ModelPath = BooksPrefabs + model, Length = SummonerLength, CenterPivot = true,
+                Blade = new Color32(150, 120, 80, 255), Hilt = new Color32(90, 70, 50, 255),
+                SummonModel = summonModel, FixedEnchantments = fixedEnchantments,
+            };
         }
 
         private static WeaponSpec Thrown(string id, string name, WeaponRank rank, float strength, string description, string modelPath,
@@ -939,6 +1007,383 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
+        // ---- 武器種 17（治癒持続）・30（召喚） ----------------------------------------------
+
+        /// <summary>
+        /// 治癒持続（17、片手杖）。右手に杖を持ち、腕を振り切る瞬間（押して 0.22 秒）に狙った地面へ種を放物線で投げ、
+        /// 落ちた所に半径 2 m の治癒の場を 5 秒張る（0.5 秒ごと 10 刻み、最初の刻みは張った瞬間）。値は仮。
+        /// 強さは毎秒の回復量で、撃つ間隔 4 秒なので、場にずっと居れば 1 つの場から 強さ × 4 回復する。
+        /// 数で付近に場が増え、多重で 1.5 秒遅れて同じ所にもう一度張り、サイズで広がる。片手杖なので盾が効く。
+        /// </summary>
+        private static WeaponTypeDefinition WriteHealFieldType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring, GameObject seed)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HealFieldTypePath);
+            SerializedObject serialized = BeginType(type, "17", "治癒持続", 7, true, new[]
+            {
+                EnchantmentKind.HealUp, EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.Size,
+                EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振る）
+
+            WriteSupportCommon(serialized, RangedAttackKind.HealField, 4f, ring);
+            serialized.FindProperty("aimMaxDistance").floatValue = 15f;
+            serialized.FindProperty("healRadius").floatValue = 2f;
+            serialized.FindProperty("healHeight").floatValue = 2f;
+            serialized.FindProperty("healDuration").floatValue = 5f;
+            serialized.FindProperty("healTickInterval").floatValue = 0.5f;
+            serialized.FindProperty("healFlightTime").floatValue = 0.55f;
+            serialized.FindProperty("healArcHeight").floatValue = 2f;
+            serialized.FindProperty("healScatterMin").floatValue = 2f;
+            serialized.FindProperty("healScatterMax").floatValue = 4f;
+            serialized.FindProperty("healRepeatInterval").floatValue = 1.5f;
+            serialized.FindProperty("healSeedPrefab").objectReferenceValue = seed;
+            // Healing circle は半径 4 m の魔法陣（大きさ 8 の板）と、同じ半径から立ちのぼる光の粒。場の半径に合わせて水平に縮める。
+            serialized.FindProperty("healEffect").objectReferenceValue = LoadEffect(HealingCircleEffectPath);
+            serialized.FindProperty("healEffectRadius").floatValue = 4f;
+            serialized.FindProperty("healRingColor").colorValue = new Color(0.45f, 1f, 0.5f, 0.85f);
+            serialized.FindProperty("aimRingColor").colorValue = new Color(0.75f, 1f, 0.75f, 0.6f);
+            serialized.FindProperty("healSound").objectReferenceValue = LoadSound(HealSoundPath);
+            serialized.FindProperty("healSoundVolume").floatValue = 0.8f;
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SeedThrowSoundPath);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 召喚（30）。腕を振り切る瞬間（押して 0.22 秒）に、狙った地面へ置物を呼び出す。置物は攻撃せず、敵を引きつける的（DecoyTarget）として
+        /// 12 秒立っている（おとりの体力 ＝ 強さ × 10。敵の攻撃はまだ無い）。数で狙った所から 1.2〜2.5 m のランダムな所に増え（互いに 1 m 以上離す）、持続時間で長く居る。
+        /// 呼び直すと前の分は消える。撃つ間隔（呼び直しの待ち）8 秒。値は仮。手に持つ本は右手。
+        /// 出るときの魔法陣（Magic circle）は自分では消えない素材なので、SummonedDecoy が少し見せてから薄くして消す。消えるときの煙は小さめ。
+        /// </summary>
+        private static WeaponTypeDefinition WriteSummonType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(SummonTypePath);
+            SerializedObject serialized = BeginType(type, "30", "召喚", 7, false, new[]
+            {
+                EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振って呼ぶ所を指す）
+
+            WriteSupportCommon(serialized, RangedAttackKind.Summon, 8f, ring);
+            serialized.FindProperty("aimMaxDistance").floatValue = 15f;
+            serialized.FindProperty("summonDuration").floatValue = 12f;
+            serialized.FindProperty("summonScatterMin").floatValue = 1.2f;
+            serialized.FindProperty("summonScatterMax").floatValue = 2.5f;
+            serialized.FindProperty("summonMinGap").floatValue = 1f;
+            serialized.FindProperty("summonHealthPerStrength").floatValue = 10f;
+            serialized.FindProperty("summonEffect").objectReferenceValue = LoadEffect(SummonCircleEffectPath);
+            serialized.FindProperty("summonEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("dismissEffect").objectReferenceValue = LoadEffect(SmokePuffEffectPath);
+            serialized.FindProperty("dismissEffectScale").floatValue = 0.4f;
+            serialized.FindProperty("aimRingColor").colorValue = new Color(0.75f, 0.85f, 1f, 0.6f);
+            serialized.FindProperty("swingSound").objectReferenceValue = LoadSound(SummonSoundPath);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 治癒持続・召喚に共通の値。遠距離の欄を使うが敵には当てないので、矢・命中・弓の音は外し、基礎攻撃力も足さない。
+        /// 右手で持ち、投擲と同じく腕を振り切る瞬間に放つ。照準へは体の前を向ける。
+        /// </summary>
+        private static void WriteSupportCommon(SerializedObject serialized, RangedAttackKind kind, float fireInterval, Material ring)
+        {
+            WriteRangedCommon(serialized, kind, fireInterval, null, ring);
+            serialized.FindProperty("characterAttackWeight").floatValue = 0f;
+            serialized.FindProperty("baseCritChance").floatValue = 0f;
+            serialized.FindProperty("heldInLeftHand").boolValue = false;
+            serialized.FindProperty("castDelay").floatValue = 0.22f;
+            // 右手の骨から見た握る所（投擲・杖と同じ）。調整済みなら触らない。
+            SeedHeldGrip(serialized, new Vector3(-0.09f, 0f, -0.02f), Vector3.zero);
+            serialized.FindProperty("hitEffect").objectReferenceValue = null;
+            serialized.FindProperty("hitSound").objectReferenceValue = null;
+            serialized.FindProperty("drawSound").objectReferenceValue = null;
+            serialized.FindProperty("stickSound").objectReferenceValue = null;
+            serialized.FindProperty("rainSound").objectReferenceValue = null;
+            serialized.FindProperty("soundVolume").floatValue = 0.8f;
+        }
+
+        /// <summary>
+        /// 治癒持続で投げる種。光る緑の小さな球に、薄い緑の尾を引かせる。当たり判定は持たない（LobbedSeed が見た目として運ぶ）。
+        /// </summary>
+        private static GameObject WriteHealSeedPrefab(Material ring)
+        {
+            var root = new GameObject("Projectile_HealSeed");
+            Material glow = Gen.Material("Placeholder_HealSeed", new Color(0.55f, 1f, 0.45f, 1f));
+            if (glow.HasProperty("_EmissionColor"))
+            {
+                glow.EnableKeyword("_EMISSION");
+                glow.SetColor("_EmissionColor", new Color(0.4f, 1.2f, 0.35f, 1f));
+                EditorUtility.SetDirty(glow);
+            }
+
+            Gen.Part(root, PrimitiveType.Sphere, glow, Vector3.zero, Vector3.one * 0.14f);
+            var trail = root.AddComponent<TrailRenderer>();
+            trail.sharedMaterial = ring;
+            trail.time = 0.25f;
+            trail.widthMultiplier = 0.09f;
+            trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+            trail.startColor = new Color(0.6f, 1f, 0.5f, 0.8f);
+            trail.endColor = new Color(0.6f, 1f, 0.5f, 0f);
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            trail.receiveShadows = false;
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, HealSeedPrefabPath);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        // ---- 召喚の置物 ----------------------------------------------
+
+        // Generate が作って Weapons() に渡す。LoadAll では作らない（読むだけなので空のまま）。
+        private static SummonModels summonModels;
+
+        private struct SummonModels
+        {
+            public GameObject WoodenDoll;
+            public GameObject StoneStatue;
+            public GameObject AncientSoldier;
+            public GameObject HeroicSpirit;
+        }
+
+        /// <summary>
+        /// 召喚で呼び出す置物を作る。どれも足元が原点、+Z が前で、当たり判定も Animator も持たない。
+        /// 木偶はプリミティブの木の人形。石像・古代兵・英霊は Blink の人型を Kevin の構えの姿勢で焼いた 1 つのメッシュを、灰の石・くすんだ青銅・半透明の青い光（URP の Unlit）で塗り分ける。
+        /// 人型が無い（ThirdParty が無い）ときは木の人形の形で代える。
+        /// </summary>
+        private static SummonModels WriteSummonModels()
+        {
+            Gen.EnsureFolder(SummonsFolder);
+            Mesh human = WriteSummonHumanMesh();
+
+            Material stone = Gen.Material("Summon_Stone", new Color32(150, 147, 140, 255));
+            SetSurface(stone, 0f, 0.15f);
+            Material bronze = Gen.Material("Summon_Bronze", new Color32(150, 112, 62, 255));
+            SetSurface(bronze, 0.85f, 0.45f);
+            Material ghost = WriteGhostMaterial();
+
+            return new SummonModels
+            {
+                WoodenDoll = SavePrefab(BuildWoodenDoll(), "Summon_WoodenDoll"),
+                StoneStatue = SavePrefab(BuildHumanStatue("Summon_StoneStatue", human, stone), "Summon_StoneStatue"),
+                AncientSoldier = SavePrefab(BuildHumanStatue("Summon_AncientSoldier", human, bronze), "Summon_AncientSoldier"),
+                HeroicSpirit = SavePrefab(AddSpiritLight(BuildHumanStatue("Summon_HeroicSpirit", human, ghost)), "Summon_HeroicSpirit"),
+            };
+        }
+
+        private static GameObject SavePrefab(GameObject root, string name)
+        {
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{SummonsFolder}/{name}.prefab");
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static void SetSurface(Material material, float metallic, float smoothness)
+        {
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", metallic);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", smoothness);
+            EditorUtility.SetDirty(material);
+        }
+
+        /// <summary>英霊の半透明の青い光。照明を受けない URP の Unlit を、透明（アルファで重ねる）にして使う。</summary>
+        private static Material WriteGhostMaterial()
+        {
+            string path = SummonsFolder + "/Summon_Ghost.mat";
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "Summon_Ghost" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else if (shader != null) material.shader = shader;
+
+            var color = new Color(0.55f, 0.8f, 1f, 0.45f);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            // Inspector で「Surface Type: Transparent / Blend: Alpha」を選んだときと同じ値とキーワード。
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>木の人形（訓練用の木偶）。台・柱・胴・腕木・頭をプリミティブで組む。高さ約 1.8 m。</summary>
+        private static GameObject BuildWoodenDoll()
+        {
+            var root = new GameObject("Summon_WoodenDoll");
+            Material wood = Gen.Material("Summon_Wood", new Color32(156, 108, 62, 255));
+            Material dark = Gen.Material("Summon_WoodDark", new Color32(108, 72, 40, 255));
+            Gen.Part(root, PrimitiveType.Cylinder, dark, new Vector3(0f, 0.04f, 0f), new Vector3(0.6f, 0.04f, 0.6f));
+            Gen.Part(root, PrimitiveType.Cylinder, dark, new Vector3(0f, 0.5f, 0f), new Vector3(0.12f, 0.5f, 0.12f));
+            Gen.Part(root, PrimitiveType.Cylinder, wood, new Vector3(0f, 1.15f, 0f), new Vector3(0.42f, 0.32f, 0.36f));
+            Gen.Part(root, PrimitiveType.Cube, dark, new Vector3(0f, 1.32f, 0f), new Vector3(1.0f, 0.08f, 0.08f));
+            Gen.Part(root, PrimitiveType.Sphere, wood, new Vector3(0f, 1.66f, 0f), new Vector3(0.3f, 0.32f, 0.3f));
+            return root;
+        }
+
+        /// <summary>焼いた人型のメッシュに material を塗った置物。メッシュが無ければ木の人形の形を material で塗る。</summary>
+        private static GameObject BuildHumanStatue(string name, Mesh mesh, Material material)
+        {
+            if (mesh == null)
+            {
+                GameObject doll = BuildWoodenDoll();
+                doll.name = name;
+                foreach (Renderer r in doll.GetComponentsInChildren<Renderer>()) r.sharedMaterial = material;
+                return doll;
+            }
+
+            var root = new GameObject(name);
+            var body = new GameObject("Body");
+            body.transform.SetParent(root.transform, false);
+            body.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = body.AddComponent<MeshRenderer>();
+            var materials = new Material[mesh.subMeshCount];
+            for (int i = 0; i < materials.Length; i++) materials[i] = material;
+            renderer.sharedMaterials = materials;
+            return root;
+        }
+
+        /// <summary>英霊に、胸の高さの青い明かりを足す。</summary>
+        private static GameObject AddSpiritLight(GameObject root)
+        {
+            var go = new GameObject("Glow");
+            go.transform.SetParent(root.transform, false);
+            go.transform.localPosition = new Vector3(0f, 1.2f, 0.3f);
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.5f, 0.75f, 1f);
+            light.range = 3f;
+            light.intensity = 1.5f;
+            light.shadows = LightShadows.None;
+            foreach (Renderer r in root.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return root;
+        }
+
+        /// <summary>
+        /// Blink の人型を Kevin の片手武器の構え（CombatIdle1H01 の頭のフレーム）の姿勢にして、肌・服・髪などの皮付きメッシュを全部焼いて 1 つに合わせ、
+        /// 足元が原点・背の高さが <see cref="SummonHumanHeight"/> のメッシュとして保存する。人型か姿勢が無ければ null（姿勢だけ無ければ元の姿勢で焼く）。
+        /// </summary>
+        private static Mesh WriteSummonHumanMesh()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(StylizedHumanPath);
+            if (source == null)
+            {
+                Debug.LogWarning($"人型が無いので、置物は木の人形の形で代える: {StylizedHumanPath}");
+                return null;
+            }
+
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            try
+            {
+                instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                AnimationClip pose = LoadClip(SummonPoseClipPath);
+                var animator = instance.GetComponentInChildren<Animator>();
+                if (pose == null || animator == null || animator.avatar == null)
+                {
+                    Debug.LogWarning("置物の姿勢を付けられなかったので、元の姿勢のまま焼く。");
+                    return BakeSkinnedMeshes(instance);
+                }
+
+                AnimationMode.StartAnimationMode();
+                try
+                {
+                    AnimationMode.BeginSampling();
+                    AnimationMode.SampleAnimationClip(animator.gameObject, pose, 0f);
+                    AnimationMode.EndSampling();
+                    return BakeSkinnedMeshes(instance);
+                }
+                finally
+                {
+                    AnimationMode.StopAnimationMode();
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        private static AnimationClip LoadClip(string path)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__", StringComparison.Ordinal)) return clip;
+            Debug.LogWarning($"置物の姿勢のモーションが無い: {path}");
+            return null;
+        }
+
+        /// <summary>root の下の皮付きメッシュと普通のメッシュを、今の姿勢のまま root の座標系で 1 つに合わせて保存する。</summary>
+        private static Mesh BakeSkinnedMeshes(GameObject root)
+        {
+            var parts = new List<CombineInstance>();
+            var temporary = new List<Mesh>();
+            Matrix4x4 toRoot = root.transform.worldToLocalMatrix;
+            foreach (SkinnedMeshRenderer skinned in root.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                if (!skinned.enabled || skinned.sharedMesh == null) continue;
+
+                var baked = new Mesh();
+                skinned.BakeMesh(baked, true);
+                temporary.Add(baked);
+                // BakeMesh(useScale) は大きさまで焼くので、位置と向きだけを掛ける。
+                Matrix4x4 placement = toRoot * Matrix4x4.TRS(skinned.transform.position, skinned.transform.rotation, Vector3.one);
+                for (int i = 0; i < baked.subMeshCount; i++) parts.Add(new CombineInstance { mesh = baked, subMeshIndex = i, transform = placement });
+            }
+
+            foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh == null) continue;
+                Matrix4x4 placement = toRoot * filter.transform.localToWorldMatrix;
+                for (int i = 0; i < filter.sharedMesh.subMeshCount; i++)
+                    parts.Add(new CombineInstance { mesh = filter.sharedMesh, subMeshIndex = i, transform = placement });
+            }
+
+            if (parts.Count == 0)
+            {
+                foreach (Mesh m in temporary) Object.DestroyImmediate(m);
+                return null;
+            }
+
+            var combined = new Mesh { name = "Mesh_SummonHuman", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            combined.CombineMeshes(parts.ToArray(), true, true);
+            foreach (Mesh m in temporary) Object.DestroyImmediate(m);
+
+            // 足元を原点に、背の高さを揃える。
+            combined.RecalculateBounds();
+            Bounds bounds = combined.bounds;
+            float scale = bounds.size.y > 1e-4f ? SummonHumanHeight / bounds.size.y : 1f;
+            Vector3[] vertices = combined.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 v = vertices[i];
+                vertices[i] = new Vector3((v.x - bounds.center.x) * scale, (v.y - bounds.min.y) * scale, (v.z - bounds.center.z) * scale);
+            }
+
+            combined.vertices = vertices;
+            // 頂点色は塗り分けでは使わないので捨てる。
+            combined.colors = null;
+            combined.RecalculateBounds();
+
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(SummonHumanMeshPath);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(combined, existing);
+                existing.name = "Mesh_SummonHuman";
+                Object.DestroyImmediate(combined);
+                EditorUtility.SetDirty(existing);
+                return existing;
+            }
+
+            AssetDatabase.CreateAsset(combined, SummonHumanMeshPath);
+            return combined;
+        }
+
         // ---- 武器種 19 / 20 / 21（両手杖） ----------------------------------------------
 
         /// <summary>
@@ -1486,6 +1931,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("heldModel").objectReferenceValue = held;
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
             serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
+            serialized.FindProperty("summonModel").objectReferenceValue = spec.SummonModel;
             SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
             fixedList.arraySize = spec.FixedEnchantments.Length;
             for (int i = 0; i < spec.FixedEnchantments.Length; i++)

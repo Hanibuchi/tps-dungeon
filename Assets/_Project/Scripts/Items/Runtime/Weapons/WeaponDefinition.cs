@@ -15,7 +15,7 @@ namespace TpsDungeon.Items
     {
         [SerializeField] private WeaponRank rank = WeaponRank.E;
 
-        [SerializeField, Min(0f), Tooltip("強さ。近接・遠距離の武器種なら DPS。")]
+        [SerializeField, Min(0f), Tooltip("強さ。近接・遠距離の武器種なら DPS、治癒持続なら毎秒の回復量、召喚ならおとりの体力の元、盾なら防御力。")]
         private float strength;
 
         [SerializeField] private WeaponTypeDefinition weaponType;
@@ -29,6 +29,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("投擲の武器種で投げたとき、壁や床に刺さらずに跳ね返って転がる（石）。投擲でなければ使わない。")]
         private bool thrownBounces;
 
+        [SerializeField, Tooltip("召喚の武器種で呼び出す置物（当たり判定の無い見た目）。召喚でなければ使わない。")]
+        private GameObject summonModel;
+
         [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べると重ねがけになる。ユニーク以外では使わない。")]
         private List<EnchantmentDefinition> fixedEnchantments = new List<EnchantmentDefinition>();
 
@@ -38,6 +41,7 @@ namespace TpsDungeon.Items
         public GameObject HeldModel => heldModel;
         public float ThrownSpinRate => thrownSpinRate;
         public bool ThrownBounces => thrownBounces;
+        public GameObject SummonModel => summonModel;
         public IReadOnlyList<EnchantmentDefinition> FixedEnchantments => fixedEnchantments;
 
         /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>
@@ -77,7 +81,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
-        /// 遠距離武器（弓・持続弓・杖）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
+        /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
         /// </summary>
         public RangedWeaponStats ComputeRangedStats(EnchantmentTotals enchantments, float characterAttack,
             Func<float, float> critChanceModifier = null, Func<float, float> critMultiplierModifier = null)
@@ -92,6 +96,9 @@ namespace TpsDungeon.Items
                 RainTickInterval = weaponType != null ? weaponType.RainTickInterval : 0f,
                 FlameDuration = weaponType != null ? weaponType.FlameDuration : 0f,
                 FlameTickInterval = weaponType != null ? weaponType.FlameTickInterval : 0f,
+                HealDuration = weaponType != null ? weaponType.HealDuration : 0f,
+                HealTickInterval = weaponType != null ? weaponType.HealTickInterval : 0f,
+                SummonDuration = weaponType != null ? weaponType.SummonDuration : 0f,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

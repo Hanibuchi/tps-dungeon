@@ -8,7 +8,7 @@ namespace TpsDungeon.Items
     /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
     /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
-    /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎・投擲）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
+    /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎・投擲・召喚・治癒持続）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
     /// お守り・盾の武器種は passiveGear を持ち、振らずに持っているだけで効く（PlayerGear）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponType", menuName = "TPS Dungeon/Weapons/Weapon Type")]
@@ -87,7 +87,7 @@ namespace TpsDungeon.Items
         [SerializeField, Range(0f, 1f), Tooltip("追撃の着弾で揺らす強さ（本撃に対する割合）。")]
         private float followUpShakeRatio = 0.4f;
 
-        [Header("遠距離（弓・持続弓。値は仮）")]
+        [Header("遠距離（弓・持続弓・杖・投擲・召喚・治癒持続。値は仮）")]
         [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。杖（雷・連置・炎）もここ。")]
         private RangedAttackKind rangedKind;
 
@@ -161,8 +161,8 @@ namespace TpsDungeon.Items
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
 
-        [Header("杖（雷・連置）と投擲。値は仮")]
-        [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間（投擲は腕を振り切る瞬間）に合わせる。狙いは放つ瞬間のもの。炎には効かない。投擲は速射でモーションを速めた分だけ縮む。")]
+        [Header("杖（雷・連置）・投擲・召喚・治癒持続。値は仮")]
+        [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間（投擲・召喚・治癒持続は腕を振り切る瞬間）に合わせる。狙いは放つ瞬間のもの。炎には効かない。腕を振る武器種は速射でモーションを速めた分だけ縮む。")]
         private float castDelay = 0.12f;
 
         [Header("連鎖する雷（電撃。値は仮）")]
@@ -262,6 +262,80 @@ namespace TpsDungeon.Items
 
         [SerializeField, Min(0.05f), Tooltip("吐いている間、放つ音（swingSound）をこの秒数ごとに鳴らし直す。")]
         private float flameSoundInterval = 0.6f;
+
+        [Header("召喚（値は仮）")]
+        [SerializeField, Min(0.1f), Tooltip("呼び出した置物が居る時間（秒、持続時間のエンチャントの補正前）。呼び直せば前の分はその場で消える。")]
+        private float summonDuration = 12f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた置物を置く、狙った所からの距離の下限（m）。向きと距離はランダム。")]
+        private float summonScatterMin = 1.2f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた置物を置く、狙った所からの距離の上限（m）。")]
+        private float summonScatterMax = 2.5f;
+
+        [SerializeField, Min(0f), Tooltip("置物どうしと持ち主から、この距離（m）より近くに置かない（ランダムに引き直す）。")]
+        private float summonMinGap = 1f;
+
+        [SerializeField, Min(0f), Tooltip("おとりの体力 ＝ 武器の強さ × この値。敵の攻撃はまだ無いので、値を持たせるところまで。")]
+        private float summonHealthPerStrength = 10f;
+
+        [SerializeField, Tooltip("置物が出るときに足元へ出す見た目（任意）。")]
+        private GameObject summonEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("summonEffect の大きさの倍率。")]
+        private float summonEffectScale = 1f;
+
+        [SerializeField, Tooltip("置物が消えるときに出す見た目（任意）。")]
+        private GameObject dismissEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("dismissEffect の大きさの倍率。")]
+        private float dismissEffectScale = 1f;
+
+        [Header("治癒の場（治癒持続。値は仮）")]
+        [SerializeField, Min(0.1f), Tooltip("治癒の場の半径（m、サイズのエンチャントの補正前）。")]
+        private float healRadius = 2f;
+
+        [SerializeField, Min(0.1f), Tooltip("この高さ（m）までの上下にいる味方を回復する。")]
+        private float healHeight = 2f;
+
+        [SerializeField, Min(0f), Tooltip("治癒の場の続く時間（秒、持続時間のエンチャントの補正前）。")]
+        private float healDuration = 5f;
+
+        [SerializeField, Min(0.05f), Tooltip("治癒の場が回復する間隔（秒）。")]
+        private float healTickInterval = 0.5f;
+
+        [SerializeField, Min(0.05f), Tooltip("投げた種が狙った地面に落ちるまでの秒数（弾速のエンチャントは付かない）。")]
+        private float healFlightTime = 0.55f;
+
+        [SerializeField, Min(0f), Tooltip("投げた種が描く弧のいちばん高い所（m、投げた所と落ちる所を結ぶ線から）。")]
+        private float healArcHeight = 2f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた場を置く、狙った所からの距離の下限（m、サイズで伸びる）。向きと距離はランダム。")]
+        private float healScatterMin = 2f;
+
+        [SerializeField, Min(0f), Tooltip("「数」で増えた場を置く、狙った所からの距離の上限（m、サイズで伸びる）。")]
+        private float healScatterMax = 4f;
+
+        [SerializeField, Min(0f), Tooltip("「多重」で同じ所にもう一度張る遅れ。k 回目は本撃から k × この秒数あとに張る。")]
+        private float healRepeatInterval = 1.5f;
+
+        [SerializeField, Tooltip("投げる種の見た目（任意）。当たり判定は無い。")]
+        private GameObject healSeedPrefab;
+
+        [SerializeField, Tooltip("治癒の場の見た目（任意）。場の中心に出し、水平だけ半径に合わせて縮め、場の間だけ続ける。")]
+        private GameObject healEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("healEffect の素材そのままの範囲の半径（m）。")]
+        private float healEffectRadius = 4f;
+
+        [SerializeField, Tooltip("治癒の場の円の色。")]
+        private Color healRingColor = new Color(0.45f, 1f, 0.5f, 0.85f);
+
+        [SerializeField, Tooltip("場を張った瞬間と、味方を回復した刻みに鳴らす音。")]
+        private AudioClip healSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("治癒の音の大きさ（武器種の音量に対して）。刻みごとの音はこの 0.4 倍。")]
+        private float healSoundVolume = 0.8f;
 
         [Header("遠距離の効果音（未設定なら鳴らさない。放つ音は swingSound、敵に当たった音は hitSound）")]
         [SerializeField, Tooltip("弓を引き絞る音。弓のモーションが引き絞り（Bow Draw）に入るたびに鳴らす（持ち替えたときと、撃って引き直すとき）。")]
@@ -401,6 +475,43 @@ namespace TpsDungeon.Items
         public float FlameEffectLength => flameEffectLength;
         public float FlameSoundInterval => flameSoundInterval;
 
+        public float SummonDuration => rangedKind == RangedAttackKind.Summon ? summonDuration : 0f;
+        public float SummonScatterMin => summonScatterMin;
+        public float SummonScatterMax => summonScatterMax;
+        public float SummonMinGap => summonMinGap;
+        public float SummonHealthPerStrength => summonHealthPerStrength;
+        public GameObject SummonEffect => summonEffect;
+        public float SummonEffectScale => summonEffectScale;
+        public GameObject DismissEffect => dismissEffect;
+        public float DismissEffectScale => dismissEffectScale;
+        public float HealRadius => healRadius;
+        public float HealHeight => healHeight;
+        public float HealDuration => rangedKind == RangedAttackKind.HealField ? healDuration : 0f;
+        public float HealTickInterval => healTickInterval;
+        public float HealFlightTime => healFlightTime;
+        public float HealArcHeight => healArcHeight;
+        public float HealScatterMin => healScatterMin;
+        public float HealScatterMax => healScatterMax;
+        public float HealRepeatInterval => healRepeatInterval;
+        public GameObject HealSeedPrefab => healSeedPrefab;
+        public GameObject HealEffect => healEffect;
+        public float HealEffectRadius => healEffectRadius;
+        public Color HealRingColor => healRingColor;
+        public AudioClip HealSound => healSound;
+        public float HealSoundVolume => healSoundVolume;
+
+        /// <summary>召喚か。狙った地面に置物（おとり）を呼び出す。</summary>
+        public bool IsSummon => rangedKind == RangedAttackKind.Summon;
+
+        /// <summary>治癒持続か。狙った地面へ種を投げ、落ちた所に治癒の場を張る。</summary>
+        public bool IsHealField => rangedKind == RangedAttackKind.HealField;
+
+        /// <summary>狙う先が照準の線の当たった所ではなく、その真下の地面か（持続弓・召喚・治癒持続）。地面に範囲の円を出す。</summary>
+        public bool AimsAtGround => rangedKind == RangedAttackKind.Rain || IsSummon || IsHealField;
+
+        /// <summary>撃つとき腕を前へ振るモーション（Kevin の右手の突き）を流すか（投擲・召喚・治癒持続）。速射でモーションも速める。</summary>
+        public bool UsesThrowMotion => IsThrow || IsSummon || IsHealField;
+
         /// <summary>杖（雷・連置・炎）か。弓と違って、腕ではなく体の前を狙いへ向け、杖の先（手の武器の Tip）から放つ。</summary>
         public bool IsStaff => rangedKind == RangedAttackKind.Chain || rangedKind == RangedAttackKind.Line || rangedKind == RangedAttackKind.Flame;
 
@@ -409,9 +520,9 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 狙うとき、腕ではなく体の前を狙いへ向けるか（背骨も曲げない）。杖は構えで腕の向きが変わり、投擲は腕を振るので、
-        /// 弓のように腕を狙いへ向けると体がぶれる。
+        /// 弓のように腕を狙いへ向けると体がぶれる。召喚・治癒持続も腕を振るので同じ。
         /// </summary>
-        public bool FacesBodyToAim => IsStaff || IsThrow;
+        public bool FacesBodyToAim => IsStaff || UsesThrowMotion;
 
         /// <summary>雷が最初の敵から飛び移る回数。extraProjectiles は「数」の合計の切り捨て（RangedWeaponStats.ExtraProjectiles）。</summary>
         public int ChainJumpsFor(int extraProjectiles) => Mathf.Max(0, chainJumps + Mathf.Max(0, extraProjectiles) * chainJumpsPerCount);

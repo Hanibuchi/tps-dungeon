@@ -259,6 +259,13 @@ namespace TpsDungeon.Combat.Editor
                 return;
             }
 
+            if (type.IsSummon || type.IsHealField)
+            {
+                RangedWeaponStats support = weapon.ComputeRangedStats(totals, characterAttack, critChance, critMultiplier);
+                EditorGUILayout.HelpBox(SupportPreviewText(weapon, support), MessageType.None);
+                return;
+            }
+
             if (type.IsRanged)
             {
                 RangedWeaponStats ranged = weapon.ComputeRangedStats(totals, characterAttack, critChance, critMultiplier);
@@ -333,6 +340,33 @@ namespace TpsDungeon.Combat.Editor
                 }
             }
 
+            return text.ToString().TrimEnd();
+        }
+
+        /// <summary>召喚・治癒持続（敵を傷つけない武器種）の値。</summary>
+        private static string SupportPreviewText(WeaponDefinition weapon, RangedWeaponStats stats)
+        {
+            WeaponTypeDefinition type = weapon.WeaponType;
+            var text = new StringBuilder();
+            int volleys = stats.MultishotCount + 1;
+            if (type.IsSummon)
+            {
+                text.AppendLine($"置物: {stats.SummonCount} 体（狙った所に 1 体、残りは {type.SummonScatterMin:0.#}〜{type.SummonScatterMax:0.#} m 離れたランダムな所に、互いに {type.SummonMinGap:0.#} m 以上離して）"
+                                + $"　居る時間 {stats.SummonDuration:0.#} 秒");
+                text.AppendLine($"おとりの体力: 1 体 {ItemInstance.SummonHealth(weapon)}（強さ × {type.SummonHealthPerStrength:0.#}。敵の攻撃はまだ無い）");
+                text.AppendLine($"呼び直しの待ち: {stats.FireInterval:0.00} 秒（呼び直すと前の分は消える）");
+            }
+            else
+            {
+                text.AppendLine($"治癒の 1 刻み: {stats.HealTickAmount} × {stats.HealTickCount} 回（{type.HealTickInterval:0.##} 秒ごと）"
+                                + $"＝ずっと居れば {stats.HealPerField}　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"場: 半径 {type.HealRadius * stats.SizeScale:0.##} m を {stats.ExtraProjectiles + 1} か所"
+                                + $"（狙った所に 1 つ、残りは {type.HealScatterMin * stats.SizeScale:0.#}〜{type.HealScatterMax * stats.SizeScale:0.#} m 離れたランダムな所）"
+                                + $" × {volleys} 回（{type.HealRepeatInterval:0.##} 秒ずつ遅れて同じ所に）");
+                text.AppendLine($"続く時間 ×{stats.DurationScale:0.##}");
+            }
+
+            text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}");
             return text.ToString().TrimEnd();
         }
 

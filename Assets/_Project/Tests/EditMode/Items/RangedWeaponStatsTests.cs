@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace TpsDungeon.Items.Tests
 {
-    /// <summary>遠距離武器（弓・持続弓・炎の杖）の数値（DPS からの 1 発の逆算、雨と炎の刻み、エンチャント）を確かめる。</summary>
+    /// <summary>遠距離武器（弓・持続弓・炎の杖・治癒持続・召喚）の数値（DPS からの 1 発の逆算、雨と炎と治癒の刻み、置物の居る時間、エンチャント）を確かめる。</summary>
     public sealed class RangedWeaponStatsTests
     {
         private static RangedWeaponStats Bow(float strength, EnchantmentTotals enchantments = null, float characterAttack = 0f)
@@ -48,6 +48,33 @@ namespace TpsDungeon.Items.Tests
                 Enchantments = enchantments,
                 BaseCritChance = 0f,
                 BaseCritMultiplier = 1.5f,
+            });
+        }
+
+        // 治癒持続の仮の値: 撃つ間隔 4 秒、場は 5 秒を 0.5 秒ごと（10 刻み）。基礎攻撃力は足さない。
+        private static RangedWeaponStats Heal(float strength, EnchantmentTotals enchantments = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttack = 50f,
+                CharacterAttackWeight = 0f,
+                FireInterval = 4f,
+                HealDuration = 5f,
+                HealTickInterval = 0.5f,
+                Enchantments = enchantments,
+            });
+        }
+
+        // 召喚の仮の値: 呼び直しの待ち 8 秒、置物は 12 秒居る。
+        private static RangedWeaponStats Summon(EnchantmentTotals enchantments = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = 40f,
+                FireInterval = 8f,
+                SummonDuration = 12f,
+                Enchantments = enchantments,
             });
         }
 
@@ -227,6 +254,66 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(0, stats.FlameTickCount);
             Assert.AreEqual(0, stats.FlameTickDamage);
             Assert.AreEqual(0f, stats.FlameDuration);
+        }
+
+        [Test]
+        public void 治癒の場はずっと居れば強さに撃つ間隔を掛けた分を刻みで回復する()
+        {
+            RangedWeaponStats stats = Heal(30f);
+
+            Assert.AreEqual(10, stats.HealTickCount);
+            Assert.AreEqual(12, stats.HealTickAmount);
+            Assert.AreEqual(120, stats.HealPerField);
+            Assert.AreEqual(0f, stats.AverageDps, "敵を傷つけないので DPS は 0");
+        }
+
+        [Test]
+        public void 回復量増加は1刻みを増やし_ダメージ増加は効かない()
+        {
+            Assert.AreEqual(15, Heal(30f, With(EnchantmentKind.HealUp, 0.25f)).HealTickAmount);
+            Assert.AreEqual(12, Heal(30f, With(EnchantmentKind.DamageUp, 0.5f)).HealTickAmount);
+        }
+
+        [Test]
+        public void 持続時間は治癒の場の刻みを増やして1刻みは変えない()
+        {
+            RangedWeaponStats stats = Heal(30f, With(EnchantmentKind.Duration, 0.2f));
+
+            Assert.AreEqual(12, stats.HealTickCount);
+            Assert.AreEqual(12, stats.HealTickAmount);
+        }
+
+        [Test]
+        public void 速射は撃つ間隔だけ縮めて治癒の1刻みは変えない()
+        {
+            RangedWeaponStats stats = Heal(30f, With(EnchantmentKind.RapidFire, 0.25f));
+
+            Assert.AreEqual(3.2f, stats.FireInterval, 1e-5f);
+            Assert.AreEqual(12, stats.HealTickAmount);
+        }
+
+        [Test]
+        public void 治癒の場を張らない武器種では治癒の刻みは0()
+        {
+            Assert.AreEqual(0, Bow(100f).HealTickCount);
+            Assert.AreEqual(0, Bow(100f).HealTickAmount);
+        }
+
+        [Test]
+        public void 召喚は持続時間で長く居て_数で体数が増える()
+        {
+            Assert.AreEqual(12f, Summon().SummonDuration, 1e-5f);
+            Assert.AreEqual(1, Summon().SummonCount);
+            Assert.AreEqual(15f, Summon(With(EnchantmentKind.Duration, 0.25f)).SummonDuration, 1e-5f);
+            Assert.AreEqual(3, Summon(With(EnchantmentKind.ProjectileCount, 1f, 2)).SummonCount);
+            Assert.AreEqual(0f, Summon().AverageDps);
+        }
+
+        [Test]
+        public void 召喚しない武器種では居る時間は0()
+        {
+            Assert.AreEqual(0f, Bow(100f).SummonDuration);
+            Assert.IsFalse(Bow(100f).IsSupport);
         }
     }
 }
