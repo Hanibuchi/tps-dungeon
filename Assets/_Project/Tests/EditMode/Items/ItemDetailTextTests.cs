@@ -89,5 +89,41 @@ namespace TpsDungeon.Items.Tests
                 Object.DestroyImmediate(charmType);
             }
         }
+
+        [Test]
+        public void 治癒持続は回復量を_召喚はおとりの体力を出して効き方を添える()
+        {
+            var heal = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var summon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var healType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var summonType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            try
+            {
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(healType, RangedAttackKind.HealField);
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(summonType, RangedAttackKind.Summon);
+                typeof(WeaponTypeDefinition).GetField("summonHealthPerStrength", Private).SetValue(summonType, 10f);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(heal, 30f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(heal, healType);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(summon, 22f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(summon, summonType);
+
+                string healText = new ItemInstance(heal).DetailText();
+                Assert.AreEqual("回復量 30/秒", healText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", healText);
+                StringAssert.Contains("治癒の場を張る", healText);
+
+                string summonText = new ItemInstance(summon).DetailText();
+                Assert.AreEqual("おとりの体力 220", summonText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", summonText);
+                StringAssert.Contains("呼び直すと前の分は消える", summonText);
+            }
+            finally
+            {
+                Object.DestroyImmediate(heal);
+                Object.DestroyImmediate(summon);
+                Object.DestroyImmediate(healType);
+                Object.DestroyImmediate(summonType);
+            }
+        }
     }
 }

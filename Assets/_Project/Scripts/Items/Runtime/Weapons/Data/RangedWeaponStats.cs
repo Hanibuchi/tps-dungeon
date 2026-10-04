@@ -31,6 +31,15 @@ namespace TpsDungeon.Items
         /// <summary>炎がダメージを与える間隔（秒、速射の補正前）。</summary>
         public float FlameTickInterval;
 
+        /// <summary>治癒の場の続く時間（秒、持続時間の補正前）。治癒の場を張らない武器種では 0。</summary>
+        public float HealDuration;
+
+        /// <summary>治癒の場が回復する間隔（秒）。</summary>
+        public float HealTickInterval;
+
+        /// <summary>召喚した置物が居る時間（秒、持続時間の補正前）。召喚しない武器種では 0。</summary>
+        public float SummonDuration;
+
         public EnchantmentTotals Enchantments;
 
         /// <summary>補正前のクリティカル率（0〜1）とクリティカル倍率。</summary>
@@ -56,18 +65,25 @@ namespace TpsDungeon.Items
     /// 炎（火炎放射器）は、吐き続けられる時間と、吐き終えてからの待ち（撃つ間隔）を合わせた 1 周で 強さ × 1 周 になるよう、
     /// 補正前の刻みの数で割って毎刻み与える（炎の中にずっと居た 1 体が受ける DPS がおよそ強さになる）。
     /// 速射は刻みの間隔と待ちの両方を縮め、持続時間は吐ける時間を延ばして刻みを増やす。
+    ///
+    /// 治癒の場（治癒持続）は「強さ」を毎秒の回復量と読み、雨と同じく、場にずっと居た 1 人が回復する合計が
+    /// 強さ × 撃つ間隔 × (1 ＋ 回復量増加) になるよう、補正前の刻みの数で割って毎刻み回復する。持続時間は刻みを増やす。クリティカルは無い。
+    ///
+    /// 召喚は攻撃しないので、ダメージの値は使わない。置物が居る時間（持続時間で延びる）と、数・速射だけを使う。
     /// </summary>
     public sealed class RangedWeaponStats
     {
         private readonly double rawShot;
         private readonly int baseRainTicks;
         private readonly double rawFlameTick;
+        private readonly double rawHealTick;
 
-        private RangedWeaponStats(double rawShot, int baseRainTicks, double rawFlameTick)
+        private RangedWeaponStats(double rawShot, int baseRainTicks, double rawFlameTick, double rawHealTick)
         {
             this.rawShot = rawShot;
             this.baseRainTicks = baseRainTicks;
             this.rawFlameTick = rawFlameTick;
+            this.rawHealTick = rawHealTick;
         }
 
         /// <summary>攻撃速度の倍率（1 ＋ 速射）。</summary>
@@ -112,10 +128,10 @@ namespace TpsDungeon.Items
         /// <summary>矢の速さの倍率（1 ＋ 弾速）。雨は降り始めるまでの時間がこの分縮み、炎は届く距離がこの分伸びる。</summary>
         public float ProjectileSpeedScale { get; private set; } = 1f;
 
-        /// <summary>範囲の大きさの倍率（1 ＋ サイズ）。雨の半径・爆発の半径・炎の太さに掛かる。</summary>
+        /// <summary>範囲の大きさの倍率（1 ＋ サイズ）。雨の半径・爆発の半径・炎の太さ・治癒の場の半径に掛かる。</summary>
         public float SizeScale { get; private set; } = 1f;
 
-        /// <summary>続く時間の倍率（1 ＋ 持続時間）。雨の長さ・炎を吐ける時間・連置の列の長さに掛かる。</summary>
+        /// <summary>続く時間の倍率（1 ＋ 持続時間）。雨の長さ・炎を吐ける時間・連置の列の長さ・治癒の場の長さ・置物の居る時間に掛かる。</summary>
         public float DurationScale { get; private set; } = 1f;
 
         /// <summary>雨がダメージを与える回数（持続時間の補正後）。雨を降らせない武器種では 0。</summary>
@@ -136,6 +152,24 @@ namespace TpsDungeon.Items
         /// <summary>炎の 1 刻みのダメージ（クリティカル前）。四捨五入、最低 1。炎を吐かない武器種では 0。</summary>
         public int FlameTickDamage => rawFlameTick > 0 ? Math.Max(1, RoundToInt(rawFlameTick)) : 0;
 
+        /// <summary>治癒の場が回復する回数（持続時間の補正後）。治癒の場を張らない武器種では 0。</summary>
+        public int HealTickCount { get; private set; }
+
+        /// <summary>治癒の場の 1 刻みの回復量。四捨五入、最低 1。治癒の場を張らない武器種では 0。</summary>
+        public int HealTickAmount => rawHealTick > 0 ? Math.Max(1, RoundToInt(rawHealTick)) : 0;
+
+        /// <summary>場にずっと居た 1 人が 1 つの場から回復する合計（1 刻み × 刻みの数）。表示用。</summary>
+        public int HealPerField => HealTickAmount * HealTickCount;
+
+        /// <summary>召喚した置物が居る時間（秒、持続時間の補正後）。召喚しない武器種では 0。</summary>
+        public float SummonDuration { get; private set; }
+
+        /// <summary>1 回で呼び出す置物の数（本体 ＋ 数）。</summary>
+        public int SummonCount => 1 + ExtraProjectiles;
+
+        /// <summary>敵を傷つけない武器種（治癒持続・召喚）か。DPS は 0 と数える。</summary>
+        public bool IsSupport => rawHealTick > 0 || SummonDuration > 0f;
+
         /// <summary>
         /// クリティカル込みの平均 DPS（1 体に 1 本ずつ当たるとして。数・多重・爆発は含めない）。表示用。
         /// 炎は吐き続けて待つ 1 周の平均（持続時間の延びは含めない）。
@@ -144,6 +178,7 @@ namespace TpsDungeon.Items
         {
             get
             {
+                if (IsSupport) return 0f;
                 if (FlameTickCount > 0)
                 {
                     float burn = FlameDuration / DurationScale;
@@ -200,8 +235,17 @@ namespace TpsDungeon.Items
                 flameTicks = TickCount(flameDuration, flameInterval);
             }
 
+            // 治癒の場は 強さ × 撃つ間隔 × (1 ＋ 回復量増加) を補正前の刻みで割る。
+            double healTick = 0;
+            int baseHealTicks = TickCount(inputs.HealDuration, inputs.HealTickInterval);
+            if (baseHealTicks > 0)
+            {
+                float healUp = Math.Max(0f, 1f + enchant.Amount(EnchantmentKind.HealUp));
+                healTick = (double)source * baseInterval * healUp / baseHealTicks;
+            }
+
             float sizeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size));
-            return new RangedWeaponStats(shot, baseTicks, flameTick)
+            return new RangedWeaponStats(shot, baseTicks, flameTick, healTick)
             {
                 AttackSpeed = speed,
                 FireInterval = baseInterval / speed,
@@ -223,6 +267,8 @@ namespace TpsDungeon.Items
                 FlameDuration = flameDuration,
                 FlameTickInterval = flameInterval,
                 FlameTickCount = flameTicks,
+                HealTickCount = baseHealTicks > 0 ? TickCount(inputs.HealDuration * durationScale, inputs.HealTickInterval) : 0,
+                SummonDuration = Math.Max(0f, inputs.SummonDuration) * durationScale,
             };
         }
 

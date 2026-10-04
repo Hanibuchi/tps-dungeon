@@ -82,7 +82,7 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
-        /// 盾は攻撃力の代わりに防御力を、お守りは強さを出さない。お守り・盾は効き方を一行添える。
+        /// 盾は攻撃力の代わりに防御力を、治癒持続は回復量を、召喚はおとりの体力を出し、お守りは強さを出さない。お守り・盾・召喚・治癒持続は効き方を一行添える。
         /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
         /// </summary>
         public string DetailText()
@@ -96,6 +96,8 @@ namespace TpsDungeon.Items
             text.Append("ランク ").Append(rank);
             WeaponTypeDefinition type = weapon.WeaponType;
             if (type != null && type.IsShield) text.Append($"\n防御力 {weapon.Strength:0.#}");
+            else if (type != null && type.IsHealField) text.Append($"\n回復量 {weapon.Strength:0.#}/秒");
+            else if (type != null && type.IsSummon) text.Append($"\nおとりの体力 {SummonHealth(weapon)}");
             else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {weapon.Strength:0.#}");
 
             foreach (EnchantmentStack stack in enchantments)
@@ -110,10 +112,19 @@ namespace TpsDungeon.Items
             return text.ToString();
         }
 
-        /// <summary>お守り・盾の効き方の一行。それ以外は空。</summary>
+        /// <summary>召喚した置物 1 体の体力（強さ × 武器種の係数、四捨五入、最低 1）。</summary>
+        public static int SummonHealth(WeaponDefinition weapon)
+        {
+            if (weapon == null || weapon.WeaponType == null) return 1;
+            return Math.Max(1, (int)Math.Round(weapon.Strength * weapon.WeaponType.SummonHealthPerStrength, MidpointRounding.AwayFromZero));
+        }
+
+        /// <summary>お守り・盾・召喚・治癒持続の効き方の一行。それ以外は空。</summary>
         private static string GearUsage(WeaponTypeDefinition type)
         {
             if (type == null) return string.Empty;
+            if (type.IsSummon) return "狙った地面に、敵を引きつける置物を呼び出す。呼び直すと前の分は消える。";
+            if (type.IsHealField) return "狙った地面に種を投げ、落ちた所に治癒の場を張る。";
             if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
             if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";
             return string.Empty;

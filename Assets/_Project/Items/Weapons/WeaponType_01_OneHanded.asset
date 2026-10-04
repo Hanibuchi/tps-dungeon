@@ -162,6 +162,30 @@ MonoBehaviour:
   flameEffect: {fileID: 0}
   flameEffectLength: 6
   flameSoundInterval: 0.6
+  summonDuration: 12
+  summonScatterMin: 1.2
+  summonScatterMax: 2.5
+  summonMinGap: 1
+  summonHealthPerStrength: 10
+  summonEffect: {fileID: 0}
+  summonEffectScale: 1
+  dismissEffect: {fileID: 0}
+  dismissEffectScale: 1
+  healRadius: 2
+  healHeight: 2
+  healDuration: 5
+  healTickInterval: 0.5
+  healFlightTime: 0.55
+  healArcHeight: 2
+  healScatterMin: 2
+  healScatterMax: 4
+  healRepeatInterval: 1.5
+  healSeedPrefab: {fileID: 0}
+  healEffect: {fileID: 0}
+  healEffectRadius: 2
+  healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
+  healSound: {fileID: 0}
+  healSoundVolume: 0.8
   drawSound: {fileID: 0}
   stickSound: {fileID: 0}
   stickSoundVolume: 0.6

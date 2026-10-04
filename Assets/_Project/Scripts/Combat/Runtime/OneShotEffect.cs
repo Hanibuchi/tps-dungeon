@@ -20,6 +20,19 @@ namespace TpsDungeon.Combat
         }
 
         /// <summary>
+        /// hold 秒見せてから fade 秒かけて薄くして消す（<see cref="EffectFadeOut"/>）。寿命の終わりにぱっと消える素材（魔法陣など）を、途中で切り上げるときに使う。
+        /// </summary>
+        public static GameObject SpawnFading(GameObject prefab, Vector3 position, Quaternion rotation, float scale, float hold, float fade)
+        {
+            if (prefab == null) return null;
+
+            GameObject instance = Object.Instantiate(prefab, position, rotation);
+            Prepare(instance, scale, false);
+            EffectFadeOut.Attach(instance, hold, fade);
+            return instance;
+        }
+
+        /// <summary>
         /// parent の子として local の位置・向きに出し、parent と一緒に動かす（走りながら出す斬撃など）。
         /// 出た粒も置き去りにならないよう、パーティクルは parent の座標系で動かす。
         /// </summary>

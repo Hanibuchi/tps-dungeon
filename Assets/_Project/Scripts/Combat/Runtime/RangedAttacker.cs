@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
+using TpsDungeon.Player;
 using TpsDungeon.Progression;
 using UnityEngine;
 
@@ -22,10 +23,14 @@ namespace TpsDungeon.Combat
     ///            数で扇状に列が増え、持続時間で列が伸び、多重で同じ向きへもう一列
     ///   投擲   … 弓と同じく照準の先へまっすぐ飛ばす。飛ぶのは手に持った武器の見た目そのもので、武器ごとの速さで縦に回る。
     ///            腕を振り切る瞬間に放ち、放してから次が投げられるまで手を空にする
+    ///   召喚   … 腕を振り切る瞬間に、狙いの線が当たった地面へ置物（おとり）を呼び出す。数で狙った所の周りのランダムな所に増え、持続時間で長く居る。
+    ///            呼び直すと前の分は消える（持ち替えても残り、置いてから別の武器で戦える）。攻撃はしない
+    ///   治癒   … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
+    ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
-    /// （持続弓は空へ向けて反らせる。杖と投擲は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
+    /// （持続弓は空へ向けて反らせる。杖・投擲・召喚・治癒は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
     /// 杖は手の武器の見た目の子の "Tip"（杖の先）から放つ。無ければ持つ手から。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
     /// 手の見た目と Animator の WeaponType は MeleeAttacker が持ち替えで替えるので、ここは撃つことだけを受け持つ。
@@ -71,6 +76,15 @@ namespace TpsDungeon.Combat
 
         /// <summary>雨の 1 刻みの命中の見た目の大きさ（武器種の命中の見た目に対して）。</summary>
         private const float TickHitEffectRatio = 0.5f;
+
+        /// <summary>治癒の場の刻みごとの音の大きさ（張った瞬間に対する割合）。</summary>
+        private const float HealTickSoundRatio = 0.4f;
+
+        /// <summary>召喚の照準の円の半径（置物を置く範囲に足す余白、m）。</summary>
+        private const float SummonRingPadding = 0.6f;
+
+        /// <summary>数で増えた置物の置き場所を、ほかの置物から離れた所が見つかるまで引き直す回数。</summary>
+        private const int SummonPlaceAttempts = 12;
 
         [SerializeField, Tooltip("キャラの Animator。未設定なら子から探す。")]
         private Animator animator;
@@ -176,6 +190,11 @@ namespace TpsDungeon.Combat
         private float flameSoundTimer;
         private readonly List<FlameJet> jets = new List<FlameJet>();
 
+        // 召喚で今居る置物。呼び直したら全部消す。持ち替えても消さない。
+        private readonly List<SummonedDecoy> activeSummons = new List<SummonedDecoy>();
+        private readonly HashSet<PlayerHealth> healTargets = new HashSet<PlayerHealth>();
+        private int healSoundFrame = -1;
+
         /// <summary>遅れて起こすこと 1 つ（雷の飛び移り・多重の雷・連置の 1 つずつ）。</summary>
         private sealed class Scheduled
         {
@@ -237,6 +256,9 @@ namespace TpsDungeon.Combat
         /// <summary>敵に当てた 1 回ごと（矢・爆発・雨の刻み・雷・連置・炎の刻み）。ダメージ表示や試験の窓が読む。</summary>
         public event Action<MeleeHitRecord> Dealt;
 
+        /// <summary>召喚で今居る置物（消え始めた物は除く）。</summary>
+        public IReadOnlyList<SummonedDecoy> ActiveSummons => activeSummons;
+
         /// <summary>当てたダメージをコンソールにも出すか（調整用）。</summary>
         public bool LogHits
         {
@@ -279,6 +301,10 @@ namespace TpsDungeon.Combat
         private void OnDestroy()
         {
             if (aimRing != null) Destroy(aimRing.gameObject);
+            // シーンを閉じるときに消える見た目を出さないよう、置物はそのまま消す。
+            foreach (SummonedDecoy decoy in activeSummons)
+                if (decoy != null) Destroy(decoy.gameObject);
+            activeSummons.Clear();
         }
 
         /// <summary>攻撃を 1 回押す。次の Update で、待ちが明けていれば撃つ。</summary>
@@ -341,7 +367,7 @@ namespace TpsDungeon.Combat
                 return;
             }
 
-            Vector3 target = type.RangedKind == RangedAttackKind.Rain ? GroundTarget(type) : AimPoint(type);
+            Vector3 target = type.AimsAtGround ? GroundTarget(type) : AimPoint(type);
             float remaining = AimBody(type, target, aimLocked ? 180f : aimTurnSpeed * Time.deltaTime, true);
             if (Mathf.Abs(remaining) < 1f) aimLocked = true;
             UpdateAimRing(type, target);
@@ -376,8 +402,7 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             cooldownRemaining = cooldownDuration = stats.FireInterval;
 
-            bool rain = type.RangedKind == RangedAttackKind.Rain;
-            Vector3 target = rain ? GroundTarget(type) : AimPoint(type);
+            Vector3 target = type.AimsAtGround ? GroundTarget(type) : AimPoint(type);
             // 撃つ瞬間は向き切る。背骨の曲げは前のフレームの LateUpdate のものが手に残っている。
             AimBody(type, target, 360f, false);
             PlayFireAnimation();
@@ -397,6 +422,23 @@ namespace TpsDungeon.Combat
                         Vector3 hand = Muzzle(type);
                         PlaySound(type.SwingSound, hand, type.SoundVolume);
                         FireBow(type, shot, hand, AimPoint(type));
+                    });
+                    break;
+                case RangedAttackKind.Summon:
+                    // 腕を振り切る瞬間に、その瞬間の狙った地面へ呼び出す。持ち替えたら Equip が予定ごと消す（呼び出した後の置物は残る）。
+                    Schedule(type.CastDelay / ThrowAnimationSpeed(), () =>
+                    {
+                        Vector3 ground = GroundTarget(type);
+                        PlaySound(type.SwingSound, ground, type.SoundVolume);
+                        FireSummon(type, shot, ground);
+                    });
+                    break;
+                case RangedAttackKind.HealField:
+                    Schedule(type.CastDelay / ThrowAnimationSpeed(), () =>
+                    {
+                        Vector3 hand = Muzzle(type);
+                        PlaySound(type.SwingSound, hand, type.SoundVolume);
+                        FireHealField(type, shot, hand, GroundTarget(type));
                     });
                     break;
                 case RangedAttackKind.Chain:
@@ -497,7 +539,8 @@ namespace TpsDungeon.Combat
             float radius = type.RainRadius * shot.SizeScale;
             float startDelay = type.RainDelay / shot.ProjectileSpeedScale;
             var centers = new List<Vector3> { target };
-            for (int i = 0; i < shot.ExtraProjectiles; i++) centers.Add(ScatterPoint(type, shot, target));
+            for (int i = 0; i < shot.ExtraProjectiles; i++)
+                centers.Add(ScatterPoint(target, type.RainScatterMin * shot.SizeScale, type.RainScatterMax * shot.SizeScale));
 
             foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.RainRepeatInterval))
             {
@@ -521,15 +564,15 @@ namespace TpsDungeon.Combat
         }
 
         /// <summary>
-        /// 数で増えた雨の置き場所。狙った所から決めた距離の範囲のランダムな所の地面。
+        /// 数で増えた雨・治癒の場・置物の置き場所。狙った所から min〜max m のランダムな所の地面。
         /// 狙った所との間に壁があれば引き直し、5 回だめなら狙った所に重ねる。
         /// </summary>
-        private Vector3 ScatterPoint(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 target)
+        private Vector3 ScatterPoint(Vector3 target, float min, float max)
         {
             Vector3 lift = Vector3.up * 0.5f;
             for (int attempt = 0; attempt < 5; attempt++)
             {
-                (float x, float z) = RangedPattern.RainOffset(type.RainScatterMin * shot.SizeScale, type.RainScatterMax * shot.SizeScale, random);
+                (float x, float z) = RangedPattern.RainOffset(min, max, random);
                 Vector3 candidate = target + new Vector3(x, 0f, z);
                 Vector3 path = candidate - target;
                 if (path.sqrMagnitude < 1e-6f || !Raycast(new Ray(target + lift, path), path.magnitude, true, out _))
@@ -537,6 +580,151 @@ namespace TpsDungeon.Combat
             }
 
             return target;
+        }
+
+        // ---- 召喚 ----
+
+        /// <summary>
+        /// 前の置物を全部消してから、1 体目を target に、数で増えた分を target の周り（決めた距離の範囲のランダムな所）に呼び出す。
+        /// 置物どうしや持ち主に近すぎる所と、狙った所との間に壁がある所は引き直す。置物はそれぞれ持ち主の方を向く。
+        /// </summary>
+        private void FireSummon(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 target)
+        {
+            DismissSummons();
+
+            var settings = new SummonedDecoy.Settings
+            {
+                Model = heldWeapon != null ? heldWeapon.SummonModel : null,
+                Duration = shot.SummonDuration,
+                Health = ItemInstance.SummonHealth(heldWeapon),
+                SpawnEffect = type.SummonEffect,
+                SpawnEffectScale = type.SummonEffectScale,
+                DismissEffect = type.DismissEffect,
+                DismissEffectScale = type.DismissEffectScale,
+            };
+
+            var placed = new List<Vector3> { target };
+            for (int i = 0; i < shot.ExtraProjectiles; i++) placed.Add(SummonPoint(type, target, placed));
+
+            foreach (Vector3 point in placed)
+            {
+                Quaternion facing = Quaternion.LookRotation(Flat(transform.position - point, -transform.forward), Vector3.up);
+                SummonedDecoy decoy = SummonedDecoy.Spawn(point, facing, settings);
+                decoy.Vanished += d => activeSummons.Remove(d);
+                activeSummons.Add(decoy);
+            }
+        }
+
+        /// <summary>
+        /// 数で増えた置物 1 体の置き場所。target から決めた距離の範囲のランダムな所（壁の向こうは除く。<see cref="ScatterPoint"/>）で、
+        /// もう置いた所と持ち主から最低の間隔だけ離れた所。決めた回数引いても見つからなければ、いちばん離れていた所にする。
+        /// </summary>
+        private Vector3 SummonPoint(WeaponTypeDefinition type, Vector3 target, List<Vector3> placed)
+        {
+            Vector3 best = target;
+            float bestGap = -1f;
+            for (int attempt = 0; attempt < SummonPlaceAttempts; attempt++)
+            {
+                Vector3 candidate = ScatterPoint(target, type.SummonScatterMin, type.SummonScatterMax);
+                // 持ち主の足元にも重ねない。
+                float gap = FlatDistance(candidate, transform.position);
+                foreach (Vector3 other in placed) gap = Mathf.Min(gap, FlatDistance(candidate, other));
+
+                if (gap >= type.SummonMinGap) return candidate;
+                if (gap > bestGap)
+                {
+                    bestGap = gap;
+                    best = candidate;
+                }
+            }
+
+            return best;
+        }
+
+        private static float FlatDistance(Vector3 a, Vector3 b)
+        {
+            Vector3 d = a - b;
+            d.y = 0f;
+            return d.magnitude;
+        }
+
+        /// <summary>今居る置物を全部消す（呼び直し）。</summary>
+        private void DismissSummons()
+        {
+            // Dismiss の中で Vanished から一覧を外すので、写してから回す。
+            foreach (SummonedDecoy decoy in activeSummons.ToArray())
+                if (decoy != null) decoy.Dismiss();
+            activeSummons.Clear();
+        }
+
+        // ---- 治癒の場（治癒持続） ----
+
+        /// <summary>
+        /// 種を target へ放物線で投げ、落ちた所に場を張る。数で付近へ場を足し（種もそれぞれへ投げる）、多重で同じ所へもう一度張る。
+        /// </summary>
+        private void FireHealField(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 hand, Vector3 target)
+        {
+            float radius = type.HealRadius * shot.SizeScale;
+            var centers = new List<Vector3> { target };
+            for (int i = 0; i < shot.ExtraProjectiles; i++)
+                centers.Add(ScatterPoint(target, type.HealScatterMin * shot.SizeScale, type.HealScatterMax * shot.SizeScale));
+
+            float[] repeats = RangedPattern.RepeatDelays(shot.MultishotCount, type.HealRepeatInterval);
+            foreach (Vector3 center in centers)
+            {
+                LobbedSeed.Launch(type.HealSeedPrefab, hand, center, type.HealFlightTime, type.HealArcHeight, landed =>
+                {
+                    foreach (float delay in repeats)
+                    {
+                        HealingFieldZone.Spawn(landed, new HealingFieldZone.Settings
+                        {
+                            Radius = radius,
+                            Height = type.HealHeight,
+                            StartDelay = delay,
+                            TickInterval = type.HealTickInterval,
+                            TickCount = shot.HealTickCount,
+                            Effect = type.HealEffect,
+                            EffectRadius = type.HealEffectRadius,
+                            RingMaterial = type.RangeRingMaterial,
+                            RingColor = type.HealRingColor,
+                        }, (c, r, h, tick) => HealTick(type, shot, c, r, h, tick == 0));
+                    }
+                });
+            }
+        }
+
+        /// <summary>場の中の味方（PlayerHealth を持つ物。今は主人公だけ）を 1 刻み分回復する。張った瞬間は音を大きく鳴らす。</summary>
+        private void HealTick(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 center, float radius, float height, bool first)
+        {
+            healTargets.Clear();
+            int count = Physics.OverlapSphereNonAlloc(center, Mathf.Max(radius, height) + height, wideOverlap, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                PlayerHealth health = wideOverlap[i].GetComponentInParent<PlayerHealth>();
+                if (health == null || health.IsDead || !healTargets.Add(health)) continue;
+
+                Vector3 offset = health.transform.position - center;
+                float up = offset.y;
+                offset.y = 0f;
+                if (offset.magnitude > radius || up < -0.5f || up > Mathf.Max(0f, height)) healTargets.Remove(health);
+            }
+
+            bool healed = false;
+            foreach (PlayerHealth health in healTargets)
+            {
+                if (health.CurrentHp >= health.MaxHp) continue;
+                health.Heal(shot.HealTickAmount);
+                healed = true;
+                if (logHits) Debug.Log($"治癒の場 → {health.name}: +{shot.HealTickAmount}", health);
+            }
+
+            healTargets.Clear();
+            // 張った瞬間は必ず、あとの刻みは回復できたときだけ控えめに鳴らす。同じフレームに何か所あっても 1 回。
+            if ((first || healed) && healSoundFrame != Time.frameCount)
+            {
+                healSoundFrame = Time.frameCount;
+                PlaySound(type.HealSound, center, type.SoundVolume * type.HealSoundVolume * (first ? 1f : HealTickSoundRatio));
+            }
         }
 
         // ---- 雷（電撃） ----
@@ -1248,10 +1436,10 @@ namespace TpsDungeon.Combat
         private static float Pitch(Vector3 direction) =>
             Mathf.Atan2(direction.y, new Vector2(direction.x, direction.z).magnitude) * Mathf.Rad2Deg;
 
-        /// <summary>持続弓を持っている間、狙う地面（target）に範囲の円を出す。</summary>
+        /// <summary>持続弓・召喚・治癒持続を持っている間、狙う地面（target）に範囲の円を出す。</summary>
         private void UpdateAimRing(WeaponTypeDefinition type, Vector3 target)
         {
-            bool show = type.RangedKind == RangedAttackKind.Rain && type.RangeRingMaterial != null;
+            bool show = type.AimsAtGround && type.RangeRingMaterial != null;
             if (!show)
             {
                 if (aimRing != null) aimRing.SetVisible(false);
@@ -1261,7 +1449,16 @@ namespace TpsDungeon.Combat
             if (aimRing == null) aimRing = RangeRing.Create("AimRing", type.RangeRingMaterial, type.AimRingColor);
             aimRing.SetColor(type.AimRingColor);
             aimRing.SetVisible(true);
-            aimRing.Set(target, type.RainRadius * (stats != null ? stats.SizeScale : 1f));
+            aimRing.Set(target, AimRingRadius(type));
+        }
+
+        /// <summary>照準の円の半径。持続弓は雨、治癒持続は場の半径、召喚は置物を置く範囲（数が無ければ 1 体分）に余白を足したもの。</summary>
+        private float AimRingRadius(WeaponTypeDefinition type)
+        {
+            float size = stats != null ? stats.SizeScale : 1f;
+            if (type.IsHealField) return type.HealRadius * size;
+            if (type.IsSummon) return (stats != null && stats.ExtraProjectiles > 0 ? type.SummonScatterMax : 0f) + SummonRingPadding;
+            return type.RainRadius * size;
         }
 
         // ---- 共通 ----
@@ -1272,7 +1469,7 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             if (hasAttackSpeedParam)
             {
-                if (type.IsThrow) animator.SetFloat(AttackSpeedParam, ThrowAnimationSpeed());
+                if (type.UsesThrowMotion) animator.SetFloat(AttackSpeedParam, ThrowAnimationSpeed());
                 else if (!type.IsStaff) animator.SetFloat(AttackSpeedParam, Mathf.Max(1f, BowCycleSeconds / Mathf.Max(0.01f, stats.FireInterval)));
             }
 
