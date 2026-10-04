@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_SteelGreatsword
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_SteelGreatsword
+  displayName: "\u92FC\u306E\u5927\u5263"
+  description: "\u4E21\u624B\u3067\u69CB\u3048\u3066\u521D\u3081\u3066\u6271\u3048\u308B\u3001\u5805\u5B9F\u306A\u4E00\u632F\u308A\u3002"
+  icon: {fileID: 2800000, guid: 99668dd726bbd47af9ca5909a4f24d99, type: 3}
+  worldPrefab: {fileID: 6596913237394692152, guid: 29e773f56c2164ca2be599543074ed39, type: 3}
+  rank: 3
+  strength: 30
+  weaponType: {fileID: 11400000, guid: 55aa04e267d1147149ec48e82c4f25d1, type: 2}
+  heldModel: {fileID: 7973312286252002489, guid: 0a7ab166f583a4ede8ccf236b5bf2e8c, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

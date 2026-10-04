@@ -72,33 +72,37 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 636001187502863848}
     m_Modifications:
+    - target: {fileID: 978359140183554496, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a14be163615ff439a8418b1e03da26f3, type: 2}
     - target: {fileID: 1626687889730050069, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_Name
       value: Shield_Epic
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.84188837
+      value: 0.92607725
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.84188837
+      value: 0.92607725
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.84188837
+      value: 0.92607725
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00035348535
+      value: 0.0003888011
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.0022279322
+      value: -0.0024507046
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.015691236
+      value: -0.017260365
       objectReference: {fileID: 0}
     - target: {fileID: 2150742226693145263, guid: f1a69e37edef17743840974cfc82a6ce, type: 3}
       propertyPath: m_LocalRotation.w

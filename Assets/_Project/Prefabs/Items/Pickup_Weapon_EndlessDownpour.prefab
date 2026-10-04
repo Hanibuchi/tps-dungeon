@@ -29,10 +29,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5102788706954312797}
+  - {fileID: 5162765584607556662}
   m_Father: {fileID: 2530490194731182473}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6342540058689338026
+--- !u!1 &8031335438665472514
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -40,7 +40,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5102788706954312797}
+  - component: {fileID: 5162765584607556662}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -48,13 +48,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5102788706954312797
+--- !u!4 &5162765584607556662
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6342540058689338026}
+  m_GameObject: {fileID: 8031335438665472514}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -117,7 +117,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.35, y: 0.3, z: 1.45}
+  m_Size: {x: 0.35, y: 0.3, z: 1.585}
   m_Center: {x: 0, y: 0.15, z: 0}
 --- !u!114 &2017700349941546543
 MonoBehaviour:
@@ -140,35 +140,39 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 5102788706954312797}
+    m_TransformParent: {fileID: 5162765584607556662}
     m_Modifications:
+    - target: {fileID: 838601129327186954, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 422ebd756c2374073bca1d88a661157a, type: 2}
     - target: {fileID: 1198998981114754527, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_Name
       value: Bow_Epic
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.97372
+      value: 1.071092
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.97372
+      value: 1.071092
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.97372
+      value: 1.071092
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.08688113
+      value: 0.09556922
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.014328003
+      value: 0.01576078
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.017127967
+      value: -0.018840764
       objectReference: {fileID: 0}
     - target: {fileID: 2010966721360703333, guid: d0c32318984847e428ac1bce4ea19377, type: 3}
       propertyPath: m_LocalRotation.w
