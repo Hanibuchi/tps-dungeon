@@ -821,6 +821,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1507463569909976496, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+      propertyPath: immortal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
       propertyPath: m_Name
       value: Big_Orc
@@ -1294,6 +1298,10 @@ PrefabInstance:
     - target: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       propertyPath: m_Name
       value: Blob_GreenBlob
+      objectReference: {fileID: 0}
+    - target: {fileID: 7541851688380475608, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      propertyPath: immortal
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
