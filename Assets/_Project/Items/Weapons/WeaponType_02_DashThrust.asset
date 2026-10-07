@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\u30C0\u30C3\u30B7\u30E5\u7A81\u304D"
   animatorWeaponType: 5
   canUseShield: 1
+  passiveGear: 0
   allowedEnchantments:
   - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
   - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
@@ -56,8 +57,97 @@ MonoBehaviour:
   followUpEffectScale: 0.7
   slamShake: 0
   followUpShakeRatio: 0.4
-  heldLocalPosition: {x: -0.1, y: -0.1, z: -0.05}
-  heldLocalEuler: {x: 0, y: 0, z: 0}
+  rangedKind: 0
+  fireInterval: 0.8
+  muzzleOffset: {x: 0, y: 1.4, z: 0.5}
+  aimMaxDistance: 40
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 35
+  projectileRange: 45
+  projectileRadius: 0.15
+  projectileKnockback: 2
+  volleySpreadAngle: 8
+  multishotInterval: 0.12
+  homingTurnRate: 540
+  homingRange: 12
+  rainRadius: 1.25
+  rainHeight: 2
+  rainDuration: 3
+  rainTickInterval: 0.5
+  rainDelay: 0.7
+  rainScatterMin: 1.25
+  rainScatterMax: 3
+  rainRepeatInterval: 1
+  rainEffect: {fileID: 0}
+  rainEffectRadius: 4
+  rainAimPitch: 35
+  castDelay: 0.12
+  chainAimAngle: 10
+  chainJumps: 3
+  chainJumpsPerCount: 2
+  chainRange: 6
+  chainJumpDelay: 0.06
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.55, g: 0.75, b: 1, a: 1}
+  boltWidth: 0.06
+  boltDuration: 0.2
+  lineStartDistance: 1.2
+  lineSpacing: 1.1
+  linePillarCount: 8
+  lineInterval: 0.05
+  lineRadius: 0.9
+  lineHeight: 2
+  lineSpreadAngle: 20
+  lineRepeatInterval: 0.45
+  lineEffect: {fileID: 0}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
+  flameDuration: 2.4
+  flameTickInterval: 0.2
+  flameRange: 6
+  flameAngle: 14
+  flameBaseRadius: 0.25
+  flameSpreadAngle: 25
+  flameHomingAngle: 40
+  flameHomingTurnRate: 120
+  flameEffect: {fileID: 0}
+  flameEffectLength: 6
+  flameSoundInterval: 0.6
+  summonDuration: 12
+  summonScatterMin: 1.2
+  summonScatterMax: 2.5
+  summonMinGap: 1
+  summonHealthPerStrength: 10
+  summonEffect: {fileID: 0}
+  summonEffectScale: 1
+  dismissEffect: {fileID: 0}
+  dismissEffectScale: 1
+  healRadius: 2
+  healHeight: 2
+  healDuration: 5
+  healTickInterval: 0.5
+  healFlightTime: 0.55
+  healArcHeight: 2
+  healScatterMin: 2
+  healScatterMax: 4
+  healRepeatInterval: 1.5
+  healSeedPrefab: {fileID: 0}
+  healEffect: {fileID: 0}
+  healEffectRadius: 4
+  healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
+  healSound: {fileID: 0}
+  healSoundVolume: 0.8
+  drawSound: {fileID: 0}
+  stickSound: {fileID: 0}
+  stickSoundVolume: 0.6
+  rainSound: {fileID: 0}
+  rainSoundVolume: 0.8
+  rangeRingMaterial: {fileID: 0}
+  rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
+  aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}
+  heldInLeftHand: 0
+  heldLocalPosition: {x: -0.131, y: -0.148, z: -0.024}
+  heldLocalEuler: {x: 0, y: -179.90001, z: -0}
   swingEffect: {fileID: 3367314013316085171, guid: 8b20002c2b69a9d44ab5bae8e1d923cd, type: 3}
   swingEffectScale: 0.8
   swingEffectLeadTime: 0.5
