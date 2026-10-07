@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_28_0E_ThrowingStone
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_ThrowingStone
+  displayName: "\u77F3\u3053\u308D"
+  description: "\u9053\u7AEF\u3067\u62FE\u3063\u305F\u624B\u3054\u308D\u306A\u77F3\u3002\u5F53\u305F\u308C\u3070\u75DB\u3044\u3002"
+  icon: {fileID: 2800000, guid: fbeefaa50ebb34b6f8ac56a5ed9f1f2c, type: 3}
+  worldPrefab: {fileID: 4441711782843766192, guid: b20bd45bfc29244fdaf4025415500da4, type: 3}
+  rank: 0
+  strength: 6
+  weaponType: {fileID: 11400000, guid: 49d8811efe680439f80b8d159b200b4e, type: 2}
+  heldModel: {fileID: 8282753815979582321, guid: 53968a8c7434a424399793f8304c9df7, type: 3}
+  thrownSpinRate: 720
+  thrownBounces: 1
+  fixedEnchantments: []

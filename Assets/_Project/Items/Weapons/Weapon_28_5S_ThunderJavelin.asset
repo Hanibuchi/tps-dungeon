@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_28_5S_ThunderJavelin
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_ThunderJavelin
+  displayName: "\u96F7\u9CF4\u306E\u6295\u69CD"
+  description: "\u6295\u3052\u653E\u3064\u3068\u540C\u6642\u306B\u3001\u7A7A\u6C17\u304C\u88C2\u3051\u3066\u9CF4\u308B\u3002"
+  icon: {fileID: 2800000, guid: 9e536352412d94495b2d56eb8f7554c7, type: 3}
+  worldPrefab: {fileID: 8456600679063474042, guid: 3af2a79a0790e4265ba6617157099677, type: 3}
+  rank: 5
+  strength: 58
+  weaponType: {fileID: 11400000, guid: 49d8811efe680439f80b8d159b200b4e, type: 2}
+  heldModel: {fileID: 2216450701050322256, guid: f029d24733dd04dffac230cd26041fe9, type: 3}
+  thrownSpinRate: 0
+  fixedEnchantments: []

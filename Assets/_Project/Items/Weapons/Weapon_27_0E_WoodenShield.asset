@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_27_0E_WoodenShield
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_WoodenShield
+  displayName: "\u6728\u306E\u76FE"
+  description: "\u677F\u3092\u6253\u3061\u3064\u3051\u305F\u3060\u3051\u306E\u76FE\u3002\u7121\u3044\u3088\u308A\u306F\u307E\u3057\u3060\u3002"
+  icon: {fileID: 2800000, guid: b6ca00f9dc1b74e35b38b5090fe52deb, type: 3}
+  worldPrefab: {fileID: 7470770835126892531, guid: d57ff8f1bcd104d45b3cf72d6dee377a, type: 3}
+  rank: 0
+  strength: 6
+  weaponType: {fileID: 11400000, guid: 06c4f5a3557ad4ad1b1002dbd2e26a59, type: 2}
+  heldModel: {fileID: 6814599288918528100, guid: 63ee495df56dc46058d595d3b6319aaf, type: 3}
+  fixedEnchantments: []

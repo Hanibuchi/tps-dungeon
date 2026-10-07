@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_05_6U_FallenStarHammer
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_FallenStarHammer
+  displayName: "\u5929\u589C\u306E\u9244\u69CC"
+  description: "\u632F\u308A\u4E0B\u308D\u305B\u3070\u3001\u843D\u3061\u305F\u661F\u306E\u3088\u3046\u306B\u5927\u5730\u304C\u7206\u305C\u308B\u3002"
+  icon: {fileID: 2800000, guid: 232c8bb20ed2849c192977fe11bf673a, type: 3}
+  worldPrefab: {fileID: 2776959547820644848, guid: 0e7319a940152461f889ce2f9154c10a, type: 3}
+  rank: 6
+  strength: 52
+  weaponType: {fileID: 11400000, guid: fc8db1696acdd47c18bfc251eda2af3d, type: 2}
+  heldModel: {fileID: 3072983188529532476, guid: d245f8bacce174a3fbe8308fe369eb71, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments:
+  - {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
+  - {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
+  - {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}

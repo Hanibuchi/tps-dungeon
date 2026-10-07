@@ -62,7 +62,9 @@ namespace TpsDungeon.Items.Editor
         public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
         public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
         public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
-        public const string FistsPath = WeaponsFolder + "/Weapon_Fists.asset";
+        // 素手は武器種 00・ランク E として、ほかの武器と同じ並びの名前にする。id は Weapon_Fists のまま。
+        public const string FistsPath = WeaponsFolder + "/Weapon_00_0E_Fists.asset";
+        private const string OldFistsPath = WeaponsFolder + "/Weapon_Fists.asset";
 
         private const string HovlPrefabs = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Prefabs/";
         private const string LanaPrefabs = "Assets/ThirdParty/VFX/Lana Studio/Hyper Casual FX/Prefabs/";
@@ -314,7 +316,10 @@ namespace TpsDungeon.Items.Editor
             var result = new List<WeaponDefinition>();
             foreach (WeaponSpec spec in Weapons())
             {
-                var weapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>($"{WeaponsFolder}/{spec.Id}.asset");
+                var type = AssetDatabase.LoadAssetAtPath<WeaponTypeDefinition>(spec.TypePath);
+                if (type == null) continue;
+
+                var weapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetPath(spec, type.Id));
                 if (weapon != null) result.Add(weapon);
             }
 
@@ -1900,6 +1905,7 @@ namespace TpsDungeon.Items.Editor
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
         private static void WriteFists(WeaponTypeDefinition type)
         {
+            RenameAsset(OldFistsPath, FistsPath);
             var fists = Gen.LoadOrCreate<WeaponDefinition>(FistsPath);
             var serialized = new SerializedObject(fists);
             serialized.FindProperty("id").stringValue = "Weapon_Fists";
@@ -2002,12 +2008,13 @@ namespace TpsDungeon.Items.Editor
         private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type,
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments)
         {
-            var weapon = Gen.LoadOrCreate<WeaponDefinition>($"{WeaponsFolder}/{spec.Id}.asset");
-
-            // プレハブは武器種・ランクの順に並ぶ名前にする（Pickup_/Held_ の後ろが同じ）。前の名前のものは GUID を保って改名する。
-            string prefabId = PrefabId(spec, type);
-            RenamePrefab($"Pickup_{spec.Id}", $"Pickup_{prefabId}");
-            RenamePrefab($"Held_{spec.Id}", $"Held_{prefabId}");
+            // 武器のアセットとプレハブは武器種・ランクの順に並ぶ名前にする（Weapon_05_3B_IronMace など。id は spec.Id のまま）。
+            // 前の名前のものは GUID を保って改名する。
+            string prefabId = PrefabId(spec, type.Id);
+            RenameAsset($"{WeaponsFolder}/{spec.Id}.asset", WeaponAssetPath(spec, type.Id));
+            RenameAsset($"{Gen.PrefabsFolder}/Pickup_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Pickup_{prefabId}.prefab");
+            RenameAsset($"{Gen.PrefabsFolder}/Held_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Held_{prefabId}.prefab");
+            var weapon = Gen.LoadOrCreate<WeaponDefinition>(WeaponAssetPath(spec, type.Id));
 
             var iconSpec = new Gen.Spec
             {
@@ -2049,27 +2056,28 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// プレハブの名前の本体。Weapon_{武器種}_{ランクの順}{ランク}_{名前}（例: Weapon_05_3B_IronMace）。
+        /// 武器のアセットとプレハブの名前の本体。Weapon_{武器種}_{ランクの順}{ランク}_{名前}（例: Weapon_05_3B_IronMace）。
         /// 名前で並べると武器種ごとにまとまり、その中は E → S → ユニーク（U）の順になる。
         /// </summary>
-        private static string PrefabId(WeaponSpec spec, WeaponTypeDefinition type)
+        private static string PrefabId(WeaponSpec spec, string typeId)
         {
             const string prefix = "Weapon_";
             string name = spec.Id.StartsWith(prefix, StringComparison.Ordinal) ? spec.Id.Substring(prefix.Length) : spec.Id;
             string rank = spec.Rank == WeaponRank.Unique ? "U" : spec.Rank.ToString();
-            return $"{prefix}{type.Id}_{RankEnumIndex(spec.Rank)}{rank}_{name}";
+            return $"{prefix}{typeId}_{RankEnumIndex(spec.Rank)}{rank}_{name}";
         }
 
-        /// <summary>前の名前のプレハブがあれば、参照（GUID）を保ったまま新しい名前へ改名する。</summary>
-        private static void RenamePrefab(string oldName, string newName)
+        /// <summary>武器のアセットのパス（Items/Weapons/Weapon_05_3B_IronMace.asset など）。</summary>
+        private static string WeaponAssetPath(WeaponSpec spec, string typeId) => $"{WeaponsFolder}/{PrefabId(spec, typeId)}.asset";
+
+        /// <summary>前の名前のアセットがあれば、参照（GUID）を保ったまま新しい名前へ改名する。</summary>
+        private static void RenameAsset(string oldPath, string newPath)
         {
-            string oldPath = $"{Gen.PrefabsFolder}/{oldName}.prefab";
-            string newPath = $"{Gen.PrefabsFolder}/{newName}.prefab";
-            if (oldPath == newPath || AssetDatabase.LoadAssetAtPath<GameObject>(oldPath) == null
-                || AssetDatabase.LoadAssetAtPath<GameObject>(newPath) != null) return;
+            if (oldPath == newPath || AssetDatabase.LoadAssetAtPath<Object>(oldPath) == null
+                || AssetDatabase.LoadAssetAtPath<Object>(newPath) != null) return;
 
             string error = AssetDatabase.MoveAsset(oldPath, newPath);
-            if (!string.IsNullOrEmpty(error)) Debug.LogWarning($"プレハブを改名できなかった: {oldPath} → {newPath}: {error}");
+            if (!string.IsNullOrEmpty(error)) Debug.LogWarning($"改名できなかった: {oldPath} → {newPath}: {error}");
         }
 
         /// <summary>拾える物の判定を剣の形に合わせる。</summary>

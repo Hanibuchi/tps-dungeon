@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_30_4A_StoneStatueTalisman
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_StoneStatueTalisman
+  displayName: "\u77F3\u50CF\u306E\u8B77\u7B26"
+  description: "\u6307\u5B9A\u3057\u305F\u5834\u6240\u306B\u77F3\u306E\u5B88\u308A\u624B\u304C\u73FE\u308C\u3001\u6575\u3092\u5F15\u304D\u3064\u3051\u308B\u3002"
+  icon: {fileID: 2800000, guid: fd302fc8e869f48cd9a30d94fa4463d9, type: 3}
+  worldPrefab: {fileID: 1077601401040268948, guid: dc40f6c929aba4eecb858d35b308ea35, type: 3}
+  rank: 4
+  strength: 41
+  weaponType: {fileID: 11400000, guid: f875a23b229334ff5a809435dc0ad63c, type: 2}
+  heldModel: {fileID: 3587772562748690748, guid: c559a0a07772a4622b83d877ef77c282, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 6898052546837531742, guid: 63855b54553cc4d56af87daa687bc5aa, type: 3}
+  fixedEnchantments: []

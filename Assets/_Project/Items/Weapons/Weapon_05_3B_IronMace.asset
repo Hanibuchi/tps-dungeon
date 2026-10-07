@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_05_3B_IronMace
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_IronMace
+  displayName: "\u9244\u584A\u306E\u30E1\u30A4\u30B9"
+  description: "\u632F\u308A\u4E0B\u308D\u3059\u305F\u3073\u3001\u5730\u9762\u304C\u77ED\u304F\u9CF4\u308B\u3002"
+  icon: {fileID: 2800000, guid: 7aa4c4e56e8a244c185460cf38133db8, type: 3}
+  worldPrefab: {fileID: 7988751938689432797, guid: 5b390f5ee9c6a4b9093719e7c5d9dcf0, type: 3}
+  rank: 3
+  strength: 33
+  weaponType: {fileID: 11400000, guid: fc8db1696acdd47c18bfc251eda2af3d, type: 2}
+  heldModel: {fileID: 5944739807608044539, guid: fe99af136232a41738d20a14603bff65, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []
