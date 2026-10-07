@@ -23,12 +23,13 @@ namespace TpsDungeon.Items.Editor
     /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
-    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖と盾・LowPoly の弓と杖と盾）があればそれを、無ければプリミティブの剣を使う。矢は Pandazole の矢。
+    /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖と盾と短剣・LowPoly の弓と杖と槍と盾）と Pandazole の弓があればそれを、
+    /// 無ければプリミティブの剣を使う。矢は Pandazole の矢。電撃の杖は LowPoly の槍、範囲連置の杖は Stylized の Staff5 の形 1 つを、
+    /// テクスチャを塗り替えてランクを表す（Items/Weapons/Textures に塗った絵を書き出す）。
     /// お守りは GanzSe の装身具（耳飾り・ペンダント・首飾り）。召喚は Daniel Riches の Books Essentials の本。
     /// 同じ武器種は同じ系統の素材で揃え、ランクが上がるほど豪華な型・色にする（片手剣は Sword1 の銅→銀→金など）。
-    /// ユニークは最上位と同じ形の、刃の筋や宝石など飾りの部分を橙金に光らせて 1.1 倍にする。
+    /// ユニークは最上位と同じ形の、刃の筋や宝石など飾りの部分（発光マップ。無ければ地の絵の明るく色の濃い所を抜いて作る）を橙金に光らせて 1.1 倍にする。
     /// 杖の手に持つ見た目には、杖の先に "Tip"（WeaponTypeDefinition.StaffTipName）を置く。雷・棘・炎はそこから出る。
-    /// 電撃・範囲連置・火炎放射器の杖は同じ型を使い回すので、先に属性の色（黄・水色・橙赤）の光る玉を付けて見分ける。
     /// 何度実行しても同じ結果になる（既存アセットは上書き、GUID は保つ）。
     /// </summary>
     public static class PlaceholderWeaponAssetGenerator
@@ -232,10 +233,8 @@ namespace TpsDungeon.Items.Editor
             public GameObject SummonModel;
             /// <summary>素材の飾りの部分（発光マップ）をこの色で光らせる（ユニーク）。null なら光らせない。</summary>
             public Color? Glow;
-            /// <summary>杖の先に置く光る玉の色（杖の武器種どうしを見分ける属性の色）。null なら置かない。</summary>
-            public Color? TipOrb;
-            /// <summary>杖の先の玉の直径（m）。</summary>
-            public float TipOrbSize;
+            /// <summary>素材のテクスチャを塗り替えてランクを表す（氷杖）。None なら素材のまま。</summary>
+            public StaffSkin Skin;
         }
 
         /// <summary>
@@ -254,10 +253,19 @@ namespace TpsDungeon.Items.Editor
         /// <summary>ユニークは同じ武器種の最上位と同じ形を、光らせて少し大きくする。</summary>
         private const float UniqueScale = 1.1f;
 
-        // 杖の先の玉の色。19・20・21 は同じ杖の型を使い回すので、玉の色で武器種を見分ける。
-        private static readonly Color LightningOrb = new Color(1f, 0.9f, 0.3f, 1f);
-        private static readonly Color SpikeLineOrb = new Color(0.45f, 0.85f, 1f, 1f);
-        private static readonly Color FlameOrb = new Color(1f, 0.4f, 0.12f, 1f);
+        /// <summary>氷杖（Staff5）のテクスチャの塗り替え方。形は 1 つで、色だけでランクを表す。</summary>
+        private enum StaffSkin
+        {
+            None,
+            /// <summary>D: 結晶を灰色の石に、金属をくすませる。</summary>
+            Stone,
+            /// <summary>B: 素材のまま（青い結晶・鋼）。</summary>
+            Ice,
+            /// <summary>S: 金属の飾りを金に、結晶を明るい水色に。</summary>
+            Gold,
+            /// <summary>U: 金の飾りに、濃い青白の結晶。結晶だけを光らせる。</summary>
+            Prison,
+        }
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
         public static void Generate()
@@ -291,6 +299,7 @@ namespace TpsDungeon.Items.Editor
             };
 
             summonModels = WriteSummonModels();
+            generatedTextures.Clear();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
 
             WriteFists(WriteUnarmedType());
@@ -317,7 +326,7 @@ namespace TpsDungeon.Items.Editor
             foreach (WeaponSpec spec in WeaponList()) yield return UniqueLook(spec);
         }
 
-        /// <summary>ユニークを光らせ、少し大きくする（杖の先の玉も）。</summary>
+        /// <summary>ユニークを光らせ、少し大きくする。</summary>
         private static WeaponSpec UniqueLook(WeaponSpec spec)
         {
             if (spec.Rank != WeaponRank.Unique) return spec;
@@ -325,7 +334,6 @@ namespace TpsDungeon.Items.Editor
             spec.Glow ??= UniqueGlow;
             spec.Length *= UniqueScale;
             spec.Grip *= UniqueScale;
-            spec.TipOrbSize *= UniqueScale;
             return spec;
         }
 
@@ -360,7 +368,7 @@ namespace TpsDungeon.Items.Editor
             {
                 Id = "Weapon_WoodenRapier", Name = "木柄の刺突剣", Rank = WeaponRank.E, Strength = 8f,
                 Description = "踏み込みの勢いを、そのまま切っ先に乗せる。",
-                TypePath = DashThrustTypePath, ModelPath = FreeSwords + "Sword2_Red.prefab", Length = 1.0f,
+                TypePath = DashThrustTypePath, ModelPath = FreeSwords + "Sword4_Red.prefab", Length = 1.0f,
                 Blade = new Color32(180, 180, 175, 255), Hilt = new Color32(120, 80, 45, 255),
             };
             // 04 両手近距離。幅広の大剣で、刃こぼれした黒い刃 → 白銀 → 金。
@@ -382,12 +390,12 @@ namespace TpsDungeon.Items.Editor
 
             // ここから Notion の武器一覧の 02・04・05 の残り。先頭の 6 本は確認シーンに置くので、並びを変えずにこの後ろへ足す。
             yield return Melee("Weapon_GaleRapier", "疾風のレイピア", WeaponRank.C, 26f, "持ち手を追い越すほどの速さで突き出される。",
-                DashThrustTypePath, FreeSwords + "Sword14_Blue.prefab", 1.0f);
+                DashThrustTypePath, FreeSwords + "Sword4_Blue.prefab", 1.0f);
             yield return Melee("Weapon_LightningFlashEstoc", "雷閃の刺剣", WeaponRank.A, 44f, "突いた軌跡に、遅れて閃光が走る。",
-                DashThrustTypePath, FreeSwords + "Sword9_White.prefab", 1.0f);
+                DashThrustTypePath, FreeSwords + "Sword4_Yellow.prefab", 1.0f);
             // 「急所を穿つ」でクリティカル率 ×3、「影より速く駆け」で多重 ×1（ダッシュの回数が 1 増える）。固定のエンチャントは仮。
             yield return Melee("Weapon_ShadowRunnerBlade", "影駆けの魔剣", WeaponRank.Unique, 8f, "影より速く駆け、突きのひとつひとつが急所を穿つ。",
-                DashThrustTypePath, FreeSwords + "Sword9_Purple.prefab", 1.0f,
+                DashThrustTypePath, FreeSwords + "Sword5_Gold.prefab", 1.0f,
                 EnchantmentKind.CritChance, EnchantmentKind.CritChance, EnchantmentKind.CritChance, EnchantmentKind.Multishot);
             yield return Melee("Weapon_SteelGreatsword", "鋼の大剣", WeaponRank.B, 30f, "両手で構えて初めて扱える、堅実な一振り。",
                 TwoHandedTypePath, FreeSwords + "Sword8_White.prefab", 1.35f);
@@ -404,43 +412,43 @@ namespace TpsDungeon.Items.Editor
 
             // 09 弓
             yield return Bow("Weapon_OldBow", "古びた弓", WeaponRank.E, 3f, "弦が緩み、矢はまっすぐ飛ばない。",
-                BowTypePath, "Bow_Basic.prefab");
+                BowTypePath, PandazolePrefabs + "Bow_01.prefab");
             yield return Bow("Weapon_HunterBow", "狩人の弓", WeaponRank.C, 19f, "森で獣を追うために作られた、扱いやすい弓。",
-                BowTypePath, "Bow_Medium.prefab");
+                BowTypePath, PandazolePrefabs + "Bow_02.prefab");
             yield return Bow("Weapon_SoldierLongbow", "兵士の長弓", WeaponRank.A, 41f, "放たれた矢は、落ちた場所を炎の輪に変える。",
-                BowTypePath, "Bow_Epic.prefab", 1.35f);
+                BowTypePath, PandazolePrefabs + "Bow_03.prefab", 1.35f);
 
             // 11 持続弓
             yield return Bow("Weapon_PoisonArrowBow", "毒矢の弓", WeaponRank.E, 6f, "降り注いだ矢が、地面にじわりと毒を残す。",
-                RainBowTypePath, "Bow_Basic.prefab");
+                RainBowTypePath, LowPolyWeapons + "Bow_Basic.prefab");
             yield return Bow("Weapon_ArrowRainBow", "矢雨の弓", WeaponRank.C, 23f, "一射で空を埋め、狙った地点に矢が降り続ける。",
-                RainBowTypePath, "Bow_Medium.prefab");
+                RainBowTypePath, LowPolyWeapons + "Bow_Medium.prefab");
             yield return Bow("Weapon_SkyPiercerLongbow", "天穿の長弓", WeaponRank.A, 40f, "天へ放たれた矢は、幾重にも分かれて落ちてくる。",
-                RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+                RainBowTypePath, LowPolyWeapons + "Bow_Epic.prefab", 1.35f);
             // ユニークなので固定のエンチャントが付くが、何を付けるかはまだ決めていない（今は何も付かない）。
             yield return Bow("Weapon_EndlessDownpour", "終わらぬ驟雨", WeaponRank.Unique, 23f, "一度降り始めた矢の雨は、いつまでも止むことがない。",
-                RainBowTypePath, "Bow_Epic.prefab", 1.35f);
+                RainBowTypePath, LowPolyWeapons + "Bow_Epic.prefab", 1.35f);
 
             // 19 電撃。ユニークは飛び移りを大きく増やす（数 ×3 で 3 ＋ 6 回）。固定のエンチャントは仮。
             yield return Staff("Weapon_ChargedStaff", "帯電した杖", WeaponRank.E, 10f, "触れた敵から敵へ、火花が短く飛び移る。",
-                LightningTypePath, LowPolyWeapons + "Staff_Basic.prefab");
+                LightningTypePath, LowPolyWeapons + "Spear2H_Basic.prefab");
             yield return Staff("Weapon_ThunderStaff", "雷撃の杖", WeaponRank.B, 29f, "走った稲光が、群れをまとめて焼き払う。",
-                LightningTypePath, LowPolyWeapons + "Staff_Medium.prefab");
+                LightningTypePath, LowPolyWeapons + "Spear2H_Medium.prefab");
             yield return Staff("Weapon_StormEmperorStaff", "嵐帝の杖", WeaponRank.S, 48f, "一度放てば、雷は獲物を残らず数え上げる。",
-                LightningTypePath, LowPolyWeapons + "Staff_Epic.prefab");
+                LightningTypePath, LowPolyWeapons + "Spear2H_Epic.prefab");
             yield return Staff("Weapon_ThunderGodPike", "雷神の鉾杖", WeaponRank.Unique, 48f, "放たれた雷は尽きることなく、敵から敵へと渡り続ける。",
-                LightningTypePath, LowPolyWeapons + "Staff_Epic.prefab",
+                LightningTypePath, LowPolyWeapons + "Spear2H_Epic.prefab",
                 EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
 
             // 20 範囲連置。ユニークは列を増やして延ばす（数 ×2 で 3 列、持続時間 ×2 で 1.4 倍の長さ）。固定のエンチャントは仮。
             yield return Staff("Weapon_StoneSpikeStaff", "石棘の杖", WeaponRank.D, 13f, "地面から石の棘が、まっすぐ連なって突き出す。",
-                SpikeLineTypePath, LowPolyWeapons + "Staff_Basic.prefab");
+                SpikeLineTypePath, StylizedStaves + "Staff5_1_1.prefab", StaffSkin.Stone);
             yield return Staff("Weapon_IceFangStaff", "氷牙の杖", WeaponRank.B, 32f, "足元から氷の牙が次々と生え、敵を追い立てる。",
-                SpikeLineTypePath, LowPolyWeapons + "Staff_Medium.prefab");
+                SpikeLineTypePath, StylizedStaves + "Staff5_1_1.prefab", StaffSkin.Ice);
             yield return Staff("Weapon_EarthSplitterStaff", "大地裂の杖", WeaponRank.S, 51f, "地面が波打ち、裂け目が敵の列を飲み込む。",
-                SpikeLineTypePath, LowPolyWeapons + "Staff_Epic.prefab");
+                SpikeLineTypePath, StylizedStaves + "Staff5_1_1.prefab", StaffSkin.Gold);
             yield return Staff("Weapon_IcePrisonScepter", "氷獄の王笏", WeaponRank.Unique, 32f, "地を這う氷の列が幾筋も伸び、逃げ場を塞いでいく。",
-                SpikeLineTypePath, LowPolyWeapons + "Staff_Epic.prefab",
+                SpikeLineTypePath, StylizedStaves + "Staff5_1_1.prefab", StaffSkin.Prison,
                 EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.Duration, EnchantmentKind.Duration);
 
             // 21 火炎放射器。ユニークは炎を壁のように広げる（サイズ ×3・数 ×2）。固定のエンチャントは仮。
@@ -482,7 +490,7 @@ namespace TpsDungeon.Items.Editor
             stone.Tint = new Color32(120, 114, 106, 255);
             yield return stone;
             yield return Thrown("Weapon_ThrowingKnife", "投げナイフ", WeaponRank.D, 18f, "軽く、速く、数を投げるためだけに研がれている。",
-                StylizedDaggers + "Dagger1_3_5.prefab", 0.35f, 0.05f, 1080f, flip: true);
+                StylizedDaggers + "Dagger4_1_3.prefab", 0.35f, 0.05f, 1080f, flip: true);
             yield return Thrown("Weapon_HandAxe", "手斧", WeaponRank.A, 38f, "回転しながら飛び、重さのまま食い込む。",
                 LowPolyWeapons + "Axe1H_Medium.prefab", 0.55f, 0.08f, 900f);
             yield return Thrown("Weapon_ThunderJavelin", "雷鳴の投槍", WeaponRank.S, 58f, "投げ放つと同時に、空気が裂けて鳴る。",
@@ -552,16 +560,19 @@ namespace TpsDungeon.Items.Editor
         private static WeaponSpec Staff(string id, string name, WeaponRank rank, float strength, string description, string typePath,
             string modelPath, params EnchantmentKind[] fixedEnchantments)
         {
+            return Staff(id, name, rank, strength, description, typePath, modelPath, StaffSkin.None, fixedEnchantments);
+        }
+
+        /// <summary>杖。skin でテクスチャを塗り替えてランクを表す（氷杖）。</summary>
+        private static WeaponSpec Staff(string id, string name, WeaponRank rank, float strength, string description, string typePath,
+            string modelPath, StaffSkin skin, params EnchantmentKind[] fixedEnchantments)
+        {
             return new WeaponSpec
             {
                 Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
                 TypePath = typePath, ModelPath = modelPath, Length = StaffLength, Grip = StaffGrip, StaffTip = true,
                 Blade = new Color32(120, 90, 60, 255), Hilt = new Color32(80, 55, 35, 255),
-                FixedEnchantments = fixedEnchantments,
-                TipOrb = typePath == LightningTypePath ? LightningOrb : typePath == SpikeLineTypePath ? SpikeLineOrb
-                    : typePath == FlamethrowerTypePath ? FlameOrb : (Color?)null,
-                // ランクが上がるほど玉を大きく（E 0.07 m → S 0.1 m）。
-                TipOrbSize = 0.07f + 0.03f * Mathf.InverseLerp(RankEnumIndex(WeaponRank.E), RankEnumIndex(WeaponRank.S), RankEnumIndex(rank)),
+                FixedEnchantments = fixedEnchantments, Skin = skin,
             };
         }
 
@@ -579,12 +590,12 @@ namespace TpsDungeon.Items.Editor
         }
 
         private static WeaponSpec Bow(string id, string name, WeaponRank rank, float strength, string description, string typePath,
-            string model, float length = BowLength)
+            string modelPath, float length = BowLength)
         {
             return new WeaponSpec
             {
                 Id = id, Name = name, Rank = rank, Strength = strength, Description = description,
-                TypePath = typePath, ModelPath = LowPolyWeapons + model, Length = length, CenterPivot = true,
+                TypePath = typePath, ModelPath = modelPath, Length = length, CenterPivot = true,
                 Blade = new Color32(140, 100, 60, 255), Hilt = new Color32(90, 60, 40, 255),
             };
         }
@@ -2117,8 +2128,9 @@ namespace TpsDungeon.Items.Editor
                     }
                 }
 
-                if (spec.Glow.HasValue) Glow(parent, spec, material);
-                AddTipOrb(parent, spec, material);
+                // 塗り替える杖（氷杖）はユニークの光も塗り替えの中で付ける（結晶だけを光らせる）。
+                if (spec.Skin != StaffSkin.None) Reskin(parent, spec, material);
+                else if (spec.Glow.HasValue) Glow(parent, spec, material);
                 return;
             }
 
@@ -2128,7 +2140,6 @@ namespace TpsDungeon.Items.Editor
             Gen.Part(parent, PrimitiveType.Cube, hilt, new Vector3(0f, 0.17f, 0f), new Vector3(0.2f, 0.03f, 0.04f));
             Gen.Part(parent, PrimitiveType.Cube, blade, new Vector3(0f, 0.17f + (spec.Length - 0.17f) * 0.5f, 0f),
                 new Vector3(0.06f, spec.Length - 0.17f, 0.012f));
-            AddTipOrb(parent, spec, material);
         }
 
         /// <summary>
@@ -2153,7 +2164,15 @@ namespace TpsDungeon.Items.Editor
                         if (glow.HasProperty("_EmissionColor"))
                         {
                             // 発光マップ（刃の筋や宝石など飾りの部分）があればそこを光の色で光らせる。模様ごと光らせると白く飛んで地味に見える。
+                            // 無ければ、地の絵から明るく色の濃い所（金の飾りなど）だけを抜いたマスクを作って発光マップにする。
                             Texture emissionMap = glow.HasProperty("_EmissionMap") ? glow.GetTexture("_EmissionMap") : null;
+                            Texture baseMap = glow.HasProperty("_BaseMap") ? glow.GetTexture("_BaseMap") : null;
+                            if (emissionMap == null && baseMap != null)
+                            {
+                                emissionMap = GlowMask(spec.Id, copies.Count, baseMap);
+                                glow.SetTexture("_EmissionMap", emissionMap);
+                            }
+
                             Color baseColor = glow.HasProperty("_BaseColor") ? glow.GetColor("_BaseColor") : Color.white;
                             glow.SetColor("_EmissionColor", emissionMap != null ? spec.Glow.Value : baseColor * UniquePlainGlow);
                             glow.EnableKeyword("_EMISSION");
@@ -2171,24 +2190,139 @@ namespace TpsDungeon.Items.Editor
             }
         }
 
-        /// <summary>杖の先（"Tip" と同じ所）に、属性の色で光る玉を置く。玉の上端が杖の先に揃うよう少し下げる。</summary>
-        private static void AddTipOrb(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
-        {
-            if (!spec.TipOrb.HasValue || spec.TipOrbSize <= 0f) return;
+        // ---- テクスチャの塗り替え --------------------------------------------
 
-            Color color = spec.TipOrb.Value;
-            Material orb = material($"Placeholder_{spec.Id}_Orb", color);
-            if (orb.HasProperty("_EmissionColor"))
+        /// <summary>塗り替えた絵と光のマスクの置き場。</summary>
+        private const string TexturesFolder = WeaponsFolder + "/Textures";
+
+        /// <summary>塗り替えた絵の大きさ（px）。元の 2048px は手に持つ大きさには過ぎるので縮める。</summary>
+        private const int SkinSize = 1024;
+
+        /// <summary>氷獄の王笏の結晶の光（HDR の青白）。</summary>
+        private static readonly Color PrisonGlow = new Color(0.7f, 1.3f, 2.4f, 1f);
+
+        // 1 回の生成で同じ絵を何度も作らない（アイコン・拾える物・手に持つ見た目で 3 回呼ばれる）。Generate の頭で空にする。
+        private static readonly Dictionary<string, Texture2D> generatedTextures = new Dictionary<string, Texture2D>();
+
+        /// <summary>
+        /// 素材のマテリアルを複製し、地の絵を spec.Skin の塗り方で塗り替えたものに差し替える（Placeholder_{Id}_Skin）。
+        /// 氷獄の王笏は結晶の所だけを抜いた発光マップで、結晶を青白く光らせる。
+        /// </summary>
+        private static void Reskin(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
+        {
+            foreach (Renderer r in parent.GetComponentsInChildren<Renderer>())
             {
-                orb.EnableKeyword("_EMISSION");
-                // 強すぎると白く飛んで色で見分けられないので、地の色と同じくらいに抑える。
-                orb.SetColor("_EmissionColor", color * 0.6f);
-                orb.globalIlluminationFlags = EmissiveFlags;
-                EditorUtility.SetDirty(orb);
+                Material[] shared = r.sharedMaterials;
+                for (int i = 0; i < shared.Length; i++)
+                {
+                    Material source = shared[i];
+                    Texture baseMap = source != null && source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : null;
+                    if (baseMap == null) continue;
+
+                    Material skin = material($"Placeholder_{spec.Id}_Skin", Color.white);
+                    skin.shader = source.shader;
+                    skin.CopyPropertiesFromMaterial(source);
+                    string stem = $"{System.IO.Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(baseMap))}_{spec.Skin}";
+                    skin.SetTexture("_BaseMap", SkinTexture(stem, baseMap, spec.Skin, false));
+                    if (skin.HasProperty("_MainTex")) skin.SetTexture("_MainTex", skin.GetTexture("_BaseMap"));
+
+                    bool glow = spec.Skin == StaffSkin.Prison;
+                    if (glow)
+                    {
+                        skin.SetTexture("_EmissionMap", SkinTexture(stem + "_Glow", baseMap, spec.Skin, true));
+                        skin.SetColor("_EmissionColor", PrisonGlow);
+                        skin.EnableKeyword("_EMISSION");
+                        skin.globalIlluminationFlags = EmissiveFlags;
+                    }
+                    else
+                    {
+                        skin.DisableKeyword("_EMISSION");
+                        skin.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+                    }
+
+                    EditorUtility.SetDirty(skin);
+                    shared[i] = skin;
+                }
+
+                r.sharedMaterials = shared;
+            }
+        }
+
+        /// <summary>
+        /// 氷杖の地の絵を塗り替える。画素を色で 3 つ（木の柄・青い結晶・暗い金属の飾り）に分け、部分ごとに色を替える。
+        /// mask が真なら、結晶の所だけを白く抜いた発光マップを作る。
+        /// </summary>
+        private static Texture2D SkinTexture(string stem, Texture baseMap, StaffSkin skin, bool mask)
+        {
+            return WriteTexture(stem, baseMap, c =>
+            {
+                Color.RGBToHSV(c, out float h, out float s, out float v);
+                bool wood = h > 0.05f && h < 0.17f && s > 0.15f;
+                bool crystal = !wood && h > 0.5f && h < 0.72f && s > 0.3f && v > 0.5f;
+                if (mask) return crystal ? Color.white * Mathf.InverseLerp(0.5f, 0.9f, v) : Color.black;
+                if (wood) return c;
+
+                switch (skin)
+                {
+                    case StaffSkin.Stone:
+                        // 結晶も金属も色を抜いて灰色の石に。少し暖かい灰にして、氷（青）と見分ける。
+                        return Color.HSVToRGB(0.08f, 0.08f, v * (crystal ? 0.7f : 0.8f));
+                    case StaffSkin.Gold:
+                        return crystal ? Color.HSVToRGB(0.52f, 0.55f, Mathf.Min(1f, v * 1.15f)) : Gilded(v);
+                    case StaffSkin.Prison:
+                        return crystal ? Color.HSVToRGB(0.6f, 0.4f, Mathf.Min(1f, v * 1.25f)) : Gilded(v);
+                    default:
+                        return c;
+                }
+            });
+        }
+
+        /// <summary>暗い金属の飾りを、明るさを保ったまま金に塗る。</summary>
+        private static Color Gilded(float v) => Color.HSVToRGB(0.11f, 0.65f, Mathf.Min(1f, 0.25f + v * 1.3f));
+
+        /// <summary>地の絵から、明るく色の濃い所（金の飾りや宝石）だけを白く抜いたユニークの光のマスク。</summary>
+        private static Texture2D GlowMask(string id, int index, Texture baseMap)
+        {
+            return WriteTexture($"{id}_GlowMask{index}", baseMap, c =>
+            {
+                Color.RGBToHSV(c, out _, out float s, out float v);
+                return Color.white * (Mathf.InverseLerp(0.3f, 0.6f, s) * Mathf.InverseLerp(0.45f, 0.8f, v));
+            });
+        }
+
+        /// <summary>
+        /// 素材の絵をファイルから読み（インポート設定の Read/Write に頼らない）、画素ごとに paint で塗って SkinSize の PNG に書き、取り込む。
+        /// 同じ名前なら同じパスに上書きするので、何度生成しても GUID は変わらない。
+        /// </summary>
+        private static Texture2D WriteTexture(string stem, Texture baseMap, Func<Color, Color> paint)
+        {
+            if (generatedTextures.TryGetValue(stem, out Texture2D cached) && cached != null) return cached;
+
+            var source = new Texture2D(2, 2);
+            source.LoadImage(System.IO.File.ReadAllBytes(AssetDatabase.GetAssetPath(baseMap)));
+            int size = Mathf.Min(SkinSize, source.width);
+            var painted = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Color c = source.GetPixelBilinear((x + 0.5f) / size, (y + 0.5f) / size);
+                Color p = paint(c);
+                p.a = 1f;
+                pixels[y * size + x] = p;
             }
 
-            float tip = spec.CenterPivot ? spec.Length * 0.5f : spec.Length - spec.Grip;
-            Gen.Part(parent, PrimitiveType.Sphere, orb, Vector3.up * (tip - spec.TipOrbSize * 0.5f), Vector3.one * spec.TipOrbSize);
+            painted.SetPixels(pixels);
+            Gen.EnsureFolder(TexturesFolder);
+            string path = $"{TexturesFolder}/{stem}.png";
+            System.IO.File.WriteAllBytes(path, painted.EncodeToPNG());
+            Object.DestroyImmediate(source);
+            Object.DestroyImmediate(painted);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            generatedTextures[stem] = texture;
+            return texture;
         }
 
         private static bool TryPlaceModel(GameObject parent, GameObject source, float targetLength, bool centered = false, float grip = 0f,
