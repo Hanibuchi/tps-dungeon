@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_11_0E_PoisonArrowBow
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_PoisonArrowBow
+  displayName: "\u6BD2\u77E2\u306E\u5F13"
+  description: "\u964D\u308A\u6CE8\u3044\u3060\u77E2\u304C\u3001\u5730\u9762\u306B\u3058\u308F\u308A\u3068\u6BD2\u3092\u6B8B\u3059\u3002"
+  icon: {fileID: 2800000, guid: a7a761311bd4041218f088ce2b4f8656, type: 3}
+  worldPrefab: {fileID: 3992828912671850186, guid: 280bfb7a07f1d4ff487eaabb954ba28c, type: 3}
+  rank: 0
+  strength: 6
+  weaponType: {fileID: 11400000, guid: a9aaf9221ad85494e9a8900e31335817, type: 2}
+  heldModel: {fileID: 8290147775863003543, guid: 45449ae3915e745948522c8048aff95e, type: 3}

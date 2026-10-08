@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\u5F13"
   animatorWeaponType: 3
   canUseShield: 0
+  passiveGear: 0
   allowedEnchantments:
   - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
   - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
@@ -68,6 +69,62 @@ MonoBehaviour:
   rainEffect: {fileID: 0}
   rainEffectRadius: 4
   rainAimPitch: 35
+  castDelay: 0.12
+  chainAimAngle: 10
+  chainJumps: 3
+  chainJumpsPerCount: 2
+  chainRange: 6
+  chainJumpDelay: 0.06
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.55, g: 0.75, b: 1, a: 1}
+  boltWidth: 0.06
+  boltDuration: 0.2
+  lineStartDistance: 1.2
+  lineSpacing: 1.1
+  linePillarCount: 8
+  lineInterval: 0.05
+  lineRadius: 0.9
+  lineHeight: 2
+  lineSpreadAngle: 20
+  lineRepeatInterval: 0.45
+  lineEffect: {fileID: 0}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
+  flameDuration: 2.4
+  flameTickInterval: 0.2
+  flameRange: 6
+  flameAngle: 14
+  flameBaseRadius: 0.25
+  flameSpreadAngle: 25
+  flameHomingAngle: 40
+  flameHomingTurnRate: 120
+  flameEffect: {fileID: 0}
+  flameEffectLength: 6
+  flameSoundInterval: 0.6
+  summonDuration: 12
+  summonScatterMin: 1.2
+  summonScatterMax: 2.5
+  summonMinGap: 1
+  summonHealthPerStrength: 10
+  summonEffect: {fileID: 0}
+  summonEffectScale: 1
+  dismissEffect: {fileID: 0}
+  dismissEffectScale: 1
+  healRadius: 2
+  healHeight: 2
+  healDuration: 5
+  healTickInterval: 0.5
+  healFlightTime: 0.55
+  healArcHeight: 2
+  healScatterMin: 2
+  healScatterMax: 4
+  healRepeatInterval: 1.5
+  healSeedPrefab: {fileID: 0}
+  healEffect: {fileID: 0}
+  healEffectRadius: 4
+  healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
+  healSound: {fileID: 0}
+  healSoundVolume: 0.8
   drawSound: {fileID: 8300000, guid: 9fae71eb8ca8147d4955767b4d1c3872, type: 3}
   stickSound: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stickSoundVolume: 0.6
@@ -77,7 +134,7 @@ MonoBehaviour:
   rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
   aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}
   heldInLeftHand: 1
-  heldLocalPosition: {x: 0.018, y: -0, z: 0.072}
+  heldLocalPosition: {x: 0.018, y: -0, z: 0.034399997}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1

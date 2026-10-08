@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_04_5S_GiantSlayerGreatsword
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_GiantSlayerGreatsword
+  displayName: "\u5DE8\u4EBA\u65AC\u308A\u306E\u5927\u5263"
+  description: "\u304B\u3064\u3066\u5DE8\u4EBA\u306E\u819D\u3092\u65AD\u3063\u305F\u3068\u4F1D\u308F\u308B\u3002"
+  icon: {fileID: 2800000, guid: 60c649d7e52444b64a929b9540e0aede, type: 3}
+  worldPrefab: {fileID: 7446420529161848980, guid: add9b6c850cb24293823ff7474155bb5, type: 3}
+  rank: 5
+  strength: 49
+  weaponType: {fileID: 11400000, guid: 55aa04e267d1147149ec48e82c4f25d1, type: 2}
+  heldModel: {fileID: 2719528559585777866, guid: 78ceb5687da66424ab771b765d013754, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

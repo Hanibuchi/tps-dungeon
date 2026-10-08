@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_17_3B_WorldTreeBranchStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_WorldTreeBranchStaff
+  displayName: "\u4E16\u754C\u6A39\u306E\u679D\u6756"
+  description: "\u843D\u3061\u305F\u5834\u6240\u306B\u6839\u3092\u5F35\u308A\u3001\u5468\u56F2\u3092\u7DD1\u306E\u52A0\u8B77\u3067\u6E80\u305F\u3059\u3002"
+  icon: {fileID: 2800000, guid: dedb3bdd9dc0a4b4b8c7fe32c71904d5, type: 3}
+  worldPrefab: {fileID: 1946401698302868533, guid: 137081ec77f514bd9a044d99515d8029, type: 3}
+  rank: 3
+  strength: 30
+  weaponType: {fileID: 11400000, guid: 662fc89f242144e03a54a91f16f19b33, type: 2}
+  heldModel: {fileID: 6488361849817225279, guid: a45eae47548c84533a1fbb1b1935abce, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

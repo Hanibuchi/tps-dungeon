@@ -131,7 +131,7 @@ MonoBehaviour:
   rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
   aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}
   heldInLeftHand: 0
-  heldLocalPosition: {x: -0.09, y: 0, z: -0.02}
+  heldLocalPosition: {x: -0.121999994, y: -0, z: -0.060999997}
   heldLocalEuler: {x: 0, y: 0, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1
