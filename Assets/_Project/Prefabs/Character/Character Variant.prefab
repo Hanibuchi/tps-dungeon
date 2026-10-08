@@ -1,321 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &805902924561893918
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1314704842998318305}
-  - component: {fileID: 4402327844944264542}
-  - component: {fileID: 5928083924021284814}
-  m_Layer: 0
-  m_Name: Inventory Screen
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1314704842998318305
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805902924561893918}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3715460319869569215}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4402327844944264542
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805902924561893918}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: abfb7f159945040fe9d002464fdac521, type: 3}
-  m_SortingOrder: 5
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &5928083924021284814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805902924561893918}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 80b78353c34e84e71ac21004e4236179, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.UI.InventoryScreen
-  playerInput: {fileID: 4090438157950177801}
-  inventory: {fileID: 7164853347632738234}
-  hotbar: {fileID: 7227348474748329602}
-  controls: {fileID: 9017600457561530597}
-  mapToggle: {fileID: 8948942209542754525}
-  toggleActionName: Player/Inventory
-  cancelActionName: UI/Cancel
-  quickMoveActionName: UI/QuickMove
-  dropActionName: Player/Drop
-  gameplayMapName: Player
-  menuMapName: UI
---- !u!1 &1605216043675353633
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2797677097111593961}
-  - component: {fileID: 6992024896062732690}
-  - component: {fileID: 4804521241758134090}
-  - component: {fileID: 5555794773749821019}
-  m_Layer: 0
-  m_Name: Game HUD
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2797677097111593961
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1605216043675353633}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3715460319869569215}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6992024896062732690
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1605216043675353633}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: fa0c622016ba348d2b8d96261b8240ca, type: 3}
-  m_SortingOrder: -10
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &4804521241758134090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1605216043675353633}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f36ee5b780594da69ed281a10561a57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.GameHudView
-  health: {fileID: 1830929375005900730}
-  progression: {fileID: 4778576193049319955}
-  hotbar: {fileID: 7227348474748329602}
-  inventory: {fileID: 7164853347632738234}
-  attacker: {fileID: 0}
-  ranged: {fileID: 6755422925214155692}
-  mapToggle: {fileID: 8948942209542754525}
-  player: {fileID: 3715460319869569215}
---- !u!114 &5555794773749821019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1605216043675353633}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfff13dd446424cf6b35f4a465499f85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Hud::TpsDungeon.Hud.DamageNumberView
-  attacker: {fileID: 8189682549201205282}
-  ranged: {fileID: 6755422925214155692}
-  viewCamera: {fileID: 0}
---- !u!1 &2845389573017558099
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6525864250617773025}
-  - component: {fileID: 2240184168493240660}
-  - component: {fileID: 290415931120243090}
-  m_Layer: 0
-  m_Name: Interaction HUD
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6525864250617773025
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2845389573017558099}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3715460319869569215}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2240184168493240660
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2845389573017558099}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: 83c65ef2b561c47dba378a520707a8ec, type: 3}
-  m_SortingOrder: -10
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &290415931120243090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2845389573017558099}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63993566767924402a4706924849024e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Interaction::TpsDungeon.Interaction.InteractionPromptView
-  interactor: {fileID: 9053242115702525082}
---- !u!1 &3060933611032281219
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 883518903114229607}
-  - component: {fileID: 1910749591983420778}
-  - component: {fileID: 5126030718571403803}
-  m_Layer: 0
-  m_Name: Pause Menu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &883518903114229607
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3060933611032281219}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3715460319869569215}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1910749591983420778
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3060933611032281219}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: b60a5220572db42cd8d575a013b201c4, type: 3}
-  m_SortingOrder: 10
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &5126030718571403803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3060933611032281219}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d4c421cbb797448da989943e944d62c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.UI.PauseMenu
-  playerInput: {fileID: 4090438157950177801}
-  controls: {fileID: 9017600457561530597}
-  mapToggle: {fileID: 8948942209542754525}
-  previewClip: {fileID: 8300000, guid: f73b4c70b81d3481a828dd1251e54e98, type: 3}
-  pauseActionName: Player/Pause
-  cancelActionName: UI/Cancel
-  gameplayMapName: Player
-  menuMapName: UI
 --- !u!1001 &398626891475622100
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -384,7 +68,11 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 8bc7173f0ad234c7ebd18fa147f9bbcb, type: 2}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4416926081852918490, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+    - {fileID: 135756642000475821, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+    - {fileID: 5885216827943657505, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+    - {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
     m_RemovedGameObjects:
     - {fileID: 5930158855145388821, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
     - {fileID: 3837663348675104489, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
@@ -392,18 +80,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3553687966822061183}
-    - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6525864250617773025}
-    - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2797677097111593961}
-    - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 883518903114229607}
-    - targetCorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1314704842998318305}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
@@ -416,22 +92,10 @@ PrefabInstance:
       addedObject: {fileID: 7227348474748329602}
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8948942209542754525}
-    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 9017600457561530597}
-    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7164853347632738234}
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4778576193049319955}
-    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8144903999415185622}
-    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7716004868957899199}
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1453996205278419730}
@@ -459,6 +123,24 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1002298641197141462}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3234749516383935180}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4964012263917139253}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1009693259644839325}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5778266785628905256}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8212326180989454537}
+    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5321254511238759108}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!4 &3715460319869569215 stripped
 Transform:
@@ -482,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f24a3cbd7df849d9acd1e00c54061a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Interaction::TpsDungeon.Interaction.PlayerInteractor
-  playerInput: {fileID: 4090438157950177801}
+  playerInput: {fileID: 0}
   interactActionName: Interact
   aimCamera: {fileID: 0}
   maxAimDistance: 10
@@ -517,40 +199,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63e9a5c43152d4638b0db09632caf2f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.PlayerHotbar
-  playerInput: {fileID: 4090438157950177801}
+  playerInput: {fileID: 0}
   scrollActionName: HotbarScroll
   slotActionPrefix: HotbarSlot
   dropActionName: Player/Drop
   scrollGestureGap: 0.15
---- !u!114 &8948942209542754525
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4090438157950177797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c236f21c9d8794277bcc9aec68145c18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.PlayerMapToggle
-  playerInput: {fileID: 4090438157950177801}
-  mapActionName: Map
---- !u!114 &9017600457561530597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4090438157950177797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e11269f794c64c719699c0db5eb2ca4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.PlayerControlSettings
-  playerInput: {fileID: 4090438157950177801}
-  lookActionName: Look
-  hotbar: {fileID: 0}
 --- !u!114 &7164853347632738234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -583,38 +236,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.CharacterProgression
   profile: {fileID: 11400000, guid: 6addb8b63aebd43feb526ba4de97c216, type: 2}
   progressId: player
---- !u!114 &8144903999415185622
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4090438157950177797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a68e2b1955b4246378a7abfc0d64b139, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.PartyProgression
-  autoLoad: 1
-  autoSave: 1
---- !u!114 &7716004868957899199
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4090438157950177797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 06c692bae322b4c088e520ceda917a36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.ProgressionDebugInput
-  party: {fileID: 0}
-  expAmount: 100
-  grantExpKey: 98
-  levelUpKey: 99
-  resetKey: 100
-  deleteSaveKey: 101
 --- !u!114 &1453996205278419730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -685,7 +306,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 709cadbda84464dbab8aeb987bc464ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Combat::TpsDungeon.Combat.PlayerMeleeInput
-  playerInput: {fileID: 4090438157950177801}
+  playerInput: {fileID: 0}
   attackActionName: Player/Attack
 --- !u!114 &6755422925214155692
 MonoBehaviour:
@@ -766,20 +387,152 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Combat::TpsDungeon.Combat.RangedShoulderCamera
   rangedSideOffset: 0.6
   sideChangeSpeed: 3
---- !u!114 &4090438157950177801 stripped
+--- !u!114 &3234749516383935180
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4416926081852918493, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-  m_PrefabInstance: {fileID: 398626891475622100}
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4090438157950177797}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Script: {fileID: 11500000, guid: 65518bfc2cf9d43a78da0e2b290577ba, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: TpsDungeon.Player::TpsDungeon.Player.CharacterMotor
+  MoveSpeed: 2
+  SprintSpeed: 5.335
+  RotationSmoothTime: 0.12
+  SpeedChangeRate: 10
+  LandingAudioClip: {fileID: 8300000, guid: ff697d3070687ce4583faa0561a145a2, type: 3}
+  FootstepAudioClips:
+  - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
+  - {fileID: 8300000, guid: 85016e0f2b01da248b9663dd49a161b0, type: 3}
+  - {fileID: 8300000, guid: 186de84b3207156479abe98f4958fed0, type: 3}
+  - {fileID: 8300000, guid: 1a91fcd19acf1e54bba0945d9f390849, type: 3}
+  - {fileID: 8300000, guid: 14e8a8d2158bec840b56c54f5266e692, type: 3}
+  - {fileID: 8300000, guid: 29841e7d5bbfb5b419c9ad16ca8bc4c1, type: 3}
+  - {fileID: 8300000, guid: dd1af302b8902684d9381de1f2d3a5af, type: 3}
+  - {fileID: 8300000, guid: 67c8b33e424ccdc4486edf538ab91c5a, type: 3}
+  - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
+  - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
+  FootstepAudioVolume: 0.3
+  JumpHeight: 1.2
+  Gravity: -15
+  JumpTimeout: 0.3
+  FallTimeout: 0.15
+  Grounded: 1
+  GroundedOffset: -0.14
+  GroundedRadius: 0.28
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  CinemachineCameraTarget: {fileID: 8516936782232103774}
+  TopClamp: 70
+  BottomClamp: -30
+  CameraAngleOverride: 0
+  LockCameraPosition: 0
+--- !u!195 &4964012263917139253
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 0.28
+  m_Speed: 2
+  m_Acceleration: 24
+  avoidancePriority: 50
+  m_AngularSpeed: 720
+  m_StoppingDistance: 0.35
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1.8
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 2
+--- !u!114 &1009693259644839325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22b6dbd765f6642d8b80929002047a0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.PartyMember
+  displayName: "\u4EF2\u9593"
+  startingItems: []
+--- !u!114 &5778266785628905256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ac0f47569a4f4842a8b7ef09b9381de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.FollowerLocomotion
+  walkSpeed: 2
+  runSpeed: 6
+  runDistance: 2.5
+  arriveDistance: 0.35
+  catchUpDistance: 22
+  stuckTime: 3
+  repathInterval: 0.2
+--- !u!114 &8212326180989454537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5169ef70852724b539764c4c7a95b4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.FollowerBrain
+  detectRadius: 14
+  loseRadius: 18
+  closeDistance: 4
+  leashDistance: 12
+  scanInterval: 0.2
+  healBelow: 0.8
+  sightMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  eyeHeight: 1.5
+--- !u!114 &5321254511238759108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4090438157950177797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f12a315725914579aa2236f18059ce8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.CharacterAppearance
+  catalog: {fileID: 11400000, guid: 7400f7cf1124d4cf5b7aebc703238438, type: 2}
+  look:
+    horn: 0
+    ear: 0
+    tail: 0
 --- !u!95 &7309302257321726661 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 6982812146204527121, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+  m_PrefabInstance: {fileID: 398626891475622100}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8516936782232103774 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8338988566280778634, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
   m_PrefabInstance: {fileID: 398626891475622100}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8475158456215154129

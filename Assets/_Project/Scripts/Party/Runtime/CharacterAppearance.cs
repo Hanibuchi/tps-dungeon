@@ -49,9 +49,9 @@ namespace TpsDungeon.Party
             get
             {
                 if (catalog == null) return null;
-                if (look.horn > 0) return CharacterAccessoryCatalog.MainColor(catalog.HornLeft(look.horn));
-                if (look.ear > 0) return CharacterAccessoryCatalog.MainColor(catalog.EarLeft(look.ear));
-                if (look.tail > 0) return CharacterAccessoryCatalog.MainColor(catalog.Tail(look.tail));
+                if (look.horn > 0) return catalog.HornColor(look.horn);
+                if (look.ear > 0) return catalog.EarColor(look.ear);
+                if (look.tail > 0) return catalog.TailColor(look.tail);
                 return null;
             }
         }

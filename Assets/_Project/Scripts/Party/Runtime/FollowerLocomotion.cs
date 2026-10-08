@@ -156,7 +156,8 @@ namespace TpsDungeon.Party
                 else if (agent.hasPath) agent.ResetPath();
             }
 
-            UpdateStuck(distance > stop + 0.5f, party);
+            // 列の位置が重なって押し合っているだけのときは跳ばさない。遠いのに進めないときだけ。
+            UpdateStuck(distance > Mathf.Max(stop + 0.5f, 3f), party);
             WriteAnimator(Flat(agent.velocity).magnitude);
         }
 

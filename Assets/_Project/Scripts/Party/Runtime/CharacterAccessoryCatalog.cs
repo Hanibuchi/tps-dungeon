@@ -41,16 +41,21 @@ namespace TpsDungeon.Party
         [Header("角（色の番号順）")]
         [SerializeField] private GameObject[] hornsLeft = new GameObject[CharacterLook.HornColors];
         [SerializeField] private GameObject[] hornsRight = new GameObject[CharacterLook.HornColors];
-        [SerializeField] private Placement hornPlacement = new Placement(HumanBodyBones.Head, new Vector3(0f, 1.74f, 0f), Vector3.zero, 1f);
+        [SerializeField] private Placement hornPlacement = new Placement(HumanBodyBones.Head, new Vector3(0f, 1.72f, -0.02f), new Vector3(-15f, 0f, 0f), 0.8f);
 
         [Header("耳（色の番号順）")]
         [SerializeField] private GameObject[] earsLeft = new GameObject[CharacterLook.EarColors];
         [SerializeField] private GameObject[] earsRight = new GameObject[CharacterLook.EarColors];
-        [SerializeField] private Placement earPlacement = new Placement(HumanBodyBones.Head, new Vector3(-0.07f, 1.76f, -0.02f), new Vector3(0f, 0f, 15f), 1f);
+        [SerializeField] private Placement earPlacement = new Placement(HumanBodyBones.Head, new Vector3(-0.085f, 1.74f, -0.03f), new Vector3(0f, 0f, 25f), 0.75f);
+
+        [Header("色見本（組み込みのときに小物のパレットから読む）")]
+        [SerializeField] private Color[] hornColors = new Color[CharacterLook.HornColors];
+        [SerializeField] private Color[] earColors = new Color[CharacterLook.EarColors];
+        [SerializeField] private Color[] tailColors = new Color[CharacterLook.TailColors];
 
         [Header("しっぽ（色の番号順）")]
         [SerializeField] private GameObject[] tails = new GameObject[CharacterLook.TailColors];
-        [SerializeField] private Placement tailPlacement = new Placement(HumanBodyBones.Hips, new Vector3(0f, 0.98f, -0.12f), Vector3.zero, 0.8f);
+        [SerializeField] private Placement tailPlacement = new Placement(HumanBodyBones.Hips, new Vector3(0f, 0.95f, -0.12f), new Vector3(-15f, 0f, 0f), 0.65f);
 
         public Placement HornPlacement => hornPlacement;
         public Placement EarPlacement => earPlacement;
@@ -63,23 +68,15 @@ namespace TpsDungeon.Party
         public GameObject EarRight(int color) => Pick(earsRight, color);
         public GameObject Tail(int color) => Pick(tails, color);
 
-        /// <summary>小物の主な色（仲間の一覧の色見本に使う）。無ければ null。</summary>
-        public static Color? MainColor(GameObject prefab)
+        /// <summary>color 番（1 始まり）の角・耳・しっぽの主な色（仲間の一覧の色見本に使う）。無ければ null。</summary>
+        public Color? HornColor(int color) => PickColor(hornColors, color);
+        public Color? EarColor(int color) => PickColor(earColors, color);
+        public Color? TailColor(int color) => PickColor(tailColors, color);
+
+        private static Color? PickColor(Color[] list, int color)
         {
-            if (prefab == null) return null;
-            var renderer = prefab.GetComponentInChildren<Renderer>();
-            if (renderer == null) return null;
-
-            // 色はパレットのテクスチャの UV で決まっているので、メッシュの UV の真ん中の色を読む。
-            Mesh mesh = renderer is SkinnedMeshRenderer skinned ? skinned.sharedMesh
-                : renderer.TryGetComponent(out MeshFilter filter) ? filter.sharedMesh : null;
-            Material material = renderer.sharedMaterial;
-            Texture2D texture = material != null ? material.mainTexture as Texture2D : null;
-            if (mesh == null || texture == null || !texture.isReadable || mesh.uv == null || mesh.uv.Length == 0)
-                return material != null && material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : (Color?)null;
-
-            Vector2 uv = mesh.uv[mesh.uv.Length / 2];
-            return texture.GetPixelBilinear(uv.x, uv.y);
+            int index = color - 1;
+            return list != null && index >= 0 && index < list.Length ? list[index] : (Color?)null;
         }
 
         private static GameObject Pick(GameObject[] list, int color)
@@ -97,6 +94,14 @@ namespace TpsDungeon.Party
             earsLeft = newEarsLeft;
             earsRight = newEarsRight;
             tails = newTails;
+        }
+
+        /// <summary>色見本を差し込む（エディタの組み込みから）。</summary>
+        public void SetColors(Color[] newHornColors, Color[] newEarColors, Color[] newTailColors)
+        {
+            hornColors = newHornColors;
+            earColors = newEarColors;
+            tailColors = newTailColors;
         }
 #endif
     }

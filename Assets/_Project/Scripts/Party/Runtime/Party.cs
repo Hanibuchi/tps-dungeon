@@ -158,8 +158,25 @@ namespace TpsDungeon.Party
 
         public int IndexOf(PartyMember member) => Order.IndexOf(member);
 
-        /// <summary>index 番目の人が立つ列の位置（跡に沿って index × 間隔だけ後ろ）。</summary>
-        public Vector3 FormationPoint(int index) => Trail.PointAt(Mathf.Max(0, index) * spacing);
+        /// <summary>
+        /// index 番目の人が立つ列の位置（跡に沿って index × 間隔だけ後ろ）。
+        /// 跡が足りない（作り直した直後で後ろが壁）ときは、跡の端の左右に互い違いに並べる。
+        /// </summary>
+        public Vector3 FormationPoint(int index)
+        {
+            float distance = Mathf.Max(0, index) * spacing;
+            Vector3 point = Trail.PointAt(distance);
+            float length = Trail.Length;
+            if (index <= 0 || distance <= length + 0.01f) return point;
+
+            // 跡の端から何人目にはみ出したか（1 始まり）。左右へ互い違いに 1 間隔ずつ開く。
+            int over = Mathf.CeilToInt((distance - length) / spacing);
+            Vector3 along = Trail.TailDirection ?? (Leader != null ? -Leader.transform.forward : Vector3.back);
+            Vector3 side = Vector3.Cross(Vector3.up, along).normalized;
+            float offset = ((over + 1) / 2) * spacing * (over % 2 == 1 ? 1f : -1f);
+            Vector3 wanted = point + side * offset;
+            return NavMesh.Raycast(OnNavMesh(point), wanted, out NavMeshHit hit, NavMesh.AllAreas) ? hit.position : wanted;
+        }
 
         /// <summary>
         /// 先頭の後ろに跡をまっすぐ作り直し、後ろの全員をその列の位置へ跳ばす。始まりと、先頭が跳んだときに使う。
@@ -170,13 +187,59 @@ namespace TpsDungeon.Party
             if (leader == null) return;
 
             Transform t = leader.transform;
-            lastLeaderPosition = t.position;
-            Trail.Reset(t.position, -t.forward);
+            ResetTrailBehind(leader);
+
+            // NavMesh がまだ無い（フロアの生成と焼き上がりを待っている）間は並べない。焼けたら Baked でもう一度呼ばれる。
+            if (!NavMesh.SamplePosition(t.position, out NavMeshHit _, 2f, NavMesh.AllAreas)) return;
+
             for (int i = 1; i < Order.Count; i++) Order[i].PlaceAt(FormationPoint(i), t.rotation);
             Regrouped?.Invoke(this);
         }
 
         private void OnNavMeshBaked() => Regroup();
+
+        /// <summary>
+        /// leader の後ろに跡を作り直す。真後ろが壁で詰まっていれば、NavMesh の上で一番開けている向きを使い、
+        /// 跡は壁に当たる所までにする（後ろの人が壁の向こうの部屋へ回り込まないように）。
+        /// </summary>
+        private void ResetTrailBehind(PartyMember leader)
+        {
+            Transform t = leader.transform;
+            lastLeaderPosition = t.position;
+            float wanted = spacing * (Order.Count - 1) + spacing;
+
+            Vector3 origin = OnNavMesh(t.position);
+
+            // 真後ろから左右へ 45 度ずつ向きを変えて探し、数人ぶん並べる長さがある最初の向きを使う（後ろに近い向きほど先）。
+            // どの向きも短ければ、一番長い向き。
+            float enough = Mathf.Min(wanted, spacing * 2.5f);
+            Vector3 best = -t.forward;
+            float bestLength = -1f;
+            foreach (float angle in new[] { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f })
+            {
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * -t.forward;
+                float length = FreeLength(origin, direction, wanted);
+                if (length > bestLength + 0.1f)
+                {
+                    best = direction;
+                    bestLength = length;
+                }
+
+                if (length >= enough) break;
+            }
+
+            Trail.Reset(t.position, best, bestLength);
+        }
+
+        /// <summary>origin から direction へ、NavMesh の端（壁）に当たるまでの長さ（最大 max）。NavMesh が無ければ max。</summary>
+        private static float FreeLength(Vector3 origin, Vector3 direction, float max)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 1e-6f) return 0f;
+            Vector3 end = origin + direction.normalized * max;
+            if (!NavMesh.SamplePosition(origin, out NavMeshHit start, 1f, NavMesh.AllAreas)) return max;
+            return NavMesh.Raycast(start.position, end, out NavMeshHit hit, NavMesh.AllAreas) ? Mathf.Max(0f, hit.distance - 0.4f) : max;
+        }
 
         private void OnOrderChanged(PartyOrder<PartyMember> _)
         {
@@ -201,8 +264,7 @@ namespace TpsDungeon.Party
             // 新しい先頭の後ろに跡を作り直す。後ろの人はそこから歩いて並び直す（跳ばさない）。
             if (after != null)
             {
-                lastLeaderPosition = after.transform.position;
-                Trail.Reset(after.transform.position, -after.transform.forward);
+                ResetTrailBehind(after);
                 Regrouped?.Invoke(this);
             }
         }

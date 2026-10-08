@@ -34,30 +34,35 @@ namespace TpsDungeon.Party
             if (obstacle.enabled != closed) obstacle.enabled = closed;
         }
 
-        /// <summary>扉の板の大きさに合わせる（開口いっぱい、厚みは道を切れる程度に）。</summary>
+        /// <summary>
+        /// 扉の開口に合わせる。開口は扉を触る範囲（トリガーの箱）か、扉の板（Leaf）の箱で測る。柱や鴨居は壁と同じく焼いてあるので見ない。
+        /// 厚みは道を切れる程度にする。
+        /// </summary>
         private void FitToOpening()
         {
-            Collider leaf = null;
-            foreach (Collider c in GetComponentsInChildren<Collider>(true))
+            BoxCollider opening = null;
+            foreach (BoxCollider box in GetComponentsInChildren<BoxCollider>(true))
             {
-                if (c.isTrigger) continue;
-                leaf = c;
-                break;
+                if (box.isTrigger || box.name == "Leaf")
+                {
+                    opening = box;
+                    if (box.isTrigger) break;
+                }
             }
 
-            if (leaf == null)
+            if (opening == null)
             {
                 obstacle.center = new Vector3(0f, 1f, 0f);
-                obstacle.size = new Vector3(1.6f, 2f, 0.4f);
+                obstacle.size = new Vector3(2f, 2f, 0.4f);
                 return;
             }
 
-            Transform t = leaf.transform;
-            Vector3 lossy = t.lossyScale;
-            Vector3 size = transform.InverseTransformVector(t.TransformVector(Vector3.one));
-            size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Max(0.4f, Mathf.Abs(size.z)));
-            obstacle.center = transform.InverseTransformPoint(t.position);
-            obstacle.size = lossy.sqrMagnitude > 0f ? size : new Vector3(1.6f, 2f, 0.4f);
+            // 箱の中心と大きさを、扉の GameObject から見た値にする。
+            Transform t = opening.transform;
+            Vector3 center = transform.InverseTransformPoint(t.TransformPoint(opening.center));
+            Vector3 size = transform.InverseTransformVector(t.TransformVector(opening.size));
+            obstacle.center = center;
+            obstacle.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Max(0.4f, Mathf.Abs(size.z)));
         }
     }
 }

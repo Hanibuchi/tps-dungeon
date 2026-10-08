@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TpsDungeon.Combat;
 using TpsDungeon.Hud.Editor;
 using TpsDungeon.Interaction.Editor;
@@ -110,14 +111,56 @@ namespace TpsDungeon.Party.Editor
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
 
+            GameObject[] hornsLeft = Load("FCA_Horn_Type1_L_Color{0}", CharacterLook.HornColors);
+            GameObject[] earsLeft = Load("FCA_Ear_Type1_L_Color{0}", CharacterLook.EarColors);
+            GameObject[] tails = Load("FCA_Tail_Static_Type1_Color{0}", CharacterLook.TailColors);
             catalog.SetPrefabs(
-                Load("FCA_Horn_Type1_L_Color{0}", CharacterLook.HornColors),
+                hornsLeft,
                 Load("FCA_Horn_Type1_R_Color{0}", CharacterLook.HornColors),
-                Load("FCA_Ear_Type1_L_Color{0}", CharacterLook.EarColors),
+                earsLeft,
                 Load("FCA_Ear_Type1_R_Color{0}", CharacterLook.EarColors),
-                Load("FCA_Tail_Static_Type1_Color{0}", CharacterLook.TailColors));
+                tails);
+            catalog.SetColors(hornsLeft.Select(SampleColor).ToArray(), earsLeft.Select(SampleColor).ToArray(), tails.Select(SampleColor).ToArray());
             EditorUtility.SetDirty(catalog);
             return catalog;
+        }
+
+        /// <summary>
+        /// 小物の主な色。色はパレットのテクスチャの UV で決まっているので、メッシュの頂点の UV の色をならして出す。
+        /// テクスチャは読み取りを許していないので、いったん RenderTexture に写して読む。
+        /// </summary>
+        private static Color SampleColor(GameObject prefab)
+        {
+            Renderer renderer = prefab != null ? prefab.GetComponentInChildren<Renderer>() : null;
+            Mesh mesh = renderer is SkinnedMeshRenderer skinned ? skinned.sharedMesh
+                : renderer != null && renderer.TryGetComponent(out MeshFilter filter) ? filter.sharedMesh : null;
+            Texture texture = renderer != null && renderer.sharedMaterial != null ? renderer.sharedMaterial.mainTexture : null;
+            if (mesh == null || texture == null || mesh.uv.Length == 0) return Color.gray;
+
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture rt = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Graphics.Blit(texture, rt);
+            RenderTexture.active = rt;
+            var readable = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+            readable.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+            readable.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+
+            Color sum = Color.clear;
+            Vector2[] uv = mesh.uv;
+            int step = Mathf.Max(1, uv.Length / 64);
+            int n = 0;
+            for (int i = 0; i < uv.Length; i += step)
+            {
+                sum += readable.GetPixelBilinear(uv[i].x, uv[i].y);
+                n++;
+            }
+
+            Object.DestroyImmediate(readable);
+            Color color = sum / Mathf.Max(1, n);
+            color.a = 1f;
+            return color;
         }
 
         private static GameObject[] Load(string pattern, int count)

@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd0e9bedeb4e4ef387dcb5da6f6e438, type: 3}
+  m_Name: CharacterAccessoryCatalog
+  m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.CharacterAccessoryCatalog
+  hornsLeft:
+  - {fileID: 7136834386017478161, guid: 30c5246efd21b914094c04384a336737, type: 3}
+  - {fileID: 3193711861486869292, guid: 55c6b6ba2edb68e43bd21686318f73f9, type: 3}
+  - {fileID: 4820312756570380063, guid: 807806f9f1e54914cb059e873accb81f, type: 3}
+  hornsRight:
+  - {fileID: 3533210151130462960, guid: 15f76740da4176846a20f86aa85a1528, type: 3}
+  - {fileID: 6566557041578077277, guid: 786ad2a26f60cd949a402081a84a3966, type: 3}
+  - {fileID: 1095217413439218603, guid: 24b1bcb9897285848b39473172e1d8f8, type: 3}
+  hornPlacement:
+    bone: 10
+    position: {x: 0, y: 1.72, z: -0.02}
+    euler: {x: -15, y: 0, z: 0}
+    scale: 0.8
+  earsLeft:
+  - {fileID: 8046186412013425200, guid: 4e445af72e019c74c905590b77ca85fb, type: 3}
+  - {fileID: 3220746735187676282, guid: d13647cf46d6ca549b341b7674b97c4a, type: 3}
+  - {fileID: 644471627098976357, guid: 2958bde37b9640e41add5f9c8e87349d, type: 3}
+  earsRight:
+  - {fileID: 1860615065996960711, guid: d11d77bc8b0e9de489c9ac204c0c5851, type: 3}
+  - {fileID: 960885424311378856, guid: 26dffc517aa5e2241a391afa68999bed, type: 3}
+  - {fileID: 793688028245049221, guid: d15a39b131c35914c97f9bafc1a8164b, type: 3}
+  earPlacement:
+    bone: 10
+    position: {x: -0.085, y: 1.74, z: -0.03}
+    euler: {x: 0, y: 0, z: 25}
+    scale: 0.75
+  hornColors:
+  - {r: 0.07710603, g: 0.07710603, b: 0.07710603, a: 1}
+  - {r: 0.2963123, g: 0.09062654, b: 0.05813554, a: 1}
+  - {r: 0.4996032, g: 0.36567014, b: 0.28093916, a: 1}
+  earColors:
+  - {r: 0.42349154, g: 0.32585618, b: 0.27046454, a: 1}
+  - {r: 0.25966278, g: 0.20753235, b: 0.18089724, a: 1}
+  - {r: 0.61279345, g: 0.5533693, b: 0.45675233, a: 1}
+  tailColors:
+  - {r: 0.6560802, g: 0.71853405, b: 0.7584869, a: 1}
+  - {r: 0.547252, g: 0.121603176, b: 0.07056373, a: 1}
+  - {r: 0.05745036, g: 0.05745036, b: 0.05745036, a: 1}
+  - {r: 0.25887546, g: 0.21830167, b: 0.18350607, a: 1}
+  - {r: 0.042901557, g: 0.19752386, b: 0.18137692, a: 1}
+  tails:
+  - {fileID: 3792749778675970303, guid: da4de5c77858a31489854146af38a969, type: 3}
+  - {fileID: 443333804267849295, guid: c4747de6441f3834d9d7bbcb41d667d1, type: 3}
+  - {fileID: 1359236254665046720, guid: fea8f79407b5c184fa3acccc2399a28b, type: 3}
+  - {fileID: 8616999876835629923, guid: 3ab33df2a34b67447b057275bc2b6075, type: 3}
+  - {fileID: 2366848864700627979, guid: 68d08f9ce2d047e4e9725fc4bd068ac1, type: 3}
+  tailPlacement:
+    bone: 0
+    position: {x: 0, y: 0.95, z: -0.12}
+    euler: {x: -15, y: 0, z: 0}
+    scale: 0.65
