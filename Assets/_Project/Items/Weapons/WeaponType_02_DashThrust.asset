@@ -17,15 +17,76 @@ MonoBehaviour:
   animatorWeaponType: 5
   canUseShield: 1
   passiveGear: 0
-  allowedEnchantments:
-  - {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
-  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
-  - {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
-  - {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
-  - {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
-  - {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
-  - {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
-  - {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+  enchantmentRanks:
+  - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 1
+    rank: 2
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 2
+    rank: 5
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   characterAttackWeight: 1
   baseCritChance: 0.05

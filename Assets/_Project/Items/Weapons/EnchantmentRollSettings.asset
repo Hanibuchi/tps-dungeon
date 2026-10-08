@@ -13,3 +13,11 @@ MonoBehaviour:
   m_Name: EnchantmentRollSettings
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnchantmentRollSettings
   continueChance: 0.35
+  maxEnchantments: 5
+  rankWeights:
+  - 0.3
+  - 0.25
+  - 0.2
+  - 0.12
+  - 0.08
+  - 0.05

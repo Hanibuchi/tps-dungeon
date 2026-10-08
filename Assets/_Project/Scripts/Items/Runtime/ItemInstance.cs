@@ -14,7 +14,14 @@ namespace TpsDungeon.Items
     {
         private readonly EnchantmentStack[] enchantments;
 
+        /// <summary>enchantments は 1 つにつき 1 段。同じものを並べた数が段になる（ユニークの固定エンチャントの書き方）。</summary>
         public ItemInstance(ItemDefinition definition, IEnumerable<EnchantmentDefinition> enchantments = null)
+            : this(definition, ToStacks(enchantments))
+        {
+        }
+
+        /// <summary>種類と段を直接渡す。同じ種類が並んだら段を足す。</summary>
+        public ItemInstance(ItemDefinition definition, IEnumerable<EnchantmentStack> enchantments)
         {
             Definition = definition != null ? definition : throw new ArgumentNullException(nameof(definition));
             this.enchantments = Group(enchantments);
@@ -25,7 +32,7 @@ namespace TpsDungeon.Items
         /// <summary>武器なら定義、そうでなければ null。</summary>
         public WeaponDefinition Weapon => Definition as WeaponDefinition;
 
-        /// <summary>付いたエンチャント。同じ種類はまとめて個数で持つ。並びは最初に付いた順。</summary>
+        /// <summary>付いたエンチャント。同じ種類は 1 つにまとめて段で持つ。並びは最初に付いた順。</summary>
         public IReadOnlyList<EnchantmentStack> Enchantments => enchantments;
 
         public string DisplayName => Definition.DisplayName;
@@ -33,7 +40,7 @@ namespace TpsDungeon.Items
         public ItemPickup WorldPrefab => Definition.WorldPrefab;
 
         /// <summary>
-        /// 定義から新しい個体を作る。武器なら武器種の候補から、決まった確率でエンチャントを振る。
+        /// 定義から新しい個体を作る。武器なら武器種のランク表から、決まった確率でエンチャントを振る（<see cref="EnchantmentRoller"/>）。
         /// ユニークは振らず、定義に書いた固定のエンチャントを付ける（何本拾っても同じ）。
         /// </summary>
         public static ItemInstance Create(ItemDefinition definition, System.Random random)
@@ -44,13 +51,23 @@ namespace TpsDungeon.Items
             if (weapon != null && weapon.HasFixedEnchantments) return new ItemInstance(definition, weapon.FixedEnchantments);
 
             WeaponTypeDefinition type = weapon?.WeaponType;
-            if (type == null || type.EnchantmentRoll == null) return new ItemInstance(definition);
+            EnchantmentRollSettings settings = type?.EnchantmentRoll;
+            if (settings == null) return new ItemInstance(definition);
 
-            IReadOnlyList<EnchantmentDefinition> candidates = type.AllowedEnchantments;
-            var rolled = new List<EnchantmentDefinition>();
-            foreach (int index in EnchantmentRoller.Roll(candidates.Count, type.EnchantmentRoll.ContinueChance, random))
+            var entries = new List<EnchantmentRankEntry>();
+            var options = new List<EnchantmentRoller.Option>();
+            foreach (EnchantmentRankEntry entry in type.EnchantmentRanks)
             {
-                if (candidates[index] != null) rolled.Add(candidates[index]);
+                if (entry.Definition == null || entry.Level < 1 || entry.Rank > WeaponRank.S) continue;
+                entries.Add(entry);
+                options.Add(new EnchantmentRoller.Option((int)entry.Definition.Kind, (int)entry.Rank));
+            }
+
+            var rolled = new List<EnchantmentStack>();
+            foreach (int index in EnchantmentRoller.Roll(options, settings.ContinueChance, settings.RankWeights,
+                         settings.MaxEnchantments, random))
+            {
+                rolled.Add(new EnchantmentStack(entries[index].Definition, entries[index].Level));
             }
 
             return new ItemInstance(definition, rolled);
@@ -62,7 +79,7 @@ namespace TpsDungeon.Items
             var totals = new EnchantmentTotals();
             foreach (EnchantmentStack stack in enchantments)
             {
-                totals.Add(stack.Definition.Kind, stack.Definition.Amount, stack.Definition.SecondaryAmount, stack.Count);
+                totals.Add(stack.Definition.Kind, stack.Definition.Amount, stack.Definition.SecondaryAmount, stack.Level);
             }
 
             return totals;
@@ -103,7 +120,7 @@ namespace TpsDungeon.Items
             foreach (EnchantmentStack stack in enchantments)
             {
                 EnchantmentDefinition e = stack.Definition;
-                text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Count, e.SecondaryAmount));
+                text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Level, e.SecondaryAmount));
             }
 
             string usage = GearUsage(type);
@@ -130,25 +147,32 @@ namespace TpsDungeon.Items
             return string.Empty;
         }
 
-        private static EnchantmentStack[] Group(IEnumerable<EnchantmentDefinition> source)
+        private static IEnumerable<EnchantmentStack> ToStacks(IEnumerable<EnchantmentDefinition> source)
+        {
+            if (source == null) yield break;
+            foreach (EnchantmentDefinition e in source) yield return new EnchantmentStack(e, 1);
+        }
+
+        private static EnchantmentStack[] Group(IEnumerable<EnchantmentStack> source)
         {
             if (source == null) return Array.Empty<EnchantmentStack>();
 
             var order = new List<EnchantmentDefinition>();
-            var counts = new Dictionary<EnchantmentDefinition, int>();
-            foreach (EnchantmentDefinition e in source)
+            var levels = new Dictionary<EnchantmentDefinition, int>();
+            foreach (EnchantmentStack stack in source)
             {
-                if (e == null) continue;
-                if (counts.TryGetValue(e, out int n)) counts[e] = n + 1;
+                EnchantmentDefinition e = stack.Definition;
+                if (e == null || stack.Level <= 0) continue;
+                if (levels.TryGetValue(e, out int n)) levels[e] = n + stack.Level;
                 else
                 {
-                    counts[e] = 1;
+                    levels[e] = stack.Level;
                     order.Add(e);
                 }
             }
 
             var result = new EnchantmentStack[order.Count];
-            for (int i = 0; i < order.Count; i++) result[i] = new EnchantmentStack(order[i], counts[order[i]]);
+            for (int i = 0; i < order.Count; i++) result[i] = new EnchantmentStack(order[i], levels[order[i]]);
             return result;
         }
     }

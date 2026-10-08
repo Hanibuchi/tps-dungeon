@@ -17,10 +17,31 @@ MonoBehaviour:
   animatorWeaponType: 7
   canUseShield: 0
   passiveGear: 0
-  allowedEnchantments:
-  - {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
-  - {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
-  - {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+  enchantmentRanks:
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 1
+    rank: 2
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 2
+    rank: 5
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 3
+    rank: 4
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   characterAttackWeight: 0
   baseCritChance: 0

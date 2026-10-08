@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\u7D20\u624B"
   animatorWeaponType: 0
   canUseShield: 0
-  allowedEnchantments: []
+  enchantmentRanks: []
   enchantmentRoll: {fileID: 0}
   characterAttackWeight: 1
   baseCritChance: 0.05

@@ -32,7 +32,7 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("召喚の武器種で呼び出す置物（当たり判定の無い見た目）。召喚でなければ使わない。")]
         private GameObject summonModel;
 
-        [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べると重ねがけになる。ユニーク以外では使わない。")]
+        [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べた数が段になる（3 つで 3 段）。ユニーク以外では使わない。")]
         private List<EnchantmentDefinition> fixedEnchantments = new List<EnchantmentDefinition>();
 
         public WeaponRank Rank => rank;

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnchantmentDefinition
   kind: 2
   displayName: "\u30C9\u30ED\u30C3\u30D7\u5897\u52A0"
-  description: "\u5012\u3057\u305F\u6575\u304C\u6B66\u5668\u3092\u843D\u3068\u3059\u78BA\u7387\u304C
+  description: "1 \u6BB5\u3054\u3068\u306B\u3001\u5012\u3057\u305F\u6575\u304C\u6B66\u5668\u3092\u843D\u3068\u3059\u78BA\u7387\u304C
     10% \u4E0A\u304C\u308B\u3002"
   amount: 0.1
   secondaryAmount: 0
