@@ -198,7 +198,7 @@ namespace TpsDungeon.Menu.UI
             if (IsOpen) Close();
 
             PartyRoster.Changed -= OnRosterChanged;
-            ShowInventoryOf(null);
+            Unbind();
 
             if (root != null)
             {
@@ -322,6 +322,21 @@ namespace TpsDungeon.Menu.UI
             ShowInventoryOf(fallback);
         }
 
+        /// <summary>
+        /// 結んでいた相手の知らせを外すだけで、画面は作り直さない。
+        /// シーンを抜けるときはキャラやパーティーが先に壊れていることがあるので、ここでは触らない。
+        /// </summary>
+        private void Unbind()
+        {
+            if (shownInventory != null) shownInventory.Changed -= OnInventoryChanged;
+            if (shownHotbar != null) shownHotbar.Changed -= OnHotbarChanged;
+            if (party != null) party.Changed -= OnPartyChanged;
+            shownInventory = null;
+            shownHotbar = null;
+            party = null;
+            selected = null;
+        }
+
         private void Select(PartyMember member)
         {
             selected = member;
@@ -436,6 +451,7 @@ namespace TpsDungeon.Menu.UI
             for (int i = 0; i < cards.Count && i < party.Members.Count; i++)
             {
                 PartyMember member = party.Members[i];
+                if (member == null) continue;
                 VisualElement card = cards[i];
                 card.EnableInClassList(CardLeaderClass, i == 0);
                 card.EnableInClassList(CardSelectedClass, member == selected);
