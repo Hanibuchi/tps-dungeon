@@ -110,7 +110,7 @@ namespace TpsDungeon.Items
             return rows;
         }
 
-        private static bool TryParseKind(string text, out EnchantmentKind kind)
+        internal static bool TryParseKind(string text, out EnchantmentKind kind)
         {
             kind = default;
             if (string.IsNullOrEmpty(text) || char.IsDigit(text[0]) || text[0] == '-') return false;

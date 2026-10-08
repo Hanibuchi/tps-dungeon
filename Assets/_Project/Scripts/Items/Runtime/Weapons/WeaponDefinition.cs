@@ -32,8 +32,8 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("召喚の武器種で呼び出す置物（当たり判定の無い見た目）。召喚でなければ使わない。")]
         private GameObject summonModel;
 
-        [SerializeField, Tooltip("ユニークに必ず付くエンチャント（ユニークは振らない）。同じものを並べた数が段になる（3 つで 3 段）。ユニーク以外では使わない。")]
-        private List<EnchantmentDefinition> fixedEnchantments = new List<EnchantmentDefinition>();
+        [SerializeField, Tooltip("ユニークに必ず付くエンチャントの種類と段（ユニークは振らない）。正は CSV（Items/Weapons/UniqueEnchantments.csv）で、保存すると取り込まれてここが書き換わる。ユニーク以外では使わない。")]
+        private List<FixedEnchantmentEntry> fixedEnchantments = new List<FixedEnchantmentEntry>();
 
         public WeaponRank Rank => rank;
         public float Strength => strength;
@@ -42,7 +42,7 @@ namespace TpsDungeon.Items
         public float ThrownSpinRate => thrownSpinRate;
         public bool ThrownBounces => thrownBounces;
         public GameObject SummonModel => summonModel;
-        public IReadOnlyList<EnchantmentDefinition> FixedEnchantments => fixedEnchantments;
+        public IReadOnlyList<FixedEnchantmentEntry> FixedEnchantments => fixedEnchantments;
 
         /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>
         public bool HasFixedEnchantments => rank == WeaponRank.Unique;

@@ -14,7 +14,7 @@ namespace TpsDungeon.Items
     {
         private readonly EnchantmentStack[] enchantments;
 
-        /// <summary>enchantments は 1 つにつき 1 段。同じものを並べた数が段になる（ユニークの固定エンチャントの書き方）。</summary>
+        /// <summary>enchantments は 1 つにつき 1 段。同じものを並べた数が段になる。</summary>
         public ItemInstance(ItemDefinition definition, IEnumerable<EnchantmentDefinition> enchantments = null)
             : this(definition, ToStacks(enchantments))
         {
@@ -48,7 +48,12 @@ namespace TpsDungeon.Items
             if (definition == null) return null;
 
             var weapon = definition as WeaponDefinition;
-            if (weapon != null && weapon.HasFixedEnchantments) return new ItemInstance(definition, weapon.FixedEnchantments);
+            if (weapon != null && weapon.HasFixedEnchantments)
+            {
+                var fixedStacks = new List<EnchantmentStack>();
+                foreach (FixedEnchantmentEntry entry in weapon.FixedEnchantments) fixedStacks.Add(new EnchantmentStack(entry.Definition, entry.Level));
+                return new ItemInstance(definition, fixedStacks);
+            }
 
             WeaponTypeDefinition type = weapon?.WeaponType;
             EnchantmentRollSettings settings = type?.EnchantmentRoll;

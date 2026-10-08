@@ -109,7 +109,7 @@ namespace TpsDungeon.Items.Editor
             return true;
         }
 
-        private static IEnumerable<T> LoadAll<T>() where T : UnityEngine.Object
+        internal static IEnumerable<T> LoadAll<T>() where T : UnityEngine.Object
         {
             foreach (string guid in AssetDatabase.FindAssets($"t:{typeof(T).Name}"))
             {

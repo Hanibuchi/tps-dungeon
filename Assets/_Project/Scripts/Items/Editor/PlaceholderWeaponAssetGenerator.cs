@@ -226,7 +226,7 @@ namespace TpsDungeon.Items.Editor
             public bool StaffTip;
             /// <summary>絵を撮るとき裏返す（盾は素材の -Z が裏の持ち手なので、表を撮るために回す）。</summary>
             public bool IconBackside;
-            /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
+            /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べた数が段。UniqueEnchantments.csv が無いときに書き出す元で、正は CSV。</summary>
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
             /// <summary>投擲で投げたとき縦に回る速さ（度/秒）。0 なら回らない。</summary>
             public float ThrownSpinRate;
@@ -310,7 +310,12 @@ namespace TpsDungeon.Items.Editor
 
             summonModels = WriteSummonModels();
             generatedTextures.Clear();
+            DefaultUniqueEnchantments.Clear();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
+
+            // ユニークの固定エンチャントも CSV が正。無いときだけ、上の武器の並びに書いた種類から書き出す。
+            WriteDefaultUniqueEnchantmentCsv();
+            UniqueEnchantmentCsvImporter.Import();
 
             WriteFists(WriteUnarmedType());
 
@@ -714,6 +719,28 @@ namespace TpsDungeon.Items.Editor
 
             File.WriteAllText(EnchantmentRankCsvImporter.CsvPath, text.ToString());
             AssetDatabase.ImportAsset(EnchantmentRankCsvImporter.CsvPath);
+        }
+
+        /// <summary>ユニークの id と、武器の並びに書いた固定のエンチャント（同じ種類を並べた数が段）。</summary>
+        private static readonly List<(string id, EnchantmentKind[] kinds)> DefaultUniqueEnchantments = new List<(string, EnchantmentKind[])>();
+
+        /// <summary>ユニークの固定エンチャントの CSV が無いときだけ書き出す。あれば手で直した表なので触らない。</summary>
+        private static void WriteDefaultUniqueEnchantmentCsv()
+        {
+            if (File.Exists(UniqueEnchantmentCsvImporter.CsvPath)) return;
+
+            var text = new StringBuilder();
+            text.Append(UniqueEnchantmentCsv.Header).Append('\n');
+            foreach ((string id, EnchantmentKind[] kinds) in DefaultUniqueEnchantments)
+            {
+                foreach (IGrouping<EnchantmentKind, EnchantmentKind> group in kinds.GroupBy(k => k))
+                {
+                    text.Append(id).Append(',').Append(group.Key).Append(',').Append(group.Count()).Append('\n');
+                }
+            }
+
+            File.WriteAllText(UniqueEnchantmentCsvImporter.CsvPath, text.ToString());
+            AssetDatabase.ImportAsset(UniqueEnchantmentCsvImporter.CsvPath);
         }
 
         private static (int level, WeaponRank rank)[] DefaultLevels(EnchantmentKind kind)
@@ -2109,10 +2136,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
             serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
             serialized.FindProperty("summonModel").objectReferenceValue = spec.SummonModel;
-            SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
-            fixedList.arraySize = spec.FixedEnchantments.Length;
-            for (int i = 0; i < spec.FixedEnchantments.Length; i++)
-                fixedList.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[spec.FixedEnchantments[i]];
+            if (spec.Rank == WeaponRank.Unique) DefaultUniqueEnchantments.Add((spec.Id, spec.FixedEnchantments));
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

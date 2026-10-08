@@ -241,7 +241,7 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void ユニークは振らずに固定のエンチャントが付き_並んだ数が段になる()
+        public void ユニークは振らずに固定のエンチャントが書いた段で付く()
         {
             var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
             var duration = ScriptableObject.CreateInstance<EnchantmentDefinition>();
@@ -250,7 +250,7 @@ namespace TpsDungeon.Items.Tests
             {
                 SetEnchantment(duration, EnchantmentKind.Duration, 0.2f);
                 SetEnchantment(multishot, EnchantmentKind.Multishot, 1f);
-                SetWeapon(weapon, WeaponRank.Unique, duration, duration, multishot);
+                SetWeapon(weapon, WeaponRank.Unique, new FixedEnchantmentEntry(duration, 2), new FixedEnchantmentEntry(multishot, 1));
 
                 for (int seed = 0; seed < 20; seed++)
                 {
@@ -278,7 +278,7 @@ namespace TpsDungeon.Items.Tests
             try
             {
                 SetEnchantment(duration, EnchantmentKind.Duration, 0.2f);
-                SetWeapon(weapon, WeaponRank.S, duration);
+                SetWeapon(weapon, WeaponRank.S, new FixedEnchantmentEntry(duration, 1));
 
                 // 武器種が無いので振る候補も無く、何も付かない。
                 Assert.IsEmpty(ItemInstance.Create(weapon, new System.Random(6)).Enchantments);
@@ -290,12 +290,12 @@ namespace TpsDungeon.Items.Tests
             }
         }
 
-        private static void SetWeapon(WeaponDefinition weapon, WeaponRank rank, params EnchantmentDefinition[] fixedEnchantments)
+        private static void SetWeapon(WeaponDefinition weapon, WeaponRank rank, params FixedEnchantmentEntry[] fixedEnchantments)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             typeof(WeaponDefinition).GetField("rank", flags).SetValue(weapon, rank);
             typeof(WeaponDefinition).GetField("fixedEnchantments", flags)
-                .SetValue(weapon, new List<EnchantmentDefinition>(fixedEnchantments));
+                .SetValue(weapon, new List<FixedEnchantmentEntry>(fixedEnchantments));
         }
 
         /// <summary>テストのためだけに公開の口を増やさず、シリアライズされる private フィールドへ直接入れる。</summary>

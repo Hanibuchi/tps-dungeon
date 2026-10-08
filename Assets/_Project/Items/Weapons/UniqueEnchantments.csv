@@ -1,0 +1,14 @@
+weapon,kind,level
+Weapon_ShadowRunnerBlade,CritChance,3
+Weapon_ShadowRunnerBlade,Multishot,1
+Weapon_FallenStarHammer,Explosion,2
+Weapon_FallenStarHammer,Size,1
+Weapon_ThunderGodPike,ProjectileCount,3
+Weapon_IcePrisonScepter,ProjectileCount,2
+Weapon_IcePrisonScepter,Duration,2
+Weapon_PurgatoryRoar,Size,3
+Weapon_PurgatoryRoar,ProjectileCount,2
+Weapon_UnfallingHolyShield,Regen,3
+Weapon_UnfallingHolyShield,Defense,1
+Weapon_HeroicSpiritHorn,ProjectileCount,2
+Weapon_HeroicSpiritHorn,Duration,1
