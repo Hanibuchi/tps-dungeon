@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントの一覧を持つ。
+    /// 武器種（全 30 種のうちの 1 つ）の定義。挙動の数値と、付けられるエンチャントのランク表を持つ。
     /// 武器（WeaponDefinition）はこれを参照し、強さとランクだけを持つ。
     /// 近接（コンボ）の武器種は comboSteps を持ち、段ごとの当て方（振る・走る・叩きつける）は MeleeComboStep.motion で選ぶ。
     /// 遠距離の武器種は rangedKind（弓・持続弓・杖の雷・連置・炎・投擲・召喚・治癒持続）を持ち、遠距離の欄の値で撃つ（RangedAttacker）。
@@ -32,8 +32,8 @@ namespace TpsDungeon.Items
         private PassiveGear passiveGear;
 
         [Header("エンチャント")]
-        [SerializeField, Tooltip("この武器種に付けられるエンチャント。")]
-        private List<EnchantmentDefinition> allowedEnchantments = new List<EnchantmentDefinition>();
+        [SerializeField, Tooltip("この武器種に付けられるエンチャントの種類・段とそのランク。正は CSV（Items/Weapons/EnchantmentRanks.csv）で、保存すると取り込まれてここが書き換わる。")]
+        private List<EnchantmentRankEntry> enchantmentRanks = new List<EnchantmentRankEntry>();
 
         [SerializeField, Tooltip("エンチャントの付き方（全武器種で共通のアセット）。")]
         private EnchantmentRollSettings enchantmentRoll;
@@ -411,7 +411,22 @@ namespace TpsDungeon.Items
         public bool IsCharm => passiveGear == PassiveGear.Charm;
         public bool IsShield => passiveGear == PassiveGear.Shield;
         public bool IsPassiveGear => passiveGear != PassiveGear.None;
-        public IReadOnlyList<EnchantmentDefinition> AllowedEnchantments => allowedEnchantments;
+        public IReadOnlyList<EnchantmentRankEntry> EnchantmentRanks => enchantmentRanks;
+
+        /// <summary>ランク表に出てくる種類（重複なし、表の並び順）。</summary>
+        public IReadOnlyList<EnchantmentDefinition> AllowedEnchantments
+        {
+            get
+            {
+                var result = new List<EnchantmentDefinition>();
+                foreach (EnchantmentRankEntry entry in enchantmentRanks)
+                {
+                    if (entry.Definition != null && !result.Contains(entry.Definition)) result.Add(entry.Definition);
+                }
+
+                return result;
+            }
+        }
         public EnchantmentRollSettings EnchantmentRoll => enchantmentRoll;
         public float CharacterAttackWeight => characterAttackWeight;
         public float BaseCritChance => baseCritChance;

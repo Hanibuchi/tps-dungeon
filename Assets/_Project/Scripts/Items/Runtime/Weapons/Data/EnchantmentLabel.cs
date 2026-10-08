@@ -5,7 +5,7 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// 情報欄に出すエンチャントの 1 行（「ダメージ増加 +15%」「数 +2」など）。UnityEngine に依存しない。
-    /// 効果量は同じ種類を全部足した合計（1 個あたり × 個数）で出す。割合は 0.15 で +15%。
+    /// 効果量は合計（1 段あたり × 段。お守りなどと重なればその分も）で出す。割合は 0.2 で +20%。
     /// </summary>
     public static class EnchantmentLabel
     {

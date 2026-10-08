@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -223,7 +226,7 @@ namespace TpsDungeon.Items.Editor
             public bool StaffTip;
             /// <summary>絵を撮るとき裏返す（盾は素材の -Z が裏の持ち手なので、表を撮るために回す）。</summary>
             public bool IconBackside;
-            /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べると重ねがけ。</summary>
+            /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べた数が段。UniqueEnchantments.csv が無いときに書き出す元で、正は CSV。</summary>
             public EnchantmentKind[] FixedEnchantments = Array.Empty<EnchantmentKind>();
             /// <summary>投擲で投げたとき縦に回る速さ（度/秒）。0 なら回らない。</summary>
             public float ThrownSpinRate;
@@ -277,6 +280,7 @@ namespace TpsDungeon.Items.Editor
             Gen.EnsureFolder(Gen.IconsFolder);
             Gen.EnsureFolder(Gen.PrefabsFolder);
 
+            DefaultAllowedEnchantments.Clear();
             WriteRankTable(WriteAuraMaterial());
             EnchantmentRollSettings roll = WriteRollSettings();
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments = WriteEnchantments();
@@ -300,9 +304,18 @@ namespace TpsDungeon.Items.Editor
                 [SummonTypePath] = WriteSummonType(enchantments, roll, ring),
             };
 
+            // 武器種のランク表は CSV が正。無いときだけ、上で集めた種類から仮の段で書き出す。
+            WriteDefaultEnchantmentRankCsv();
+            EnchantmentRankCsvImporter.Import();
+
             summonModels = WriteSummonModels();
             generatedTextures.Clear();
+            DefaultUniqueEnchantments.Clear();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
+
+            // ユニークの固定エンチャントも CSV が正。無いときだけ、上の武器の並びに書いた種類から書き出す。
+            WriteDefaultUniqueEnchantmentCsv();
+            UniqueEnchantmentCsvImporter.Import();
 
             WriteFists(WriteUnarmedType());
 
@@ -661,38 +674,120 @@ namespace TpsDungeon.Items.Editor
             var settings = Gen.LoadOrCreate<EnchantmentRollSettings>(RollSettingsPath);
             var serialized = new SerializedObject(settings);
             serialized.FindProperty("continueChance").floatValue = 0.35f;
+            serialized.FindProperty("maxEnchantments").intValue = 5;
+            float[] weights = { 0.30f, 0.25f, 0.20f, 0.12f, 0.08f, 0.05f }; // E〜S。値は仮。
+            SerializedProperty list = serialized.FindProperty("rankWeights");
+            list.arraySize = weights.Length;
+            for (int i = 0; i < weights.Length; i++) list.GetArrayElementAtIndex(i).floatValue = weights[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return settings;
         }
 
+        /// <summary>各武器種に付けられる種類（武器種を書くときに集め、ランク表の CSV が無いときの仮の表に使う）。キーは武器種の番号。</summary>
+        private static readonly Dictionary<string, EnchantmentKind[]> DefaultAllowedEnchantments = new Dictionary<string, EnchantmentKind[]>();
+
+        /// <summary>
+        /// ランク表の CSV が無いときだけ、付けられる種類から仮の段で書き出す。あれば手で直した表なので触らない。
+        ///   ふつうの種類: 1 段 E・2 段 C・3 段 A ／ 数・貫通・多重: 1 段 C・2 段 S ／ ホーミング: 1 段だけで B ／ 爆発: 1 段 D・2 段 B・3 段 S
+        /// </summary>
+        private static void WriteDefaultEnchantmentRankCsv()
+        {
+            if (File.Exists(EnchantmentRankCsvImporter.CsvPath)) return;
+
+            var text = new StringBuilder();
+            text.Append("# 武器種ごとのエンチャントのランク表。1 行 = 武器種の番号, 種類（EnchantmentKind の名前）, ランク E〜S の列にそのランクで付く段（1, 2, 3…）。空欄ならそのランクでは付かない。\n");
+            text.Append("# 効果量は種類ごとに 1 段あたりで決まっていて（Enchantments/Enchant_*.asset）、段を掛ける。保存すると武器種に取り込まれる。\n");
+            text.Append(EnchantmentRankCsv.Header).Append('\n');
+            foreach (KeyValuePair<string, EnchantmentKind[]> pair in DefaultAllowedEnchantments.OrderBy(p => p.Key, StringComparer.Ordinal))
+            {
+                foreach (EnchantmentKind kind in pair.Value)
+                {
+                    (int level, WeaponRank rank)[] levels = DefaultLevels(kind);
+                    text.Append(pair.Key).Append(',').Append(kind);
+                    foreach (WeaponRank column in EnchantmentRankCsv.RankColumns)
+                    {
+                        text.Append(',');
+                        foreach ((int level, WeaponRank rank) in levels)
+                        {
+                            if (rank == column) text.Append(level);
+                        }
+                    }
+
+                    text.Append('\n');
+                }
+            }
+
+            File.WriteAllText(EnchantmentRankCsvImporter.CsvPath, text.ToString());
+            AssetDatabase.ImportAsset(EnchantmentRankCsvImporter.CsvPath);
+        }
+
+        /// <summary>ユニークの id と、武器の並びに書いた固定のエンチャント（同じ種類を並べた数が段）。</summary>
+        private static readonly List<(string id, EnchantmentKind[] kinds)> DefaultUniqueEnchantments = new List<(string, EnchantmentKind[])>();
+
+        /// <summary>ユニークの固定エンチャントの CSV が無いときだけ書き出す。あれば手で直した表なので触らない。</summary>
+        private static void WriteDefaultUniqueEnchantmentCsv()
+        {
+            if (File.Exists(UniqueEnchantmentCsvImporter.CsvPath)) return;
+
+            var text = new StringBuilder();
+            text.Append(UniqueEnchantmentCsv.Header).Append('\n');
+            foreach ((string id, EnchantmentKind[] kinds) in DefaultUniqueEnchantments)
+            {
+                foreach (IGrouping<EnchantmentKind, EnchantmentKind> group in kinds.GroupBy(k => k))
+                {
+                    text.Append(id).Append(',').Append(group.Key).Append(',').Append(group.Count()).Append('\n');
+                }
+            }
+
+            File.WriteAllText(UniqueEnchantmentCsvImporter.CsvPath, text.ToString());
+            AssetDatabase.ImportAsset(UniqueEnchantmentCsvImporter.CsvPath);
+        }
+
+        private static (int level, WeaponRank rank)[] DefaultLevels(EnchantmentKind kind)
+        {
+            switch (kind)
+            {
+                case EnchantmentKind.ProjectileCount:
+                case EnchantmentKind.Pierce:
+                case EnchantmentKind.Multishot:
+                    return new[] { (1, WeaponRank.C), (2, WeaponRank.S) };
+                case EnchantmentKind.Homing:
+                    return new[] { (1, WeaponRank.B) };
+                case EnchantmentKind.Explosion:
+                    return new[] { (1, WeaponRank.D), (2, WeaponRank.B), (3, WeaponRank.S) };
+                default:
+                    return new[] { (1, WeaponRank.E), (2, WeaponRank.C), (3, WeaponRank.A) };
+            }
+        }
+
         private static Dictionary<EnchantmentKind, EnchantmentDefinition> WriteEnchantments()
         {
-            // 効果量は仮。割合は 0.15 で +15%。効果を実装しているのは近接の武器種に付く 12 種だけ
-            // （片手近距離の 9 種と、持続時間＝ダッシュの時間・数＝叩きつけの数・多重＝追撃とダッシュの回数）。
+            // 効果量は 1 段あたりで、仮。割合は 0.2 で +20%。付いた段を掛ける（2 段なら 2 倍）。
+            // どの武器種にどの段が何ランクで付くかは、ランク表の CSV（EnchantmentRanks.csv）が決める。
             var specs = new (EnchantmentKind kind, string name, float amount, float secondary, string description)[]
             {
-                (EnchantmentKind.DamageUp, "ダメージ増加", 0.15f, 0f, "与えるダメージが 15% 上がる。"),
-                (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "クリティカルの出る確率が 5% 上がる。"),
-                (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "倒した敵が武器を落とす確率が 10% 上がる。"),
-                (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "攻撃の速さが 10% 上がる。"),
-                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "放つ矢や叩きつけ・連ねる列・炎の筋が 1 つ増える。矢は照準の右左へ交互に開き、叩きつけと列と炎は前を中心に扇状に、矢の雨は狙った所の付近に降る。雷は飛び移る回数が増える。"),
-                (EnchantmentKind.Size, "サイズ", 0.15f, 0f, "攻撃の届く範囲（矢の雨の範囲と炎の太さも）と、振りや爆発の大きさが 15% 広がる。"),
-                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "矢の雨やダッシュ、炎を吐ける時間が 20% 延び、地面から連ねる列が 20% 長くなる。"),
-                (EnchantmentKind.Pierce, "貫通", 1f, 0f, "矢が敵を 1 体多く貫く。"),
-                (EnchantmentKind.Multishot, "多重", 1f, 0f, "少し遅れてもう一度放つ一斉射（矢の雨は同じ所にもう一度、雷と地面から連ねる列も）や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
-                (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "回復する量が 20% 増える。"),
+                (EnchantmentKind.DamageUp, "ダメージ増加", 0.20f, 0f, "1 段ごとに、与えるダメージが 20% 上がる。"),
+                (EnchantmentKind.CritChance, "クリティカル率", 0.05f, 0f, "1 段ごとに、クリティカルの出る確率が 5% 上がる。"),
+                (EnchantmentKind.DropUp, "ドロップ増加", 0.10f, 0f, "1 段ごとに、倒した敵が武器を落とす確率が 10% 上がる。"),
+                (EnchantmentKind.RapidFire, "速射", 0.10f, 0f, "1 段ごとに、攻撃の速さが 10% 上がる。"),
+                (EnchantmentKind.ProjectileCount, "数", 1f, 0f, "1 段ごとに、放つ矢や叩きつけ・連ねる列・炎の筋が 1 つ増える。矢は照準の右左へ交互に開き、叩きつけと列と炎は前を中心に扇状に、矢の雨は狙った所の付近に降る。雷は飛び移る回数が増える。"),
+                (EnchantmentKind.Size, "サイズ", 0.20f, 0f, "1 段ごとに、攻撃の届く範囲（矢の雨の範囲と炎の太さも）と、振りや爆発の大きさが 20% 広がる。"),
+                (EnchantmentKind.Duration, "持続時間", 0.20f, 0f, "1 段ごとに、矢の雨やダッシュ、炎を吐ける時間が 20% 延び、地面から連ねる列が 20% 長くなる。"),
+                (EnchantmentKind.Pierce, "貫通", 1f, 0f, "1 段ごとに、矢が敵を 1 体多く貫く。"),
+                (EnchantmentKind.Multishot, "多重", 1f, 0f, "1 段ごとに、少し遅れてもう一度放つ一斉射（矢の雨は同じ所にもう一度、雷と地面から連ねる列も）や、叩きつけの追撃（叩きつけごとに、本撃と同じダメージ）、ダッシュ突きの走る回数が 1 つ増える。"),
+                (EnchantmentKind.HealUp, "回復量増加", 0.20f, 0f, "1 段ごとに、回復する量が 20% 増える。"),
                 (EnchantmentKind.Homing, "ホーミング", 1f, 0f, "矢や炎が前にいる敵を追って曲がる。"),
-                (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.15f, 0f, "溜めにかかる時間が 15% 縮む。"),
-                (EnchantmentKind.Stun, "スタン", 0.25f, 0f, "敵をスタン・気絶させやすくなる（一撃の重さ 25% 増しで判定）。"),
-                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "矢が 20% 速く飛ぶ。矢の雨は 20% 早く降り始め、炎は 20% 遠くまで届く。"),
-                (EnchantmentKind.Knockback, "ノックバック", 2f, 0f, "当てた敵を押し出す勢いが増す。"),
-                (EnchantmentKind.Explosion, "爆発", 0.40f, 2.5f, "当てた所で爆発し、周りの敵にダメージの 40% を与える。"),
-                (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "当てるたびにダメージが 10% ずつ上がり、周をまたいでも続く。空振りか手を止めると途切れる。"),
-                (EnchantmentKind.MoveSpeed, "移動速度", 0.10f, 0f, "歩く速さが 10% 上がる。"),
-                (EnchantmentKind.Exp, "経験値", 0.10f, 0f, "得られる経験値が 10% 増える。"),
-                (EnchantmentKind.MaxHp, "体力増加", 0.10f, 0f, "最大 HP が 10% 増える。"),
-                (EnchantmentKind.Defense, "防御力", 0.10f, 0f, "受けるダメージが 10% 減る。"),
-                (EnchantmentKind.Regen, "自然回復", 1f, 0f, "HP が毎秒 1 ずつ回復する。"),
+                (EnchantmentKind.ChargeTimeDown, "チャージ時間減少", 0.20f, 0f, "1 段ごとに、溜めにかかる時間が 20% 縮む。"),
+                (EnchantmentKind.Stun, "スタン", 0.25f, 0f, "1 段ごとに、敵をスタン・気絶させやすくなる（一撃の重さ 25% 増しで判定）。"),
+                (EnchantmentKind.ProjectileSpeed, "弾速", 0.20f, 0f, "1 段ごとに、矢が 20% 速く飛ぶ。矢の雨は 20% 早く降り始め、炎は 20% 遠くまで届く。"),
+                (EnchantmentKind.Knockback, "ノックバック", 2f, 0f, "1 段ごとに、当てた敵を押し出す勢いが増す。"),
+                (EnchantmentKind.Explosion, "爆発", 0.40f, 2.5f, "当てた所で爆発し、周りの敵に 1 段ごとにダメージの 40% を与える。"),
+                (EnchantmentKind.ComboBonus, "コンボボーナス", 0.10f, 0f, "当てるたびにダメージが 1 段ごとに 10% ずつ上がり、周をまたいでも続く。空振りか手を止めると途切れる。"),
+                (EnchantmentKind.MoveSpeed, "移動速度", 0.10f, 0f, "1 段ごとに、歩く速さが 10% 上がる。"),
+                (EnchantmentKind.Exp, "経験値", 0.10f, 0f, "1 段ごとに、得られる経験値が 10% 増える。"),
+                (EnchantmentKind.MaxHp, "体力増加", 0.10f, 0f, "1 段ごとに、最大 HP が 10% 増える。"),
+                (EnchantmentKind.Defense, "防御力", 0.10f, 0f, "1 段ごとに、受けるダメージが 10% 減る。"),
+                (EnchantmentKind.Regen, "自然回復", 1f, 0f, "1 段ごとに、HP が毎秒 1 ずつ回復する。"),
             };
 
             var result = new Dictionary<EnchantmentKind, EnchantmentDefinition>();
@@ -728,10 +823,7 @@ namespace TpsDungeon.Items.Editor
                 EnchantmentKind.RapidFire, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Explosion,
                 EnchantmentKind.ComboBonus,
             };
-            SerializedProperty list = serialized.FindProperty("allowedEnchantments");
-            list.arraySize = allowed.Length;
-            for (int i = 0; i < allowed.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[allowed[i]];
-
+            DefaultAllowedEnchantments["01"] = allowed;
             serialized.FindProperty("enchantmentRoll").objectReferenceValue = roll;
             serialized.FindProperty("characterAttackWeight").floatValue = 1f;
             serialized.FindProperty("baseCritChance").floatValue = 0.05f;
@@ -779,7 +871,6 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("displayName").stringValue = "素手";
             serialized.FindProperty("animatorWeaponType").intValue = 0; // CharacterAnimatorBuilder.Weapon.Unarmed
             serialized.FindProperty("canUseShield").boolValue = false;
-            serialized.FindProperty("allowedEnchantments").arraySize = 0;
             serialized.FindProperty("enchantmentRoll").objectReferenceValue = null;
             serialized.FindProperty("characterAttackWeight").floatValue = 1f;
             serialized.FindProperty("baseCritChance").floatValue = 0.05f;
@@ -806,7 +897,7 @@ namespace TpsDungeon.Items.Editor
 
         // ---- 武器種 02 / 04 / 05 ----------------------------------------------
 
-        /// <summary>武器種の見出しと、付けられるエンチャント・ダメージの基礎を入れる。</summary>
+        /// <summary>武器種の見出しと、付けられるエンチャント（ランク表の CSV が無いときの元）・ダメージの基礎を入れる。</summary>
         private static SerializedObject BeginType(WeaponTypeDefinition type, string id, string displayName, int animatorWeaponType,
             bool canUseShield, EnchantmentKind[] allowed, Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
@@ -817,10 +908,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("animatorWeaponType").intValue = animatorWeaponType;
             serialized.FindProperty("canUseShield").boolValue = canUseShield;
 
-            SerializedProperty list = serialized.FindProperty("allowedEnchantments");
-            list.arraySize = allowed.Length;
-            for (int i = 0; i < allowed.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[allowed[i]];
-
+            DefaultAllowedEnchantments[id] = allowed;
             serialized.FindProperty("enchantmentRoll").objectReferenceValue = roll;
             serialized.FindProperty("characterAttackWeight").floatValue = 1f;
             serialized.FindProperty("baseCritChance").floatValue = 0.05f;
@@ -2048,10 +2136,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
             serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
             serialized.FindProperty("summonModel").objectReferenceValue = spec.SummonModel;
-            SerializedProperty fixedList = serialized.FindProperty("fixedEnchantments");
-            fixedList.arraySize = spec.FixedEnchantments.Length;
-            for (int i = 0; i < spec.FixedEnchantments.Length; i++)
-                fixedList.GetArrayElementAtIndex(i).objectReferenceValue = enchantments[spec.FixedEnchantments[i]];
+            if (spec.Rank == WeaponRank.Unique) DefaultUniqueEnchantments.Add((spec.Id, spec.FixedEnchantments));
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

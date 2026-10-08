@@ -25,7 +25,9 @@ MonoBehaviour:
   thrownBounces: 0
   summonModel: {fileID: 0}
   fixedEnchantments:
-  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
-  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
-  - {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
-  - {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 3
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 2
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 4

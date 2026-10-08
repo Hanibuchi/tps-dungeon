@@ -14,9 +14,9 @@ namespace TpsDungeon.Combat.Editor
 {
     /// <summary>
     /// 武器とエンチャントの組み合わせを手早く試す窓。
-    ///   1. 武器を選び、その武器種に付けられるエンチャントの個数を ± で決める（ランダムに振ることもできる）
+    ///   1. 武器を選び、その武器種に付けられるエンチャントの段を ± で決める（ランダムに振ることもできる。表に無い段も試せる）
     ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージ、弓の矢の数や雨の刻みなど）がその場で出る
-    ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（個数を変えたら自動で持たせ直せる）
+    ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（段を変えたら自動で持たせ直せる）
     ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃・雨に分けて記録し、実測の DPS を出す（近接も遠距離も）
     /// ゲーム側には何も足さない（的と持ち物は Play を止めれば消える）。
     /// </summary>
@@ -46,7 +46,7 @@ namespace TpsDungeon.Combat.Editor
         [SerializeField] private bool dummyImmortal;
         [SerializeField] private bool logToConsole;
 
-        // 武器種ごとの個数（並びは武器種の AllowedEnchantments と同じ）。武器を替えて戻っても残す。
+        // 武器種ごとの段（並びは武器種の AllowedEnchantments と同じ）。武器を替えて戻っても残す。
         private readonly Dictionary<WeaponTypeDefinition, int[]> counts = new Dictionary<WeaponTypeDefinition, int[]>();
         private readonly List<MeleeHitRecord> records = new List<MeleeHitRecord>();
         private readonly List<float> recordTimes = new List<float>();
@@ -175,6 +175,7 @@ namespace TpsDungeon.Combat.Editor
                     int typed = EditorGUILayout.IntField(values[i], GUILayout.Width(36));
                     if (typed != values[i]) { values[i] = Mathf.Max(0, typed); changed = true; }
                     if (GUILayout.Button("+", GUILayout.Width(24))) { values[i]++; changed = true; }
+                    EditorGUILayout.LabelField(RankHint(type, definition), EditorStyles.miniLabel, GUILayout.Width(110));
                     EditorGUILayout.LabelField(definition.Description, EditorStyles.miniLabel);
                 }
             }
@@ -213,12 +214,23 @@ namespace TpsDungeon.Combat.Editor
                 for (int i = 0; i < allowed.Count; i++)
                 {
                     if (allowed[i] != stack.Definition) continue;
-                    values[i] += stack.Count;
+                    values[i] = stack.Level;
                     break;
                 }
             }
         }
 
+        /// <summary>ランク表のその種類の段とランク（「1:E 2:C 3:A」）。</summary>
+        private static string RankHint(WeaponTypeDefinition type, EnchantmentDefinition definition)
+        {
+            var parts = type.EnchantmentRanks
+                .Where(e => e.Definition == definition)
+                .OrderBy(e => e.Level)
+                .Select(e => $"{e.Level}:{e.Rank}");
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>選んだ段の数だけ並べる（ItemInstance は並んだ数を段とみなす）。</summary>
         private List<EnchantmentDefinition> Chosen(WeaponTypeDefinition type)
         {
             var result = new List<EnchantmentDefinition>();
