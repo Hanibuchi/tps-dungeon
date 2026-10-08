@@ -690,17 +690,25 @@ namespace TpsDungeon.Items.Editor
             if (File.Exists(EnchantmentRankCsvImporter.CsvPath)) return;
 
             var text = new StringBuilder();
-            text.Append("# 武器種ごとのエンチャントのランク表。1 行 = 武器種の番号, 種類（EnchantmentKind の名前）, 段（1, 2, 3…）, ランク（E〜S）。\n");
+            text.Append("# 武器種ごとのエンチャントのランク表。1 行 = 武器種の番号, 種類（EnchantmentKind の名前）, ランク E〜S の列にそのランクで付く段（1, 2, 3…）。空欄ならそのランクでは付かない。\n");
             text.Append("# 効果量は種類ごとに 1 段あたりで決まっていて（Enchantments/Enchant_*.asset）、段を掛ける。保存すると武器種に取り込まれる。\n");
             text.Append(EnchantmentRankCsv.Header).Append('\n');
             foreach (KeyValuePair<string, EnchantmentKind[]> pair in DefaultAllowedEnchantments.OrderBy(p => p.Key, StringComparer.Ordinal))
             {
                 foreach (EnchantmentKind kind in pair.Value)
                 {
-                    foreach ((int level, WeaponRank rank) in DefaultLevels(kind))
+                    (int level, WeaponRank rank)[] levels = DefaultLevels(kind);
+                    text.Append(pair.Key).Append(',').Append(kind);
+                    foreach (WeaponRank column in EnchantmentRankCsv.RankColumns)
                     {
-                        text.Append(pair.Key).Append(',').Append(kind).Append(',').Append(level).Append(',').Append(rank).Append('\n');
+                        text.Append(',');
+                        foreach ((int level, WeaponRank rank) in levels)
+                        {
+                            if (rank == column) text.Append(level);
+                        }
                     }
+
+                    text.Append('\n');
                 }
             }
 
