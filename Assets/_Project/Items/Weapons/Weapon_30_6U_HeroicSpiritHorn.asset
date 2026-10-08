@@ -26,6 +26,6 @@ MonoBehaviour:
   summonModel: {fileID: 2539562350021659264, guid: 61e1e4e91e35f4923be1b622bc8fc9fc, type: 3}
   fixedEnchantments:
   - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
-    level: 2
+    level: 4
   - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
-    level: 1
+    level: 5

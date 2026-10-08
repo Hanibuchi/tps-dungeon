@@ -21,4 +21,13 @@ MonoBehaviour:
   strength: 23
   weaponType: {fileID: 11400000, guid: a9aaf9221ad85494e9a8900e31335817, type: 2}
   heldModel: {fileID: 3798973567781349531, guid: 0b43fb54fdd2641eea0c5c388da23f1a, type: 3}
-  fixedEnchantments: []
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments:
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 2
+  - definition: {fileID: 11400000, guid: 1632422bbd9bd49f1b694967033d579b, type: 2}
+    level: 3
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 2

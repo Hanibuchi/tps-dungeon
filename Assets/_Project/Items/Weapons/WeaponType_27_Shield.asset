@@ -44,21 +44,9 @@ MonoBehaviour:
     rank: 4
   - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
     level: 1
-    rank: 3
-  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
-    level: 2
-    rank: 4
-  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
-    level: 4
     rank: 5
   - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
     level: 1
-    rank: 3
-  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
-    level: 2
-    rank: 4
-  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
-    level: 4
     rank: 5
   - definition: {fileID: 11400000, guid: 110e8a9663832464899287dfd020844a, type: 2}
     level: 1
