@@ -46,6 +46,12 @@ namespace TpsDungeon.Menu.UI
         /// <summary>札を押してからこれだけ動いたらドラッグとみなす（パネルの px）。</summary>
         private const float CardDragThreshold = 6f;
 
+        /// <summary>札の 1 列の段数。これを超えたら 2 列目へ折り返す（Inventory.uss の .party-list の高さと揃える）。</summary>
+        private const int CardsPerColumn = 6;
+
+        /// <summary>札 1 列の幅（札の幅 186px ＋ 左右の余白 3px ずつ。Inventory.uss の .party-card と揃える）。</summary>
+        private const float CardColumnWidth = 192f;
+
         [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定なら親から探す。")]
         private PlayerInput playerInput;
 
@@ -401,9 +407,15 @@ namespace TpsDungeon.Menu.UI
                 AddCard(null, soloInventory, soloInventory.GetComponent<PlayerHotbar>());
             }
 
+            // 列の数だけの幅にする。1 列で足りるときに 2 列目の空きを残さない（パネルは中央寄せなので、そのぶん詰まる）。
+            partyList.style.width = ColumnCount(cards.Count) * CardColumnWidth;
+
             RefreshSlots();
             RefreshCards();
         }
+
+        /// <summary>count 枚の札を並べる列の数（最低 1）。</summary>
+        public static int ColumnCount(int count) => Mathf.Max(1, (count + CardsPerColumn - 1) / CardsPerColumn);
 
         private VisualElement CreateSlot(SlotRef slotRef, string number)
         {

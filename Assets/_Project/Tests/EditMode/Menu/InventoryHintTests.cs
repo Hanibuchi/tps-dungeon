@@ -14,6 +14,16 @@ namespace TpsDungeon.Menu.Tests
         }
 
         [Test]
+        public void 仲間の札は6人までは1列_7人からは2列()
+        {
+            Assert.AreEqual(1, InventoryScreen.ColumnCount(0));
+            Assert.AreEqual(1, InventoryScreen.ColumnCount(1));
+            Assert.AreEqual(1, InventoryScreen.ColumnCount(6));
+            Assert.AreEqual(2, InventoryScreen.ColumnCount(7));
+            Assert.AreEqual(2, InventoryScreen.ColumnCount(12));
+        }
+
+        [Test]
         public void クイック移動キーを押している間の案内()
         {
             Assert.AreEqual("クリックで移動", InventoryScreen.QuickMoveHintText);

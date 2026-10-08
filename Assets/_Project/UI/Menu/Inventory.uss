@@ -66,6 +66,7 @@
     margin-right: 22px;
 }
 
+/* 幅は札の列の数に合わせて InventoryScreen が決める（1 列 192px）。 */
 .party-list {
     width: 384px;
     height: 432px;
