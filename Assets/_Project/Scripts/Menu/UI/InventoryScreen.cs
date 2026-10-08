@@ -15,7 +15,9 @@ namespace TpsDungeon.Menu.UI
     /// Tab（ゲームパッドは Y）で開くインベントリ画面。開いている間はポーズと同じくゲームを止める（<see cref="GamePauser"/>）。
     /// Inventory.uxml を UIDocument に差して、パーティーの操作台（かプレイヤー）の子に置いて使う。
     ///
-    /// 左にパーティーの並び（先頭が操作しているキャラ）、真ん中に共有のバッグと、選んでいる人の手元（ホットバーの 4 枠）を出す。
+    /// 左にパーティーの並び（先頭が操作しているキャラ。札にはその人の手持ちの 4 枠も小さく出す）、
+    /// 真ん中に共有のバッグと、選んでいる人の手元（ホットバーの 4 枠）を出す。
+    /// 右の情報欄は大きさを固定してあり、説明の長さでパネルが伸び縮みしない（収まらない分は切る）。
     /// 操作（マウス）:
     /// - 仲間の札をドラッグして別の札に落とすと、その位置へ並べ替える。先頭に落とせばその人を操作するようになる。
     /// - 仲間の札をクリックすると、その人の手元を出す（装備を替えられる）。
@@ -111,6 +113,7 @@ namespace TpsDungeon.Menu.UI
         private readonly List<VisualElement> slots = new List<VisualElement>();
         private readonly List<SlotRef> slotRefs = new List<SlotRef>();
         private readonly List<VisualElement> cards = new List<VisualElement>();
+        private readonly List<PartyMember> watchedMembers = new List<PartyMember>();
 
         private GamePauser pauser;
 
@@ -331,6 +334,7 @@ namespace TpsDungeon.Menu.UI
             if (shownInventory != null) shownInventory.Changed -= OnInventoryChanged;
             if (shownHotbar != null) shownHotbar.Changed -= OnHotbarChanged;
             if (party != null) party.Changed -= OnPartyChanged;
+            UnwatchMembers();
             shownInventory = null;
             shownHotbar = null;
             party = null;
@@ -398,6 +402,7 @@ namespace TpsDungeon.Menu.UI
             CancelCardDrag();
             partyList.Clear();
             cards.Clear();
+            UnwatchMembers();
             if (party == null) return;
 
             for (int i = 0; i < party.Members.Count; i++)
@@ -405,10 +410,36 @@ namespace TpsDungeon.Menu.UI
                 VisualElement card = CreateCard(i);
                 partyList.Add(card);
                 cards.Add(card);
+                WatchMember(party.Members[i]);
             }
 
             RefreshCards();
         }
+
+        /// <summary>札に出す手持ちが変わったら（誰かの装備を替えた・持ち替えた）札を出し直す。</summary>
+        private void WatchMember(PartyMember member)
+        {
+            if (member == null) return;
+            if (member.Inventory != null) member.Inventory.Changed += OnMemberInventoryChanged;
+            if (member.Hotbar != null) member.Hotbar.Changed += OnMemberHotbarChanged;
+            watchedMembers.Add(member);
+        }
+
+        private void UnwatchMembers()
+        {
+            foreach (PartyMember member in watchedMembers)
+            {
+                if (member == null) continue;
+                if (member.Inventory != null) member.Inventory.Changed -= OnMemberInventoryChanged;
+                if (member.Hotbar != null) member.Hotbar.Changed -= OnMemberHotbarChanged;
+            }
+
+            watchedMembers.Clear();
+        }
+
+        private void OnMemberInventoryChanged(PlayerInventory _) => RefreshCards();
+
+        private void OnMemberHotbarChanged(PlayerHotbar _) => RefreshCards();
 
         private VisualElement CreateCard(int index)
         {
@@ -423,20 +454,36 @@ namespace TpsDungeon.Menu.UI
             number.AddToClassList("party-card__number");
             card.Add(number);
 
+            // 右側は 2 段。上に名前・Lv・操作中の印、下に手持ちの 4 枠。
             var text = new VisualElement { pickingMode = PickingMode.Ignore };
             text.AddToClassList("party-card__text");
+
+            var header = new VisualElement { pickingMode = PickingMode.Ignore };
+            header.AddToClassList("party-card__header");
             var name = new Label { name = "name", pickingMode = PickingMode.Ignore };
             name.AddToClassList("party-card__name");
             name.AddToClassList("rpg-bold");
             var level = new Label { name = "level", pickingMode = PickingMode.Ignore };
             level.AddToClassList("party-card__level");
-            text.Add(name);
-            text.Add(level);
-            card.Add(text);
-
             var badge = new Label { name = "badge", text = "操作中", pickingMode = PickingMode.Ignore };
             badge.AddToClassList("party-card__badge");
-            card.Add(badge);
+            header.Add(name);
+            header.Add(level);
+            header.Add(badge);
+            text.Add(header);
+
+            var hand = new VisualElement { name = "hand", pickingMode = PickingMode.Ignore };
+            hand.AddToClassList("party-card__hand");
+            for (int i = 0; i < PlayerHotbar.SlotCount; i++)
+            {
+                VisualElement slot = ItemSlot.Create($"hand-{i}", null);
+                slot.pickingMode = PickingMode.Ignore;
+                slot.AddToClassList("party-card__slot");
+                hand.Add(slot);
+            }
+
+            text.Add(hand);
+            card.Add(text);
 
             card.RegisterCallback<PointerDownEvent>(e => OnCardPointerDown(index, e));
             card.RegisterCallback<PointerEnterEvent>(_ => OnCardHover(index, true));
@@ -462,6 +509,17 @@ namespace TpsDungeon.Menu.UI
                 var appearance = member.GetComponent<CharacterAppearance>();
                 Color? accent = appearance != null ? appearance.AccentColor : null;
                 card.Q<VisualElement>("swatch").style.backgroundColor = accent ?? new Color(0.55f, 0.47f, 0.33f);
+
+                Inventory hand = member.Inventory != null ? member.Inventory.Inventory : null;
+                int held = member.Hotbar != null ? member.Hotbar.SelectedIndex : -1;
+                for (int k = 0; k < PlayerHotbar.SlotCount; k++)
+                {
+                    VisualElement slot = card.Q<VisualElement>($"hand-{k}");
+                    if (slot == null) continue;
+                    ItemInstance item = hand != null ? hand[k] : null;
+                    ItemSlot.SetItem(slot, item?.Icon, RankColor(item));
+                    slot.EnableInClassList(ItemSlot.SelectedClass, k == held);
+                }
             }
 
             if (handCaption != null)
@@ -818,14 +876,6 @@ namespace TpsDungeon.Menu.UI
             lines.Add(index == 0 ? "操作中（パーティーの先頭）" : $"列の {index + 1} 番目");
             if (member.Progression != null) lines.Add($"Lv {member.Progression.Level}");
             if (member.Health != null) lines.Add($"HP {member.Health.CurrentHp} / {member.Health.MaxHp}");
-
-            Inventory hand = member.Inventory != null ? member.Inventory.Inventory : null;
-            if (hand != null)
-            {
-                lines.Add(string.Empty);
-                for (int i = 0; i < hand.Count; i++) lines.Add($"{i + 1}. {(hand[i] != null ? hand[i].DisplayName : "—")}");
-            }
-
             return string.Join("\n", lines);
         }
 
