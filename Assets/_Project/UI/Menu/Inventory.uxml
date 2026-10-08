@@ -25,9 +25,6 @@
                     <ui:VisualElement class="inventory__slots">
                         <ui:Label text="背 嚢" class="inventory__caption rpg-bold" />
                         <ui:VisualElement name="bag" class="inventory__bag" />
-                        <ui:VisualElement class="inventory__divider" />
-                        <ui:Label name="hand-caption" text="手 元" class="inventory__caption rpg-bold" />
-                        <ui:VisualElement name="hotbar" class="inventory__hotbar" />
                     </ui:VisualElement>
 
                     <ui:VisualElement name="details" class="item-details inventory__details">
