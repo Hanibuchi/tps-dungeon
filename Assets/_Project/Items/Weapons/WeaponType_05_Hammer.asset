@@ -23,94 +23,139 @@ MonoBehaviour:
     rank: 0
   - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
     level: 2
-    rank: 2
+    rank: 1
   - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
     level: 3
+    rank: 2
+  - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+    level: 4
+    rank: 3
+  - definition: {fileID: 11400000, guid: ab41a8241cc2d48e48ff54ac9800b596, type: 2}
+    level: 5
     rank: 4
   - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
     level: 1
     rank: 0
   - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
     level: 2
-    rank: 2
+    rank: 1
   - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
     level: 3
+    rank: 2
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 4
+    rank: 3
+  - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
+    level: 5
     rank: 4
   - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
     level: 1
-    rank: 0
+    rank: 2
   - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
     level: 2
-    rank: 2
+    rank: 3
   - definition: {fileID: 11400000, guid: 3dca699763b9a48f58bba17df3e5c5f7, type: 2}
     level: 3
     rank: 4
   - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
     level: 1
-    rank: 2
+    rank: 3
   - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
     level: 2
+    rank: 4
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 4
     rank: 5
   - definition: {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
     level: 1
-    rank: 0
+    rank: 1
   - definition: {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
     level: 2
     rank: 2
   - definition: {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
     level: 3
+    rank: 3
+  - definition: {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+    level: 4
     rank: 4
+  - definition: {fileID: 11400000, guid: 63145296d95924732849faaa32b656d2, type: 2}
+    level: 5
+    rank: 5
   - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
     level: 1
-    rank: 2
+    rank: 3
   - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
     level: 2
+    rank: 4
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 4
     rank: 5
   - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
     level: 1
-    rank: 0
+    rank: 1
   - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
     level: 2
     rank: 2
   - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
     level: 3
+    rank: 3
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 4
     rank: 4
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 5
+    rank: 5
   - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
     level: 1
     rank: 0
   - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
     level: 2
-    rank: 2
+    rank: 1
   - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
     level: 3
+    rank: 2
+  - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+    level: 4
+    rank: 3
+  - definition: {fileID: 11400000, guid: 0f04a8df1eab448a9aa53537e82ffd53, type: 2}
+    level: 5
     rank: 4
   - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
     level: 1
     rank: 0
   - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
     level: 2
-    rank: 2
+    rank: 1
   - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
     level: 3
+    rank: 2
+  - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+    level: 4
+    rank: 3
+  - definition: {fileID: 11400000, guid: 40d9b30526ad348c2ba9c63d0ab2508e, type: 2}
+    level: 5
     rank: 4
   - definition: {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
     level: 1
-    rank: 1
+    rank: 2
   - definition: {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
     level: 2
     rank: 3
   - definition: {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
     level: 3
+    rank: 4
+  - definition: {fileID: 11400000, guid: d2711f6cc89f942eda5537a406eb892b, type: 2}
+    level: 4
     rank: 5
   - definition: {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
     level: 1
-    rank: 0
+    rank: 3
   - definition: {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
     level: 2
-    rank: 2
-  - definition: {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
-    level: 3
     rank: 4
+  - definition: {fileID: 11400000, guid: d4616cba3cdb640d8aaa279377d500b5, type: 2}
+    level: 4
+    rank: 5
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   characterAttackWeight: 1
   baseCritChance: 0.05
