@@ -12,7 +12,8 @@ namespace TpsDungeon.Hud
 {
     /// <summary>
     /// 常時表示の HUD（左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
-    /// GameHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
+    /// GameHud.uxml を UIDocument に差して、パーティーの操作台（かプレイヤー）の子に置いて使う。
+    /// パーティーが居れば、キャラの分（HP・レベル・ホットバー・待ち）は先頭のキャラを写し、先頭が替われば結び直す（<see cref="PartyRoster"/>）。
     /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / MeleeAttacker / RangedAttacker / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
     /// 次に振れる・撃てるまでの待ち（武器種の待ち・持ち替えの待ち）は、選んでいる枠の暗幕で見せる。
     /// 遠距離の武器（弓など）を持っている間は、画面の中央に照準を出す。
@@ -153,30 +154,76 @@ namespace TpsDungeon.Hud
             cooldownSlot = -1;
             shownCooldown = 0f;
 
-            if (health != null) health.Changed += OnHealthChanged;
-            if (progression != null) progression.ExpChanged += OnExpChanged;
-            if (progression != null) progression.LeveledUp += OnLeveledUp;
-            if (hotbar != null) hotbar.Changed += OnHotbarChanged;
-            if (inventory != null) inventory.Changed += OnInventoryChanged;
+            if (PartyRoster.Leader != null) TakeCharacter(PartyRoster.Leader);
+            PartyRoster.LeaderChanged += OnLeaderChanged;
+            SubscribeCharacter();
             if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
-            RefreshHealth();
-            RefreshProgression();
-            RefreshHotbar();
-            RefreshHotbarItems();
+            RefreshCharacter();
             RefreshMapOverlay();
         }
 
         private void OnDisable()
         {
+            PartyRoster.LeaderChanged -= OnLeaderChanged;
+            UnsubscribeCharacter();
+            expRefill?.Pause();
+            expRefill = null;
+            if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
+            UnbindFloor();
+        }
+
+        /// <summary>写すキャラを leader に替える（パーティーの先頭が替わった）。</summary>
+        private void OnLeaderChanged(GameObject leader)
+        {
+            if (leader == null) return;
+
+            UnsubscribeCharacter();
+            expRefill?.Pause();
+            expRefill = null;
+            TakeCharacter(leader);
+            SubscribeCharacter();
+            lastHp = -1;
+            levelUpPending = false;
+            cooldownSlot = -1;
+            shownCooldown = 0f;
+            RefreshCharacter();
+        }
+
+        private void TakeCharacter(GameObject character)
+        {
+            health = character.GetComponent<PlayerHealth>();
+            progression = character.GetComponent<CharacterProgression>();
+            hotbar = character.GetComponent<PlayerHotbar>();
+            inventory = character.GetComponent<PlayerInventory>();
+            attacker = character.GetComponent<MeleeAttacker>();
+            ranged = character.GetComponent<RangedAttacker>();
+            player = character.transform;
+        }
+
+        private void SubscribeCharacter()
+        {
+            if (health != null) health.Changed += OnHealthChanged;
+            if (progression != null) progression.ExpChanged += OnExpChanged;
+            if (progression != null) progression.LeveledUp += OnLeveledUp;
+            if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            if (inventory != null) inventory.Changed += OnInventoryChanged;
+        }
+
+        private void UnsubscribeCharacter()
+        {
             if (health != null) health.Changed -= OnHealthChanged;
             if (progression != null) progression.ExpChanged -= OnExpChanged;
             if (progression != null) progression.LeveledUp -= OnLeveledUp;
-            expRefill?.Pause();
-            expRefill = null;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
-            if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
-            UnbindFloor();
+        }
+
+        private void RefreshCharacter()
+        {
+            RefreshHealth();
+            RefreshProgression();
+            RefreshHotbar();
+            RefreshHotbarItems();
         }
 
         private void LateUpdate()

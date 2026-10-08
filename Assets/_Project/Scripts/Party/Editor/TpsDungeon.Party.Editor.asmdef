@@ -1,0 +1,34 @@
+{
+    "name": "TpsDungeon.Party.Editor",
+    "rootNamespace": "TpsDungeon.Party.Editor",
+    "references": [
+        "Unity.InputSystem",
+        "TpsDungeon.Party",
+        "TpsDungeon.Items",
+        "TpsDungeon.Player",
+        "TpsDungeon.Progression",
+        "TpsDungeon.Combat",
+        "TpsDungeon.Interaction",
+        "TpsDungeon.Map",
+        "TpsDungeon.Hud",
+        "TpsDungeon.Menu",
+        "Unity.AI.Navigation",
+        "Unity.Cinemachine",
+        "TpsDungeon.Hud.Editor",
+        "TpsDungeon.Menu.Editor",
+        "TpsDungeon.Interaction.Editor",
+        "TpsDungeon.Progression.Editor",
+        "TpsDungeon.Player.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

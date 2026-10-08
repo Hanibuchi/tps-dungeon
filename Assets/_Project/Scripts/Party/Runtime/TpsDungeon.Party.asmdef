@@ -1,0 +1,25 @@
+{
+    "name": "TpsDungeon.Party",
+    "rootNamespace": "TpsDungeon.Party",
+    "references": [
+        "Unity.InputSystem",
+        "TpsDungeon.Items",
+        "TpsDungeon.Enemies",
+        "TpsDungeon.Player",
+        "TpsDungeon.Progression",
+        "TpsDungeon.Combat",
+        "TpsDungeon.Interaction",
+        "TpsDungeon.Map",
+        "Unity.AI.Navigation",
+        "Unity.Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

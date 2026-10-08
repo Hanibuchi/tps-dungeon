@@ -7,15 +7,16 @@ namespace TpsDungeon.Interaction
     /// <summary>
     /// 画面中央の照準と、その下の「[E] 開ける」のようなプロンプト。
     /// 狙っている相手が IInteractableDetails を実装していれば、画面右側に情報欄（絵・名前・説明）も出す。
-    /// InteractionHud.uxml を UIDocument に差して、プレイヤーの子に置いて使う。
+    /// InteractionHud.uxml を UIDocument に差して、パーティーの操作台（かプレイヤー）の子に置いて使う。
     /// 表示は PlayerInteractor の状態を毎フレーム写すだけで、入力は扱わない。
+    /// 相手を決めていなければ、今有効な PlayerInteractor（パーティーの先頭のもの、<see cref="PlayerInteractor.Current"/>）を写す。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
     [AddComponentMenu("TPS Dungeon/Interaction Prompt View")]
     public sealed class InteractionPromptView : MonoBehaviour
     {
-        [SerializeField, Tooltip("状態を写す相手。未設定なら親から探す。")]
+        [SerializeField, Tooltip("状態を写す相手。未設定なら親から探し、無ければ今有効なもの（パーティーの先頭）。")]
         private PlayerInteractor interactor;
 
         private UIDocument document;
@@ -65,12 +66,13 @@ namespace TpsDungeon.Interaction
         {
             if (prompt == null) return;
 
-            var target = interactor != null ? interactor.CurrentTarget : null;
+            PlayerInteractor source = interactor != null ? interactor : PlayerInteractor.Current;
+            var target = source != null && source.isActiveAndEnabled ? source.CurrentTarget : null;
             SetVisible(target != null);
             SetDetails(DetailsOf(target));
             if (target == null) return;
 
-            SetText(keyLabel, KeyCapText(interactor.InteractBindingDisplay));
+            SetText(keyLabel, KeyCapText(source.InteractBindingDisplay));
             SetText(actionLabel, target.PromptLabel);
         }
 

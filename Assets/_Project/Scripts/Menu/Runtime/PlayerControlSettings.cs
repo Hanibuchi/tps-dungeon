@@ -6,7 +6,8 @@ namespace TpsDungeon.Menu
 {
     /// <summary>
     /// 保存してある操作の設定（マウス感度・上下反転・なめらかスクロールの無視・ホイール反転・キー設定）をプレイヤーの入力に当てる窓口。
-    /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。設定画面はここ経由で値を変える。
+    /// パーティーの操作台（PlayerInput と同じ GameObject）に付ける。設定画面はここ経由で値を変える。
+    /// ホイールの設定は、パーティーの全員のホットバー（<see cref="PartyRoster"/>）に当てる。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Control Settings")]
@@ -47,6 +48,10 @@ namespace TpsDungeon.Menu
             if (playerInput == null) playerInput = GetComponent<PlayerInput>();
             if (hotbar == null) hotbar = GetComponent<PlayerHotbar>();
         }
+
+        private void OnEnable() => PartyRoster.Changed += ApplyScroll;
+
+        private void OnDisable() => PartyRoster.Changed -= ApplyScroll;
 
         // PlayerInput は OnEnable で自分用のアクションを用意し直すことがあるので、全員の OnEnable が済んだ後で当てる。
         private void Start()
@@ -131,9 +136,18 @@ namespace TpsDungeon.Menu
 
         private void ApplyScroll()
         {
-            if (hotbar == null) return;
-            hotbar.DiscreteScroll = DiscreteScroll;
-            hotbar.InvertScroll = InvertScroll;
+            ApplyScroll(hotbar);
+            foreach (GameObject member in PartyRoster.Members)
+            {
+                if (member != null) ApplyScroll(member.GetComponent<PlayerHotbar>());
+            }
+        }
+
+        private void ApplyScroll(PlayerHotbar target)
+        {
+            if (target == null) return;
+            target.DiscreteScroll = DiscreteScroll;
+            target.InvertScroll = InvertScroll;
         }
 
         private void ApplyLook()

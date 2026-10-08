@@ -71,7 +71,7 @@ namespace TpsDungeon.Items
             if (Definition is WeaponDefinition weapon) WeaponAura.Attach(gameObject, weapon.Rank);
         }
 
-        public string PromptLabel => lastInventory != null && !lastInventory.Inventory.HasSpace ? fullLabel : pickupLabel;
+        public string PromptLabel => lastInventory != null && !lastInventory.HasSpace ? fullLabel : pickupLabel;
 
         public string DetailTitle => Instance != null ? Instance.DisplayName : string.Empty;
         public string DetailBody => Instance != null ? Instance.DetailText() : string.Empty;

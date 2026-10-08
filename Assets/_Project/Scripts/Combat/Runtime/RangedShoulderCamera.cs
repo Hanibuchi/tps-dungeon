@@ -1,3 +1,4 @@
+using TpsDungeon.Player;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -8,7 +9,8 @@ namespace TpsDungeon.Combat
     /// 普段のカメラは体のほぼ真後ろ（右へ 0.2 m）にあり、右肩が照準のすぐ手前に来るので、手から照準へ飛ぶ弾の出だしが体に隠れる。
     /// 寄せる量は ShoulderOffset と CameraSide から出る横のずれ（m）で決め、CameraSide を書き換えてなめらかに移す。
     /// 持ち替えて遠距離武器でなくなったら、シーンに置いたときの CameraSide へ戻す。
-    /// プレイヤーのルート（RangedAttacker と同じ GameObject）に付ける。カメラはシーンから探す。
+    /// キャラのルート（RangedAttacker と同じ GameObject）に付ける。カメラはシーンから探す。
+    /// パーティーでは全員が持つが、カメラを動かすのは操作しているキャラ（先頭）だけ。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RangedAttacker))]
@@ -29,11 +31,12 @@ namespace TpsDungeon.Combat
 
         private void OnDisable()
         {
-            if (follow != null) follow.CameraSide = baseCameraSide;
+            if (follow != null && PartyRoster.IsLeader(gameObject)) follow.CameraSide = baseCameraSide;
         }
 
         private void LateUpdate()
         {
+            if (!PartyRoster.IsLeader(gameObject)) return;
             if (follow == null && !FindFollow()) return;
 
             // CinemachineThirdPersonFollow は横のずれを Lerp(-ShoulderOffset.x, ShoulderOffset.x, CameraSide) で出す。

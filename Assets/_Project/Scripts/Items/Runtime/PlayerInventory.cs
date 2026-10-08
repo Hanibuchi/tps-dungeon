@@ -5,16 +5,18 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// プレイヤーの持ち物。<see cref="Inventory"/> を持ち、拾う・捨てるの出入り口になる。
-    /// ホットバーの枠はインベントリの先頭の枠で、どれを選んでいるかは PlayerHotbar が持つ。
+    /// キャラ 1 人の持ち物の窓口。手持ち（ホットバーの 4 枠、<see cref="Inventory"/>）はキャラごとに持ち、
+    /// バッグ（<see cref="Bag"/>）はパーティーで 1 つを共有する（Party が全員に同じものを渡す）。
+    /// パーティーが無いとき（1 人だけのシーンやテスト）は、自分用のバッグを作って持つ。
+    /// どの枠を選んでいるかは PlayerHotbar が持つ。
     /// ゲーム中に捨てるキーを押すと、PlayerHotbar で選んでいる枠（手に持っているもの）を捨てる。
-    /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
+    /// キャラのルート（PlayerHotbar と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Inventory")]
     public sealed class PlayerInventory : MonoBehaviour
     {
-        [SerializeField, Min(0), Tooltip("バッグの枠の数（ホットバーの枠は含まない）。")]
+        [SerializeField, Min(0), Tooltip("パーティーが無いときに自分で持つバッグの枠の数。パーティーではバッグを共有するので使わない。")]
         private int bagCapacity = 12;
 
         [SerializeField, Tooltip("捨てたものを置く、キャラの前方への距離（メートル）。")]
@@ -27,9 +29,10 @@ namespace TpsDungeon.Items
         private LayerMask groundMask = ~0;
 
         private Inventory inventory;
+        private Inventory bag;
         private PlayerHotbar hotbar;
 
-        /// <summary>持ち物の枠。先頭の PlayerHotbar.SlotCount 枠がホットバー。</summary>
+        /// <summary>手持ち（ホットバーの PlayerHotbar.SlotCount 枠）。バッグの枠は持たない。</summary>
         public Inventory Inventory
         {
             get
@@ -39,12 +42,37 @@ namespace TpsDungeon.Items
             }
         }
 
-        /// <summary>中身か枠の数が変わったら飛ぶ。</summary>
+        /// <summary>
+        /// バッグ。パーティーでは全員が同じものを持つ。差し替えると Changed が飛ぶ。
+        /// null を入れると自分用のバッグを作り直す。
+        /// </summary>
+        public Inventory Bag
+        {
+            get
+            {
+                EnsureBag();
+                return bag;
+            }
+            set
+            {
+                if (value == bag && value != null) return;
+                if (bag != null) bag.Changed -= OnItemsChanged;
+                bag = value ?? new Inventory(0, bagCapacity);
+                bag.Changed += OnItemsChanged;
+                Changed?.Invoke(this);
+            }
+        }
+
+        /// <summary>手持ちかバッグのどこかに空きがあるか。</summary>
+        public bool HasSpace => Inventory.HasSpace || Bag.HasSpace;
+
+        /// <summary>手持ちかバッグの中身、またはバッグの差し替えで飛ぶ。</summary>
         public event Action<PlayerInventory> Changed;
 
         private void Awake()
         {
             EnsureInventory();
+            EnsureBag();
             hotbar = GetComponent<PlayerHotbar>();
         }
 
@@ -60,24 +88,42 @@ namespace TpsDungeon.Items
 
         private void OnDropRequested(int index) => Drop(index);
 
+        private void OnItemsChanged(Inventory _) => Changed?.Invoke(this);
+
         private void EnsureInventory()
         {
             if (inventory != null) return;
 
-            inventory = new Inventory(PlayerHotbar.SlotCount, bagCapacity);
-            inventory.Changed += _ => Changed?.Invoke(this);
+            inventory = new Inventory(PlayerHotbar.SlotCount, 0);
+            inventory.Changed += OnItemsChanged;
         }
 
-        /// <summary>拾ったものを入れる。入らなければ false。</summary>
-        public bool TryAdd(ItemInstance item) => Inventory.TryAdd(item) >= 0;
+        private void EnsureBag()
+        {
+            if (bag != null) return;
+
+            bag = new Inventory(0, bagCapacity);
+            bag.Changed += OnItemsChanged;
+        }
+
+        /// <summary>拾ったものを入れる。手持ちの左から空きを探し、埋まっていればバッグの先頭から。入らなければ false。</summary>
+        public bool TryAdd(ItemInstance item)
+        {
+            if (item == null) return false;
+            return Inventory.TryAdd(item) >= 0 || Bag.TryAdd(item) >= 0;
+        }
+
+        /// <summary>手持ちの index 番目の枠のものを足元に捨てる。</summary>
+        public bool Drop(int index) => Drop(Inventory, index);
 
         /// <summary>
-        /// index 番目の枠のものを足元（キャラの少し前）に捨て、拾える物として置く。
+        /// source（手持ちかバッグ）の index 番目の枠のものを、このキャラの足元（少し前）に捨て、拾える物として置く。
         /// ポーズ中（timeScale 0）でも置けるよう、物理は使わず位置を決めて置くだけにする。
         /// </summary>
-        public bool Drop(int index)
+        public bool Drop(Inventory source, int index)
         {
-            ItemInstance item = Inventory[index];
+            if (source == null) return false;
+            ItemInstance item = source[index];
             if (item == null) return false;
 
             if (item.WorldPrefab == null)
@@ -86,7 +132,7 @@ namespace TpsDungeon.Items
                 return false;
             }
 
-            Inventory.RemoveAt(index);
+            source.RemoveAt(index);
 
             Vector3 position = DropPosition();
             Quaternion rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);

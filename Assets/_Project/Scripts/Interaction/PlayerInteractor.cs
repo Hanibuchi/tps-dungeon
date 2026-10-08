@@ -9,7 +9,9 @@ namespace TpsDungeon.Interaction
     /// カーソルはロックされているので「カーソルを合わせる」は画面中央からのレイで判定する。
     /// 壁越しに拾わないよう、自分以外で最初に当たったものしか見ない。
     /// トリガーは IInteractable に属するもの（開いた扉の開口に張った判定など）だけを的にし、それ以外は素通しする。
-    /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
+    /// キャラのルートに付ける。パーティーでは操作しているキャラ（先頭）でだけ有効にする。
+    /// 有効な最後の 1 つを <see cref="Current"/> で読める（案内の表示が見る）。
+    /// PlayerInput は同じ GameObject に無ければシーンから探す。照準のレイはパーティーの味方（Ally レイヤー）を素通しする。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Interactor")]
@@ -17,7 +19,7 @@ namespace TpsDungeon.Interaction
     {
         private const int HitBufferSize = 16;
 
-        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject から探す。")]
+        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject か、シーンから探す。")]
         private PlayerInput playerInput;
 
         [SerializeField, Tooltip("PlayerInput のアクションアセット内のインタラクト用アクション名。")]
@@ -44,6 +46,12 @@ namespace TpsDungeon.Interaction
         // Door などは作り直しで破棄されるので、Unity の null 判定ができるよう Component でも持つ。
         private Component currentComponent;
 
+        /// <summary>今有効な（操作しているキャラの）インタラクトの役。居なければ null。</summary>
+        public static PlayerInteractor Current { get; private set; }
+
+        /// <summary><see cref="Current"/> が替わった。</summary>
+        public static event Action<PlayerInteractor> CurrentChanged;
+
         /// <summary>今照準が合っていて触れる相手。いなければ null。</summary>
         public IInteractable CurrentTarget { get; private set; }
 
@@ -57,11 +65,17 @@ namespace TpsDungeon.Interaction
 
         private void Awake()
         {
-            if (playerInput == null) playerInput = GetComponent<PlayerInput>();
+            // パーティーの味方の体で照準が止まらないように。
+            int ally = LayerMask.NameToLayer("Ally");
+            if (ally >= 0) aimMask &= ~(1 << ally);
         }
 
         private void OnEnable()
         {
+            Current = this;
+            CurrentChanged?.Invoke(this);
+
+            if (playerInput == null) playerInput = FindPlayerInput();
             if (playerInput == null || playerInput.actions == null)
             {
                 Debug.LogWarning("PlayerInput が無いのでインタラクトできない", this);
@@ -85,6 +99,26 @@ namespace TpsDungeon.Interaction
             InputSystem.onActionChange -= OnActionChange;
             interactAction = null;
             SetTarget(null);
+
+            if (Current == this)
+            {
+                Current = null;
+                CurrentChanged?.Invoke(null);
+            }
+        }
+
+        private PlayerInput FindPlayerInput()
+        {
+            if (TryGetComponent(out PlayerInput own)) return own;
+            return PlayerInput.all.Count > 0 ? PlayerInput.all[0] : FindAnyObjectByType<PlayerInput>();
+        }
+
+        // ドメインリロードを切っているので、再生のたびに前回の相手を捨てる。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Current = null;
+            CurrentChanged = null;
         }
 
         private void Update()

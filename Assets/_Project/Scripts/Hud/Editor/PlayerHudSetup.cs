@@ -1,7 +1,4 @@
-using TpsDungeon.Combat;
-using TpsDungeon.Items;
 using TpsDungeon.Player;
-using TpsDungeon.Progression;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,12 +7,14 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに常時表示の HUD（HP・ホットバー・マップ・ダメージの数字）と、その出どころの
-    /// PlayerHealth / PlayerHotbar / PlayerInventory / PlayerMapToggle を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// パーティーの操作台のプレハブに常時表示の HUD（HP・ホットバー・マップ・ダメージの数字）と、大きな地図の開け閉め（PlayerMapToggle）を組み込む。
+    /// HP・ホットバーなどキャラの分は、実行中にパーティーの先頭を写す（GameHudView が PartyRoster から結ぶ）ので、ここでは結ばない。
+    /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
     /// </summary>
     public static class PlayerHudSetup
     {
-        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Party.prefab";
         private const string HudUxmlPath = "Assets/_Project/UI/Hud/GameHud.uxml";
         private const string PanelSettingsPath = "Assets/_Project/Settings/UI/GamePanelSettings.asset";
         private const string HudName = "Game HUD";
@@ -37,20 +36,10 @@ namespace TpsDungeon.Hud.Editor
             var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
             try
             {
-                var health = root.GetComponent<PlayerHealth>();
-                if (health == null) health = root.AddComponent<PlayerHealth>();
-
-                var hotbar = root.GetComponent<PlayerHotbar>();
-                if (hotbar == null) hotbar = root.AddComponent<PlayerHotbar>();
-
-                var inventory = root.GetComponent<PlayerInventory>();
-                if (inventory == null) inventory = root.AddComponent<PlayerInventory>();
-
                 var mapToggle = root.GetComponent<PlayerMapToggle>();
                 if (mapToggle == null) mapToggle = root.AddComponent<PlayerMapToggle>();
 
                 var playerInput = root.GetComponent<PlayerInput>();
-                SetReference(hotbar, "playerInput", playerInput);
                 SetReference(mapToggle, "playerInput", playerInput);
 
                 var hud = root.transform.Find(HudName);
@@ -70,19 +59,20 @@ namespace TpsDungeon.Hud.Editor
                 if (view == null) view = hud.gameObject.AddComponent<GameHudView>();
 
                 var serializedView = new SerializedObject(view);
-                serializedView.FindProperty("health").objectReferenceValue = health;
-                serializedView.FindProperty("progression").objectReferenceValue = root.GetComponent<CharacterProgression>();
-                serializedView.FindProperty("hotbar").objectReferenceValue = hotbar;
-                serializedView.FindProperty("inventory").objectReferenceValue = inventory;
+                serializedView.FindProperty("health").objectReferenceValue = null;
+                serializedView.FindProperty("progression").objectReferenceValue = null;
+                serializedView.FindProperty("hotbar").objectReferenceValue = null;
+                serializedView.FindProperty("inventory").objectReferenceValue = null;
                 serializedView.FindProperty("mapToggle").objectReferenceValue = mapToggle;
-                serializedView.FindProperty("player").objectReferenceValue = root.transform;
+                serializedView.FindProperty("player").objectReferenceValue = null;
                 serializedView.ApplyModifiedPropertiesWithoutUndo();
 
                 var damageNumbers = hud.GetComponent<DamageNumberView>();
                 if (damageNumbers == null) damageNumbers = hud.gameObject.AddComponent<DamageNumberView>();
-                SetReference(damageNumbers, "attacker", root.GetComponent<MeleeAttacker>());
-                SetReference(damageNumbers, "ranged", root.GetComponent<RangedAttacker>());
-                SetReference(view, "ranged", root.GetComponent<RangedAttacker>());
+                SetReference(damageNumbers, "attacker", null);
+                SetReference(damageNumbers, "ranged", null);
+                SetReference(view, "attacker", null);
+                SetReference(view, "ranged", null);
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Debug.Log($"HUD を組み込んだ: {PlayerPrefabPath}");

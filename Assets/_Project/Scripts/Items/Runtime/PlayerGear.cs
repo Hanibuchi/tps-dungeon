@@ -15,7 +15,8 @@ namespace TpsDungeon.Items
     /// - 自然回復・防御（盾） → PlayerHealth.RegenPerSecond / DamageTaken
     /// クリティカル率・ドロップ増加・数・多重は、攻撃の実行役（MeleeAttacker / RangedAttacker）が数値を出すときに
     /// <see cref="CurrentBonuses"/> の WeaponTotals を手の武器のエンチャントに足す。
-    /// プレイヤーのルート（PlayerInventory・PlayerHotbar と同じ GameObject）に付ける。
+    /// 経験値だけはパーティーに 1 つなので、パーティーの先頭のときだけ書く。
+    /// キャラのルート（PlayerInventory・PlayerHotbar と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Gear")]
@@ -54,6 +55,7 @@ namespace TpsDungeon.Items
         {
             if (inventory != null) inventory.Changed += OnInventoryChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            PartyRoster.LeaderChanged += OnLeaderChanged;
             Refresh();
         }
 
@@ -61,7 +63,14 @@ namespace TpsDungeon.Items
         {
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
+            PartyRoster.LeaderChanged -= OnLeaderChanged;
             Apply(GearBonuses.None, null);
+        }
+
+        // 経験値の上乗せはパーティーに 1 つなので、先頭が替わったら新しい先頭の分に書き直す。
+        private void OnLeaderChanged(GameObject leader)
+        {
+            if (leader == gameObject) Refresh();
         }
 
         private void OnInventoryChanged(PlayerInventory _) => Refresh();
@@ -114,8 +123,9 @@ namespace TpsDungeon.Items
             if (locomotion != null) locomotion.Multiplier = 1f + bonuses.MoveSpeedPercent;
             if (progression != null) progression.SetGearMaxHpPercent(bonuses.MaxHpPercent);
 
+            // パーティー全体に掛かる経験値の上乗せは、人数で積み上がらないよう先頭の手持ちの分だけにする。
             PartyProgression target = party != null ? party : PartyProgression.Current;
-            if (target != null) target.GearExpBonus = bonuses.ExpPercent;
+            if (target != null && PartyRoster.IsLeader(gameObject)) target.GearExpBonus = bonuses.ExpPercent;
 
             Changed?.Invoke(this);
         }
