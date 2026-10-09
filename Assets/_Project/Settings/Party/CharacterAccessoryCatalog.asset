@@ -22,8 +22,8 @@ MonoBehaviour:
   - {fileID: 1095217413439218603, guid: 24b1bcb9897285848b39473172e1d8f8, type: 3}
   hornPlacement:
     bone: 10
-    position: {x: 0, y: 1.72, z: -0.02}
-    euler: {x: -15, y: 0, z: 0}
+    position: {x: -0.061580777, y: 1.7895323, z: -0.05123933}
+    euler: {x: -15.000061, y: 0.016246874, z: 0.0018010007}
     scale: 0.8
   earsLeft:
   - {fileID: 8046186412013425200, guid: 4e445af72e019c74c905590b77ca85fb, type: 3}
@@ -35,8 +35,8 @@ MonoBehaviour:
   - {fileID: 793688028245049221, guid: d15a39b131c35914c97f9bafc1a8164b, type: 3}
   earPlacement:
     bone: 10
-    position: {x: -0.085, y: 1.74, z: -0.03}
-    euler: {x: 0, y: 0, z: 25}
+    position: {x: -0.053051103, y: 1.7548978, z: -0.02130157}
+    euler: {x: 0, y: 0.0016733756, z: 25.000317}
     scale: 0.75
   hornColors:
   - {r: 0.07710603, g: 0.07710603, b: 0.07710603, a: 1}
