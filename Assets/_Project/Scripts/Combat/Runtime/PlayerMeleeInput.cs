@@ -12,7 +12,9 @@ namespace TpsDungeon.Combat
     /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして（PlayerLocomotionSpeed.Locked）、入力で走りがぶれないようにする。
     /// ThirdPersonController は CharacterController の速度から今の速さを引き継ぐので、そのままだと走りの速さで二重に進み、
     /// 走り終えてからも惰性で滑る。速さの追従（SpeedChangeRate）も一瞬にして 0 へ落とし、走り終えた次のフレームまで止めておく。
-    /// プレイヤーのルート（PlayerInput・PlayerHotbar・PlayerInventory・MeleeAttacker・RangedAttacker と同じ GameObject）に付ける。
+    /// キャラのルート（PlayerHotbar・PlayerInventory・MeleeAttacker・RangedAttacker と同じ GameObject）に付ける。
+    /// 操作しているキャラ（パーティーの先頭）だけで有効にし、後ろの仲間では止めて仲間の AI に任せる。
+    /// PlayerInput は同じ GameObject に無ければシーンから探す（パーティーの操作台が持つ）。
     /// </summary>
     // 押下をその同じフレームの MeleeAttacker / RangedAttacker の Update で使わせるため、先に回す。
     [DefaultExecutionOrder(-10)]
@@ -24,7 +26,7 @@ namespace TpsDungeon.Combat
         /// <summary>走り終えてから歩きを戻すまでのフレーム数。最後に走ったフレームの速度を ThirdPersonController に拾わせない。</summary>
         private const int UnlockDelayFrames = 1;
 
-        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject から探す。")]
+        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject か、シーンから探す。")]
         private PlayerInput playerInput;
 
         [SerializeField, Tooltip("攻撃のアクション名。")]
@@ -47,7 +49,6 @@ namespace TpsDungeon.Combat
 
         private void Awake()
         {
-            if (playerInput == null) playerInput = GetComponent<PlayerInput>();
             attacker = GetComponent<MeleeAttacker>();
             ranged = GetComponent<RangedAttacker>();
             hotbar = GetComponent<PlayerHotbar>();
@@ -58,6 +59,7 @@ namespace TpsDungeon.Combat
 
         private void OnEnable()
         {
+            if (playerInput == null) playerInput = PlayerInputs.Find(this);
             if (playerInput != null && playerInput.actions != null)
             {
                 attackAction = playerInput.actions.FindAction(attackActionName);

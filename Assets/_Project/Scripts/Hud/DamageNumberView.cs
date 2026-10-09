@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TpsDungeon.Combat;
+using TpsDungeon.Player;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,6 +11,7 @@ namespace TpsDungeon.Hud
     /// MeleeAttacker.Dealt・RangedAttacker.Dealt を受けて 1 撃ごとに 1 つ出し、はじけて上がりながら消す。
     /// クリティカルは大きく金、爆発の一撃と矢の雨の刻みは小さく橙（見た目は GameHud.uss の .damage-number）。
     /// クリティカルの 1 撃には数字の下に「Critical」を、コンボボーナスが乗った 1 撃にはその下に「N COMBO」を添える。N が大きいほど白→金→赤。
+    /// パーティーが居れば、全員（後ろの仲間も）の当てたダメージを出す（<see cref="PartyRoster"/>）。
     /// GameHudView と同じ GameObject に付けて、同じ UIDocument に描く。
     /// </summary>
     [DisallowMultipleComponent]
@@ -71,6 +73,10 @@ namespace TpsDungeon.Hud
 
         private UIDocument document;
         private VisualElement layer;
+
+        // パーティーのメンバーの分。並びが変わるたびに付け直す。
+        private readonly List<MeleeAttacker> memberAttackers = new List<MeleeAttacker>();
+        private readonly List<RangedAttacker> memberRanged = new List<RangedAttacker>();
         private readonly List<Number> active = new List<Number>();
         private readonly Stack<Number> idle = new Stack<Number>();
 
@@ -104,16 +110,52 @@ namespace TpsDungeon.Hud
 
             if (attacker != null) attacker.Dealt += OnDealt;
             if (ranged != null) ranged.Dealt += OnDealt;
+            PartyRoster.Changed += OnRosterChanged;
+            OnRosterChanged();
         }
 
         private void OnDisable()
         {
             if (attacker != null) attacker.Dealt -= OnDealt;
             if (ranged != null) ranged.Dealt -= OnDealt;
+            PartyRoster.Changed -= OnRosterChanged;
+            UnsubscribeMembers();
             layer?.RemoveFromHierarchy();
             layer = null;
             active.Clear();
             idle.Clear();
+        }
+
+        private void OnRosterChanged()
+        {
+            UnsubscribeMembers();
+            foreach (GameObject member in PartyRoster.Members)
+            {
+                if (member == null) continue;
+                var melee = member.GetComponent<MeleeAttacker>();
+                if (melee != null && melee != attacker)
+                {
+                    melee.Dealt += OnDealt;
+                    memberAttackers.Add(melee);
+                }
+
+                var rangedMember = member.GetComponent<RangedAttacker>();
+                if (rangedMember != null && rangedMember != ranged)
+                {
+                    rangedMember.Dealt += OnDealt;
+                    memberRanged.Add(rangedMember);
+                }
+            }
+        }
+
+        private void UnsubscribeMembers()
+        {
+            foreach (MeleeAttacker melee in memberAttackers)
+                if (melee != null) melee.Dealt -= OnDealt;
+            foreach (RangedAttacker rangedMember in memberRanged)
+                if (rangedMember != null) rangedMember.Dealt -= OnDealt;
+            memberAttackers.Clear();
+            memberRanged.Clear();
         }
 
         private void OnDealt(MeleeHitRecord record)

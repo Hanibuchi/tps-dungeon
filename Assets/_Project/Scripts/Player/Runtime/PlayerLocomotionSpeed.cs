@@ -1,32 +1,23 @@
-using System.Reflection;
 using UnityEngine;
 
 namespace TpsDungeon.Player
 {
     /// <summary>
-    /// ThirdPersonController の歩き・走りの速さ（MoveSpeed / SprintSpeed）と速さの追従（SpeedChangeRate）を書く役をまとめたもの。
+    /// CharacterMotor の歩き・走りの速さ（MoveSpeed / SprintSpeed）と速さの追従（SpeedChangeRate）を書く役をまとめたもの。
     /// 最初の値を基準に覚え、装備の倍率（<see cref="Multiplier"/>、移動速度のエンチャント）と、
     /// ダッシュ突きで走っている間の止め（<see cref="Locked"/>、PlayerMeleeInput）から毎回書き直す。
     /// 止めと倍率を別々に覚え直さないので、走っている最中に装備が変わっても、走り終えたときに古い速さへ戻すことはない。
-    /// ThirdPersonController は名前で探してフィールドを名前で書くので、Starter Assets のアセンブリには依存しない（GamePauser と同じ）。
-    /// プレイヤーのルート（ThirdPersonController と同じ GameObject）に付ける。
+    /// 後ろの仲間（NavMeshAgent で歩く）は <see cref="Multiplier"/> を読んで歩く速さに掛ける。
+    /// キャラのルート（CharacterMotor と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Locomotion Speed")]
     public sealed class PlayerLocomotionSpeed : MonoBehaviour
     {
-        private const string LocomotionTypeName = "ThirdPersonController";
-        private const string MoveSpeedField = "MoveSpeed";
-        private const string SprintSpeedField = "SprintSpeed";
-        private const string SpeedChangeRateField = "SpeedChangeRate";
-
         /// <summary>止めている間の速さの追従。一瞬で 0 へ落とす。</summary>
         private const float LockedSpeedChangeRate = 1e6f;
 
-        private Component locomotion;
-        private FieldInfo moveSpeed;
-        private FieldInfo sprintSpeed;
-        private FieldInfo speedChangeRate;
+        private CharacterMotor locomotion;
         private float baseMoveSpeed;
         private float baseSprintSpeed;
         private float baseSpeedChangeRate;
@@ -71,30 +62,12 @@ namespace TpsDungeon.Player
         {
             if (locomotion != null) return;
 
-            foreach (Component component in GetComponents<Component>())
-            {
-                if (component == null || component.GetType().Name != LocomotionTypeName) continue;
+            locomotion = GetComponent<CharacterMotor>();
+            if (locomotion == null) return;
 
-                FieldInfo move = FloatField(component, MoveSpeedField);
-                FieldInfo sprint = FloatField(component, SprintSpeedField);
-                FieldInfo rate = FloatField(component, SpeedChangeRateField);
-                if (move == null || sprint == null || rate == null) return;
-
-                locomotion = component;
-                moveSpeed = move;
-                sprintSpeed = sprint;
-                speedChangeRate = rate;
-                baseMoveSpeed = (float)move.GetValue(component);
-                baseSprintSpeed = (float)sprint.GetValue(component);
-                baseSpeedChangeRate = (float)rate.GetValue(component);
-                return;
-            }
-        }
-
-        private static FieldInfo FloatField(Component component, string fieldName)
-        {
-            FieldInfo field = component.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
-            return field != null && field.FieldType == typeof(float) ? field : null;
+            baseMoveSpeed = locomotion.MoveSpeed;
+            baseSprintSpeed = locomotion.SprintSpeed;
+            baseSpeedChangeRate = locomotion.SpeedChangeRate;
         }
 
         private void Apply()
@@ -102,9 +75,9 @@ namespace TpsDungeon.Player
             FindLocomotion();
             if (locomotion == null) return;
 
-            moveSpeed.SetValue(locomotion, locked ? 0f : baseMoveSpeed * multiplier);
-            sprintSpeed.SetValue(locomotion, locked ? 0f : baseSprintSpeed * multiplier);
-            speedChangeRate.SetValue(locomotion, locked ? LockedSpeedChangeRate : baseSpeedChangeRate);
+            locomotion.MoveSpeed = locked ? 0f : baseMoveSpeed * multiplier;
+            locomotion.SprintSpeed = locked ? 0f : baseSprintSpeed * multiplier;
+            locomotion.SpeedChangeRate = locked ? LockedSpeedChangeRate : baseSpeedChangeRate;
         }
     }
 }

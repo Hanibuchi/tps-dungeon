@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
+using TpsDungeon.Player;
 using TpsDungeon.Progression;
 using UnityEngine;
 
@@ -171,6 +172,12 @@ namespace TpsDungeon.Combat
         public float CooldownFraction =>
             combo != null && combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
 
+        /// <summary>次に振れるまでの待ちの残り（秒）。振っている途中や振れる武器が無いときは 0。</summary>
+        public float CooldownRemaining => combo != null && combo.IsCoolingDown ? combo.CooldownRemaining : 0f;
+
+        /// <summary>段を振っている途中か。</summary>
+        public bool IsSwinging => combo != null && combo.IsSwinging;
+
         /// <summary>
         /// コンボボーナスの段数（続けて当てた段の数。次の 1 撃にこの分上乗せする）。コンボボーナスの無い武器では 0。
         /// </summary>
@@ -211,6 +218,8 @@ namespace TpsDungeon.Combat
             if (initialized) return;
 
             initialized = true;
+            // パーティーの味方（自分も含む）には当てず、突きも味方で止めない。
+            hitMask = AllyLayer.Exclude(hitMask);
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
             gear = GetComponent<PlayerGear>();
@@ -230,14 +239,16 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// item を手に持つ（null なら素手）。switched が真なら、中身が同じでも持ち替えとして待たせる（枠を選び直したときなど）。
-        /// 最初の 1 回は待たせない。前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+        /// 最初の 1 回は待たせない。inheritCooldown が真なら前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+        /// 仲間の AI は武器ごとの待ちを自分で覚えているので、偽にして持ち替えの待ちだけにする。
         /// </summary>
-        public void Equip(ItemInstance item, bool switched = false)
+        public void Equip(ItemInstance item, bool switched = false, bool inheritCooldown = true)
         {
             if (equipped && item == held && !switched) return;
 
             Initialize();
-            float switchWait = equipped ? Mathf.Max(switchCooldown, combo != null ? combo.CooldownRemaining : 0f) : 0f;
+            float previous = inheritCooldown && combo != null ? combo.CooldownRemaining : 0f;
+            float switchWait = equipped ? Mathf.Max(switchCooldown, previous) : 0f;
             equipped = true;
             CancelExtraDashes();
             EndLunge();

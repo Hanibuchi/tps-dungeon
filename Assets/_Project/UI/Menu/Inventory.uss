@@ -4,9 +4,11 @@
     padding-bottom: 22px;
 }
 
+/* 高さを決めておく。情報欄の説明の長さでパネルが伸び縮みすると、中央寄せのパネル全体が上下にずれるため。 */
 .inventory__body {
     flex-direction: row;
     align-items: stretch;
+    height: 464px;
 }
 
 .inventory__slots {
@@ -26,18 +28,6 @@
     width: 432px;
     flex-direction: row;
     flex-wrap: wrap;
-}
-
-.inventory__hotbar {
-    flex-direction: row;
-    margin-top: 8px;
-}
-
-.inventory__divider {
-    align-self: stretch;
-    height: 1px;
-    margin: 10px 4px 14px 4px;
-    background-color: var(--brass-dim);
 }
 
 .inventory .slot {
@@ -69,9 +59,200 @@
     transition-duration: 0.05s;
 }
 
+/* ---- 仲間の並び（左の欄）。2 列 6 段で、左の列の上から 1, 2, … と数える。札の中の 4 枠がその人の装備の枠。
+   高さは札 6 段（余白込み 71px × 6）に少し足して、端数で 5 段に折り返さないようにする。 ---- */
+
+.inventory__party {
+    margin-right: 22px;
+}
+
+/* 幅は札の列の数に合わせて InventoryScreen が決める（1 列 192px）。 */
+.party-list {
+    width: 384px;
+    height: 432px;
+    flex-shrink: 0;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.party-card {
+    width: 186px;
+    height: 65px;
+    margin: 3px;
+    flex-direction: row;
+    background-color: rgba(20, 17, 15, 0.84);
+    border-width: 1px;
+    border-color: var(--brass-dim);
+    transition-property: translate, scale, border-color, background-color, opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.party-card:hover {
+    border-color: var(--gold);
+}
+
+/* 角・耳・しっぽの色。 */
+.party-card__swatch {
+    width: 5px;
+    align-self: stretch;
+}
+
+.party-card__body {
+    flex-grow: 1;
+    padding: 2px 4px 3px 5px;
+}
+
+/* 上の段：番号・名前・Lv・操作中の印。 */
+.party-card__header {
+    flex-direction: row;
+    align-items: center;
+    height: 18px;
+}
+
+.party-card__number {
+    margin: 0 4px 0 0;
+    padding: 0;
+    font-size: 11px;
+    color: var(--ink-faint);
+}
+
+.party-card__name {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.party-card__level {
+    flex-shrink: 0;
+    margin: 0 0 0 5px;
+    padding: 0;
+    font-size: 10px;
+    color: var(--ink-dim);
+}
+
+.party-card__badge {
+    display: none;
+    flex-shrink: 0;
+    margin: 0 0 0 auto;
+    padding: 1px 4px;
+    font-size: 9px;
+    color: var(--stone);
+    background-color: var(--gold);
+}
+
+.party-card.party-card--leader .party-card__badge {
+    display: flex;
+}
+
+.party-card.party-card--leader .party-card__number {
+    color: var(--gold-bright);
+}
+
+/* 下の段：手持ちの 4 枠（装備の枠）。バッグと同じ枠を小さくして並べる。 */
+.party-card__hand {
+    flex-direction: row;
+    margin-top: 2px;
+}
+
+.inventory .party-card .slot.party-card__slot {
+    width: 38px;
+    height: 38px;
+    margin: 0 4px 0 0;
+}
+
+/* 手に持っている枠は縁だけ灯す（小さい枠では浮かせたり大きくしたりしない）。 */
+.inventory .party-card .slot.party-card__slot.slot--selected {
+    translate: 0 0;
+    scale: 1 1;
+}
+
+.inventory .party-card .slot.party-card__slot .slot__gem {
+    display: none;
+}
+
+.inventory .party-card .slot.party-card__slot .slot__number {
+    left: 2px;
+    top: 0;
+    font-size: 9px;
+}
+
+.inventory .party-card .slot.party-card__slot .slot__icon {
+    left: 5px;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+}
+
+.inventory .party-card .slot.party-card__slot .slot__inner {
+    left: 2px;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+}
+
+/* ドラッグ中、離すと入る枠は大きくしすぎない。 */
+.inventory .party-card .slot.party-card__slot.slot--drop-target {
+    scale: 1.08 1.08;
+}
+
+/* 札の並べ替え中、掴んだ札は中身を消した空きになり、入る予定の位置へ滑る。 */
+.party-card.party-card--drag-source {
+    background-color: var(--gold-glow);
+    border-color: var(--gold);
+    opacity: 0.6;
+}
+
+.party-card.party-card--drag-source > * {
+    opacity: 0;
+}
+
+/* 札の並べ替え中、ポインタについて動く写し。 */
+.party-card.party-card--ghost {
+    position: absolute;
+    margin: 0;
+    scale: 1.05 1.05;
+    border-color: var(--gold-bright);
+    background-color: rgba(38, 31, 24, 0.96);
+    transition-duration: 0s;
+}
+
+/* 落としたあと、写しの位置から枠へ吸い込ませる最初の 1 コマ（動かさずに置く）。 */
+.party-card.party-card--settling {
+    transition-duration: 0s;
+}
+
+/* ドラッグ中、離すとその位置に入る札（武器なら、その人の手持ちの空きに入る）。 */
+.party-card.party-card--drop-target {
+    border-color: var(--gold-bright);
+    background-color: var(--gold-glow-strong);
+}
+
+/* 手持ちが埋まっていて渡せなかったとき、一瞬赤く灯る。 */
+.party-card.party-card--denied {
+    border-color: var(--blood-bright);
+    translate: 3px 0;
+    transition-duration: 0.05s;
+}
+
+/* 大きさを固定する。名前が折り返しても説明が長くても外形は変わらず、収まらない説明は下で切る。 */
 .inventory__details {
     margin-left: 24px;
     width: 250px;
+    min-width: 250px;
+    max-width: 250px;
+    overflow: hidden;
+}
+
+.inventory__details .item-details__body {
+    flex-shrink: 1;
+    overflow: hidden;
 }
 
 .inventory__details.inventory__details--empty .item-details__well {

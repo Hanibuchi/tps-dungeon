@@ -8,12 +8,13 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Menu.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに、Esc で開くポーズメニュー（設定画面つき）と、操作の設定を当てる
+    /// パーティーの操作台のプレハブ（PlayerInput を持つ）に、Esc で開くポーズメニュー（設定画面つき）と、操作の設定を当てる
     /// PlayerControlSettings を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
     /// </summary>
     public static class PauseMenuSetup
     {
-        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Party.prefab";
         private const string MenuUxmlPath = "Assets/_Project/UI/Menu/PauseMenu.uxml";
         private const string PanelSettingsPath = "Assets/_Project/Settings/UI/GamePanelSettings.asset";
         private const string PreviewClipPath = "Assets/_Project/Audio/Placeholder/SE_Click.wav";

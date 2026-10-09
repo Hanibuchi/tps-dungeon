@@ -8,9 +8,10 @@ namespace TpsDungeon.Player
     /// 画面下のホットバー（アイテム欄）のどの枠を選んでいるか。
     /// マウスホイール（ゲームパッドは LB/RB）で隣へ、数字キーで直接選ぶ。
     /// なめらかスクロールを無視する設定（<see cref="DiscreteScroll"/>）では、ホイール 1 ノッチで 1 枠送る。
-    /// 枠の中身はインベントリの先頭の枠（PlayerInventory）が持ち、ここは選択位置だけを持つ。
+    /// 枠の中身はキャラの手持ち（PlayerInventory）が持ち、ここは選択位置だけを持つ。
     /// 捨てるキーは選んでいる枠を捨ててほしいと <see cref="DropRequested"/> で知らせるだけで、捨てるのは PlayerInventory。
-    /// プレイヤーのルート（PlayerInput と同じ GameObject）に付ける。
+    /// キャラのルートに付ける。入力を読むのは操作しているキャラ（パーティーの先頭）だけで、後ろの仲間ではこのコンポーネントを止め、
+    /// 仲間の AI が <see cref="Select"/> で持ち替える。PlayerInput は同じ GameObject に無ければシーンから探す。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Player Hotbar")]
@@ -18,7 +19,7 @@ namespace TpsDungeon.Player
     {
         public const int SlotCount = 4;
 
-        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject から探す。")]
+        [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定ならこの GameObject か、シーンから探す。")]
         private PlayerInput playerInput;
 
         [SerializeField, Tooltip("隣の枠へ送るアクション名。正の値で右、負の値で左。")]
@@ -62,12 +63,12 @@ namespace TpsDungeon.Player
 
         private void Awake()
         {
-            if (playerInput == null) playerInput = GetComponent<PlayerInput>();
             scrollGesture = new ScrollGesture(scrollGestureGap);
         }
 
         private void OnEnable()
         {
+            if (playerInput == null) playerInput = PlayerInputs.Find(this);
             if (playerInput == null || playerInput.actions == null)
             {
                 Debug.LogWarning("PlayerInput が無いのでホットバーを切り替えられない", this);
@@ -89,7 +90,7 @@ namespace TpsDungeon.Player
         private void Update()
         {
             // インベントリ画面も開いている間だけ同じアクションを効かせ直すので、ゲーム中のマップが有効なときだけ拾う。
-            if (dropAction != null && dropAction.WasPressedThisFrame() && dropAction.actionMap == playerInput.currentActionMap)
+            if (dropAction != null && dropAction.WasPressedThisFrame() && playerInput != null && dropAction.actionMap == playerInput.currentActionMap)
                 DropRequested?.Invoke(SelectedIndex);
 
             for (int i = 0; i < SlotCount; i++)

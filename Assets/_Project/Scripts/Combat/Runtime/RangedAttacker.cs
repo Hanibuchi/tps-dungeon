@@ -233,6 +233,12 @@ namespace TpsDungeon.Combat
         public float CooldownFraction => burning ? FlameUsedFraction
             : cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
 
+        /// <summary>次に撃てるまでの待ちの残り（秒）。炎を吐いている間は 0。</summary>
+        public float CooldownRemaining => burning ? 0f : cooldownRemaining;
+
+        /// <summary>持続弓・召喚・治癒持続を持っている間、狙う地面に範囲の円を出すか。仲間の AI では出さない。</summary>
+        public bool ShowAimRing { get; set; } = true;
+
         /// <summary>今吐いている炎の、吐ける量のうち使った割合。吐いていなければ 0。</summary>
         private float FlameUsedFraction
         {
@@ -279,6 +285,8 @@ namespace TpsDungeon.Combat
             if (initialized) return;
 
             initialized = true;
+            // パーティーの味方（自分も含む）には矢を刺さず、照準も味方で止めない。
+            hitMask = AllyLayer.Exclude(hitMask);
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
             gear = GetComponent<PlayerGear>();
@@ -312,14 +320,15 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// item を手に持つ（null なら素手）。遠距離武器でなければ何も撃たない。switched が真なら、中身が同じでも持ち替えとして待たせる。
-        /// 最初の 1 回は待たせない。前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+        /// 最初の 1 回は待たせない。inheritCooldown が真なら前の武器の待ちが長ければ引き継ぎ、往復で消させない。
+        /// 仲間の AI は武器ごとの待ちを自分で覚えているので、偽にして持ち替えの待ちだけにする。
         /// </summary>
-        public void Equip(ItemInstance item, bool switched = false)
+        public void Equip(ItemInstance item, bool switched = false, bool inheritCooldown = true)
         {
             if (equipped && item == held && !switched) return;
 
             Initialize();
-            float switchWait = equipped ? Mathf.Max(switchCooldown, cooldownRemaining) : 0f;
+            float switchWait = equipped ? Mathf.Max(switchCooldown, inheritCooldown ? cooldownRemaining : 0f) : 0f;
             bool wasRanged = heldWeapon != null;
             equipped = true;
             volleys.Clear();
@@ -1439,7 +1448,7 @@ namespace TpsDungeon.Combat
         /// <summary>持続弓・召喚・治癒持続を持っている間、狙う地面（target）に範囲の円を出す。</summary>
         private void UpdateAimRing(WeaponTypeDefinition type, Vector3 target)
         {
-            bool show = type.AimsAtGround && type.RangeRingMaterial != null;
+            bool show = ShowAimRing && type.AimsAtGround && type.RangeRingMaterial != null;
             if (!show)
             {
                 if (aimRing != null) aimRing.SetVisible(false);

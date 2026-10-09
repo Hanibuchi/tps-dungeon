@@ -1,4 +1,3 @@
-using TpsDungeon.Items;
 using TpsDungeon.Menu.UI;
 using TpsDungeon.Player;
 using UnityEditor;
@@ -9,12 +8,14 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Menu.Editor
 {
     /// <summary>
-    /// プレイヤーのプレハブに、持ち物（PlayerInventory）と Tab で開くインベントリ画面を組み込む。
+    /// パーティーの操作台のプレハブ（PlayerInput を持つ）に、Tab で開くインベントリ画面を組み込む。
+    /// 持ち物（PlayerInventory）はキャラごとに持つので、画面はパーティーの先頭と共有のバッグを出す。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
+    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
     /// </summary>
     public static class InventorySetup
     {
-        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Party.prefab";
         private const string ScreenUxmlPath = "Assets/_Project/UI/Menu/Inventory.uxml";
         private const string PanelSettingsPath = "Assets/_Project/Settings/UI/GamePanelSettings.asset";
         private const string ScreenName = "Inventory Screen";
@@ -43,9 +44,6 @@ namespace TpsDungeon.Menu.Editor
                     return;
                 }
 
-                var inventory = root.GetComponent<PlayerInventory>();
-                if (inventory == null) inventory = root.AddComponent<PlayerInventory>();
-
                 var holder = root.transform.Find(ScreenName);
                 if (holder == null)
                 {
@@ -64,8 +62,7 @@ namespace TpsDungeon.Menu.Editor
 
                 var serialized = new SerializedObject(screen);
                 serialized.FindProperty("playerInput").objectReferenceValue = playerInput;
-                serialized.FindProperty("inventory").objectReferenceValue = inventory;
-                serialized.FindProperty("hotbar").objectReferenceValue = root.GetComponent<PlayerHotbar>();
+                serialized.FindProperty("inventory").objectReferenceValue = null;
                 serialized.FindProperty("controls").objectReferenceValue = root.GetComponent<PlayerControlSettings>();
                 serialized.FindProperty("mapToggle").objectReferenceValue = root.GetComponent<PlayerMapToggle>();
                 serialized.ApplyModifiedPropertiesWithoutUndo();
