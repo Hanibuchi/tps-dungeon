@@ -27,7 +27,7 @@ namespace TpsDungeon.Menu.UI
     /// - 枠に合わせて捨てるキー（既定 O）を押すと、足元に捨てる。
     /// - 枠や札に合わせると右の情報欄に説明が出る。
     /// 開閉キー（Player/Inventory）か Esc（UI/Cancel）で閉じる。
-    /// 下の操作案内は、クイック移動キーを押している間だけ「クリックで移動」に変わる。
+    /// 下の操作案内は、クイック移動キーを押している間だけ「クリックで移動」に変わる（仲間の札の案内の行は残し、パネルの大きさが変わらないようにする）。
     /// パーティーが居ないシーンでは、親か先頭の持ち物を札 1 枚で出す（並べ替えはできない）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -1047,7 +1047,7 @@ namespace TpsDungeon.Menu.UI
 
             if (quickMove)
             {
-                hint.text = QuickMoveHintText;
+                hint.text = QuickMoveHint(party != null);
                 return;
             }
 
@@ -1062,6 +1062,12 @@ namespace TpsDungeon.Menu.UI
         }
 
         public const string QuickMoveHintText = "クリックで移動";
+
+        /// <summary>
+        /// クイック移動キーを押している間の案内。仲間が居るときは札の案内の行を残して、普段と同じ 2 行にする
+        /// （行が減るとパネルが縮み、中央寄せなので上下にも動く。空の行は詰められて高さを保てない）。
+        /// </summary>
+        public static string QuickMoveHint(bool party) => party ? QuickMoveHintText + "\n" + PartyHintText : QuickMoveHintText;
 
         public const string PartyHintText = "札の枠にドラッグで装備　札をドラッグで並べ替え（先頭が操作するキャラ）";
 

@@ -47,5 +47,12 @@ namespace TpsDungeon.Menu.Tests
         {
             Assert.AreEqual("クリックで移動", InventoryScreen.QuickMoveHintText);
         }
+
+        [Test]
+        public void クイック移動の案内は普段と同じ行の数にする()
+        {
+            Assert.AreEqual("クリックで移動", InventoryScreen.QuickMoveHint(false));
+            Assert.AreEqual("クリックで移動\n" + InventoryScreen.PartyHintText, InventoryScreen.QuickMoveHint(true));
+        }
     }
 }
