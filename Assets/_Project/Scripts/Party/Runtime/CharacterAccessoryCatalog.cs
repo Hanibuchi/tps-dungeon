@@ -7,6 +7,7 @@ namespace TpsDungeon.Party
     /// 見た目の個性に使う小物（角・耳・しっぽ）のプレハブと、付ける位置。<see cref="CharacterAppearance"/> が読む。
     /// 位置と向きは、キャラのルートから見た値（顔が +Z、上が +Y）で、骨（頭・腰）の初めの姿勢を基準に骨の下へ置く。
     /// 左の値を書き、右は左右反転（X を逆、Y・Z 回りの回転を逆）して使う。
+    /// 合わせるときは、シーンのキャラを選んでインスペクタの「小物の置き方を合わせる」からシーンビューで動かせる。
     /// </summary>
     [CreateAssetMenu(menuName = "TPS Dungeon/Party/Character Accessory Catalog", fileName = "CharacterAccessoryCatalog")]
     public sealed class CharacterAccessoryCatalog : ScriptableObject
@@ -86,6 +87,11 @@ namespace TpsDungeon.Party
         }
 
 #if UNITY_EDITOR
+        /// <summary>値が変わった（インスペクタやシーンビューの調整の道具から）。付けている人が付け直す。</summary>
+        public static event Action<CharacterAccessoryCatalog> Edited;
+
+        private void OnValidate() => Edited?.Invoke(this);
+
         /// <summary>プレハブを差し込む（エディタの組み込みから）。</summary>
         public void SetPrefabs(GameObject[] newHornsLeft, GameObject[] newHornsRight, GameObject[] newEarsLeft, GameObject[] newEarsRight, GameObject[] newTails)
         {

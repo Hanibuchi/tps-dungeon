@@ -9,7 +9,11 @@ namespace TpsDungeon.Party
     /// 置き方はキャラのルートから見た値で書いてあるので、起動したときの骨の姿勢（アニメーションが動く前）を覚えておき、それを基準に骨の下へ置く。
     /// 小物の当たりは外す（攻撃や照準を止めない）。レイヤーはキャラに揃える。
     /// キャラのルート（Animator と同じ GameObject）に付ける。
+    ///
+    /// エディタでは Play していなくても、開いているシーンのキャラに小物を出す（置き方を見ながら合わせるため）。
+    /// このときの小物はシーンに保存しない。カタログの値を変えると、その場で全員が付け直す。
     /// </summary>
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Character Appearance")]
     public sealed class CharacterAppearance : MonoBehaviour
@@ -61,7 +65,22 @@ namespace TpsDungeon.Party
             animator = GetComponent<Animator>();
             CaptureBindPose(HumanBodyBones.Head);
             CaptureBindPose(HumanBodyBones.Hips);
+        }
+
+        private void OnEnable()
+        {
+#if UNITY_EDITOR
+            CharacterAccessoryCatalog.Edited += OnCatalogEdited;
+#endif
             Apply();
+        }
+
+        private void OnDisable()
+        {
+#if UNITY_EDITOR
+            CharacterAccessoryCatalog.Edited -= OnCatalogEdited;
+#endif
+            Clear();
         }
 
         /// <summary>今の見た目で小物を付け直す。</summary>
@@ -70,7 +89,7 @@ namespace TpsDungeon.Party
         {
             applied = true;
             Clear();
-            if (catalog == null) return;
+            if (catalog == null || !ShowsAccessories) return;
 
             CharacterLook l = look.Clamped;
             if (l.horn > 0) SpawnPair(catalog.HornLeft(l.horn), catalog.HornRight(l.horn), catalog.HornPlacement, "Horn");
@@ -100,10 +119,13 @@ namespace TpsDungeon.Party
             }
             SetLayer(instance.transform, gameObject.layer);
 
+#if UNITY_EDITOR
+            // Play していないときに出す小物は、シーンにもプレハブの差分にも残さない。
+            if (!Application.isPlaying) SetHideFlags(instance.transform, HideFlags.HideAndDontSave);
+#endif
+
             // ルートから見た置き方を、覚えておいた骨の初めの姿勢から見た値に直して骨の下に置く。
-            Matrix4x4 rootToBone = BindPose(placement.bone, bone).inverse;
-            Vector3 localPosition = rootToBone.MultiplyPoint3x4(placement.position);
-            Quaternion localRotation = rootToBone.rotation * Quaternion.Euler(placement.euler);
+            BoneLocal(placement, bone, out Vector3 localPosition, out Quaternion localRotation);
 
             Transform t = instance.transform;
             t.SetParent(bone, false);
@@ -116,15 +138,122 @@ namespace TpsDungeon.Party
 
         private void Clear()
         {
-            foreach (GameObject go in spawned)
-            {
-                if (go == null) continue;
-                if (Application.isPlaying) Destroy(go);
-                else DestroyImmediate(go);
-            }
-
+            foreach (GameObject go in spawned) DestroyAccessory(go);
             spawned.Clear();
+
+            // スクリプトの読み込み直しで一覧だけ消えて、Play していないときに出した小物が骨の下に残っていることがある
+            // （シーンを読み直さずに Play に入る設定でも残る）。保存しない印の付いた物だけ消す。
+            RemoveLeftovers(Bone(HumanBodyBones.Head));
+            RemoveLeftovers(Bone(HumanBodyBones.Hips));
         }
+
+        private static void RemoveLeftovers(Transform bone)
+        {
+            if (bone == null) return;
+            for (int i = bone.childCount - 1; i >= 0; i--)
+            {
+                Transform child = bone.GetChild(i);
+                if (child.name.StartsWith(AccessoryPrefix) && (child.hideFlags & HideFlags.DontSave) != 0) DestroyAccessory(child.gameObject);
+            }
+        }
+
+        private static void DestroyAccessory(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
+        }
+
+        /// <summary>
+        /// 小物を出すか。Play 中は出す。Play していないときは、開いているシーン（とプレハブの編集画面）だけで出し、
+        /// 組み込みがプレハブを裏で開いているとき（ほかのプレビュー用のシーン）には出さない（プレハブに混ざらないように）。
+        /// </summary>
+        private bool ShowsAccessories
+        {
+            get
+            {
+                if (Application.isPlaying) return true;
+#if UNITY_EDITOR
+                if (!gameObject.scene.IsValid()) return false;
+                if (!UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(gameObject.scene)) return true;
+                var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+                return stage != null && stage.scene == gameObject.scene;
+#else
+                return false;
+#endif
+            }
+        }
+
+        // ---- 置き方と骨の上の位置の行き来（エディタの調整の道具も使う） ----
+
+        /// <summary>置き方 placement の小物が、今の骨の姿勢でどこにどの向きで付くか（ワールド）。骨が無ければ false。</summary>
+        public bool TryGetWorldPose(CharacterAccessoryCatalog.Placement placement, out Vector3 position, out Quaternion rotation)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            Transform bone = Bone(placement.bone);
+            if (bone == null) return false;
+
+            BoneLocal(placement, bone, out Vector3 localPosition, out Quaternion localRotation);
+            position = bone.TransformPoint(localPosition);
+            rotation = bone.rotation * localRotation;
+            return true;
+        }
+
+        /// <summary>
+        /// ワールドの位置と向きに小物を置いたときの置き方（ルートから見た値）。骨と大きさは current のまま。骨が無ければ current を返す。
+        /// </summary>
+        public CharacterAccessoryCatalog.Placement ToPlacement(CharacterAccessoryCatalog.Placement current, Vector3 position, Quaternion rotation)
+        {
+            Transform bone = Bone(current.bone);
+            if (bone == null) return current;
+
+            Matrix4x4 bind = BindPose(current.bone, bone);
+            Vector3 localPosition = bone.InverseTransformPoint(position);
+            Quaternion localRotation = Quaternion.Inverse(bone.rotation) * rotation;
+            Vector3 euler = (bind.rotation * localRotation).eulerAngles;
+            euler = new Vector3(Mathf.DeltaAngle(0f, euler.x), Mathf.DeltaAngle(0f, euler.y), Mathf.DeltaAngle(0f, euler.z));
+            return new CharacterAccessoryCatalog.Placement(current.bone, bind.MultiplyPoint3x4(localPosition), euler, current.scale);
+        }
+
+        private void BoneLocal(CharacterAccessoryCatalog.Placement placement, Transform bone, out Vector3 localPosition, out Quaternion localRotation)
+        {
+            Matrix4x4 rootToBone = BindPose(placement.bone, bone).inverse;
+            localPosition = rootToBone.MultiplyPoint3x4(placement.position);
+            localRotation = rootToBone.rotation * Quaternion.Euler(placement.euler);
+        }
+
+#if UNITY_EDITOR
+        private bool reapplyQueued;
+
+        private void OnValidate()
+        {
+            // インスペクタで見た目を変えたら付け直す（OnValidate の中では壊せないので後で）。
+            if (isActiveAndEnabled) QueueApply();
+        }
+
+        private void OnCatalogEdited(CharacterAccessoryCatalog edited)
+        {
+            if (edited == catalog) QueueApply();
+        }
+
+        private void QueueApply()
+        {
+            if (reapplyQueued) return;
+            reapplyQueued = true;
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                reapplyQueued = false;
+                if (this != null && isActiveAndEnabled) Apply();
+            };
+        }
+
+        private static void SetHideFlags(Transform t, HideFlags flags)
+        {
+            t.gameObject.hideFlags = flags;
+            foreach (Transform child in t) SetHideFlags(child, flags);
+        }
+#endif
 
         private Transform Bone(HumanBodyBones bone)
         {
