@@ -21,6 +21,8 @@ namespace TpsDungeon.Menu.UI
     /// - 枠をドラッグで枠から枠へ移す（埋まっていれば入れ替え）。札の枠に落とせばその人が装備する。
     ///   札の枠の外（名前のあたり）に落とすと、その人の手持ちの空きへ入れる。パネルの外で離すと、先頭の足元に捨てる。
     /// - 札（枠の外か空の枠）をドラッグして別の札に落とすと、その位置へ並べ替える。先頭に落とせばその人を操作するようになる。
+    ///   ドラッグ中は札の写しがポインタについて動き、ほかの札は離したときの並びへ滑る（番号と「操作中」も先の並びで出す）。
+    ///   一覧の外で離すと並びはそのまま。
     /// - クイック移動キー（既定 Shift）＋クリックで、手持ちの物はバッグの空きへ、バッグの物は先頭の手持ちの空きへ移す。
     /// - 枠に合わせて捨てるキー（既定 O）を押すと、足元に捨てる。
     /// - 枠や札に合わせると右の情報欄に説明が出る。
@@ -42,6 +44,8 @@ namespace TpsDungeon.Menu.UI
         private const string CardDragSourceClass = "party-card--drag-source";
         private const string CardDropTargetClass = "party-card--drop-target";
         private const string CardDeniedClass = "party-card--denied";
+        private const string CardGhostClass = "party-card--ghost";
+        private const string CardSettlingClass = "party-card--settling";
 
         /// <summary>札を押してからこれだけ動いたらドラッグとみなす（パネルの px）。</summary>
         private const float CardDragThreshold = 6f;
@@ -149,6 +153,13 @@ namespace TpsDungeon.Menu.UI
         private int cardPressed = -1;
         private bool cardDragging;
         private Vector2 cardPressPosition;
+
+        // 札のドラッグ中の見せ方。ドラッグを始めたときの各札の位置（partyList の中。translate は layout に効かないので動かしても変わらない）、
+        // 離したら入る番号、ポインタについて動く写しと、押した点の札の中での位置。
+        private readonly List<Vector2> cardSlotPositions = new List<Vector2>();
+        private int cardPreviewTo = -1;
+        private VisualElement cardGhost;
+        private Vector2 cardGrabOffset;
 
         private bool quickMoveHintShown;
 
@@ -434,7 +445,30 @@ namespace TpsDungeon.Menu.UI
             int index = cards.Count;
             var card = new Card { Member = member, Inventory = owner, Hotbar = hotbar, FirstSlot = slots.Count };
 
-            var element = new VisualElement { name = $"party-card-{index}" };
+            VisualElement element = CreateCardElement($"party-card-{index}", out VisualElement hand);
+            Inventory items = owner != null ? owner.Inventory : null;
+            for (int k = 0; k < PlayerHotbar.SlotCount; k++)
+            {
+                VisualElement slot = CreateSlot(new SlotRef(items, k), (k + 1).ToString());
+                slot.AddToClassList("party-card__slot");
+                hand.Add(slot);
+            }
+
+            element.RegisterCallback<PointerDownEvent>(e => OnCardPointerDown(index, e));
+            element.RegisterCallback<PointerEnterEvent>(_ => OnCardHover(index, true));
+            element.RegisterCallback<PointerLeaveEvent>(_ => OnCardHover(index, false));
+
+            card.Element = element;
+            if (owner != null) owner.Changed += OnItemsChanged;
+            if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            partyList.Add(element);
+            cards.Add(card);
+        }
+
+        /// <summary>札の外形（色見本・番号・名前・Lv・操作中の印）を作る。手持ちの枠は hand に足す。</summary>
+        private static VisualElement CreateCardElement(string elementName, out VisualElement hand)
+        {
+            var element = new VisualElement { name = elementName };
             element.AddToClassList(CardClass);
 
             var swatch = new VisualElement { name = "swatch", pickingMode = PickingMode.Ignore };
@@ -462,28 +496,11 @@ namespace TpsDungeon.Menu.UI
             header.Add(badge);
             body.Add(header);
 
-            var hand = new VisualElement { pickingMode = PickingMode.Ignore };
+            hand = new VisualElement { pickingMode = PickingMode.Ignore };
             hand.AddToClassList("party-card__hand");
-            Inventory items = owner != null ? owner.Inventory : null;
-            for (int k = 0; k < PlayerHotbar.SlotCount; k++)
-            {
-                VisualElement slot = CreateSlot(new SlotRef(items, k), (k + 1).ToString());
-                slot.AddToClassList("party-card__slot");
-                hand.Add(slot);
-            }
-
             body.Add(hand);
             element.Add(body);
-
-            element.RegisterCallback<PointerDownEvent>(e => OnCardPointerDown(index, e));
-            element.RegisterCallback<PointerEnterEvent>(_ => OnCardHover(index, true));
-            element.RegisterCallback<PointerLeaveEvent>(_ => OnCardHover(index, false));
-
-            card.Element = element;
-            if (owner != null) owner.Changed += OnItemsChanged;
-            if (hotbar != null) hotbar.Changed += OnHotbarChanged;
-            partyList.Add(element);
-            cards.Add(card);
+            return element;
         }
 
         private void RefreshSlots()
@@ -510,26 +527,35 @@ namespace TpsDungeon.Menu.UI
         {
             for (int i = 0; i < cards.Count; i++)
             {
-                Card card = cards[i];
-                VisualElement element = card.Element;
-                PartyMember member = card.Member;
-                element.EnableInClassList(CardLeaderClass, i == 0 && member != null);
-                element.Q<Label>("number").text = (i + 1).ToString();
-
-                if (member == null)
-                {
-                    element.Q<Label>("name").text = "手持ち";
-                    element.Q<Label>("level").text = string.Empty;
-                    continue;
-                }
-
-                element.Q<Label>("name").text = member.DisplayName;
-                element.Q<Label>("level").text = member.Progression != null ? $"Lv {member.Progression.Level}" : string.Empty;
-
-                var appearance = member.GetComponent<CharacterAppearance>();
-                Color? accent = appearance != null ? appearance.AccentColor : null;
-                element.Q<VisualElement>("swatch").style.backgroundColor = accent ?? new Color(0.55f, 0.47f, 0.33f);
+                FillCard(cards[i].Element, cards[i].Member, i);
             }
+        }
+
+        /// <summary>札に、place 番目に居る member の名前・Lv・色と、番号・操作中の印を出す。</summary>
+        private static void FillCard(VisualElement element, PartyMember member, int place)
+        {
+            SetCardPlace(element, member, place);
+
+            if (member == null)
+            {
+                element.Q<Label>("name").text = "手持ち";
+                element.Q<Label>("level").text = string.Empty;
+                return;
+            }
+
+            element.Q<Label>("name").text = member.DisplayName;
+            element.Q<Label>("level").text = member.Progression != null ? $"Lv {member.Progression.Level}" : string.Empty;
+
+            var appearance = member.GetComponent<CharacterAppearance>();
+            Color? accent = appearance != null ? appearance.AccentColor : null;
+            element.Q<VisualElement>("swatch").style.backgroundColor = accent ?? new Color(0.55f, 0.47f, 0.33f);
+        }
+
+        /// <summary>札の番号と操作中の印だけを place 番目として出し直す。</summary>
+        private static void SetCardPlace(VisualElement element, PartyMember member, int place)
+        {
+            element.EnableInClassList(CardLeaderClass, place == 0 && member != null);
+            element.Q<Label>("number").text = (place + 1).ToString();
         }
 
         // ---- 仲間の札（並べ替え） ------------------------------------------
@@ -554,15 +580,122 @@ namespace TpsDungeon.Menu.UI
             RefreshDetails();
         }
 
-        private void BeginCardDrag()
+        private void BeginCardDrag(Vector2 position)
         {
             cardDragging = true;
-            if (cardPressed >= 0 && cardPressed < cards.Count) cards[cardPressed].Element.AddToClassList(CardDragSourceClass);
+            if (cardPressed < 0 || cardPressed >= cards.Count) return;
+
+            cardSlotPositions.Clear();
+            foreach (Card card in cards) cardSlotPositions.Add(card.Element.layout.position);
+
+            VisualElement source = cards[cardPressed].Element;
+            source.AddToClassList(CardDragSourceClass);
+            cardGrabOffset = cardPressPosition - source.worldBound.position;
+            cardGhost = CreateCardGhost(cards[cardPressed]);
+            MoveCardGhost(position);
+
+            cardPreviewTo = cardPressed;
+            SetCardPreview(PreviewTargetAt(position));
         }
 
+        /// <summary>札の写し（見た目だけで触れない）。パネルの最後に足して、ほかの何よりも上に描く。</summary>
+        private VisualElement CreateCardGhost(Card card)
+        {
+            VisualElement ghostCard = CreateCardElement("party-card-ghost", out VisualElement hand);
+            ghostCard.AddToClassList(CardGhostClass);
+            Inventory items = card.Inventory != null ? card.Inventory.Inventory : null;
+            int held = card.Hotbar != null ? card.Hotbar.SelectedIndex : -1;
+            for (int k = 0; k < PlayerHotbar.SlotCount; k++)
+            {
+                VisualElement slot = ItemSlot.Create(null, (k + 1).ToString());
+                slot.AddToClassList("party-card__slot");
+                ItemInstance item = items != null ? items[k] : null;
+                ItemSlot.SetItem(slot, item?.Icon, RankColor(item));
+                slot.EnableInClassList(ItemSlot.SelectedClass, k == held);
+                hand.Add(slot);
+            }
+
+            FillCard(ghostCard, card.Member, cardPressed);
+            ghostCard.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);
+            panel.Add(ghostCard);
+            return ghostCard;
+        }
+
+        private void MoveCardGhost(Vector2 position)
+        {
+            if (cardGhost == null) return;
+
+            // 絶対配置の left/top はパネルの枠線の内側から測るので、そのぶん引く。
+            Vector2 local = panel.WorldToLocal(position - cardGrabOffset);
+            cardGhost.style.left = local.x - panel.resolvedStyle.borderLeftWidth;
+            cardGhost.style.top = local.y - panel.resolvedStyle.borderTopWidth;
+        }
+
+        /// <summary>
+        /// ポインタの位置で離したら掴んだ札が入る番号。札の一覧（の少し外まで）の上なら一番近い札の位置、外なら元の位置（並びは変えない）。
+        /// 動いている札の見た目ではなく、ドラッグを始めたときの位置で決めるので、札が滑ってもぶれない。
+        /// </summary>
+        private int PreviewTargetAt(Vector2 position)
+        {
+            if (partyList == null || cardSlotPositions.Count == 0) return cardPressed;
+
+            Rect area = partyList.worldBound;
+            const float reach = 24f;
+            area.xMin -= reach;
+            area.yMin -= reach;
+            area.xMax += reach;
+            area.yMax += reach;
+            if (!area.Contains(position)) return cardPressed;
+
+            Vector2 local = partyList.WorldToLocal(position);
+            int best = cardPressed;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < cardSlotPositions.Count; i++)
+            {
+                Vector2 size = cards[i].Element.layout.size;
+                float distance = (cardSlotPositions[i] + size * 0.5f - local).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>掴んだ札を to 番目に入れたときの並びへ、札を滑らせ、番号と操作中の印を出し直す。</summary>
+        private void SetCardPreview(int to)
+        {
+            if (to == cardPreviewTo || to < 0) return;
+            cardPreviewTo = to;
+
+            for (int i = 0; i < cards.Count && i < cardSlotPositions.Count; i++)
+            {
+                int place = PreviewIndex(i, cardPressed, to);
+                Vector2 offset = cardSlotPositions[place] - cardSlotPositions[i];
+                cards[i].Element.style.translate = new Translate(offset.x, offset.y);
+                SetCardPlace(cards[i].Element, cards[i].Member, place);
+            }
+
+            if (cardGhost != null) SetCardPlace(cardGhost, cards[cardPressed].Member, to);
+            RefreshDetails();
+        }
+
+        /// <summary>
+        /// from 番目の人を to 番目へ移したとき、今 index 番目に居る人が何番目になるか（<see cref="PartyOrder{T}.Move"/> と同じ規則）。
+        /// </summary>
+        public static int PreviewIndex(int index, int from, int to)
+        {
+            if (index == from) return to;
+            if (from < to && index > from && index <= to) return index - 1;
+            if (to < from && index >= to && index < from) return index + 1;
+            return index;
+        }
+
+        /// <summary>枠の物のドラッグ中、離すとその人の手持ちへ入る札を灯す。</summary>
         private void SetDropCard(int index)
         {
-            if (cardDragging && index == cardPressed) index = -1;
             if (index == dropCard) return;
 
             if (dropCard >= 0 && dropCard < cards.Count) cards[dropCard].Element.RemoveFromClassList(CardDropTargetClass);
@@ -579,12 +712,45 @@ namespace TpsDungeon.Menu.UI
         private void EndCardDrag()
         {
             int pointerId = dragPointerId;
-            if (cardPressed >= 0 && cardPressed < cards.Count) cards[cardPressed].Element.RemoveFromClassList(CardDragSourceClass);
+            if (cardDragging)
+            {
+                foreach (Card card in cards)
+                {
+                    card.Element.RemoveFromClassList(CardDragSourceClass);
+                    card.Element.style.translate = StyleKeyword.Null;
+                }
+
+                RefreshCards();
+            }
+
+            cardGhost?.RemoveFromHierarchy();
+            cardGhost = null;
+            cardSlotPositions.Clear();
+            cardPreviewTo = -1;
             SetDropCard(-1);
             cardPressed = -1;
             cardDragging = false;
             dragPointerId = -1;
             if (root != null && pointerId >= 0 && root.HasPointerCapture(pointerId)) root.ReleasePointer(pointerId);
+            RefreshDetails();
+        }
+
+        /// <summary>
+        /// 落とした札を、写しの居た位置 from（パネル座標）から今の位置へ滑り込ませる。
+        /// 最初の 1 コマは transition を切ってずらして置き、次のコマで戻すと動いて見える。
+        /// </summary>
+        private static void SettleCard(VisualElement element, Vector2 slotWorld, Vector2 from)
+        {
+            Vector2 offset = from - slotWorld;
+            if (offset.sqrMagnitude < 1f) return;
+
+            element.AddToClassList(CardSettlingClass);
+            element.style.translate = new Translate(offset.x, offset.y);
+            element.schedule.Execute(() =>
+            {
+                element.RemoveFromClassList(CardSettlingClass);
+                element.schedule.Execute(() => element.style.translate = StyleKeyword.Null);
+            });
         }
 
         /// <summary>パネル座標 position の下にある札の番号。無ければ -1。</summary>
@@ -657,8 +823,13 @@ namespace TpsDungeon.Menu.UI
 
             if (cardPressed >= 0)
             {
-                if (!cardDragging && Vector2.Distance(e.position, cardPressPosition) >= CardDragThreshold) BeginCardDrag();
-                if (cardDragging) SetDropCard(CardAt(e.position));
+                if (!cardDragging && Vector2.Distance(e.position, cardPressPosition) >= CardDragThreshold) BeginCardDrag(e.position);
+                if (cardDragging)
+                {
+                    MoveCardGhost(e.position);
+                    SetCardPreview(PreviewTargetAt(e.position));
+                }
+
                 return;
             }
 
@@ -678,10 +849,18 @@ namespace TpsDungeon.Menu.UI
             {
                 int pressed = cardPressed;
                 bool dragging = cardDragging;
-                int onto = CardAt(e.position);
+                int onto = dragging ? PreviewTargetAt(e.position) : -1;
+                // 写しは少し大きくしてあるので、worldBound ではなくポインタから大きさを戻す前の左上を出す。
+                Vector2 ghostWorld = (Vector2)e.position - cardGrabOffset;
+                Vector2 slotWorld = onto >= 0 && onto < cardSlotPositions.Count
+                    ? partyList.LocalToWorld(cardSlotPositions[onto])
+                    : Vector2.zero;
                 EndCardDrag();
+                if (!dragging || onto < 0) return;
 
-                if (dragging && onto >= 0 && onto != pressed && party != null) party.Move(pressed, onto);
+                // 並びが変わると札は作り直される（位置は見せていた並びと同じなので跳ばない）。落とした札だけ写しの位置から滑り込ませる。
+                if (onto != pressed && party != null) party.Move(pressed, onto);
+                if (onto < cards.Count) SettleCard(cards[onto].Element, slotWorld, ghostWorld);
                 return;
             }
 
@@ -798,10 +977,17 @@ namespace TpsDungeon.Menu.UI
             RefreshDetails();
         }
 
-        /// <summary>ドラッグ中は掴んでいるもの、そうでなければ合わせている枠のもの（か仲間）を情報欄に出す。</summary>
+        /// <summary>ドラッグ中は掴んでいるもの（札なら離したときの位置）、そうでなければ合わせている枠のもの（か仲間）を情報欄に出す。</summary>
         private void RefreshDetails()
         {
             if (details == null) return;
+
+            // 札を並べ替えている間は、掴んだ人を離したときの位置で出す。
+            if (cardDragging && cardPressed >= 0 && cardPressed < cards.Count && cards[cardPressed].Member != null)
+            {
+                ShowMemberDetails(cards[cardPressed].Member, cardPreviewTo >= 0 ? cardPreviewTo : cardPressed);
+                return;
+            }
 
             int index = dragFrom >= 0 ? dragFrom : hoverIndex;
             ItemInstance item = index >= 0 && index < slotRefs.Count ? slotRefs[index].Item : null;
