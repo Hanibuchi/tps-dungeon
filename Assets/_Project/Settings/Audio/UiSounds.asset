@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: UiSounds
   m_EditorClassIdentifier: TpsDungeon.Audio::TpsDungeon.Audio.Authoring.UiSoundSet
   hover:
-    clip: {fileID: 8300000, guid: 7474fa80702644f9eb3ec1523f3c308b, type: 3}
+    clip: {fileID: 8300000, guid: d46bd403536344ba3a24684b06055ef4, type: 3}
     volume: 0.5
   click:
     clip: {fileID: 8300000, guid: 5924ca839d720475b99d8919668825f7, type: 3}
@@ -22,7 +22,7 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: b0550b0632c754d58943dee47e396f57, type: 3}
     volume: 0.8
   open:
-    clip: {fileID: 8300000, guid: 0423238aef28c494493ed1ebce0071f8, type: 3}
+    clip: {fileID: 8300000, guid: 49cd5c511b050457a853c91d8c9631b1, type: 3}
     volume: 0.7
   close:
     clip: {fileID: 8300000, guid: 2a99d95739ec641b789eb25211df04a9, type: 3}
@@ -34,12 +34,21 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 6782476b430c44c8f826f160ef0f7971, type: 3}
     volume: 0.8
   place:
-    clip: {fileID: 8300000, guid: 9fabae49f31f9483c98674ab7fecf6f9, type: 3}
+    clip: {fileID: 8300000, guid: 7a03a56386df9402a97cc803c4527a4f, type: 3}
     volume: 0.8
   denied:
     clip: {fileID: 8300000, guid: 8454baf8c1d9446e587b1bbc09870085, type: 3}
     volume: 0.6
   discard:
-    clip: {fileID: 8300000, guid: 7ce0148ea622f43dabe41e03c76edf96, type: 3}
+    clip: {fileID: 8300000, guid: df6923526a6a34665ac2a26732239e68, type: 3}
     volume: 0.7
+  reorder:
+    clip: {fileID: 8300000, guid: 52dccb56012da494f8cf2568019416be, type: 3}
+    volume: 0.6
+  toHand:
+    clip: {fileID: 8300000, guid: 7a03a56386df9402a97cc803c4527a4f, type: 3}
+    volume: 0.8
+  toBag:
+    clip: {fileID: 8300000, guid: 628768f10f8fc4e909d6ee9ccef18fe2, type: 3}
+    volume: 0.8
   minInterval: 0.04
