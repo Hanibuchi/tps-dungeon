@@ -78,7 +78,7 @@
 
 .party-card {
     width: 186px;
-    height: 65px;
+    height: 71px;
     margin: 3px;
     flex-direction: row;
     background-color: rgba(20, 17, 15, 0.84);
@@ -99,9 +99,10 @@
     align-self: stretch;
 }
 
+/* 右の余白は手持ちの 4 枠の右端に合わせる（名前の段も HP の棒もそこで終わる）。 */
 .party-card__body {
     flex-grow: 1;
-    padding: 2px 4px 3px 5px;
+    padding: 2px 10px 3px 5px;
 }
 
 /* 上の段：番号・名前・Lv・操作中の印。 */
@@ -155,10 +156,33 @@
     color: var(--gold-bright);
 }
 
+/* 名前の下の HP の棒。残りが少ないと明るい赤になる。 */
+.party-card__hp {
+    height: 4px;
+    margin-top: 2px;
+    background-color: rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.party-card__hp-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--blood);
+}
+
+.party-card__hp--low .party-card__hp-fill {
+    background-color: var(--blood-bright);
+}
+
 /* 下の段：手持ちの 4 枠（装備の枠）。バッグと同じ枠を小さくして並べる。 */
 .party-card__hand {
     flex-direction: row;
     margin-top: 2px;
+    /* 最後の枠の右の間（4px）を本文の余白へはみ出させ、最後の枠の右端を本文の右端に揃える（USS には :last-child が無い）。 */
+    margin-right: -4px;
 }
 
 .inventory .party-card .slot.party-card__slot {
