@@ -391,12 +391,13 @@ namespace TpsDungeon.Hud
             shownCooldown = fraction;
         }
 
-        /// <summary>遠距離の武器を持っている間だけ照準を出す。大きな地図を開いている間は隠す。</summary>
+        /// <summary>遠距離の武器（狙わずに仲間へ掛ける支援の杖は除く）を持っている間だけ照準を出す。大きな地図を開いている間は隠す。</summary>
         private void RefreshCrosshair()
         {
             if (crosshair == null) return;
 
-            bool show = ranged != null && ranged.isActiveAndEnabled && ranged.HeldWeapon != null && (mapToggle == null || !mapToggle.IsOpen);
+            bool show = ranged != null && ranged.isActiveAndEnabled && ranged.HeldWeapon != null && ranged.HeldWeapon.WeaponType.AimsWithCamera
+                        && (mapToggle == null || !mapToggle.IsOpen);
             if (show == crosshairShown) return;
 
             crosshairShown = show;

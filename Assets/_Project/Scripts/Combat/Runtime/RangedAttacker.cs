@@ -32,7 +32,7 @@ namespace TpsDungeon.Combat
     ///   治癒   … 同じく、近くの体力が減っている仲間から 1 ＋ 数 人をランダムに選んですぐ回復する。多重で選び直してもう一度
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
-    /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
+    /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し（狙わずに仲間へ掛ける支援の杖は回さず、近接と同じく歩く向きのまま）、背骨を曲げて弓を持つ腕を狙いへ向ける
     /// （持続弓は空へ向けて反らせる。杖・投擲・召喚・治癒持続・ダメージ軽減・治癒は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
     /// 杖は手の武器の見た目の子の "Tip"（杖の先）から放つ。無ければ持つ手から。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
@@ -377,7 +377,7 @@ namespace TpsDungeon.Combat
         {
             WeaponTypeDefinition type = heldWeapon != null ? heldWeapon.WeaponType : null;
             UpdateDrawSound(type);
-            if (type == null || !Aim.HasValue)
+            if (type == null || !Aim.HasValue || !type.AimsWithCamera)
             {
                 if (aimRing != null) aimRing.SetVisible(false);
                 return;
@@ -427,8 +427,8 @@ namespace TpsDungeon.Combat
             cooldownRemaining = cooldownDuration = stats.FireInterval;
 
             Vector3 target = type.AimsAtGround ? GroundTarget(type) : AimPoint(type);
-            // 撃つ瞬間は向き切る。背骨の曲げは前のフレームの LateUpdate のものが手に残っている。
-            AimBody(type, target, 360f, false);
+            // 撃つ瞬間は向き切る。背骨の曲げは前のフレームの LateUpdate のものが手に残っている。狙わない支援は向きを変えない。
+            if (type.AimsWithCamera) AimBody(type, target, 360f, false);
             PlayFireAnimation();
 
             Vector3 muzzle = Muzzle(type);

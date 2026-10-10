@@ -604,6 +604,13 @@ namespace TpsDungeon.Items
         /// <summary>狙わずに仲間を選んで掛ける支援（ダメージ軽減・治癒）か。照準の円は出さない。</summary>
         public bool TargetsAllies => IsBuff || IsHeal;
 
+        /// <summary>
+        /// カメラの狙いに体の向きを合わせる遠距離武器か（照準を出し、カメラを肩へ寄せる）。
+        /// 狙わずに仲間へ掛ける支援（ダメージ軽減・治癒）は遠くを狙わないので、近接と同じく体の向きとカメラを切り離す。
+        /// 治癒持続は狙った地面へ投げるので合わせる。
+        /// </summary>
+        public bool AimsWithCamera => IsRanged && !TargetsAllies;
+
         /// <summary>召喚か。狙った地面に置物（おとり）を呼び出す。</summary>
         public bool IsSummon => rangedKind == RangedAttackKind.Summon;
 
