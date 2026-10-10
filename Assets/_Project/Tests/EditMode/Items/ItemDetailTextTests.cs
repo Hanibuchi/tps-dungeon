@@ -163,7 +163,7 @@ namespace TpsDungeon.Items.Tests
                 string healText = new ItemInstance(heal).DetailText();
                 Assert.AreEqual("回復量 25", healText.Split('\n')[1]);
                 StringAssert.DoesNotContain("攻撃力", healText);
-                StringAssert.Contains("体力が減っている人を選んで回復する", healText);
+                StringAssert.Contains("体力の割合が低い人から選んで回復する", healText);
             }
             finally
             {

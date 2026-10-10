@@ -180,7 +180,7 @@ namespace TpsDungeon.Items
             if (type == null) return string.Empty;
             if (type.IsSummon) return "狙った地面に、敵を引きつける置物を呼び出す。呼び直すと前の分は消える。";
             if (type.IsHealField) return "狙った地面に種を投げ、落ちた所に治癒の場を張る。";
-            if (type.IsHeal) return "近くの仲間のうち、体力が減っている人を選んで回復する。";
+            if (type.IsHeal) return "近くの仲間のうち、体力の割合が低い人から選んで回復する。";
             if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
             if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";
             return string.Empty;

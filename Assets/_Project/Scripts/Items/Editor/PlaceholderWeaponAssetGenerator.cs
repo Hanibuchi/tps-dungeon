@@ -1386,8 +1386,8 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 治癒（16、片手杖）。ダメージ軽減と同じく、腕を振り切る瞬間に 20 m 以内の体力が減っている仲間（自分も含む）から
-        /// 1 ＋ 数 人をランダムに選んで、強さ ×（1 ＋ 回復量増加）だけすぐ回復する。誰も減っていなければ何もしない。
+        /// 治癒（16、片手杖）。ダメージ軽減と同じく、腕を振り切る瞬間に 20 m 以内の仲間（自分も含む）から体力の割合の低い順
+        /// （同じなら体力の少ない順）に 1 ＋ 数 人を選んで、強さ ×（1 ＋ 回復量増加）だけすぐ回復する。誰も減っていなくても選んで見た目と音は出す。
         /// 多重で 0.5 秒ずつ遅れて選び直してもう一度回復する。撃つ間隔 3 秒。値は仮。片手杖なので盾が効く。
         /// </summary>
         private static WeaponTypeDefinition WriteHealType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,

@@ -29,7 +29,7 @@ namespace TpsDungeon.Combat
     ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
     ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうちその杖の種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の加護が
     ///            付いていない人から 1 ＋ 数 人をランダムに選び、その色の膜を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
-    ///   治癒   … 同じく、近くの体力が減っている仲間から 1 ＋ 数 人をランダムに選んですぐ回復する。多重で選び直してもう一度
+    ///   治癒   … 同じく、近くの仲間から体力の割合の低い順（同じなら体力の少ない順）に 1 ＋ 数 人を選んですぐ回復する。多重で選び直してもう一度
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し（狙わずに仲間へ掛ける支援の杖は回さず、近接と同じく歩く向きのまま）、背骨を曲げて弓を持つ腕を狙いへ向ける
@@ -768,23 +768,29 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// 範囲内の仲間（自分も含む）から 1 ＋ 数 人を選んで掛ける。
-        /// ダメージ軽減はその杖の種類の加護が付いていない人からランダムに選び、足りなければその種類の残りが短い人を掛け直す。治癒は体力が減っている人からランダムに選ぶ。
+        /// ダメージ軽減はその杖の種類の加護が付いていない人からランダムに選び、足りなければその種類の残りが短い人を掛け直す。
+        /// 治癒は体力の割合の低い順（同じなら体力の少ない順）に選ぶ。満タンの人も選ぶので、誰も傷ついていなくても掛けた見た目は出る（回復はしない）。
         /// </summary>
         private void CastSupport(WeaponTypeDefinition type, RangedWeaponStats shot)
         {
             if (this == null) return;
             bool buff = type.IsBuff;
-            CollectSupportPool(type.SupportRange, !buff);
+            CollectSupportPool(type.SupportRange);
             supportCandidates.Clear();
             BlessingKind kind = shot.BlessingKind;
             foreach (PlayerHealth health in supportPool)
             {
                 CharacterBuffs buffs = buff ? health.GetComponent<CharacterBuffs>() : null;
                 bool blessed = buffs != null && buffs.Has(kind);
-                supportCandidates.Add(new SupportCandidate { Fresh = !blessed, Remaining = blessed ? buffs.Remaining(kind) : 0f });
+                supportCandidates.Add(new SupportCandidate
+                {
+                    Fresh = !blessed, Remaining = blessed ? buffs.Remaining(kind) : 0f,
+                    HealthFraction = health.Fraction, Health = health.CurrentHp,
+                });
             }
 
-            SupportTargeting.Pick(supportCandidates, shot.TargetCount, buff, supportRandom, supportPicks);
+            if (buff) SupportTargeting.Pick(supportCandidates, shot.TargetCount, true, supportRandom, supportPicks);
+            else SupportTargeting.PickMostHurt(supportCandidates, shot.TargetCount, supportPicks);
             bool any = false;
             foreach (int index in supportPicks)
             {
@@ -818,16 +824,14 @@ namespace TpsDungeon.Combat
             if (logHits) Debug.Log($"加護 → {health.name}: {kind} {shot.BlessingAmount:0.###}（{shot.BlessingDuration:0.#} 秒）", health);
         }
 
-        /// <summary>
-        /// 自分から range 以内に居る、生きている仲間（パーティーの並び。並びが無ければ自分だけ）を supportPool に集める。hurtOnly なら体力が減っている人だけ。
-        /// </summary>
-        private void CollectSupportPool(float range, bool hurtOnly)
+        /// <summary>自分から range 以内に居る、生きている仲間（パーティーの並び。並びが無ければ自分だけ）を supportPool に集める。</summary>
+        private void CollectSupportPool(float range)
         {
             supportPool.Clear();
             IReadOnlyList<GameObject> members = PartyRoster.Members;
             if (members.Count == 0)
             {
-                if (TryGetComponent(out PlayerHealth self) && !self.IsDead && (!hurtOnly || self.CurrentHp < self.MaxHp)) supportPool.Add(self);
+                if (TryGetComponent(out PlayerHealth self) && !self.IsDead) supportPool.Add(self);
                 return;
             }
 
@@ -837,7 +841,6 @@ namespace TpsDungeon.Combat
             {
                 if (member == null || !member.activeInHierarchy) continue;
                 if (!member.TryGetComponent(out PlayerHealth health) || health.IsDead) continue;
-                if (hurtOnly && health.CurrentHp >= health.MaxHp) continue;
                 if (member != gameObject && (member.transform.position - origin).sqrMagnitude > sqrRange) continue;
                 supportPool.Add(health);
             }

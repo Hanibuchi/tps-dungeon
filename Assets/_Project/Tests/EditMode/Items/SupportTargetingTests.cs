@@ -67,5 +67,37 @@ namespace TpsDungeon.Items.Tests
             SupportTargeting.Pick(Array.Empty<SupportCandidate>(), 3, true, new Random(0), results);
             Assert.IsEmpty(results);
         }
+    
+        private static SupportCandidate Hurt(int hp, int max) => new SupportCandidate { HealthFraction = (float)hp / max, Health = hp };
+
+        [Test]
+        public void 治癒は体力の割合の低い順に選ぶ()
+        {
+            var candidates = new[] { Hurt(80, 100), Hurt(30, 100), Hurt(50, 200), Hurt(100, 100) };
+            var results = new List<int>();
+            SupportTargeting.PickMostHurt(candidates, 2, results);
+            CollectionAssert.AreEqual(new[] { 2, 1 }, results, "25% → 30% の順");
+        }
+
+        [Test]
+        public void 治癒は割合が同じなら体力の少ない方を先に選ぶ()
+        {
+            var candidates = new[] { Hurt(100, 200), Hurt(50, 100), Hurt(60, 120) };
+            var results = new List<int>();
+            SupportTargeting.PickMostHurt(candidates, 3, results);
+            CollectionAssert.AreEqual(new[] { 1, 2, 0 }, results);
+        }
+
+        [Test]
+        public void 治癒は全員満タンでも選ぶ_人数は候補の数まで()
+        {
+            var candidates = new[] { Hurt(100, 100), Hurt(120, 120) };
+            var results = new List<int>();
+            SupportTargeting.PickMostHurt(candidates, 5, results);
+            CollectionAssert.AreEqual(new[] { 0, 1 }, results);
+
+            SupportTargeting.PickMostHurt(Array.Empty<SupportCandidate>(), 2, results);
+            Assert.IsEmpty(results);
+        }
     }
 }
