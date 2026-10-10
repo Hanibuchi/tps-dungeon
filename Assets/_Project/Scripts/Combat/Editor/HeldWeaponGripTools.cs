@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TpsDungeon.Items;
+using TpsDungeon.Player;
 using UnityEditor;
 using UnityEngine;
 
@@ -116,14 +117,16 @@ namespace TpsDungeon.Combat.Editor
     {
         private const string MenuPath = "Tools/TPS Dungeon/Player/手の武器を選ぶ";
 
-        /// <summary>手の武器を選び、Scene ビューで寄って、手の骨のローカル軸で動かせるようにする。</summary>
+        /// <summary>操作しているキャラの手の武器を選び、Scene ビューで寄って、手の骨のローカル軸で動かせるようにする。</summary>
         [MenuItem(MenuPath)]
         public static void SelectHeldWeapon()
         {
-            var grip = Object.FindAnyObjectByType<HeldWeaponGrip>();
+            // 仲間も武器を持っているので、操作しているキャラ（パーティーの先頭）の手の武器を選ぶ。パーティーが居ないシーンではシーンの 1 本。
+            GameObject leader = PartyRoster.Leader;
+            HeldWeaponGrip grip = leader != null ? leader.GetComponentInChildren<HeldWeaponGrip>() : Object.FindAnyObjectByType<HeldWeaponGrip>();
             if (grip == null)
             {
-                Debug.LogWarning("手に武器を持っていない（見た目のある武器をホットバーで持つ）");
+                Debug.LogWarning("操作しているキャラが手に武器を持っていない（見た目のある武器をホットバーで持つ）");
                 return;
             }
 
