@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_15_4A_BloodrushStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_BloodrushStaff
+  displayName: "\u8840\u8D70\u308A\u306E\u6756"
+  description: "\u819C\u306B\u5305\u307E\u308C\u305F\u8005\u306F\u3001\u6575\u306E\u6025\u6240\u3092\u898B\u629C\u304F\u76EE\u3092\u5F97\u308B\u3002"
+  icon: {fileID: 2800000, guid: 46fca8d277e774f1c9e5f40ac6f2daf1, type: 3}
+  worldPrefab: {fileID: 303124009672474403, guid: 6aeaa6936a9ac4c968eab2ba7a28cdb6, type: 3}
+  rank: 4
+  strength: 25
+  weaponType: {fileID: 11400000, guid: b8e0f4f50948b4ca5b9b247bf78379c7, type: 2}
+  heldModel: {fileID: 4085728561761007514, guid: aa67d2507d24848908386646d5674617, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

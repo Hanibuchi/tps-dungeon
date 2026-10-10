@@ -104,7 +104,8 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
-        /// 盾は攻撃力の代わりに防御力を、治癒持続は回復量を、召喚はおとりの体力を出し、お守りは強さを出さない。お守り・盾・召喚・治癒持続は効き方を一行添える。
+        /// 盾は攻撃力の代わりに防御力を、治癒持続・治癒は回復量を、召喚はおとりの体力を、ダメージ軽減は加護の効き目を出し、お守りは強さを出さない。
+        /// お守り・盾・召喚・治癒持続・ダメージ軽減・治癒は効き方を一行添える。
         /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
         /// </summary>
         public string DetailText()
@@ -120,6 +121,8 @@ namespace TpsDungeon.Items
             if (type != null && type.IsShield) text.Append($"\n防御力 {weapon.Strength:0.#}");
             else if (type != null && type.IsHealField) text.Append($"\n回復量 {weapon.Strength:0.#}/秒");
             else if (type != null && type.IsSummon) text.Append($"\nおとりの体力 {SummonHealth(weapon)}");
+            else if (type != null && type.IsBuff) text.Append("\n").Append(BlessingText(weapon));
+            else if (type != null && type.IsHeal) text.Append($"\n回復量 {weapon.Strength:0.#}");
             else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {weapon.Strength:0.#}");
 
             foreach (EnchantmentStack stack in enchantments)
@@ -141,12 +144,26 @@ namespace TpsDungeon.Items
             return Math.Max(1, (int)Math.Round(weapon.Strength * weapon.WeaponType.SummonHealthPerStrength, MidpointRounding.AwayFromZero));
         }
 
-        /// <summary>お守り・盾・召喚・治癒持続の効き方の一行。それ以外は空。</summary>
+        /// <summary>加護（ダメージ軽減）の効き目と続く時間（エンチャントの補正前）。例:「被ダメージ −15%・クリティカル率 +7.5%・状態異常耐性 30%（12 秒）」。</summary>
+        public static string BlessingText(WeaponDefinition weapon)
+        {
+            WeaponTypeDefinition type = weapon != null ? weapon.WeaponType : null;
+            if (type == null || !type.IsBuff) return string.Empty;
+            float strength = Math.Max(0f, weapon.Strength);
+            float reduction = Math.Min(strength * type.BlessingDamageReductionPerStrength, type.BlessingMaxDamageReduction);
+            float crit = strength * type.BlessingCritChancePerStrength;
+            float resistance = Math.Min(1f, strength * type.BlessingResistancePerStrength);
+            return $"被ダメージ −{reduction * 100f:0.#}%・クリティカル率 +{crit * 100f:0.#}%・状態異常耐性 {resistance * 100f:0.#}%（{type.BlessingDuration:0.#} 秒）";
+        }
+
+        /// <summary>お守り・盾・召喚・治癒持続・ダメージ軽減・治癒の効き方の一行。それ以外は空。</summary>
         private static string GearUsage(WeaponTypeDefinition type)
         {
             if (type == null) return string.Empty;
             if (type.IsSummon) return "狙った地面に、敵を引きつける置物を呼び出す。呼び直すと前の分は消える。";
             if (type.IsHealField) return "狙った地面に種を投げ、落ちた所に治癒の場を張る。";
+            if (type.IsBuff) return "近くの仲間のうち、加護の付いていない人を選んで加護の膜を張る。";
+            if (type.IsHeal) return "近くの仲間のうち、体力が減っている人を選んで回復する。";
             if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
             if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";
             return string.Empty;

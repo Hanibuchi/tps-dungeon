@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_15_1D_GuardianStaff
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_GuardianStaff
+  displayName: "\u5B88\u8B77\u306E\u6756"
+  description: "\u63B2\u3052\u308B\u3068\u3001\u4EF2\u9593\u306E\u8EAB\u3092\u6DE1\u3044\u5149\u306E\u819C\u304C\u5305\u3080\u3002"
+  icon: {fileID: 2800000, guid: dcf64ba7576b94ea59207b9b72d90304, type: 3}
+  worldPrefab: {fileID: 2587775428598117454, guid: 992ab9df030b94e9d9ddf8561d482006, type: 3}
+  rank: 1
+  strength: 15
+  weaponType: {fileID: 11400000, guid: b8e0f4f50948b4ca5b9b247bf78379c7, type: 2}
+  heldModel: {fileID: 3046891625093865644, guid: 857cee98a074346e58ddf3b23a624aab, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

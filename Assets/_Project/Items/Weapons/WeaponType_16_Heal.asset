@@ -1,0 +1,194 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8abb58d5ac444208637c2dd6c8fc29, type: 3}
+  m_Name: WeaponType_16_Heal
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponTypeDefinition
+  id: 16
+  displayName: "\u6CBB\u7652"
+  animatorWeaponType: 7
+  canUseShield: 1
+  passiveGear: 0
+  enchantmentRanks:
+  - definition: {fileID: 11400000, guid: c90d543848580426da8cb3b5f809276c, type: 2}
+    level: 1
+    rank: 0
+  - definition: {fileID: 11400000, guid: c90d543848580426da8cb3b5f809276c, type: 2}
+    level: 2
+    rank: 1
+  - definition: {fileID: 11400000, guid: c90d543848580426da8cb3b5f809276c, type: 2}
+    level: 3
+    rank: 2
+  - definition: {fileID: 11400000, guid: c90d543848580426da8cb3b5f809276c, type: 2}
+    level: 4
+    rank: 3
+  - definition: {fileID: 11400000, guid: c90d543848580426da8cb3b5f809276c, type: 2}
+    level: 5
+    rank: 4
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 1
+    rank: 3
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 2
+    rank: 4
+  - definition: {fileID: 11400000, guid: 37de2542ac2b84f54a12712c081711b1, type: 2}
+    level: 4
+    rank: 5
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 1
+    rank: 3
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 2
+    rank: 4
+  - definition: {fileID: 11400000, guid: 8a5b053aaea794209adb6f32a6a05f0b, type: 2}
+    level: 4
+    rank: 5
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 1
+    rank: 1
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 2
+    rank: 2
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 3
+    rank: 3
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 4
+    rank: 4
+  - definition: {fileID: 11400000, guid: c24e07a8c05a945eba88c6af9ef9aeee, type: 2}
+    level: 5
+    rank: 5
+  enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  characterAttackWeight: 0
+  baseCritChance: 0
+  baseCritMultiplier: 1.5
+  comboSteps: []
+  comboChainGrace: 0.25
+  comboCooldown: 0.3
+  lungePassesThroughEnemies: 1
+  invulnerableDuringLunge: 1
+  slamSpreadAngle: 30
+  followUpSpacing: 1.5
+  followUpInterval: 0.18
+  followUpEffectScale: 0.7
+  slamShake: 0
+  followUpShakeRatio: 0.4
+  rangedKind: 10
+  fireInterval: 3
+  muzzleOffset: {x: 0, y: 1.4, z: 0.5}
+  aimMaxDistance: 20
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 35
+  projectileRange: 45
+  projectileRadius: 0.15
+  projectileKnockback: 2
+  volleySpreadAngle: 8
+  multishotInterval: 0.12
+  homingTurnRate: 540
+  homingRange: 12
+  rainRadius: 1.25
+  rainHeight: 2
+  rainDuration: 3
+  rainTickInterval: 0.5
+  rainDelay: 0.7
+  rainScatterMin: 1.25
+  rainScatterMax: 3
+  rainRepeatInterval: 1
+  rainEffect: {fileID: 0}
+  rainEffectRadius: 4
+  rainAimPitch: 35
+  castDelay: 0.22
+  chainAimAngle: 10
+  chainJumps: 3
+  chainJumpsPerCount: 2
+  chainRange: 6
+  chainJumpDelay: 0.06
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.55, g: 0.75, b: 1, a: 1}
+  boltWidth: 0.06
+  boltDuration: 0.2
+  lineStartDistance: 1.2
+  lineSpacing: 1.1
+  linePillarCount: 8
+  lineInterval: 0.05
+  lineRadius: 0.9
+  lineHeight: 2
+  lineSpreadAngle: 20
+  lineRepeatInterval: 0.45
+  lineEffect: {fileID: 0}
+  lineEffectLength: 7.8
+  lineEffectTravelTime: 0.32
+  flameDuration: 2.4
+  flameTickInterval: 0.2
+  flameRange: 6
+  flameAngle: 14
+  flameBaseRadius: 0.25
+  flameSpreadAngle: 25
+  flameHomingAngle: 40
+  flameHomingTurnRate: 120
+  flameEffect: {fileID: 0}
+  flameEffectLength: 6
+  flameSoundInterval: 0.6
+  summonDuration: 12
+  summonScatterMin: 1.2
+  summonScatterMax: 2.5
+  summonMinGap: 1
+  summonHealthPerStrength: 10
+  summonEffect: {fileID: 0}
+  summonEffectScale: 1
+  dismissEffect: {fileID: 0}
+  dismissEffectScale: 1
+  healRadius: 2
+  healHeight: 2
+  healDuration: 5
+  healTickInterval: 0.5
+  healFlightTime: 0.55
+  healArcHeight: 2
+  healScatterMin: 2
+  healScatterMax: 4
+  healRepeatInterval: 1.5
+  healSeedPrefab: {fileID: 0}
+  healEffect: {fileID: 0}
+  healEffectRadius: 4
+  healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
+  healSound: {fileID: 8300000, guid: 66cfdf6da9b1e471591794e9e12be628, type: 3}
+  healSoundVolume: 0.8
+  supportRange: 20
+  supportDuration: 12
+  supportRepeatInterval: 0.5
+  blessingDamageReductionPerStrength: 0.01
+  blessingMaxDamageReduction: 0.8
+  blessingCritChancePerStrength: 0.005
+  blessingResistancePerStrength: 0.02
+  blessingEffect: {fileID: 0}
+  blessingEffectScale: 1
+  supportHitEffect: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
+  supportHitEffectScale: 1
+  drawSound: {fileID: 0}
+  stickSound: {fileID: 0}
+  stickSoundVolume: 0.6
+  rainSound: {fileID: 0}
+  rainSoundVolume: 0.8
+  rangeRingMaterial: {fileID: 2100000, guid: d56dffd4cdb3c4f8abcb62a971009d5d, type: 2}
+  rainRingColor: {r: 1, g: 0.55, b: 0.2, a: 0.85}
+  aimRingColor: {r: 1, g: 1, b: 1, a: 0.6}
+  heldInLeftHand: 0
+  heldLocalPosition: {x: -0.09, y: 0, z: -0.02}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  swingEffect: {fileID: 0}
+  swingEffectScale: 1
+  swingEffectLeadTime: 0
+  hitEffect: {fileID: 0}
+  hitEffectScale: 0.3
+  slamEffects: []
+  swingSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  soundVolume: 0.8

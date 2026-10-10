@@ -40,6 +40,20 @@ namespace TpsDungeon.Items
         /// <summary>召喚した置物が居る時間（秒、持続時間の補正前）。召喚しない武器種では 0。</summary>
         public float SummonDuration;
 
+        /// <summary>加護（ダメージ軽減）の続く時間（秒、持続時間の補正前）。加護を張らない武器種では 0。</summary>
+        public float BlessingDuration;
+
+        /// <summary>強さ 1 あたりの加護の被ダメージ軽減（割合）・クリティカル率の加算・状態異常耐性（割合）。</summary>
+        public float BlessingDamageReductionPerStrength;
+        public float BlessingCritChancePerStrength;
+        public float BlessingResistancePerStrength;
+
+        /// <summary>加護の被ダメージ軽減の上限（割合）。</summary>
+        public float BlessingMaxDamageReduction;
+
+        /// <summary>仲間をすぐ回復する武器種（治癒）か。強さを 1 人への回復量と読む。</summary>
+        public bool InstantHeal;
+
         public EnchantmentTotals Enchantments;
 
         /// <summary>補正前のクリティカル率（0〜1）とクリティカル倍率。</summary>
@@ -70,6 +84,10 @@ namespace TpsDungeon.Items
     /// 強さ × 撃つ間隔 × (1 ＋ 回復量増加) になるよう、補正前の刻みの数で割って毎刻み回復する。持続時間は刻みを増やす。クリティカルは無い。
     ///
     /// 召喚は攻撃しないので、ダメージの値は使わない。置物が居る時間（持続時間で延びる）と、数・速射だけを使う。
+    ///
+    /// ダメージ軽減は「強さ」を加護の強さと読み、武器種の係数を掛けて被ダメージ軽減・クリティカル率・状態異常耐性にする。
+    /// 持続時間は加護の続く時間を延ばす。治癒は「強さ」を 1 人への回復量と読み、回復量増加を掛ける。
+    /// どちらも 1 ＋ 数 人に掛け、多重で選び直してもう一度掛ける。クリティカルは無い。
     /// </summary>
     public sealed class RangedWeaponStats
     {
@@ -167,8 +185,26 @@ namespace TpsDungeon.Items
         /// <summary>1 回で呼び出す置物の数（本体 ＋ 数）。</summary>
         public int SummonCount => 1 + ExtraProjectiles;
 
-        /// <summary>敵を傷つけない武器種（治癒持続・召喚）か。DPS は 0 と数える。</summary>
-        public bool IsSupport => rawHealTick > 0 || SummonDuration > 0f;
+        /// <summary>加護の続く時間（秒、持続時間の補正後）。加護を張らない武器種では 0。</summary>
+        public float BlessingDuration { get; private set; }
+
+        /// <summary>加護の被ダメージ軽減（割合、0.2 で 2 割減る）。</summary>
+        public float BlessingDamageReduction { get; private set; }
+
+        /// <summary>加護のクリティカル率の加算（0.1 で +10%）。</summary>
+        public float BlessingCritChance { get; private set; }
+
+        /// <summary>加護の状態異常耐性（割合、1 で無効）。</summary>
+        public float BlessingResistance { get; private set; }
+
+        /// <summary>治癒の 1 人への回復量（回復量増加の補正後）。四捨五入、最低 1。すぐ回復しない武器種では 0。</summary>
+        public int HealAmount { get; private set; }
+
+        /// <summary>ダメージ軽減・治癒で 1 回に掛ける人数（1 ＋ 数）。</summary>
+        public int TargetCount => 1 + ExtraProjectiles;
+
+        /// <summary>敵を傷つけない武器種（治癒持続・召喚・ダメージ軽減・治癒）か。DPS は 0 と数える。</summary>
+        public bool IsSupport => rawHealTick > 0 || SummonDuration > 0f || BlessingDuration > 0f || HealAmount > 0;
 
         /// <summary>
         /// クリティカル込みの平均 DPS（1 体に 1 本ずつ当たるとして。数・多重・爆発は含めない）。表示用。
@@ -244,6 +280,16 @@ namespace TpsDungeon.Items
                 healTick = (double)source * baseInterval * healUp / baseHealTicks;
             }
 
+            // 加護は武器の強さだけで決まる（基礎攻撃力は足さない）。
+            float blessingDuration = Math.Max(0f, inputs.BlessingDuration) * durationScale;
+            float blessingStrength = blessingDuration > 0f ? Math.Max(0f, inputs.Strength) : 0f;
+            int healAmount = 0;
+            if (inputs.InstantHeal)
+            {
+                float healUp = Math.Max(0f, 1f + enchant.Amount(EnchantmentKind.HealUp));
+                healAmount = Math.Max(1, RoundToInt((double)Math.Max(0f, inputs.Strength) * healUp));
+            }
+
             float sizeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size));
             return new RangedWeaponStats(shot, baseTicks, flameTick, healTick)
             {
@@ -269,6 +315,11 @@ namespace TpsDungeon.Items
                 FlameTickCount = flameTicks,
                 HealTickCount = baseHealTicks > 0 ? TickCount(inputs.HealDuration * durationScale, inputs.HealTickInterval) : 0,
                 SummonDuration = Math.Max(0f, inputs.SummonDuration) * durationScale,
+                BlessingDuration = blessingDuration,
+                BlessingDamageReduction = Clamp(blessingStrength * inputs.BlessingDamageReductionPerStrength, 0f, Clamp01(inputs.BlessingMaxDamageReduction)),
+                BlessingCritChance = Math.Max(0f, blessingStrength * inputs.BlessingCritChancePerStrength),
+                BlessingResistance = Clamp01(blessingStrength * inputs.BlessingResistancePerStrength),
+                HealAmount = healAmount,
             };
         }
 
@@ -291,5 +342,7 @@ namespace TpsDungeon.Items
         private static int FloorCount(float value) => value <= 0f ? 0 : (int)Math.Floor(value + 1e-4);
 
         private static float Clamp01(float value) => value < 0f ? 0f : value > 1f ? 1f : value;
+
+        private static float Clamp(float value, float min, float max) => value < min ? min : value > max ? max : value;
     }
 }

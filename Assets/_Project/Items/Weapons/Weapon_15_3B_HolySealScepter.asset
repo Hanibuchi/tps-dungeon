@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c122547997cf449590e1b2dd6f18250, type: 3}
+  m_Name: Weapon_15_3B_HolySealScepter
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
+  id: Weapon_HolySealScepter
+  displayName: "\u8056\u5370\u306E\u932B\u6756"
+  description: "\u523B\u307E\u308C\u305F\u8056\u5370\u304C\u3001\u4EF2\u9593\u3092\u707D\u3044\u304B\u3089\u9060\u3056\u3051\u308B\u3002"
+  icon: {fileID: 2800000, guid: 524eaa430bade40a6bee3e761e7f1133, type: 3}
+  worldPrefab: {fileID: 2325069609352279515, guid: 8f82a71a30e1d4cd887b71be1103709f, type: 3}
+  rank: 3
+  strength: 20
+  weaponType: {fileID: 11400000, guid: b8e0f4f50948b4ca5b9b247bf78379c7, type: 2}
+  heldModel: {fileID: 3254666812854898690, guid: ee1a93ead38964cc0a62c71b16b059ef, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  fixedEnchantments: []

@@ -336,6 +336,14 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
+            // 加護（ダメージ軽減の杖の膜）のクリティカル率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
+            float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritChanceBonus : 0f;
+            if (blessingCrit > 0f)
+            {
+                Func<float, float> inner = critChance;
+                critChance = x => (inner != null ? inner(x) : x) + blessingCrit;
+            }
+
             // 素手で殴っているとき、手の物のエンチャントは乗せない。
             EnchantmentTotals enchantments = held != null && held.Weapon == heldWeapon ? held.EnchantmentTotals() : new EnchantmentTotals();
             // ホットバーのお守り・盾のクリティカル率・ドロップ増加・数・多重を足す（素手でも）。

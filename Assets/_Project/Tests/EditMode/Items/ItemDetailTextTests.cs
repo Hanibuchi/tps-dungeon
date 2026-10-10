@@ -125,5 +125,41 @@ namespace TpsDungeon.Items.Tests
                 Object.DestroyImmediate(summonType);
             }
         }
+    
+        [Test]
+        public void ダメージ軽減は加護の効き目を_治癒は回復量を出して効き方を添える()
+        {
+            var blessing = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var heal = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var blessingType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var healType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            try
+            {
+                // 係数と加護の長さは武器種の既定（強さ 1 で被ダメージ −1%・クリティカル率 +0.5%・耐性 2%、12 秒）。
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(blessingType, RangedAttackKind.Buff);
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(healType, RangedAttackKind.Heal);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(blessing, 15f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(blessing, blessingType);
+                typeof(WeaponDefinition).GetField("strength", Private).SetValue(heal, 25f);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(heal, healType);
+
+                string blessingText = new ItemInstance(blessing).DetailText();
+                Assert.AreEqual("被ダメージ −15%・クリティカル率 +7.5%・状態異常耐性 30%（12 秒）", blessingText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", blessingText);
+                StringAssert.Contains("加護の膜を張る", blessingText);
+
+                string healText = new ItemInstance(heal).DetailText();
+                Assert.AreEqual("回復量 25", healText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", healText);
+                StringAssert.Contains("体力が減っている人を選んで回復する", healText);
+            }
+            finally
+            {
+                Object.DestroyImmediate(blessing);
+                Object.DestroyImmediate(heal);
+                Object.DestroyImmediate(blessingType);
+                Object.DestroyImmediate(healType);
+            }
+        }
     }
 }

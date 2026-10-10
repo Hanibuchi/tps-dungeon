@@ -81,7 +81,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
-        /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
+        /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続・ダメージ軽減・治癒）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
         /// </summary>
         public RangedWeaponStats ComputeRangedStats(EnchantmentTotals enchantments, float characterAttack,
             Func<float, float> critChanceModifier = null, Func<float, float> critMultiplierModifier = null)
@@ -99,6 +99,12 @@ namespace TpsDungeon.Items
                 HealDuration = weaponType != null ? weaponType.HealDuration : 0f,
                 HealTickInterval = weaponType != null ? weaponType.HealTickInterval : 0f,
                 SummonDuration = weaponType != null ? weaponType.SummonDuration : 0f,
+                BlessingDuration = weaponType != null ? weaponType.BlessingDuration : 0f,
+                BlessingDamageReductionPerStrength = weaponType != null ? weaponType.BlessingDamageReductionPerStrength : 0f,
+                BlessingCritChancePerStrength = weaponType != null ? weaponType.BlessingCritChancePerStrength : 0f,
+                BlessingResistancePerStrength = weaponType != null ? weaponType.BlessingResistancePerStrength : 0f,
+                BlessingMaxDamageReduction = weaponType != null ? weaponType.BlessingMaxDamageReduction : 0f,
+                InstantHeal = weaponType != null && weaponType.IsHeal,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

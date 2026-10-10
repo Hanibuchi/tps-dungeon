@@ -87,7 +87,7 @@ namespace TpsDungeon.Items
         [SerializeField, Range(0f, 1f), Tooltip("追撃の着弾で揺らす強さ（本撃に対する割合）。")]
         private float followUpShakeRatio = 0.4f;
 
-        [Header("遠距離（弓・持続弓・杖・投擲・召喚・治癒持続。値は仮）")]
+        [Header("遠距離（弓・持続弓・杖・投擲・召喚・治癒持続・ダメージ軽減・治癒。値は仮）")]
         [SerializeField, Tooltip("撃ち方。None なら遠距離の武器ではない。杖（雷・連置・炎）もここ。")]
         private RangedAttackKind rangedKind;
 
@@ -161,7 +161,7 @@ namespace TpsDungeon.Items
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
 
-        [Header("杖（雷・連置）・投擲・召喚・治癒持続。値は仮")]
+        [Header("杖（雷・連置）・投擲・召喚・治癒持続・ダメージ軽減・治癒。値は仮")]
         [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間（投擲・召喚・治癒持続は腕を振り切る瞬間）に合わせる。狙いは放つ瞬間のもの。炎には効かない。腕を振る武器種は速射でモーションを速めた分だけ縮む。")]
         private float castDelay = 0.12f;
 
@@ -336,6 +336,40 @@ namespace TpsDungeon.Items
 
         [SerializeField, Range(0f, 1f), Tooltip("治癒の音の大きさ（武器種の音量に対して）。刻みごとの音はこの 0.4 倍。")]
         private float healSoundVolume = 0.8f;
+
+        [Header("仲間に掛ける（ダメージ軽減・治癒。値は仮）")]
+        [SerializeField, Min(0f), Tooltip("掛ける相手を探す、自分からの距離（m）。自分も相手に入る。")]
+        private float supportRange = 20f;
+
+        [SerializeField, Min(0f), Tooltip("加護の続く時間（秒、持続時間のエンチャントの補正前）。ダメージ軽減だけ。")]
+        private float supportDuration = 12f;
+
+        [SerializeField, Min(0f), Tooltip("「多重」でもう一度掛ける遅れ。k 回目は本撃から k × この秒数あとに、相手を選び直して掛ける。")]
+        private float supportRepeatInterval = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("加護の被ダメージ軽減（割合）＝ 強さ × この値。")]
+        private float blessingDamageReductionPerStrength = 0.01f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("加護の被ダメージ軽減の上限（割合）。")]
+        private float blessingMaxDamageReduction = 0.8f;
+
+        [SerializeField, Min(0f), Tooltip("加護のクリティカル率の加算 ＝ 強さ × この値。")]
+        private float blessingCritChancePerStrength = 0.005f;
+
+        [SerializeField, Min(0f), Tooltip("加護の状態異常耐性（割合、1 で無効）＝ 強さ × この値。")]
+        private float blessingResistancePerStrength = 0.02f;
+
+        [SerializeField, Tooltip("加護の膜の見た目（任意）。相手の体に付けて、加護の続く間だけ出す。")]
+        private GameObject blessingEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("blessingEffect の大きさの倍率。")]
+        private float blessingEffectScale = 1f;
+
+        [SerializeField, Tooltip("掛けた瞬間に相手の足元に 1 回出す見た目（任意）。")]
+        private GameObject supportHitEffect;
+
+        [SerializeField, Min(0.01f), Tooltip("supportHitEffect の大きさの倍率。")]
+        private float supportHitEffectScale = 1f;
 
         [Header("遠距離の効果音（未設定なら鳴らさない。放つ音は swingSound、敵に当たった音は hitSound）")]
         [SerializeField, Tooltip("弓を引き絞る音。弓のモーションが引き絞り（Bow Draw）に入るたびに鳴らす（持ち替えたときと、撃って引き直すとき）。")]
@@ -514,6 +548,29 @@ namespace TpsDungeon.Items
         public Color HealRingColor => healRingColor;
         public AudioClip HealSound => healSound;
         public float HealSoundVolume => healSoundVolume;
+        public float SupportRange => supportRange;
+        public float SupportRepeatInterval => supportRepeatInterval;
+
+        /// <summary>加護の続く時間（補正前）。ダメージ軽減でなければ 0。</summary>
+        public float BlessingDuration => IsBuff ? supportDuration : 0f;
+
+        public float BlessingDamageReductionPerStrength => IsBuff ? blessingDamageReductionPerStrength : 0f;
+        public float BlessingMaxDamageReduction => blessingMaxDamageReduction;
+        public float BlessingCritChancePerStrength => IsBuff ? blessingCritChancePerStrength : 0f;
+        public float BlessingResistancePerStrength => IsBuff ? blessingResistancePerStrength : 0f;
+        public GameObject BlessingEffect => blessingEffect;
+        public float BlessingEffectScale => blessingEffectScale;
+        public GameObject SupportHitEffect => supportHitEffect;
+        public float SupportHitEffectScale => supportHitEffectScale;
+
+        /// <summary>ダメージ軽減か。範囲内の仲間を選んで加護の膜を張る。</summary>
+        public bool IsBuff => rangedKind == RangedAttackKind.Buff;
+
+        /// <summary>治癒か。範囲内の体力が減っている仲間を選んですぐ回復する。</summary>
+        public bool IsHeal => rangedKind == RangedAttackKind.Heal;
+
+        /// <summary>狙わずに仲間を選んで掛ける支援（ダメージ軽減・治癒）か。照準の円は出さない。</summary>
+        public bool TargetsAllies => IsBuff || IsHeal;
 
         /// <summary>召喚か。狙った地面に置物（おとり）を呼び出す。</summary>
         public bool IsSummon => rangedKind == RangedAttackKind.Summon;
@@ -524,8 +581,8 @@ namespace TpsDungeon.Items
         /// <summary>狙う先が照準の線の当たった所ではなく、その真下の地面か（持続弓・召喚・治癒持続）。地面に範囲の円を出す。</summary>
         public bool AimsAtGround => rangedKind == RangedAttackKind.Rain || IsSummon || IsHealField;
 
-        /// <summary>撃つとき腕を前へ振るモーション（Kevin の右手の突き）を流すか（投擲・召喚・治癒持続）。速射でモーションも速める。</summary>
-        public bool UsesThrowMotion => IsThrow || IsSummon || IsHealField;
+        /// <summary>撃つとき腕を前へ振るモーション（Kevin の右手の突き）を流すか（投擲・召喚・治癒持続・ダメージ軽減・治癒）。速射でモーションも速める。</summary>
+        public bool UsesThrowMotion => IsThrow || IsSummon || IsHealField || TargetsAllies;
 
         /// <summary>杖（雷・連置・炎）か。弓と違って、腕ではなく体の前を狙いへ向け、杖の先（手の武器の Tip）から放つ。</summary>
         public bool IsStaff => rangedKind == RangedAttackKind.Chain || rangedKind == RangedAttackKind.Line || rangedKind == RangedAttackKind.Flame;

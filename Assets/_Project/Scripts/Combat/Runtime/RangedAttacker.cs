@@ -25,12 +25,15 @@ namespace TpsDungeon.Combat
     ///            腕を振り切る瞬間に放ち、放してから次が投げられるまで手を空にする
     ///   召喚   … 腕を振り切る瞬間に、狙いの線が当たった地面へ置物（おとり）を呼び出す。数で狙った所の周りのランダムな所に増え、持続時間で長く居る。
     ///            呼び直すと前の分は消える（持ち替えても残り、置いてから別の武器で戦える）。攻撃はしない
-    ///   治癒   … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
+    ///   治癒持続 … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
     ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
+    ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうち加護の付いていない人から 1 ＋ 数 人をランダムに選び、
+    ///            加護の膜（被ダメージ軽減・クリティカル率・状態異常耐性）を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
+    ///   治癒   … 同じく、近くの体力が減っている仲間から 1 ＋ 数 人をランダムに選んですぐ回復する。多重で選び直してもう一度
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し、背骨を曲げて弓を持つ腕を狙いへ向ける
-    /// （持続弓は空へ向けて反らせる。杖・投擲・召喚・治癒は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
+    /// （持続弓は空へ向けて反らせる。杖・投擲・召喚・治癒持続・ダメージ軽減・治癒は腕ではなく体の前を向け、背骨は曲げない）。歩く向きへ回す ThirdPersonController より後に上書きする。
     /// 杖は手の武器の見た目の子の "Tip"（杖の先）から放つ。無ければ持つ手から。
     /// ダメージ・クリティカル・爆発・命中の見た目と音は近接（MeleeAttacker）と同じ作り。当てた 1 回ごとに <see cref="Dealt"/> で知らせる。
     /// 手の見た目と Animator の WeaponType は MeleeAttacker が持ち替えで替えるので、ここは撃つことだけを受け持つ。
@@ -193,6 +196,10 @@ namespace TpsDungeon.Combat
         // 召喚で今居る置物。呼び直したら全部消す。持ち替えても消さない。
         private readonly List<SummonedDecoy> activeSummons = new List<SummonedDecoy>();
         private readonly HashSet<PlayerHealth> healTargets = new HashSet<PlayerHealth>();
+        private readonly List<PlayerHealth> supportPool = new List<PlayerHealth>();
+        private readonly List<SupportCandidate> supportCandidates = new List<SupportCandidate>();
+        private readonly List<int> supportPicks = new List<int>();
+        private readonly System.Random supportRandom = new System.Random();
         private int healSoundFrame = -1;
 
         /// <summary>遅れて起こすこと 1 つ（雷の飛び移り・多重の雷・連置の 1 つずつ）。</summary>
@@ -396,6 +403,14 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
+            // 加護（ダメージ軽減の杖の膜）のクリティカル率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
+            float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritChanceBonus : 0f;
+            if (blessingCrit > 0f)
+            {
+                Func<float, float> inner = critChance;
+                critChance = x => (inner != null ? inner(x) : x) + blessingCrit;
+            }
+
             EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : new EnchantmentTotals();
             // ホットバーのお守り・盾のクリティカル率・ドロップ増加・数・多重を足す（素手でも）。
             if (gear != null) enchantments.AddAll(gear.CurrentBonuses().WeaponTotals);
@@ -448,6 +463,19 @@ namespace TpsDungeon.Combat
                         Vector3 hand = Muzzle(type);
                         PlaySound(type.SwingSound, hand, type.SoundVolume);
                         FireHealField(type, shot, hand, GroundTarget(type));
+                    });
+                    break;
+                case RangedAttackKind.Buff:
+                case RangedAttackKind.Heal:
+                    // 狙いは使わず、腕を振り切る瞬間に近くの仲間を選んで掛ける。多重は選び直してもう一度。持ち替えたら Equip が予定ごと消す。
+                    Schedule(type.CastDelay / ThrowAnimationSpeed(), () =>
+                    {
+                        PlaySound(type.SwingSound, Muzzle(type), type.SoundVolume);
+                        foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.SupportRepeatInterval))
+                        {
+                            if (delay <= 0f) CastSupport(type, shot);
+                            else Schedule(delay, () => CastSupport(type, shot));
+                        }
                     });
                     break;
                 case RangedAttackKind.Chain:
@@ -733,6 +761,85 @@ namespace TpsDungeon.Combat
             {
                 healSoundFrame = Time.frameCount;
                 PlaySound(type.HealSound, center, type.SoundVolume * type.HealSoundVolume * (first ? 1f : HealTickSoundRatio));
+            }
+        }
+
+        // ---- ダメージ軽減（加護）・治癒 ----
+
+        /// <summary>
+        /// 範囲内の仲間（自分も含む）から 1 ＋ 数 人を選んで掛ける。
+        /// ダメージ軽減は加護の付いていない人からランダムに選び、足りなければ残りの短い人を掛け直す。治癒は体力が減っている人からランダムに選ぶ。
+        /// </summary>
+        private void CastSupport(WeaponTypeDefinition type, RangedWeaponStats shot)
+        {
+            if (this == null) return;
+            bool buff = type.IsBuff;
+            CollectSupportPool(type.SupportRange, !buff);
+            supportCandidates.Clear();
+            foreach (PlayerHealth health in supportPool)
+            {
+                CharacterBuffs buffs = buff ? health.GetComponent<CharacterBuffs>() : null;
+                bool blessed = buffs != null && buffs.HasBlessing;
+                supportCandidates.Add(new SupportCandidate { Fresh = !blessed, Remaining = blessed ? buffs.Remaining : 0f });
+            }
+
+            SupportTargeting.Pick(supportCandidates, shot.TargetCount, buff, supportRandom, supportPicks);
+            bool any = false;
+            foreach (int index in supportPicks)
+            {
+                PlayerHealth health = supportPool[index];
+                if (buff) Bless(type, shot, health);
+                else
+                {
+                    health.Heal(shot.HealAmount);
+                    if (logHits) Debug.Log($"治癒 → {health.name}: +{shot.HealAmount}", health);
+                }
+
+                Vector3 feet = health.transform.position;
+                OneShotEffect.Spawn(type.SupportHitEffect, feet, Quaternion.identity, type.SupportHitEffectScale);
+                any = true;
+            }
+
+            // 掛けた相手が居れば、同じフレームに何人居ても 1 回鳴らす。
+            if (any && healSoundFrame != Time.frameCount)
+            {
+                healSoundFrame = Time.frameCount;
+                PlaySound(type.HealSound, transform.position, type.SoundVolume * type.HealSoundVolume);
+            }
+        }
+
+        private void Bless(WeaponTypeDefinition type, RangedWeaponStats shot, PlayerHealth health)
+        {
+            CharacterBuffs buffs = CharacterBuffs.On(health.gameObject);
+            buffs.ApplyBlessing(shot.BlessingDamageReduction, shot.BlessingCritChance, shot.BlessingResistance, shot.BlessingDuration);
+            BlessingAura.Ensure(buffs, type.BlessingEffect, type.BlessingEffectScale);
+            if (logHits)
+                Debug.Log($"加護 → {health.name}: 被ダメージ −{shot.BlessingDamageReduction:P0}・クリティカル率 +{shot.BlessingCritChance:P1}・"
+                          + $"状態異常耐性 {shot.BlessingResistance:P0}（{shot.BlessingDuration:0.#} 秒）", health);
+        }
+
+        /// <summary>
+        /// 自分から range 以内に居る、生きている仲間（パーティーの並び。並びが無ければ自分だけ）を supportPool に集める。hurtOnly なら体力が減っている人だけ。
+        /// </summary>
+        private void CollectSupportPool(float range, bool hurtOnly)
+        {
+            supportPool.Clear();
+            IReadOnlyList<GameObject> members = PartyRoster.Members;
+            if (members.Count == 0)
+            {
+                if (TryGetComponent(out PlayerHealth self) && !self.IsDead && (!hurtOnly || self.CurrentHp < self.MaxHp)) supportPool.Add(self);
+                return;
+            }
+
+            Vector3 origin = transform.position;
+            float sqrRange = range * range;
+            foreach (GameObject member in members)
+            {
+                if (member == null || !member.activeInHierarchy) continue;
+                if (!member.TryGetComponent(out PlayerHealth health) || health.IsDead) continue;
+                if (hurtOnly && health.CurrentHp >= health.MaxHp) continue;
+                if (member != gameObject && (member.transform.position - origin).sqrMagnitude > sqrRange) continue;
+                supportPool.Add(health);
             }
         }
 

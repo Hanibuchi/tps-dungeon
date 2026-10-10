@@ -8,7 +8,7 @@ namespace TpsDungeon.Player
     /// プレイヤーの体力。値を持って増減させ、変わったら知らせるだけ。
     /// 死亡やダメージ演出はまだ無く、HUD がこれを読んで表示する。
     /// 最大 HP はレベルに応じて CharacterProgression が <see cref="SetMaxAndCurrent"/> で書き込む（Inspector の値は初期値）。
-    /// 受けるダメージの倍率（盾）と毎秒の回復（自然回復）は装備（PlayerGear）が書き込む。
+    /// 受けるダメージの倍率（盾）と毎秒の回復（自然回復）は装備（PlayerGear）が書き込む。加護（CharacterBuffs）が付いていれば、その軽減も掛け合わせる。
     /// プレイヤーのルートに付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,6 +22,7 @@ namespace TpsDungeon.Player
         private int currentHp = 100;
 
         private float regenCarry;
+        private CharacterBuffs buffs;
 
         public int MaxHp => maxHp;
         public int CurrentHp => currentHp;
@@ -33,6 +34,12 @@ namespace TpsDungeon.Player
 
         /// <summary>受けるダメージに掛ける倍率（1 で減らない）。盾が書き込む。</summary>
         public float DamageTaken { get; set; } = 1f;
+
+        /// <summary>加護（<see cref="CharacterBuffs"/>）も掛けた、今受けるダメージの倍率。</summary>
+        public float EffectiveDamageTaken => DamageTaken * (Buffs != null ? Buffs.DamageTakenScale : 1f);
+
+        // 加護は掛ける側が後から付けるので、無ければ毎回探す。
+        private CharacterBuffs Buffs => buffs != null ? buffs : buffs = GetComponent<CharacterBuffs>();
 
         /// <summary>毎秒の回復量。自然回復のエンチャントが書き込む。端数はためて 1 になったら回復する。</summary>
         public float RegenPerSecond { get; set; }
@@ -61,11 +68,11 @@ namespace TpsDungeon.Player
             Heal(heal);
         }
 
-        /// <summary>amount に <see cref="DamageTaken"/> を掛けて減らす（四捨五入、最低 1）。負の値は無視する（回復は Heal で）。</summary>
+        /// <summary>amount に <see cref="EffectiveDamageTaken"/>（盾と加護）を掛けて減らす（四捨五入、最低 1）。負の値は無視する（回復は Heal で）。</summary>
         public void Damage(int amount)
         {
             if (amount <= 0) return;
-            SetCurrent(currentHp - ReducedDamage(amount, DamageTaken));
+            SetCurrent(currentHp - ReducedDamage(amount, EffectiveDamageTaken));
         }
 
         /// <summary>amount に倍率 taken を掛けたダメージ。四捨五入し、最低 1 は入る。</summary>
