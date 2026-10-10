@@ -164,6 +164,7 @@ MonoBehaviour:
   supportRange: 20
   supportDuration: 12
   supportRepeatInterval: 0.5
+  supportTargetCount: 3
   damageReductionPerStrength: 0.01
   maxDamageReduction: 0.8
   critMultiplierPerStrength: 0.02
@@ -173,7 +174,7 @@ MonoBehaviour:
   ailmentResistanceEffect: {fileID: 0}
   blessingEffectScale: 1
   supportHitEffect: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
-  supportHitEffectScale: 1
+  supportHitEffectScale: 0.6
   drawSound: {fileID: 0}
   stickSound: {fileID: 0}
   stickSoundVolume: 0.6

@@ -106,6 +106,7 @@ namespace TpsDungeon.Items
                 SummonDuration = weaponType != null ? weaponType.SummonDuration : 0f,
                 BlessingDuration = weaponType != null ? weaponType.BlessingDuration : 0f,
                 BlessingKind = blessingKind,
+                SupportTargetCount = weaponType != null ? weaponType.SupportTargetCount : 0,
                 BlessingPerStrength = weaponType != null ? weaponType.BlessingPerStrength(blessingKind) : 0f,
                 BlessingCap = weaponType != null ? weaponType.BlessingCap(blessingKind) : 0f,
                 InstantHeal = weaponType != null && weaponType.IsHeal,

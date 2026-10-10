@@ -79,7 +79,7 @@ namespace TpsDungeon.Items.Tests
             });
         }
 
-        // ダメージ軽減の仮の値: 撃つ間隔 6 秒、加護は 12 秒。既定は被ダメージ軽減（強さ 1 で −1%、8 割まで）。
+        // ダメージ軽減の仮の値: 撃つ間隔 6 秒、加護は 12 秒、3 人に掛ける。既定は被ダメージ軽減（強さ 1 で −1%、8 割まで）。
         private static RangedWeaponStats Blessing(float strength, EnchantmentTotals enchantments = null,
             BlessingKind kind = BlessingKind.DamageReduction, float perStrength = 0.01f, float cap = 0.8f)
         {
@@ -92,6 +92,7 @@ namespace TpsDungeon.Items.Tests
                 BlessingKind = kind,
                 BlessingPerStrength = perStrength,
                 BlessingCap = cap,
+                SupportTargetCount = 3,
                 Enchantments = enchantments,
             });
         }
@@ -105,6 +106,7 @@ namespace TpsDungeon.Items.Tests
                 CharacterAttack = 50f,
                 FireInterval = 3f,
                 InstantHeal = true,
+                SupportTargetCount = 3,
                 Enchantments = enchantments,
             });
         }
@@ -353,9 +355,9 @@ namespace TpsDungeon.Items.Tests
             RangedWeaponStats stats = Blessing(20f);
             Assert.AreEqual(BlessingKind.DamageReduction, stats.BlessingKind);
             Assert.AreEqual(0.2f, stats.BlessingAmount, 1e-5f);
-            RangedWeaponStats crit = Blessing(25f, kind: BlessingKind.CritMultiplier, perStrength: 0.02f, cap: float.MaxValue);
+            RangedWeaponStats crit = Blessing(100f, kind: BlessingKind.CritMultiplier, perStrength: 0.01f, cap: float.MaxValue);
             Assert.AreEqual(BlessingKind.CritMultiplier, crit.BlessingKind);
-            Assert.AreEqual(0.5f, crit.BlessingAmount, 1e-5f);
+            Assert.AreEqual(1f, crit.BlessingAmount, 1e-5f);
             Assert.AreEqual(12f, stats.BlessingDuration, 1e-5f);
             Assert.AreEqual(15f, Blessing(20f, With(EnchantmentKind.Duration, 0.25f)).BlessingDuration, 1e-5f);
             Assert.IsTrue(stats.IsSupport);
@@ -366,14 +368,15 @@ namespace TpsDungeon.Items.Tests
         public void 加護の値は上限で止まる()
         {
             Assert.AreEqual(0.8f, Blessing(100f).BlessingAmount, 1e-5f);
-            Assert.AreEqual(1f, Blessing(100f, kind: BlessingKind.AilmentResistance, perStrength: 0.02f, cap: 1f).BlessingAmount, 1e-5f);
+            Assert.AreEqual(1f, Blessing(150f, kind: BlessingKind.AilmentResistance, perStrength: 0.01f, cap: 1f).BlessingAmount, 1e-5f);
         }
 
         [Test]
-        public void ダメージ軽減と治癒は1と数の人数に掛け_多重と速射が効く()
+        public void ダメージ軽減と治癒は武器種の人数と数の人数に掛け_多重と速射が効く()
         {
-            Assert.AreEqual(1, Blessing(20f).TargetCount);
-            Assert.AreEqual(3, Blessing(20f, With(EnchantmentKind.ProjectileCount, 1f, 2)).TargetCount);
+            Assert.AreEqual(3, Blessing(20f).TargetCount);
+            Assert.AreEqual(5, Blessing(20f, With(EnchantmentKind.ProjectileCount, 1f, 2)).TargetCount);
+            Assert.AreEqual(3, InstantHeal(25f).TargetCount);
             Assert.AreEqual(2, InstantHeal(25f, With(EnchantmentKind.Multishot, 1f, 2)).MultishotCount);
             Assert.AreEqual(3f / 1.5f, InstantHeal(25f, With(EnchantmentKind.RapidFire, 0.5f)).FireInterval, 1e-5f);
         }

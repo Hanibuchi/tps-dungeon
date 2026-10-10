@@ -28,8 +28,8 @@ namespace TpsDungeon.Combat
     ///   治癒持続 … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
     ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
     ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうちその杖の種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の加護が
-    ///            付いていない人から 1 ＋ 数 人をランダムに選び、その色の膜を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
-    ///   治癒   … 同じく、近くの仲間から体力の割合の低い順（同じなら体力の少ない順）に 1 ＋ 数 人を選んですぐ回復する。多重で選び直してもう一度
+    ///            付いていない人から 3 ＋ 数 人をランダムに選び、その色の膜を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
+    ///   治癒   … 同じく、近くの仲間から体力の割合の低い順（同じなら体力の少ない順）に 3 ＋ 数 人を選んですぐ回復する。多重で選び直してもう一度
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
     /// 遠距離の武器を持っていて狙いの線がある間は、毎フレーム（Animator の後で）体ごと狙いの方へ回し（狙わずに仲間へ掛ける支援の杖は回さず、近接と同じく歩く向きのまま）、背骨を曲げて弓を持つ腕を狙いへ向ける
@@ -82,6 +82,10 @@ namespace TpsDungeon.Combat
 
         /// <summary>治癒の場の刻みごとの音の大きさ（張った瞬間に対する割合）。</summary>
         private const float HealTickSoundRatio = 0.4f;
+
+        /// <summary>ダメージ軽減・治癒で掛けた相手に出す見た目を見せる秒数と、そのあと薄くして消す秒数。</summary>
+        private const float SupportHitHold = 0.8f;
+        private const float SupportHitFade = 0.8f;
 
         /// <summary>召喚の照準の円の半径（置物を置く範囲に足す余白、m）。</summary>
         private const float SummonRingPadding = 0.6f;
@@ -403,12 +407,12 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
-            // 加護（血走りの杖の膜）のクリティカル倍率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
+            // 加護（血走りの杖の膜）は、永続アップグレードの補正の後のクリティカル倍率に (1 ＋ 上げ幅) を掛ける。加護は掛けられたときに後から付く。
             float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritMultiplierBonus : 0f;
             if (blessingCrit > 0f)
             {
                 Func<float, float> inner = critMultiplier;
-                critMultiplier = x => (inner != null ? inner(x) : x) + blessingCrit;
+                critMultiplier = x => (inner != null ? inner(x) : x) * (1f + blessingCrit);
             }
 
             EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : new EnchantmentTotals();
@@ -767,7 +771,7 @@ namespace TpsDungeon.Combat
         // ---- ダメージ軽減（加護）・治癒 ----
 
         /// <summary>
-        /// 範囲内の仲間（自分も含む）から 1 ＋ 数 人を選んで掛ける。
+        /// 範囲内の仲間（自分も含む）から 武器種の人数（3）＋ 数 人を選んで掛ける。
         /// ダメージ軽減はその杖の種類の加護が付いていない人からランダムに選び、足りなければその種類の残りが短い人を掛け直す。
         /// 治癒は体力の割合の低い順（同じなら体力の少ない順）に選ぶ。満タンの人も選ぶので、誰も傷ついていなくても掛けた見た目は出る（回復はしない）。
         /// </summary>
@@ -803,7 +807,8 @@ namespace TpsDungeon.Combat
                 }
 
                 Vector3 feet = health.transform.position;
-                OneShotEffect.Spawn(type.SupportHitEffect, feet, Quaternion.identity, type.SupportHitEffectScale);
+                // 素材は出し続ける作りなので、少し見せてから放出を止めて薄くして消す（途中でぱっと消さない）。
+                OneShotEffect.SpawnFading(type.SupportHitEffect, feet, Quaternion.identity, type.SupportHitEffectScale, SupportHitHold, SupportHitFade);
                 any = true;
             }
 

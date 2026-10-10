@@ -554,19 +554,20 @@ namespace TpsDungeon.Items.Editor
             };
 
             // 15 ダメージ軽減（片手杖）。杖ごとに加護の種類が 1 つで、膜の色と杖の玉の色で見分ける。強さ × 武器種の種類ごとの係数が効き目。
-            //   守護（青い玉の Wand_Basic）… 被ダメージ −強さ%   聖印（黄色い玉の Wand_Epic）… 状態異常耐性 強さ×2 %
-            //   血走り（Wand_Epic の玉を赤に）… クリティカル倍率 +強さ×0.02
+            // 強さはどの種類も効き目の % と読む（係数 0.01）。
+            //   守護（青い玉の Wand_Basic）… 被ダメージ −強さ%   聖印（黄色い玉の Wand_Epic）… 状態異常耐性 強さ%
+            //   血走り（Wand_Epic の玉を赤に）… クリティカル倍率に (1 ＋ 強さ%) を掛ける
             // 不壊の聖杖は守護の杖に固定エンチャントを付けた物（見た目は守護と同じ形を光らせる）。固定エンチャントは「並び立つ者すべてを長く」に合わせて
-            // 数・持続時間（段は UniqueEnchantments.csv が正。数 4 段で 5 人、持続時間 5 段で 2 倍）。
-            yield return Blessing("Weapon_GuardianStaff", "守護の杖", WeaponRank.D, 15f, "掲げると、仲間の身を青い光の膜が包む。",
+            // 数・持続時間（段は UniqueEnchantments.csv が正。数 4 段で 7 人、持続時間 5 段で 2 倍）。
+            yield return Blessing("Weapon_GuardianStaff", "守護の杖", WeaponRank.D, 20f, "掲げると、仲間の身を青い光の膜が包む。",
                 BlessingKind.DamageReduction, LowPolyWeapons + "Wand_Basic.prefab");
-            yield return Blessing("Weapon_HolySealScepter", "聖印の錫杖", WeaponRank.B, 20f, "刻まれた聖印が、仲間を災いから遠ざける。",
+            yield return Blessing("Weapon_HolySealScepter", "聖印の錫杖", WeaponRank.B, 80f, "刻まれた聖印が、仲間を災いから遠ざける。",
                 BlessingKind.AilmentResistance, LowPolyWeapons + "Wand_Epic.prefab");
-            var bloodrush = Blessing("Weapon_BloodrushStaff", "血走りの杖", WeaponRank.A, 25f, "膜に包まれた者は、敵の急所を見抜く目を得る。",
+            var bloodrush = Blessing("Weapon_BloodrushStaff", "血走りの杖", WeaponRank.A, 100f, "膜に包まれた者は、敵の急所を見抜く目を得る。",
                 BlessingKind.CritMultiplier, LowPolyWeapons + "Wand_Epic.prefab");
             bloodrush.GemGlow = new Color(2.4f, 0.12f, 0.1f, 1f);
             yield return bloodrush;
-            var unbreakable = Blessing("Weapon_UnbreakableHolyStaff", "不壊の聖杖", WeaponRank.Unique, 15f, "その加護は、並び立つ者すべてを長く包み込む。",
+            var unbreakable = Blessing("Weapon_UnbreakableHolyStaff", "不壊の聖杖", WeaponRank.Unique, 20f, "その加護は、並び立つ者すべてを長く包み込む。",
                 BlessingKind.DamageReduction, LowPolyWeapons + "Wand_Basic.prefab",
                 EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.Duration);
             // Wand_Basic は発光マップが無く、青い玉は暗いので、ユニークの光は青い玉の所に、玉と同じ青で付ける。
@@ -1353,8 +1354,8 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// ダメージ軽減（15、片手杖）。右手に杖を持ち、腕を振り切る瞬間（押して 0.22 秒）に、20 m 以内の仲間（自分も含む）のうち
-        /// その杖の種類の加護が付いていない人から 1 ＋ 数 人をランダムに選んで、その色の膜を 12 秒張る（足りなければ残りの短い人を掛け直す）。
-        /// 種類と効き目: 被ダメージ軽減 −強さ%（8 割まで、青）・クリティカル倍率 +強さ×0.02（赤）・状態異常耐性 強さ×2 %（黄）。
+        /// その杖の種類の加護が付いていない人から 3 ＋ 数 人をランダムに選んで、その色の膜を 12 秒張る（足りなければ残りの短い人を掛け直す）。
+        /// 種類と効き目: 被ダメージ軽減 −強さ%（8 割まで、青）・クリティカル倍率 ×(1 ＋ 強さ%)（赤）・状態異常耐性 強さ%（黄）。
         /// 多重で 0.5 秒ずつ遅れて選び直してもう一度掛け、持続時間で長く続く。撃つ間隔 6 秒。値は仮。片手杖なので盾が効く。
         /// </summary>
         private static WeaponTypeDefinition WriteBlessingType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
@@ -1371,8 +1372,8 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("supportDuration").floatValue = 12f;
             serialized.FindProperty("damageReductionPerStrength").floatValue = 0.01f;
             serialized.FindProperty("maxDamageReduction").floatValue = 0.8f;
-            serialized.FindProperty("critMultiplierPerStrength").floatValue = 0.02f;
-            serialized.FindProperty("ailmentResistancePerStrength").floatValue = 0.02f;
+            serialized.FindProperty("critMultiplierPerStrength").floatValue = 0.01f;
+            serialized.FindProperty("ailmentResistancePerStrength").floatValue = 0.01f;
             // Magic shield は足元に置く作りで、直径 2.8 m の球が 1 m 上に出る。キャラ（約 1.8 m）を包むくらいに縮める（直径 2.2 m、中心 0.8 m）。
             serialized.FindProperty("damageReductionEffect").objectReferenceValue = LoadEffect(DamageReductionShieldEffectPath);
             serialized.FindProperty("critMultiplierEffect").objectReferenceValue = redShield;
@@ -1387,7 +1388,7 @@ namespace TpsDungeon.Items.Editor
 
         /// <summary>
         /// 治癒（16、片手杖）。ダメージ軽減と同じく、腕を振り切る瞬間に 20 m 以内の仲間（自分も含む）から体力の割合の低い順
-        /// （同じなら体力の少ない順）に 1 ＋ 数 人を選んで、強さ ×（1 ＋ 回復量増加）だけすぐ回復する。誰も減っていなくても選んで見た目と音は出す。
+        /// （同じなら体力の少ない順）に 3 ＋ 数 人を選んで、強さ ×（1 ＋ 回復量増加）だけすぐ回復する。誰も減っていなくても選んで見た目と音は出す。
         /// 多重で 0.5 秒ずつ遅れて選び直してもう一度回復する。撃つ間隔 3 秒。値は仮。片手杖なので盾が効く。
         /// </summary>
         private static WeaponTypeDefinition WriteHealType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
@@ -1401,8 +1402,9 @@ namespace TpsDungeon.Items.Editor
 
             WriteSupportCommon(serialized, RangedAttackKind.Heal, 3f, ring);
             WriteAllySupport(serialized);
+            // Healing は足元から大きな煙と光が立つ素材。足元に収まるくらいに縮める。
             serialized.FindProperty("supportHitEffect").objectReferenceValue = LoadEffect(HealBurstEffectPath);
-            serialized.FindProperty("supportHitEffectScale").floatValue = 1f;
+            serialized.FindProperty("supportHitEffectScale").floatValue = 0.6f;
             serialized.FindProperty("healSound").objectReferenceValue = LoadSound(HealSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
@@ -1414,6 +1416,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("aimMaxDistance").floatValue = 20f;
             serialized.FindProperty("supportRange").floatValue = 20f;
             serialized.FindProperty("supportRepeatInterval").floatValue = 0.5f;
+            serialized.FindProperty("supportTargetCount").intValue = 3;
             serialized.FindProperty("healSoundVolume").floatValue = 0.8f;
             serialized.FindProperty("swingSound").objectReferenceValue = null;
         }

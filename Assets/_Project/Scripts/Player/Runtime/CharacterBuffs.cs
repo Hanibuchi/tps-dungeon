@@ -21,7 +21,7 @@ namespace TpsDungeon.Player
         /// <summary>受けるダメージに掛ける倍率（1 − ダメージ軽減）。付いていなければ 1。</summary>
         public float DamageTakenScale => Mathf.Clamp01(1f - Amount(BlessingKind.DamageReduction));
 
-        /// <summary>クリティカル倍率の加算（0.5 で ×1.5 が ×2.0 に）。付いていなければ 0。</summary>
+        /// <summary>クリティカル倍率の上げ幅（割合）。クリティカル倍率に (1 ＋ この値) を掛ける（1 で ×3 が ×6 に）。付いていなければ 0。</summary>
         public float CritMultiplierBonus => Amount(BlessingKind.CritMultiplier);
 
         /// <summary>状態異常耐性（割合、1 で無効）。付いていなければ 0。</summary>

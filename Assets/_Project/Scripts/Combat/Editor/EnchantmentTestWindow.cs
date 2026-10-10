@@ -393,7 +393,7 @@ namespace TpsDungeon.Combat.Editor
         private static string BlessingValue(RangedWeaponStats stats) => stats.BlessingKind switch
         {
             BlessingKind.DamageReduction => $"被ダメージ −{stats.BlessingAmount * 100f:0.#}%",
-            BlessingKind.CritMultiplier => $"クリティカル倍率 +{stats.BlessingAmount:0.##}",
+            BlessingKind.CritMultiplier => $"クリティカル倍率 +{stats.BlessingAmount * 100f:0.#}%",
             _ => $"状態異常耐性 {stats.BlessingAmount * 100f:0.#}%",
         };
 

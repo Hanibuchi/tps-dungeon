@@ -149,7 +149,7 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 加護（ダメージ軽減）の効き目と続く時間（エンチャントの補正前）。武器ごとの種類で
-        /// 「被ダメージ −15%（12 秒）」「クリティカル倍率 +0.5（12 秒）」「状態異常耐性 40%（12 秒）」のように出す。
+        /// 「被ダメージ −20%（12 秒）」「クリティカル倍率 +100%（12 秒）」「状態異常耐性 80%（12 秒）」のように出す。
         /// </summary>
         public static string BlessingText(WeaponDefinition weapon)
         {
@@ -160,7 +160,7 @@ namespace TpsDungeon.Items
             string effect = kind switch
             {
                 BlessingKind.DamageReduction => $"被ダメージ −{amount * 100f:0.#}%",
-                BlessingKind.CritMultiplier => $"クリティカル倍率 +{amount:0.##}",
+                BlessingKind.CritMultiplier => $"クリティカル倍率 +{amount * 100f:0.#}%",
                 _ => $"状態異常耐性 {amount * 100f:0.#}%",
             };
             return $"{effect}（{type.BlessingDuration:0.#} 秒）";

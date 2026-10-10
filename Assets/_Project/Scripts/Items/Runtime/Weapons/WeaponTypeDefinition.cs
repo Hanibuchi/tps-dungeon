@@ -348,17 +348,20 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("「多重」でもう一度掛ける遅れ。k 回目は本撃から k × この秒数あとに、相手を選び直して掛ける。")]
         private float supportRepeatInterval = 0.5f;
 
+        [SerializeField, Min(1), Tooltip("1 回に掛ける人数（「数」の補正前）。数 1 段ごとに 1 人増える。")]
+        private int supportTargetCount = 3;
+
         [SerializeField, Min(0f), Tooltip("ダメージ軽減の加護の被ダメージ軽減（割合）＝ 強さ × この値。")]
         private float damageReductionPerStrength = 0.01f;
 
         [SerializeField, Range(0f, 1f), Tooltip("ダメージ軽減の加護の上限（割合）。")]
         private float maxDamageReduction = 0.8f;
 
-        [SerializeField, Min(0f), Tooltip("クリティカル倍率の加護の倍率の加算 ＝ 強さ × この値。")]
-        private float critMultiplierPerStrength = 0.02f;
+        [SerializeField, Min(0f), Tooltip("クリティカル倍率の加護の上げ幅（割合、1 でクリティカルのダメージが 2 倍）＝ 強さ × この値。")]
+        private float critMultiplierPerStrength = 0.01f;
 
         [SerializeField, Min(0f), Tooltip("状態異常耐性の加護の耐性（割合、1 で無効）＝ 強さ × この値。")]
-        private float ailmentResistancePerStrength = 0.02f;
+        private float ailmentResistancePerStrength = 0.01f;
 
         [SerializeField, Tooltip("ダメージ軽減の膜の見た目（任意）。相手の体に付けて、加護の続く間だけ出す。種類ごとに色を変えて見分ける。")]
         private GameObject damageReductionEffect;
@@ -557,6 +560,9 @@ namespace TpsDungeon.Items
         public float HealSoundVolume => healSoundVolume;
         public float SupportRange => supportRange;
         public float SupportRepeatInterval => supportRepeatInterval;
+
+        /// <summary>1 回に掛ける人数（数の補正前）。仲間へ掛ける支援（ダメージ軽減・治癒）でなければ 0。</summary>
+        public int SupportTargetCount => TargetsAllies ? supportTargetCount : 0;
 
         /// <summary>加護の続く時間（補正前）。ダメージ軽減でなければ 0。</summary>
         public float BlessingDuration => IsBuff ? supportDuration : 0f;

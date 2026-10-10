@@ -336,12 +336,12 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
-            // 加護（血走りの杖の膜）のクリティカル倍率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
+            // 加護（血走りの杖の膜）は、永続アップグレードの補正の後のクリティカル倍率に (1 ＋ 上げ幅) を掛ける。加護は掛けられたときに後から付く。
             float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritMultiplierBonus : 0f;
             if (blessingCrit > 0f)
             {
                 Func<float, float> inner = critMultiplier;
-                critMultiplier = x => (inner != null ? inner(x) : x) + blessingCrit;
+                critMultiplier = x => (inner != null ? inner(x) : x) * (1f + blessingCrit);
             }
 
             // 素手で殴っているとき、手の物のエンチャントは乗せない。

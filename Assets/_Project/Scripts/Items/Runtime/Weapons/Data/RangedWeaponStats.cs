@@ -47,6 +47,9 @@ namespace TpsDungeon.Items
         /// <summary>張る加護の種類（武器ごと）。</summary>
         public BlessingKind BlessingKind;
 
+        /// <summary>ダメージ軽減・治癒で 1 回に掛ける人数（数の補正前）。</summary>
+        public int SupportTargetCount;
+
         /// <summary>強さ 1 あたりの加護の値（種類ごとの武器種の係数）と、値の上限。</summary>
         public float BlessingPerStrength;
         public float BlessingCap;
@@ -87,7 +90,7 @@ namespace TpsDungeon.Items
     ///
     /// ダメージ軽減は「強さ」を加護の強さと読み、武器ごとの種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の係数を武器種から引いて掛ける。
     /// 持続時間は加護の続く時間を延ばす。治癒は「強さ」を 1 人への回復量と読み、回復量増加を掛ける。
-    /// どちらも 1 ＋ 数 人に掛け、多重で選び直してもう一度掛ける。クリティカルは無い。
+    /// どちらも 武器種の人数 ＋ 数 人に掛け、多重で選び直してもう一度掛ける。クリティカルは無い。
     /// </summary>
     public sealed class RangedWeaponStats
     {
@@ -192,15 +195,17 @@ namespace TpsDungeon.Items
         public BlessingKind BlessingKind { get; private set; }
 
         /// <summary>
-        /// 加護の値（強さ × 係数、上限まで）。被ダメージ軽減は割合（0.2 で 2 割減る）、クリティカル倍率は加算（0.5 で +0.5）、状態異常耐性は割合（1 で無効）。
+        /// 加護の値（強さ × 係数、上限まで）。被ダメージ軽減は割合（0.2 で 2 割減る）、クリティカル倍率は上げ幅（1 でクリティカルのダメージが 2 倍）、状態異常耐性は割合（1 で無効）。
         /// </summary>
         public float BlessingAmount { get; private set; }
 
         /// <summary>治癒の 1 人への回復量（回復量増加の補正後）。四捨五入、最低 1。すぐ回復しない武器種では 0。</summary>
         public int HealAmount { get; private set; }
 
-        /// <summary>ダメージ軽減・治癒で 1 回に掛ける人数（1 ＋ 数）。</summary>
-        public int TargetCount => 1 + ExtraProjectiles;
+        /// <summary>ダメージ軽減・治癒で 1 回に掛ける人数（武器種の人数 ＋ 数、最低 1）。</summary>
+        public int TargetCount => Math.Max(1, SupportTargetCount) + ExtraProjectiles;
+
+        private int SupportTargetCount { get; set; }
 
         /// <summary>敵を傷つけない武器種（治癒持続・召喚・ダメージ軽減・治癒）か。DPS は 0 と数える。</summary>
         public bool IsSupport => rawHealTick > 0 || SummonDuration > 0f || BlessingDuration > 0f || HealAmount > 0;
@@ -316,6 +321,7 @@ namespace TpsDungeon.Items
                 SummonDuration = Math.Max(0f, inputs.SummonDuration) * durationScale,
                 BlessingDuration = blessingDuration,
                 BlessingKind = inputs.BlessingKind,
+                SupportTargetCount = inputs.SupportTargetCount,
                 BlessingAmount = Clamp(blessingStrength * inputs.BlessingPerStrength, 0f, Math.Max(0f, inputs.BlessingCap)),
                 HealAmount = healAmount,
             };
