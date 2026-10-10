@@ -41,7 +41,7 @@ namespace TpsDungeon.Combat
     ///                               最後の段のあとは先行入力があっても待つ（連打で待ちを飛ばさせない）
     ///
     /// 時間は speed（攻撃速度の倍率）を掛けて進める。猶予と待ちは実時間のまま。
-    /// 持ち替えのように外から待たせたいときは <see cref="StartCooldown"/>。
+    /// 外から待たせたいとき（持ち替えて戻ってきた武器の待ちの残りなど）は <see cref="StartCooldown"/>。
     /// </summary>
     public sealed class MeleeComboState
     {
@@ -87,13 +87,16 @@ namespace TpsDungeon.Combat
 
         public bool IsCoolingDown => CooldownRemaining > 0f;
 
-        /// <summary>seconds 秒待たせる。今の残りのほうが長ければそのまま（短い待ちで長い待ちを縮めない）。</summary>
-        public void StartCooldown(float seconds)
+        /// <summary>
+        /// seconds 秒待たせる。今の残りのほうが長ければそのまま（短い待ちで長い待ちを縮めない）。
+        /// duration は待ち全体の長さ（途中から再開するときに、残りの割合を元の長さで出すため）。seconds より短ければ seconds。
+        /// </summary>
+        public void StartCooldown(float seconds, float duration = 0f)
         {
             if (seconds <= CooldownRemaining) return;
 
             CooldownRemaining = seconds;
-            CooldownDuration = seconds;
+            CooldownDuration = Math.Max(seconds, duration);
         }
 
         /// <summary>待機に戻す（持ち替えたときなど）。</summary>

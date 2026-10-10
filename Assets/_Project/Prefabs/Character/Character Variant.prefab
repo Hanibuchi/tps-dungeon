@@ -503,7 +503,7 @@ MonoBehaviour:
   closeDistance: 4
   leashDistance: 12
   scanInterval: 0.2
-  healBelow: 0.8
+  healBelow: 1
   sightMask:
     serializedVersion: 2
     m_Bits: 4294967295

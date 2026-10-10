@@ -24,7 +24,7 @@ namespace TpsDungeon.Combat
     ///   投擲   … 弓と同じく照準の先へまっすぐ飛ばす。飛ぶのは手に持った武器の見た目そのもので、武器ごとの速さで縦に回る。
     ///            腕を振り切る瞬間に放ち、放してから次が投げられるまで手を空にする
     ///   召喚   … 腕を振り切る瞬間に、狙いの線が当たった地面へ置物（おとり）を呼び出す。数で狙った所の周りのランダムな所に増え、持続時間で長く居る。
-    ///            呼び直すと前の分は消える（持ち替えても残り、置いてから別の武器で戦える）。攻撃はしない
+    ///            同じ武器で呼び直すとその武器で呼んだ前の分は消える（別の召喚武器の分は消えない。持ち替えても残り、置いてから別の武器で戦える）。攻撃はしない
     ///   治癒持続 … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
     ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
     ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうちその杖の種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の加護が
@@ -99,7 +99,7 @@ namespace TpsDungeon.Combat
         [SerializeField, Tooltip("矢と照準が当たるレイヤー。")]
         private LayerMask hitMask = ~0;
 
-        [SerializeField, Min(0f), Tooltip("持ち替えてから撃てるまでの秒数。全武器共通（MeleeAttacker の switchCooldown と揃える）。")]
+        [SerializeField, Min(0f), Tooltip("持ち替えてから撃てるまでの秒数（MeleeAttacker の switchCooldown と揃える）。撃つ間隔の待ちとは別に数え、両方明けたら撃てる。")]
         private float switchCooldown = 0.5f;
 
         [SerializeField, Min(0f), Tooltip("遠距離の武器に持ち替えたとき、体を狙いの方へ回す速さ（度/秒）。向き切ったあとは毎フレーム狙いに合わせ続ける。")]
@@ -146,8 +146,12 @@ namespace TpsDungeon.Combat
         private ItemInstance held;
         private WeaponDefinition heldWeapon;
         private RangedWeaponStats stats;
-        private float cooldownRemaining;
-        private float cooldownDuration;
+        // 今持っている武器の撃つ間隔の待ち。持ち替えたら cooldowns に預け、戻ってきたら残りを引き継ぐ（武器どうしで共有しない）。
+        private float fireRemaining;
+        private float fireDuration;
+        // 持ち替えの待ち。どの武器に替えても同じ長さ。
+        private float switchRemaining;
+        private readonly WeaponCooldowns cooldowns = new WeaponCooldowns();
         private bool pressQueued;
         private RangeRing aimRing;
 
@@ -197,8 +201,9 @@ namespace TpsDungeon.Combat
         private float flameSoundTimer;
         private readonly List<FlameJet> jets = new List<FlameJet>();
 
-        // 召喚で今居る置物。呼び直したら全部消す。持ち替えても消さない。
+        // 召喚で今居る置物と、それを呼んだ武器。同じ武器で呼び直したらその武器の分だけ消す。持ち替えても消さない。
         private readonly List<SummonedDecoy> activeSummons = new List<SummonedDecoy>();
+        private readonly Dictionary<SummonedDecoy, ItemInstance> summonSources = new Dictionary<SummonedDecoy, ItemInstance>();
         private readonly HashSet<PlayerHealth> healTargets = new HashSet<PlayerHealth>();
         private readonly List<PlayerHealth> supportPool = new List<PlayerHealth>();
         private readonly List<SupportCandidate> supportCandidates = new List<SupportCandidate>();
@@ -241,11 +246,29 @@ namespace TpsDungeon.Combat
         /// 炎を吐いている間は、吐ける量のうち使った割合（0 で吐き始め、1 で吐き切る）。吐き切ればそのまま 1 から待ちが減っていき、
         /// 途中で離せば使った割合の所から減っていくので、ホットバーの暗幕が途切れずに伸びて縮む。
         /// </summary>
-        public float CooldownFraction => burning ? FlameUsedFraction
-            : cooldownDuration > 0f && cooldownRemaining > 0f ? Mathf.Clamp01(cooldownRemaining / cooldownDuration) : 0f;
+        public float CooldownFraction
+        {
+            get
+            {
+                if (burning) return FlameUsedFraction;
+                // 撃つ間隔の待ちと持ち替えの待ちのうち、長く残っている方を出す。
+                if (switchRemaining > fireRemaining) return switchCooldown > 0f ? Mathf.Clamp01(switchRemaining / switchCooldown) : 0f;
+                return fireDuration > 0f && fireRemaining > 0f ? Mathf.Clamp01(fireRemaining / fireDuration) : 0f;
+            }
+        }
 
-        /// <summary>次に撃てるまでの待ちの残り（秒）。炎を吐いている間は 0。</summary>
-        public float CooldownRemaining => burning ? 0f : cooldownRemaining;
+        /// <summary>次に撃てるまでの待ちの残り（秒、持ち替えの待ちも含む）。炎を吐いている間は 0。</summary>
+        public float CooldownRemaining => burning ? 0f : Mathf.Max(fireRemaining, switchRemaining);
+
+        /// <summary>
+        /// item の撃つ間隔の待ちの残り（秒）。持ち替えの待ちは含まない。今持っていない武器も、持ち替えて離れた後の残りを返す。
+        /// 遠距離武器でなければ 0。
+        /// </summary>
+        public float WeaponCooldownRemaining(ItemInstance item)
+        {
+            if (equipped && item == held) return burning ? 0f : fireRemaining;
+            return cooldowns.Remaining(item, Time.time);
+        }
 
         /// <summary>持続弓・召喚・治癒持続を持っている間、狙う地面に範囲の円を出すか。仲間の AI では出さない。</summary>
         public bool ShowAimRing { get; set; } = true;
@@ -269,6 +292,12 @@ namespace TpsDungeon.Combat
 
         /// <summary>炎を吐いているか。</summary>
         public bool IsBurning => burning;
+
+        /// <summary>
+        /// 撃ったがまだ出し終えていないか（腕を振り切る瞬間を待つ召喚・治癒・加護・投げ・杖、多重の後の矢）。
+        /// 持ち替えるとこれらは消えるので、仲間の AI はこの間持ち替えない。
+        /// </summary>
+        public bool IsCasting => scheduled.Count > 0 || volleys.Count > 0;
 
         /// <summary>敵に当てた 1 回ごと（矢・爆発・雨の刻み・雷・連置・炎の刻み）。ダメージ表示や試験の窓が読む。</summary>
         public event Action<MeleeHitRecord> Dealt;
@@ -324,6 +353,7 @@ namespace TpsDungeon.Combat
             foreach (SummonedDecoy decoy in activeSummons)
                 if (decoy != null) Destroy(decoy.gameObject);
             activeSummons.Clear();
+            summonSources.Clear();
         }
 
         /// <summary>攻撃を 1 回押す。次の Update で、待ちが明けていれば撃つ。</summary>
@@ -331,15 +361,16 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// item を手に持つ（null なら素手）。遠距離武器でなければ何も撃たない。switched が真なら、中身が同じでも持ち替えとして待たせる。
-        /// 最初の 1 回は待たせない。inheritCooldown が真なら前の武器の待ちが長ければ引き継ぎ、往復で消させない。
-        /// 仲間の AI は武器ごとの待ちを自分で覚えているので、偽にして持ち替えの待ちだけにする。
+        /// 最初の 1 回は待たせない。撃つ間隔の待ちは武器ごとに覚え、持ち替えた先の武器は、前に撃った待ちが残っていればその残りだけ待つ
+        /// （手放していた武器の待ちも減っていく）。それとは別に持ち替えの待ち（switchCooldown）がかかる。
         /// </summary>
-        public void Equip(ItemInstance item, bool switched = false, bool inheritCooldown = true)
+        public void Equip(ItemInstance item, bool switched = false)
         {
             if (equipped && item == held && !switched) return;
 
             Initialize();
-            float switchWait = equipped ? Mathf.Max(switchCooldown, inheritCooldown ? cooldownRemaining : 0f) : 0f;
+            if (equipped) cooldowns.Store(held, Time.time, fireRemaining);
+            switchRemaining = equipped ? switchCooldown : 0f;
             bool wasRanged = heldWeapon != null;
             equipped = true;
             volleys.Clear();
@@ -354,7 +385,8 @@ namespace TpsDungeon.Combat
             WeaponDefinition weapon = item?.Weapon;
             heldWeapon = weapon != null && weapon.WeaponType != null && weapon.WeaponType.IsRanged ? weapon : null;
             stats = heldWeapon != null ? ComputeStats() : null;
-            cooldownRemaining = cooldownDuration = switchWait;
+            fireRemaining = cooldowns.Remaining(item, Time.time);
+            fireDuration = Mathf.Max(fireRemaining, stats != null ? stats.FireInterval : 0f);
             aimLocked = false;
 
             // 弓で立てたまま残った Attack が、持ち替え先の攻撃で後から効かないように。
@@ -364,18 +396,22 @@ namespace TpsDungeon.Combat
         private void Update()
         {
             float dt = Time.deltaTime;
-            cooldownRemaining = Mathf.Max(0f, cooldownRemaining - dt);
+            fireRemaining = Mathf.Max(0f, fireRemaining - dt);
+            switchRemaining = Mathf.Max(0f, switchRemaining - dt);
             TickVolleys(dt);
             TickScheduled(dt);
-            if (handEmptied && cooldownRemaining <= 0f && volleys.Count == 0 && scheduled.Count == 0) SetHandEmpty(false);
+            if (handEmptied && fireRemaining <= 0f && volleys.Count == 0 && scheduled.Count == 0) SetHandEmpty(false);
 
             bool pressed = pressQueued;
             pressQueued = false;
             if (heldWeapon == null) return;
 
             if (heldWeapon.WeaponType.RangedKind == RangedAttackKind.Flame) UpdateFlame(dt, pressed || AttackHeld);
-            else if (pressed && cooldownRemaining <= 0f) Fire();
+            else if (pressed && CanFire) Fire();
         }
+
+        /// <summary>撃つ間隔の待ちも持ち替えの待ちも明けているか。</summary>
+        private bool CanFire => fireRemaining <= 0f && switchRemaining <= 0f;
 
         private void LateUpdate()
         {
@@ -428,7 +464,7 @@ namespace TpsDungeon.Combat
         {
             stats = ComputeStats();
             WeaponTypeDefinition type = heldWeapon.WeaponType;
-            cooldownRemaining = cooldownDuration = stats.FireInterval;
+            fireRemaining = fireDuration = stats.FireInterval;
 
             Vector3 target = type.AimsAtGround ? GroundTarget(type) : AimPoint(type);
             // 撃つ瞬間は向き切る。背骨の曲げは前のフレームの LateUpdate のものが手に残っている。狙わない支援は向きを変えない。
@@ -626,12 +662,12 @@ namespace TpsDungeon.Combat
         // ---- 召喚 ----
 
         /// <summary>
-        /// 前の置物を全部消してから、1 体目を target に、数で増えた分を target の周り（決めた距離の範囲のランダムな所）に呼び出す。
+        /// 今の武器で前に呼んだ置物を消してから（別の武器で呼んだ分は残す）、1 体目を target に、数で増えた分を target の周り（決めた距離の範囲のランダムな所）に呼び出す。
         /// 置物どうしや持ち主に近すぎる所と、狙った所との間に壁がある所は引き直す。置物はそれぞれ持ち主の方を向く。
         /// </summary>
         private void FireSummon(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 target)
         {
-            DismissSummons();
+            DismissSummons(held);
 
             var settings = new SummonedDecoy.Settings
             {
@@ -651,8 +687,13 @@ namespace TpsDungeon.Combat
             {
                 Quaternion facing = Quaternion.LookRotation(Flat(transform.position - point, -transform.forward), Vector3.up);
                 SummonedDecoy decoy = SummonedDecoy.Spawn(point, facing, settings);
-                decoy.Vanished += d => activeSummons.Remove(d);
+                decoy.Vanished += d =>
+                {
+                    activeSummons.Remove(d);
+                    summonSources.Remove(d);
+                };
                 activeSummons.Add(decoy);
+                summonSources[decoy] = held;
             }
         }
 
@@ -689,13 +730,18 @@ namespace TpsDungeon.Combat
             return d.magnitude;
         }
 
-        /// <summary>今居る置物を全部消す（呼び直し）。</summary>
-        private void DismissSummons()
+        /// <summary>source（武器）で呼んだ置物を全部消す（呼び直し）。</summary>
+        private void DismissSummons(ItemInstance source)
         {
             // Dismiss の中で Vanished から一覧を外すので、写してから回す。
             foreach (SummonedDecoy decoy in activeSummons.ToArray())
+            {
+                if (!summonSources.TryGetValue(decoy, out ItemInstance from) || from != source) continue;
+
+                activeSummons.Remove(decoy);
+                summonSources.Remove(decoy);
                 if (decoy != null) decoy.Dismiss();
-            activeSummons.Clear();
+            }
         }
 
         // ---- 治癒の場（治癒持続） ----
@@ -1064,7 +1110,7 @@ namespace TpsDungeon.Combat
             WeaponTypeDefinition type = heldWeapon.WeaponType;
             if (!burning)
             {
-                if (wants && cooldownRemaining <= 0f) StartFlame(type);
+                if (wants && CanFire) StartFlame(type);
                 return;
             }
 
@@ -1149,8 +1195,8 @@ namespace TpsDungeon.Combat
             jets.Clear();
             if (cooldown && burnStats != null)
             {
-                cooldownDuration = burnStats.FireInterval;
-                cooldownRemaining = burnStats.FireInterval * used;
+                fireDuration = burnStats.FireInterval;
+                fireRemaining = burnStats.FireInterval * used;
             }
         }
 
