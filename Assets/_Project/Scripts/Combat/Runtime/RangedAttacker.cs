@@ -293,6 +293,12 @@ namespace TpsDungeon.Combat
         /// <summary>炎を吐いているか。</summary>
         public bool IsBurning => burning;
 
+        /// <summary>
+        /// 撃ったがまだ出し終えていないか（腕を振り切る瞬間を待つ召喚・治癒・加護・投げ・杖、多重の後の矢）。
+        /// 持ち替えるとこれらは消えるので、仲間の AI はこの間持ち替えない。
+        /// </summary>
+        public bool IsCasting => scheduled.Count > 0 || volleys.Count > 0;
+
         /// <summary>敵に当てた 1 回ごと（矢・爆発・雨の刻み・雷・連置・炎の刻み）。ダメージ表示や試験の窓が読む。</summary>
         public event Action<MeleeHitRecord> Dealt;
 

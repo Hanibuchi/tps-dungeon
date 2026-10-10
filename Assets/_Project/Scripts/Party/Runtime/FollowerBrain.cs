@@ -38,8 +38,8 @@ namespace TpsDungeon.Party
         [SerializeField, Min(0.05f), Tooltip("敵を探し直す間隔（秒）。全員が同じフレームに探さないよう、人ごとにずらす。")]
         private float scanInterval = 0.2f;
 
-        [SerializeField, Range(0f, 1f), Tooltip("治癒の場は、パーティーの誰かの体力がこの割合を切ったときだけ使う。")]
-        private float healBelow = 0.8f;
+        [SerializeField, Range(0f, 1f), Tooltip("治癒の杖・治癒の場は、パーティーの誰かの体力がこの割合を切ったときだけ使う（1 なら少しでも減っていれば使う）。")]
+        private float healBelow = 1f;
 
         [SerializeField, Tooltip("見通しの判定で遮る物とみなすレイヤー（味方は除く）。")]
         private LayerMask sightMask = ~0;
@@ -160,6 +160,8 @@ namespace TpsDungeon.Party
 
             // 振っている途中の近接は振り終えるまで持ち替えない。
             if (melee != null && (melee.IsSwinging || melee.IsLunging)) return hotbar.SelectedIndex;
+            // 撃った遠距離も、出し終えるまで持ち替えない（持ち替えると召喚・治癒などの予約が消え、待ちだけ残る）。
+            if (ranged != null && ranged.IsCasting) return hotbar.SelectedIndex;
 
             int pick = FollowerWeaponPicker.Pick(options, distance, closeDistance, Time.time, hotbar.SelectedIndex);
             return pick >= 0 ? pick : UnarmedSlot(hand);
