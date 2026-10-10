@@ -191,6 +191,19 @@ MonoBehaviour:
   healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
   healSound: {fileID: 8300000, guid: 66cfdf6da9b1e471591794e9e12be628, type: 3}
   healSoundVolume: 0.8
+  supportRange: 20
+  supportDuration: 12
+  supportRepeatInterval: 0.5
+  damageReductionPerStrength: 0.01
+  maxDamageReduction: 0.8
+  critMultiplierPerStrength: 0.02
+  ailmentResistancePerStrength: 0.02
+  damageReductionEffect: {fileID: 0}
+  critMultiplierEffect: {fileID: 0}
+  ailmentResistanceEffect: {fileID: 0}
+  blessingEffectScale: 1
+  supportHitEffect: {fileID: 0}
+  supportHitEffectScale: 1
   drawSound: {fileID: 0}
   stickSound: {fileID: 0}
   stickSoundVolume: 0.6
@@ -201,7 +214,7 @@ MonoBehaviour:
   aimRingColor: {r: 0.75, g: 1, b: 0.75, a: 0.6}
   heldInLeftHand: 0
   heldLocalPosition: {x: -0.089999996, y: -0.1113, z: -0.02}
-  heldLocalEuler: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 90, z: 0}
   swingEffect: {fileID: 0}
   swingEffectScale: 1
   swingEffectLeadTime: 0
