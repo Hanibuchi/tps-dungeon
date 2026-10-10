@@ -18,9 +18,10 @@ namespace TpsDungeon.Audio.Editor
     ///   Master
     ///   ├─ BGM     Attenuation → Duck Volume → Lowpass
     ///   ├─ SE      Attenuation → Lowpass → Send(→Reverb) → Send(→BGM の Duck Volume)
-    ///   └─ Reverb  Receive → SFX Reverb → Attenuation   ※SE からのリターン専用
+    ///   ├─ Reverb  Receive → SFX Reverb → Attenuation   ※SE からのリターン専用
+    ///   └─ UI      Attenuation   ※UI の操作音。ポーズ中もこもらせず、BGM も沈ませない
     ///
-    /// 露出パラメータ(スライダー用): MasterVolume / BgmVolume / SeVolume
+    /// 露出パラメータ(スライダー用): MasterVolume / BgmVolume / SeVolume / UiVolume（SE のスライダーに連動）
     /// スナップショット: Default / Dungeon / Paused
     ///
     /// 露出パラメータはスナップショットのブレンドを上書きするので、
@@ -34,10 +35,12 @@ namespace TpsDungeon.Audio.Editor
         public const string BgmGroupName = "BGM";
         public const string SeGroupName = "SE";
         public const string ReverbGroupName = "Reverb";
+        public const string UiGroupName = "UI";
 
         public const string MasterVolumeParam = "MasterVolume";
         public const string BgmVolumeParam = "BgmVolume";
         public const string SeVolumeParam = "SeVolume";
+        public const string UiVolumeParam = "UiVolume";
 
         public const string DefaultSnapshotName = "Default";
         public const string DungeonSnapshotName = "Dungeon";
@@ -90,6 +93,7 @@ namespace TpsDungeon.Audio.Editor
             object bgm = CreateGroup(controller, master, BgmGroupName);
             object se = CreateGroup(controller, master, SeGroupName);
             object reverb = CreateGroup(controller, master, ReverbGroupName);
+            object ui = CreateGroup(controller, master, UiGroupName);
 
             // BGM: SE から送られてくるサイドチェーンで音量を下げ、ポーズ中はこもらせる。
             object duck = AddEffect(controller, bgm, "Duck Volume", AtEnd);
@@ -111,6 +115,7 @@ namespace TpsDungeon.Audio.Editor
             ExposeVolume(controller, master, MasterVolumeParam);
             ExposeVolume(controller, bgm, BgmVolumeParam);
             ExposeVolume(controller, se, SeVolumeParam);
+            ExposeVolume(controller, ui, UiVolumeParam);
 
             // 既定のスナップショットを Default に仕立ててから、それを複製して他の 2 つを作る。
             object defaultSnapshot = FirstSnapshot(controller);
@@ -150,7 +155,7 @@ namespace TpsDungeon.Audio.Editor
             if (mixer == null) return "ミキサーが見つからない: " + MixerPath;
 
             var lines = new List<string>();
-            foreach (string groupName in new[] { MasterGroupName, BgmGroupName, SeGroupName, ReverbGroupName })
+            foreach (string groupName in new[] { MasterGroupName, BgmGroupName, SeGroupName, ReverbGroupName, UiGroupName })
             {
                 // FindMatchingGroups はパスの部分一致なので、名前が完全に一致したものだけ数える。
                 int count = 0;
@@ -162,7 +167,7 @@ namespace TpsDungeon.Audio.Editor
                 lines.Add("  group " + groupName + ": " + count + " 件");
             }
 
-            foreach (string param in new[] { MasterVolumeParam, BgmVolumeParam, SeVolumeParam })
+            foreach (string param in new[] { MasterVolumeParam, BgmVolumeParam, SeVolumeParam, UiVolumeParam })
             {
                 lines.Add("  param " + param + ": " + (mixer.GetFloat(param, out float value) ? value + "dB" : "露出していない"));
             }

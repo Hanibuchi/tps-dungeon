@@ -1,5 +1,7 @@
 using System;
+using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.Audio.UI;
 using TpsDungeon.Player;
 using TpsDungeon.UiKit;
 using UnityEngine;
@@ -101,6 +103,10 @@ namespace TpsDungeon.Menu.UI
             resumeButton = root.Q<Button>("resume-button");
 
             if (resumeButton != null) resumeButton.clicked += Resume;
+            // 再開は閉じる音、戻るは戻る音を ShowPage で鳴らすので、押した音は重ねない。
+            UiSoundHooks.Silence(resumeButton);
+            UiSoundHooks.Silence(root.Q<Button>("back-button"));
+            UiSoundHooks.Attach(root);
             var settingsButton = root.Q<Button>("settings-button");
             if (settingsButton != null) settingsButton.clicked += ShowSettings;
             var quitButton = root.Q<Button>("quit-button");
@@ -119,6 +125,7 @@ namespace TpsDungeon.Menu.UI
 
             settings?.Dispose();
             settings = null;
+            UiSoundHooks.Detach(document.rootVisualElement);
         }
 
         // PlayerInput は OnEnable でアクションを用意し直すことがあるので、掴むのは全員の OnEnable の後。
@@ -209,6 +216,9 @@ namespace TpsDungeon.Menu.UI
                 Changed?.Invoke(this);
                 return;
             }
+
+            if (next == Page.Closed) GameAudio.Instance?.PlayUi(UiSound.Close);
+            else if (next == Page.Menu) GameAudio.Instance?.PlayUi(previous == Page.Settings ? UiSound.Back : UiSound.Open);
 
             switch (next)
             {

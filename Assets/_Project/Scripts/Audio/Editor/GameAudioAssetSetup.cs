@@ -26,6 +26,24 @@ namespace TpsDungeon.Audio.Editor
         public const string ThemePath = "Assets/_Project/Settings/UI/GameRuntimeTheme.tss";
         public const string PanelUxmlPath = "Assets/_Project/UI/Audio/AudioSettingsPanel.uxml";
         public const string PreviewClipPath = "Assets/_Project/Audio/Placeholder/SE_Click.wav";
+        public const string UiSoundsPath = "Assets/_Project/Settings/Audio/UiSounds.asset";
+
+        /// <summary>UI の操作音の素材（効果音ラボ「ボタン・システム音」）。ThirdParty は git に上げないので、無ければクリップは空のまま。</summary>
+        public const string UiSoundFolder = "Assets/ThirdParty/Sound/SoundEffect-Lab/UI/";
+
+        private static readonly (string field, string file)[] UiSoundFiles =
+        {
+            ("hover", "カーソル移動1.mp3"),
+            ("click", "決定ボタンを押す29.mp3"),
+            ("back", "キャンセル1.mp3"),
+            ("open", "メニューを開く4.mp3"),
+            ("close", "キャンセル8.mp3"),
+            ("tab", "カーソル移動5.mp3"),
+            ("pick", "決定ボタンを押す44.mp3"),
+            ("place", "決定ボタンを押す34.mp3"),
+            ("denied", "ビープ音1.mp3"),
+            ("discard", "キャンセル2.mp3"),
+        };
 
         [MenuItem("Tools/TPS Dungeon/Audio/Generate Game Audio Config And Prefab")]
         public static void GenerateFromMenu()
@@ -43,14 +61,16 @@ namespace TpsDungeon.Audio.Editor
             }
 
             GameAudioConfig config = LoadOrCreateConfig();
-            WireConfig(config, mixer);
+            UiSoundSet uiSounds = LoadOrCreateUiSounds(out string uiSoundLog);
+            WireConfig(config, mixer, uiSounds);
 
             PanelSettings panelSettings = LoadOrCreatePanelSettings();
             GameObject prefab = CreateOrUpdatePrefab(config, panelSettings);
 
             AssetDatabase.SaveAssets();
             return "オーディオの設定一式を用意した:\n  " + ConfigPath + "\n  " + PanelSettingsPath + "\n  " + PrefabPath
-                   + "\n  prefab=" + (prefab != null ? prefab.name : "作成失敗");
+                   + "\n  prefab=" + (prefab != null ? prefab.name : "作成失敗")
+                   + "\n  " + UiSoundsPath + ": " + uiSoundLog;
         }
 
         private static GameAudioConfig LoadOrCreateConfig()
@@ -65,13 +85,53 @@ namespace TpsDungeon.Audio.Editor
             return config;
         }
 
+        /// <summary>
+        /// UI の操作音の組。無ければ作り、空のクリップだけ素材の場所から埋める（手で差し替えたクリップと音量はそのまま）。
+        /// </summary>
+        private static UiSoundSet LoadOrCreateUiSounds(out string log)
+        {
+            var set = AssetDatabase.LoadAssetAtPath<UiSoundSet>(UiSoundsPath);
+            if (set == null)
+            {
+                set = ScriptableObject.CreateInstance<UiSoundSet>();
+                AssetDatabase.CreateAsset(set, UiSoundsPath);
+            }
+
+            var serialized = new SerializedObject(set);
+            int filled = 0;
+            var missing = new System.Collections.Generic.List<string>();
+            foreach ((string field, string file) in UiSoundFiles)
+            {
+                SerializedProperty clip = serialized.FindProperty(field).FindPropertyRelative("clip");
+                if (clip.objectReferenceValue != null) continue;
+
+                var loaded = AssetDatabase.LoadAssetAtPath<AudioClip>(UiSoundFolder + file);
+                if (loaded == null)
+                {
+                    missing.Add(file);
+                    continue;
+                }
+
+                clip.objectReferenceValue = loaded;
+                filled++;
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(set);
+            log = filled + " 個のクリップを差した" + (missing.Count > 0 ? "。素材が無い: " + string.Join(", ", missing) : "");
+            return set;
+        }
+
         /// <summary>ミキサーのグループとスナップショットを名前で引いて設定に差す。</summary>
-        private static void WireConfig(GameAudioConfig config, AudioMixer mixer)
+        private static void WireConfig(GameAudioConfig config, AudioMixer mixer, UiSoundSet uiSounds)
         {
             var serialized = new SerializedObject(config);
             serialized.FindProperty("mixer").objectReferenceValue = mixer;
             serialized.FindProperty("bgmGroup").objectReferenceValue = FindGroup(mixer, GameAudioMixerSetup.BgmGroupName);
             serialized.FindProperty("seGroup").objectReferenceValue = FindGroup(mixer, GameAudioMixerSetup.SeGroupName);
+            serialized.FindProperty("uiGroup").objectReferenceValue = FindGroup(mixer, GameAudioMixerSetup.UiGroupName);
+            serialized.FindProperty("uiVolumeParameter").stringValue = GameAudioMixerSetup.UiVolumeParam;
+            serialized.FindProperty("uiSounds").objectReferenceValue = uiSounds;
 
             serialized.FindProperty("masterVolumeParameter").stringValue = GameAudioMixerSetup.MasterVolumeParam;
             serialized.FindProperty("bgmVolumeParameter").stringValue = GameAudioMixerSetup.BgmVolumeParam;

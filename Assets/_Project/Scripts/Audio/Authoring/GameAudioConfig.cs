@@ -22,6 +22,9 @@ namespace TpsDungeon.Audio.Authoring
         [SerializeField, Tooltip("SE 用 AudioSource の出力先グループ。")]
         private AudioMixerGroup seGroup;
 
+        [SerializeField, Tooltip("UI の操作音の出力先グループ。ポーズ中のこもり（SE のローパス）を通さない。未設定なら SE へ流す。")]
+        private AudioMixerGroup uiGroup;
+
         [Header("露出パラメータ名")]
         [SerializeField, Tooltip("全体音量。ミキサー側で露出させた名前と一致している必要がある。")]
         private string masterVolumeParameter = "MasterVolume";
@@ -32,6 +35,9 @@ namespace TpsDungeon.Audio.Authoring
         [SerializeField, Tooltip("SE 音量。")]
         private string seVolumeParameter = "SeVolume";
 
+        [SerializeField, Tooltip("UI の操作音の音量。SE のスライダーに連動させる（UI グループは SE の外にあるので）。")]
+        private string uiVolumeParameter = "UiVolume";
+
         [Header("スナップショット")]
         [SerializeField, Tooltip("素の状態。")]
         private AudioMixerSnapshot defaultSnapshot;
@@ -41,6 +47,10 @@ namespace TpsDungeon.Audio.Authoring
 
         [SerializeField, Tooltip("ポーズ中。全体がこもる。")]
         private AudioMixerSnapshot pausedSnapshot;
+
+        [Header("UI の操作音")]
+        [SerializeField, Tooltip("操作音ごとのクリップと音量。")]
+        private UiSoundSet uiSounds;
 
         [Header("既定値")]
         [SerializeField, Range(0f, 1f), Tooltip("初回起動時の全体音量。")]
@@ -62,6 +72,11 @@ namespace TpsDungeon.Audio.Authoring
         public AudioMixer Mixer => mixer;
         public AudioMixerGroup BgmGroup => bgmGroup;
         public AudioMixerGroup SeGroup => seGroup;
+        public AudioMixerGroup UiGroup => uiGroup;
+        public UiSoundSet UiSounds => uiSounds;
+
+        /// <summary>SE の音量に連動させる UI の操作音の露出パラメータ名。</summary>
+        public string UiVolumeParameter => uiVolumeParameter;
         public float BgmCrossFadeSeconds => bgmCrossFadeSeconds;
         public float SnapshotTransitionSeconds => snapshotTransitionSeconds;
 

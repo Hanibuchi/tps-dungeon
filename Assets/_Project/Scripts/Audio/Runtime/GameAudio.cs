@@ -24,10 +24,16 @@ namespace TpsDungeon.Audio.Runtime
         [SerializeField, Min(1), Tooltip("同時に鳴らせる SE の数。足りなくなると一番古い音を止めて使い回す。")]
         private int seVoiceCount = 8;
 
+        [SerializeField, Min(1), Tooltip("同時に鳴らせる UI の操作音の数。SE とは別に持つので、戦闘の音に押し出されない。")]
+        private int uiVoiceCount = 4;
+
         private AudioSource[] bgmSources;
         private AudioSource[] seSources;
         private int activeBgmIndex;
         private int nextSeIndex;
+        private AudioSource[] uiSources;
+        private int nextUiIndex;
+        private readonly float[] lastUiPlayed = new float[System.Enum.GetValues(typeof(UiSound)).Length];
         private Coroutine bgmFade;
 
         /// <summary>唯一のインスタンス。起動前や終了後は null。</summary>
@@ -196,21 +202,50 @@ namespace TpsDungeon.Audio.Runtime
         /// <summary>空いている音源を返す。全部埋まっていたら一番古いものを奪う。</summary>
         private AudioSource TakeSeSource()
         {
-            if (seSources == null) return null;
+            return seSources != null ? Take(seSources, ref nextSeIndex) : null;
+        }
 
-            for (int i = 0; i < seSources.Length; i++)
+        private static AudioSource Take(AudioSource[] sources, ref int next)
+        {
+            for (int i = 0; i < sources.Length; i++)
             {
-                int index = (nextSeIndex + i) % seSources.Length;
-                if (seSources[index].isPlaying) continue;
+                int index = (next + i) % sources.Length;
+                if (sources[index].isPlaying) continue;
 
-                nextSeIndex = (index + 1) % seSources.Length;
-                return seSources[index];
+                next = (index + 1) % sources.Length;
+                return sources[index];
             }
 
-            AudioSource oldest = seSources[nextSeIndex];
-            nextSeIndex = (nextSeIndex + 1) % seSources.Length;
+            AudioSource oldest = sources[next];
+            next = (next + 1) % sources.Length;
             oldest.Stop();
             return oldest;
+        }
+
+        // ---- UI の操作音 ------------------------------------------------------
+
+        /// <summary>
+        /// UI の操作音を鳴らす。クリップと音量は設定の <see cref="GameAudioConfig.UiSounds"/> から引き、無ければ黙って返る。
+        /// ポーズ中もこもらないグループへ流す。同じ音は短い間隔では鳴らし直さない（実時間で数える）。
+        /// </summary>
+        public void PlayUi(UiSound sound)
+        {
+            UiSoundSet set = config != null ? config.UiSounds : null;
+            if (set == null || uiSources == null) return;
+
+            UiSoundSet.Entry entry = set.Get(sound);
+            if (entry.clip == null) return;
+
+            int index = (int)sound;
+            float now = Time.unscaledTime;
+            if (index >= 0 && index < lastUiPlayed.Length)
+            {
+                if (lastUiPlayed[index] > 0f && now - lastUiPlayed[index] < set.MinInterval) return;
+                lastUiPlayed[index] = now;
+            }
+
+            AudioSource source = Take(uiSources, ref nextUiIndex);
+            source.PlayOneShot(entry.clip, Mathf.Clamp01(entry.volume));
         }
 
         // ---- スナップショット -----------------------------------------------
@@ -259,6 +294,15 @@ namespace TpsDungeon.Audio.Runtime
                 seSources[i].spatialBlend = 0f;
                 seSources[i].rolloffMode = AudioRolloffMode.Linear;
                 seSources[i].maxDistance = 30f;
+            }
+
+            uiSources = new AudioSource[Mathf.Max(1, uiVoiceCount)];
+            for (int i = 0; i < uiSources.Length; i++)
+            {
+                uiSources[i] = CreateSource("UI " + (i + 1), config.UiGroup != null ? config.UiGroup : config.SeGroup);
+                uiSources[i].loop = false;
+                uiSources[i].volume = 1f;
+                uiSources[i].spatialBlend = 0f;
             }
         }
 
