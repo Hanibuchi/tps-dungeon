@@ -58,6 +58,9 @@ namespace TpsDungeon.Menu.UI
         /// <summary>札 1 列の幅（札の幅 186px ＋ 左右の余白 3px ずつ。Inventory.uss の .party-card と揃える）。</summary>
         private const float CardColumnWidth = 192f;
 
+        /// <summary>札の HP の棒を赤く灯す残りの割合（HUD の HP 欄と揃える）。</summary>
+        private const float LowHpFraction = 0.3f;
+
         [SerializeField, Tooltip("入力を受け取る PlayerInput。未設定なら親から探す。")]
         private PlayerInput playerInput;
 
@@ -110,6 +113,7 @@ namespace TpsDungeon.Menu.UI
             public PartyMember Member;
             public PlayerInventory Inventory;
             public PlayerHotbar Hotbar;
+            public PlayerHealth Health;
             public int FirstSlot;
         }
 
@@ -380,8 +384,11 @@ namespace TpsDungeon.Menu.UI
             {
                 if (card.Inventory != null) card.Inventory.Changed -= OnItemsChanged;
                 if (card.Hotbar != null) card.Hotbar.Changed -= OnHotbarChanged;
+                if (card.Health != null) card.Health.Changed -= OnHealthChanged;
             }
         }
+
+        private void OnHealthChanged(PlayerHealth _) => RefreshCards();
 
         // ---- 作り直し ------------------------------------------------------
 
@@ -447,7 +454,8 @@ namespace TpsDungeon.Menu.UI
         private void AddCard(PartyMember member, PlayerInventory owner, PlayerHotbar hotbar)
         {
             int index = cards.Count;
-            var card = new Card { Member = member, Inventory = owner, Hotbar = hotbar, FirstSlot = slots.Count };
+            PlayerHealth health = member != null ? member.Health : null;
+            var card = new Card { Member = member, Inventory = owner, Hotbar = hotbar, Health = health, FirstSlot = slots.Count };
 
             VisualElement element = CreateCardElement($"party-card-{index}", out VisualElement hand);
             Inventory items = owner != null ? owner.Inventory : null;
@@ -465,11 +473,12 @@ namespace TpsDungeon.Menu.UI
             card.Element = element;
             if (owner != null) owner.Changed += OnItemsChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
+            if (health != null) health.Changed += OnHealthChanged;
             partyList.Add(element);
             cards.Add(card);
         }
 
-        /// <summary>札の外形（色見本・番号・名前・Lv・操作中の印）を作る。手持ちの枠は hand に足す。</summary>
+        /// <summary>札の外形（色見本・番号・名前・Lv・操作中の印・HP の棒）を作る。手持ちの枠は hand に足す。</summary>
         private static VisualElement CreateCardElement(string elementName, out VisualElement hand)
         {
             var element = new VisualElement { name = elementName };
@@ -482,7 +491,7 @@ namespace TpsDungeon.Menu.UI
             var body = new VisualElement { pickingMode = PickingMode.Ignore };
             body.AddToClassList("party-card__body");
 
-            // 上の段：番号・名前・Lv・操作中の印。下の段：手持ちの 4 枠（装備の枠そのもの）。
+            // 上の段：番号・名前・Lv・操作中の印。その下に HP の棒。下の段：手持ちの 4 枠（装備の枠そのもの）。
             var header = new VisualElement { pickingMode = PickingMode.Ignore };
             header.AddToClassList("party-card__header");
             var number = new Label { name = "number", pickingMode = PickingMode.Ignore };
@@ -499,6 +508,13 @@ namespace TpsDungeon.Menu.UI
             header.Add(level);
             header.Add(badge);
             body.Add(header);
+
+            var hp = new VisualElement { name = "hp", pickingMode = PickingMode.Ignore };
+            hp.AddToClassList("party-card__hp");
+            var hpFill = new VisualElement { name = "hp-fill", pickingMode = PickingMode.Ignore };
+            hpFill.AddToClassList("party-card__hp-fill");
+            hp.Add(hpFill);
+            body.Add(hp);
 
             hand = new VisualElement { pickingMode = PickingMode.Ignore };
             hand.AddToClassList("party-card__hand");
@@ -535,7 +551,7 @@ namespace TpsDungeon.Menu.UI
             }
         }
 
-        /// <summary>札に、place 番目に居る member の名前・Lv・色と、番号・操作中の印を出す。</summary>
+        /// <summary>札に、place 番目に居る member の名前・Lv・色・HP と、番号・操作中の印を出す。</summary>
         private static void FillCard(VisualElement element, PartyMember member, int place)
         {
             SetCardPlace(element, member, place);
@@ -544,6 +560,7 @@ namespace TpsDungeon.Menu.UI
             {
                 element.Q<Label>("name").text = "手持ち";
                 element.Q<Label>("level").text = string.Empty;
+                SetCardHp(element, null);
                 return;
             }
 
@@ -553,6 +570,19 @@ namespace TpsDungeon.Menu.UI
             var appearance = member.GetComponent<CharacterAppearance>();
             Color? accent = appearance != null ? appearance.AccentColor : null;
             element.Q<VisualElement>("swatch").style.backgroundColor = accent ?? new Color(0.55f, 0.47f, 0.33f);
+            SetCardHp(element, member.Health);
+        }
+
+        /// <summary>札の HP の棒を health の残りの割合まで満たす。体力の持ち主が居なければ棒ごと隠す。</summary>
+        private static void SetCardHp(VisualElement element, PlayerHealth health)
+        {
+            VisualElement hp = element.Q<VisualElement>("hp");
+            hp.style.visibility = health != null ? Visibility.Visible : Visibility.Hidden;
+            if (health == null) return;
+
+            float fraction = health.Fraction;
+            element.Q<VisualElement>("hp-fill").style.width = Length.Percent(fraction * 100f);
+            hp.EnableInClassList("party-card__hp--low", fraction < LowHpFraction);
         }
 
         /// <summary>札の番号と操作中の印だけを place 番目として出し直す。</summary>

@@ -34,7 +34,7 @@ namespace TpsDungeon.Audio.Editor
         private static readonly (string field, string file)[] UiSoundFiles =
         {
             ("hover", "カーソル移動9.mp3"),
-            ("click", "決定ボタンを押す29.mp3"),
+            ("click", "決定ボタンを押す44.mp3"),
             ("back", "キャンセル1.mp3"),
             ("open", "メニューを開く2.mp3"),
             ("close", "キャンセル8.mp3"),
