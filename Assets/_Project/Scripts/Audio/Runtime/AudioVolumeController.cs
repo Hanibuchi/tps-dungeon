@@ -77,7 +77,11 @@ namespace TpsDungeon.Audio.Runtime
             if (config.Mixer == null) return;
 
             // SetFloat は再生中でないと失敗する。エディタの編集中に呼ばれても害は無いので黙って通す。
-            config.Mixer.SetFloat(config.GetVolumeParameter(channel), AudioVolumeMath.ToDecibels(normalized));
+            float decibels = AudioVolumeMath.ToDecibels(normalized);
+            config.Mixer.SetFloat(config.GetVolumeParameter(channel), decibels);
+            // UI の操作音はこもらせないよう SE の外のグループに流しているので、SE のスライダーをそちらにも効かせる。
+            if (channel == AudioChannel.Se && !string.IsNullOrEmpty(config.UiVolumeParameter))
+                config.Mixer.SetFloat(config.UiVolumeParameter, decibels);
         }
     }
 }

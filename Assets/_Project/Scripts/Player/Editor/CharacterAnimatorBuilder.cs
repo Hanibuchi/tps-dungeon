@@ -577,7 +577,10 @@ namespace TpsDungeon.Player.Editor
 
             AnimatorStateTransition t;
 
+            // 溶け込みの最中は行き先（Draw）の遷移が評価されないので、0.2 秒のうちに引き終わり（BowDrawEnd）を過ぎると
+            // 次の周まで構えに入れず、持ち替えただけで放す・つがえ直すまで 1 周流れてしまう。溶け込み中も Draw → Aim を見させる。
             t = Transition(free, draw, 0.2f);
+            t.interruptionSource = TransitionInterruptionSource.Destination;
             t.AddCondition(AnimatorConditionMode.Equals, (int)Weapon.Bow, WeaponTypeParam);
 
             Transition(draw, aim, 0.05f, exitTime: BowDrawEnd);

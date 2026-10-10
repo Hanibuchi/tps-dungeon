@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using TpsDungeon.Audio.Data;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Interaction;
 using TpsDungeon.Items;
 using TpsDungeon.Party;
@@ -293,6 +295,7 @@ namespace TpsDungeon.Menu.UI
 
             UiTransitions.Show(scrim);
             UiTransitions.Show(panel);
+            Play(UiSound.Open);
         }
 
         /// <summary>インベントリを閉じてゲームに戻る。</summary>
@@ -307,6 +310,7 @@ namespace TpsDungeon.Menu.UI
             UiTransitions.Hide(panel);
             UiTransitions.Hide(scrim);
             Pauser.Resume();
+            Play(UiSound.Close);
         }
 
         // ---- 見せる相手 ----------------------------------------------------
@@ -575,6 +579,7 @@ namespace TpsDungeon.Menu.UI
 
         private void OnCardHover(int index, bool entered)
         {
+            if (entered && dragFrom < 0 && cardPressed < 0 && cards[index].Member != null) Play(UiSound.Hover);
             if (entered) hoverCard = index;
             else if (hoverCard == index) hoverCard = -1;
             RefreshDetails();
@@ -590,6 +595,7 @@ namespace TpsDungeon.Menu.UI
 
             VisualElement source = cards[cardPressed].Element;
             source.AddToClassList(CardDragSourceClass);
+            Play(UiSound.Pick);
             cardGrabOffset = cardPressPosition - source.worldBound.position;
             cardGhost = CreateCardGhost(cards[cardPressed]);
             MoveCardGhost(position);
@@ -778,7 +784,16 @@ namespace TpsDungeon.Menu.UI
 
             if (IsHeld(quickMoveAction))
             {
-                if (!QuickMove(slotRef)) UiTransitions.Flash(slots[index], DeniedClass, 160);
+                if (QuickMove(slotRef))
+                {
+                    Play(UiSound.Place);
+                }
+                else
+                {
+                    UiTransitions.Flash(slots[index], DeniedClass, 160);
+                    Play(UiSound.Denied);
+                }
+
                 return;
             }
 
@@ -803,6 +818,7 @@ namespace TpsDungeon.Menu.UI
             dragFrom = index;
             dragPointerId = pointerId;
             slots[index].AddToClassList(DragSourceClass);
+            Play(UiSound.Pick);
 
             if (ghost != null)
             {
@@ -856,10 +872,16 @@ namespace TpsDungeon.Menu.UI
                     ? partyList.LocalToWorld(cardSlotPositions[onto])
                     : Vector2.zero;
                 EndCardDrag();
-                if (!dragging || onto < 0) return;
+                if (!dragging) return;
+                if (onto < 0)
+                {
+                    Play(UiSound.Back); // 一覧の外で離した。並びはそのまま
+                    return;
+                }
 
                 // 並びが変わると札は作り直される（位置は見せていた並びと同じなので跳ばない）。落とした札だけ写しの位置から滑り込ませる。
                 if (onto != pressed && party != null) party.Move(pressed, onto);
+                Play(UiSound.Place);
                 if (onto < cards.Count) SettleCard(cards[onto].Element, slotWorld, ghostWorld);
                 return;
             }
@@ -873,10 +895,14 @@ namespace TpsDungeon.Menu.UI
             EndDrag();
 
             SlotRef source = slotRefs[from];
-            if (to >= 0)
+            if (to == from)
+            {
+                Play(UiSound.Back); // 元の枠で離した
+            }
+            else if (to >= 0)
             {
                 SlotRef target = slotRefs[to];
-                InventoryTransfer.Move(source.Items, source.Index, target.Items, target.Index);
+                Play(InventoryTransfer.Move(source.Items, source.Index, target.Items, target.Index) ? UiSound.Place : UiSound.Denied);
             }
             else if (card >= 0)
             {
@@ -884,7 +910,11 @@ namespace TpsDungeon.Menu.UI
             }
             else if (outside)
             {
-                LeadInventory?.Drop(source.Items, source.Index);
+                Play(LeadInventory != null && LeadInventory.Drop(source.Items, source.Index) ? UiSound.Discard : UiSound.Denied);
+            }
+            else
+            {
+                Play(UiSound.Back); // パネルの中の何も無いところで離した。元に戻る
             }
         }
 
@@ -892,11 +922,21 @@ namespace TpsDungeon.Menu.UI
         private void GiveToCard(SlotRef source, int card)
         {
             Inventory hand = cards[card].Inventory != null ? cards[card].Inventory.Inventory : null;
-            if (hand == null || hand == source.Items) return;
+            if (hand == null || hand == source.Items)
+            {
+                Play(UiSound.Back);
+                return;
+            }
 
             int to = InventoryTransfer.FirstEmpty(hand);
-            if (to < 0 || !InventoryTransfer.Move(source.Items, source.Index, hand, to))
-                UiTransitions.Flash(cards[card].Element, CardDeniedClass, 160);
+            if (to >= 0 && InventoryTransfer.Move(source.Items, source.Index, hand, to))
+            {
+                Play(UiSound.Place);
+                return;
+            }
+
+            UiTransitions.Flash(cards[card].Element, CardDeniedClass, 160);
+            Play(UiSound.Denied);
         }
 
         // ウィンドウからフォーカスが外れるなどで掴みが切れたら、何もせず元に戻す。
@@ -965,13 +1005,17 @@ namespace TpsDungeon.Menu.UI
 
             SlotRef slotRef = slotRefs[hoverIndex];
             if (slotRef.Item == null) return;
-            LeadInventory?.Drop(slotRef.Items, slotRef.Index);
+            if (LeadInventory != null && LeadInventory.Drop(slotRef.Items, slotRef.Index)) Play(UiSound.Discard);
         }
+
+        private static void Play(UiSound sound) => GameAudio.Instance?.PlayUi(sound);
 
         // ---- 情報欄 --------------------------------------------------------
 
         private void OnSlotHover(int index, bool entered)
         {
+            // 空の枠まで鳴らすと、なぞるだけでうるさいので物の入った枠だけ。
+            if (entered && dragFrom < 0 && cardPressed < 0 && slotRefs[index].Item != null) Play(UiSound.Hover);
             if (entered) hoverIndex = index;
             else if (hoverIndex == index) hoverIndex = -1;
             RefreshDetails();

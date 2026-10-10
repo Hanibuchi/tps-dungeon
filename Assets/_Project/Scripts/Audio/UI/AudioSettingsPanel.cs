@@ -56,7 +56,10 @@ namespace TpsDungeon.Audio.UI
             page = root.Q<VisualElement>("page");
             volumes = new AudioVolumeSection(root, previewClip);
 
-            root.Q<Button>("close-button")?.RegisterCallback<ClickEvent>(_ => Close());
+            Button closeButton = root.Q<Button>("close-button");
+            closeButton?.RegisterCallback<ClickEvent>(_ => Close());
+            UiSoundHooks.Silence(closeButton); // 閉じる音を SetOpen で鳴らす
+            UiSoundHooks.Attach(root);
             root.Q<Button>("reset-button")?.RegisterCallback<ClickEvent>(_ => volumes?.ResetToDefaults());
 
             // 起動時の初期化ではスナップショットを触らない。
@@ -68,6 +71,7 @@ namespace TpsDungeon.Audio.UI
         {
             volumes?.Dispose();
             volumes = null;
+            UiSoundHooks.Detach(document.rootVisualElement);
         }
 
         private void Update()
@@ -113,6 +117,7 @@ namespace TpsDungeon.Audio.UI
 
             GameAudio audio = GameAudio.Instance;
             if (audio == null || !applySnapshot) return;
+            if (open != wasOpen) audio.PlayUi(open ? UiSound.Open : UiSound.Close);
 
             if (!open)
             {

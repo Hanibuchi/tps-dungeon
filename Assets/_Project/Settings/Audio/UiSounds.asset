@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77310a08876443139d145fd7be85123, type: 3}
+  m_Name: UiSounds
+  m_EditorClassIdentifier: TpsDungeon.Audio::TpsDungeon.Audio.Authoring.UiSoundSet
+  hover:
+    clip: {fileID: 8300000, guid: 7474fa80702644f9eb3ec1523f3c308b, type: 3}
+    volume: 0.5
+  click:
+    clip: {fileID: 8300000, guid: 5924ca839d720475b99d8919668825f7, type: 3}
+    volume: 0.8
+  back:
+    clip: {fileID: 8300000, guid: b0550b0632c754d58943dee47e396f57, type: 3}
+    volume: 0.8
+  open:
+    clip: {fileID: 8300000, guid: 0423238aef28c494493ed1ebce0071f8, type: 3}
+    volume: 0.7
+  close:
+    clip: {fileID: 8300000, guid: 2a99d95739ec641b789eb25211df04a9, type: 3}
+    volume: 0.6
+  tab:
+    clip: {fileID: 8300000, guid: 1423325e2872d4b0386bba40c381aeaa, type: 3}
+    volume: 0.7
+  pick:
+    clip: {fileID: 8300000, guid: 6782476b430c44c8f826f160ef0f7971, type: 3}
+    volume: 0.8
+  place:
+    clip: {fileID: 8300000, guid: 9fabae49f31f9483c98674ab7fecf6f9, type: 3}
+    volume: 0.8
+  denied:
+    clip: {fileID: 8300000, guid: 8454baf8c1d9446e587b1bbc09870085, type: 3}
+    volume: 0.6
+  discard:
+    clip: {fileID: 8300000, guid: 7ce0148ea622f43dabe41e03c76edf96, type: 3}
+    volume: 0.7
+  minInterval: 0.04

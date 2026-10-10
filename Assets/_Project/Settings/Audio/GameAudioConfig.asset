@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: GameAudioConfig
   m_EditorClassIdentifier: TpsDungeon.Audio::TpsDungeon.Audio.Authoring.GameAudioConfig
   mixer: {fileID: 24100000, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
-  bgmGroup: {fileID: -28835609671846428, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
-  seGroup: {fileID: 6155081283979710665, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  bgmGroup: {fileID: -1988985236194809606, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  seGroup: {fileID: 2538431680525374801, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  uiGroup: {fileID: -8774317292619919592, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
   masterVolumeParameter: MasterVolume
   bgmVolumeParameter: BgmVolume
   seVolumeParameter: SeVolume
+  uiVolumeParameter: UiVolume
   defaultSnapshot: {fileID: 24500006, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
-  dungeonSnapshot: {fileID: -2726574347412269656, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
-  pausedSnapshot: {fileID: 7139025638603446762, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  dungeonSnapshot: {fileID: 2311090687377543205, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  pausedSnapshot: {fileID: 4470933185284558488, guid: 8fdeee51668d248e49dd134a210a7f03, type: 2}
+  uiSounds: {fileID: 11400000, guid: 273034ea87a33447d832fe71626dc91b, type: 2}
   defaultMasterVolume: 0.8
   defaultBgmVolume: 0.7
   defaultSeVolume: 0.8

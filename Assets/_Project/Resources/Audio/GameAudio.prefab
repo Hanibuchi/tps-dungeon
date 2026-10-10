@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Audio::TpsDungeon.Audio.Runtime.GameAudio
   config: {fileID: 11400000, guid: a68487815ff2b40f3ae55b674988dc5a, type: 2}
   seVoiceCount: 8
+  uiVoiceCount: 4
 --- !u!1 &6791729119443327535
 GameObject:
   m_ObjectHideFlags: 0

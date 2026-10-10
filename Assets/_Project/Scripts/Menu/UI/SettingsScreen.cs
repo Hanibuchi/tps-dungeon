@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using TpsDungeon.Audio.Data;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Audio.UI;
 using TpsDungeon.UiKit;
 using UnityEngine;
@@ -54,6 +56,7 @@ namespace TpsDungeon.Menu.UI
                 tabs[i] = root.Q<Button>(TabNames[i]);
                 pages[i] = root.Q<VisualElement>(PageNames[i]);
                 if (tabs[i] != null) tabs[i].clicked += () => Select(tab);
+                UiSoundHooks.Silence(tabs[i]); // 切り替えたときだけ Select でタブの音を鳴らす
                 UiTransitions.HideImmediately(pages[i]);
             }
 
@@ -137,6 +140,7 @@ namespace TpsDungeon.Menu.UI
         {
             if (tab == current) return;
             if (tab != Tab.Keys) keys.Cancel();
+            GameAudio.Instance?.PlayUi(UiSound.Tab);
 
             // 右のタブへ移るなら、今のページは左へ抜け、新しいページは右から入る。
             bool forward = tab > current;
