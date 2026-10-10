@@ -21,3 +21,5 @@ Weapon_UnfallingHolyShield,Regen,5
 Weapon_UnfallingHolyShield,Defense,5
 Weapon_HeroicSpiritHorn,ProjectileCount,4
 Weapon_HeroicSpiritHorn,Duration,5
+Weapon_UnbreakableHolyStaff,ProjectileCount,4
+Weapon_UnbreakableHolyStaff,Duration,5

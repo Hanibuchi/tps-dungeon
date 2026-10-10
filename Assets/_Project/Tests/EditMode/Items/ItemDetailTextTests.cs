@@ -1,5 +1,6 @@
 using System.Reflection;
 using NUnit.Framework;
+using TpsDungeon.Player;
 using UnityEngine;
 
 namespace TpsDungeon.Items.Tests
@@ -123,6 +124,55 @@ namespace TpsDungeon.Items.Tests
                 Object.DestroyImmediate(summon);
                 Object.DestroyImmediate(healType);
                 Object.DestroyImmediate(summonType);
+            }
+        }
+    
+        [Test]
+        public void ダメージ軽減は杖の種類の効き目を_治癒は回復量を出して効き方を添える()
+        {
+            var guardian = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var bloodrush = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var seal = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var heal = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var blessingType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var healType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            try
+            {
+                // 係数と加護の長さは武器種の既定（強さ 1 で被ダメージ −1%・クリティカル倍率 +1%・耐性 1%、12 秒）。
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(blessingType, RangedAttackKind.Buff);
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(healType, RangedAttackKind.Heal);
+                void Setup(WeaponDefinition weapon, float strength, WeaponTypeDefinition type, BlessingKind kind)
+                {
+                    typeof(WeaponDefinition).GetField("strength", Private).SetValue(weapon, strength);
+                    typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(weapon, type);
+                    typeof(WeaponDefinition).GetField("blessingKind", Private).SetValue(weapon, kind);
+                }
+
+                Setup(guardian, 20f, blessingType, BlessingKind.DamageReduction);
+                Setup(bloodrush, 100f, blessingType, BlessingKind.CritMultiplier);
+                Setup(seal, 80f, blessingType, BlessingKind.AilmentResistance);
+                Setup(heal, 25f, healType, BlessingKind.DamageReduction);
+
+                string guardianText = new ItemInstance(guardian).DetailText();
+                Assert.AreEqual("被ダメージ −20%（12 秒）", guardianText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", guardianText);
+                StringAssert.Contains("ダメージ軽減の膜", guardianText);
+                Assert.AreEqual("クリティカル倍率 +100%（12 秒）", new ItemInstance(bloodrush).DetailText().Split('\n')[1]);
+                Assert.AreEqual("状態異常耐性 80%（12 秒）", new ItemInstance(seal).DetailText().Split('\n')[1]);
+
+                string healText = new ItemInstance(heal).DetailText();
+                Assert.AreEqual("回復量 25", healText.Split('\n')[1]);
+                StringAssert.DoesNotContain("攻撃力", healText);
+                StringAssert.Contains("体力の割合が低い人から選んで回復する", healText);
+            }
+            finally
+            {
+                Object.DestroyImmediate(guardian);
+                Object.DestroyImmediate(bloodrush);
+                Object.DestroyImmediate(seal);
+                Object.DestroyImmediate(heal);
+                Object.DestroyImmediate(blessingType);
+                Object.DestroyImmediate(healType);
             }
         }
     }

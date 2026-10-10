@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using TpsDungeon.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -15,9 +16,9 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
-    ///   17（治癒持続）・19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）・30（召喚）: Assets/_Project/Items/Weapons/
+    ///   15（ダメージ軽減）・16（治癒）・17（治癒持続）・19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）・30（召喚）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
-    /// - 武器 49 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02 の 4 本、04 の 3 本、05 の 4 本、09 の 3 本、11・19・20・21 の 4 本ずつ、26 の 3 本、
+    /// - 武器 54 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02 の 4 本、04 の 3 本、05 の 4 本、09 の 3 本、11・15・19・20・21 の 4 本ずつ、16 の 1 本、26 の 3 本、
     ///   27 の 4 本、28 の 3 本と、一覧に無い 28 の石ころ、17 の 1 本、30 の 4 本）と、拾える物・手に持つ見た目のプレハブ
     /// - 召喚で呼び出す置物（Prefabs/Items/Summons/。木の人形はプリミティブ、石像・古代兵・英霊は Blink の人型を Kevin の構えの姿勢で焼いたメッシュ）と、
     ///   治癒持続で投げる種（Projectile_HealSeed）
@@ -55,6 +56,8 @@ namespace TpsDungeon.Items.Editor
         public const string ShieldTypePath = WeaponsFolder + "/WeaponType_27_Shield.asset";
         public const string ThrowTypePath = WeaponsFolder + "/WeaponType_28_Throw.asset";
         public const string HealFieldTypePath = WeaponsFolder + "/WeaponType_17_HealField.asset";
+        public const string BlessingTypePath = WeaponsFolder + "/WeaponType_15_DamageReduction.asset";
+        public const string HealTypePath = WeaponsFolder + "/WeaponType_16_Heal.asset";
         public const string SummonTypePath = WeaponsFolder + "/WeaponType_30_Summon.asset";
         public const string SummonsFolder = Gen.PrefabsFolder + "/Summons";
         public const string HealSeedPrefabPath = Gen.PrefabsFolder + "/Projectile_HealSeed.prefab";
@@ -101,6 +104,14 @@ namespace TpsDungeon.Items.Editor
         public const string SummonCircleEffectPath = HovlPrefabs + "Magic circles/Magic circle.prefab";
         public const string SmokePuffEffectPath = HovlPrefabs + "Smoke effects/Smoke puff.prefab";
         public const string HealingCircleEffectPath = HovlPrefabs + "Magic circles/Healing circle.prefab";
+        // 加護の膜（ダメージ軽減の杖。種類ごとに色を変える: 被ダメージ軽減は青、クリティカル倍率は赤、状態異常耐性は黄）と、掛けた瞬間に相手に出す光（ダメージ軽減は Buff、治癒は Healing）。
+        public const string DamageReductionShieldEffectPath = HovlPrefabs + "Magic shields/Magic shield blue.prefab";
+        public const string CritMultiplierShieldEffectPath = HovlPrefabs + "Magic shields/Magic shield pink.prefab";
+        // Hovl に赤い膜は無いので、桃色の膜の粒の色を赤に替えた物を作る（Effect_ShieldRed）。
+        public const string RedShieldPrefabPath = Gen.PrefabsFolder + "/Effect_ShieldRed.prefab";
+        public const string AilmentResistanceShieldEffectPath = HovlPrefabs + "Magic shields/Magic shield yellow.prefab";
+        public const string BlessingHitEffectPath = HovlPrefabs + "Character auras/Buff.prefab";
+        public const string HealBurstEffectPath = HovlPrefabs + "Character auras/Healing.prefab";
         // 炎の粒の絵（煙の柔らかい塊を、色を時間で変えて炎に見せる）と、火の粉の点。
         private const string FlameMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Smoke26.mat";
         private const string EmberMaterialPath = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/Point.mat";
@@ -131,6 +142,7 @@ namespace TpsDungeon.Items.Editor
         public const string SeedThrowSoundPath = ArmsSounds + "手裏剣を投げる.mp3";
         public const string HealSoundPath = ArmsSounds + "回復魔法1.mp3";
         public const string SummonSoundPath = ArmsSounds + "パワーアップ.mp3";
+        public const string BlessingSoundPath = ArmsSounds + "スピードアップ.mp3";
         // 投げた物が壁や床に当たった音。
         public const string ThrownStickSoundPath = ArmsSounds + "雪玉をぶつける.mp3";
         // 「ハンマーを叩きつける音」は調達済みだが未取り込み。届いたらここだけ差し替える。振りと命中（着弾）の両方に使う。
@@ -224,6 +236,20 @@ namespace TpsDungeon.Items.Editor
             public bool Flip;
             /// <summary>手に持つ見た目の先（Length − Grip の高さ）に "Tip" を置く（杖）。</summary>
             public bool StaffTip;
+            /// <summary>ダメージ軽減の杖が張る加護の種類。</summary>
+            public BlessingKind BlessingKind;
+            /// <summary>素材の発光の色（宝石の色）をこの色に替える（HDR）。null なら素材のまま。発光マップのある素材（Wand_Epic）に使う。</summary>
+            public Color? GemGlow;
+            /// <summary>先の飾りの内側に、この色で光る玉を足す（世界樹の枝杖）。null なら足さない。</summary>
+            public Color? Orb;
+            /// <summary>玉の位置を、見つけた内側の真ん中からずらす量（m）と、玉の直径（m）。</summary>
+            public Vector3 OrbOffset;
+            public float OrbSize = 0.06f;
+            /// <summary>
+            /// ユニークの光を、地の絵のこの色相の範囲（0〜1）の所だけに付ける（発光マップの無い素材の宝石を光らせる）。
+            /// null なら明るく色の濃い所（金の飾りなど）を光らせる。
+            /// </summary>
+            public Vector2? GlowHue;
             /// <summary>絵を撮るとき裏返す（盾は素材の -Z が裏の持ち手なので、表を撮るために回す）。</summary>
             public bool IconBackside;
             /// <summary>ユニークに必ず付くエンチャント。同じ種類を並べた数が段。UniqueEnchantments.csv が無いときに書き出す元で、正は CSV。</summary>
@@ -301,6 +327,8 @@ namespace TpsDungeon.Items.Editor
                 [ShieldTypePath] = WriteShieldType(enchantments, roll),
                 [ThrowTypePath] = WriteThrowType(enchantments, roll, ring),
                 [HealFieldTypePath] = WriteHealFieldType(enchantments, roll, ring, WriteHealSeedPrefab(ring)),
+                [BlessingTypePath] = WriteBlessingType(enchantments, roll, ring, WriteRedShieldPrefab()),
+                [HealTypePath] = WriteHealType(enchantments, roll, ring),
                 [SummonTypePath] = WriteSummonType(enchantments, roll, ring),
             };
 
@@ -519,9 +547,37 @@ namespace TpsDungeon.Items.Editor
             {
                 Id = "Weapon_WorldTreeBranchStaff", Name = "世界樹の枝杖", Rank = WeaponRank.B, Strength = 30f,
                 Description = "落ちた場所に根を張り、周囲を緑の加護で満たす。",
-                TypePath = HealFieldTypePath, ModelPath = LowPolyWeapons + "Wand_Medium.prefab", Length = WandLength, Grip = WandGrip, StaffTip = true,
+                TypePath = HealFieldTypePath, ModelPath = StylizedStaves + "Staff4_1_1.prefab", Length = WandLength, Grip = WandGrip, StaffTip = true,
                 Blade = new Color32(120, 160, 80, 255), Hilt = new Color32(100, 70, 40, 255),
+                // 三日月の枝の杖（Staff4）を片手杖の長さにし、三日月の内側に緑に光る玉を抱かせる（位置と大きさは見て合わせた）。
+                Orb = new Color(0.08f, 1.3f, 0.18f, 1f), OrbOffset = new Vector3(0.01f, -0.008f, -0.004f), OrbSize = 0.06f,
             };
+
+            // 15 ダメージ軽減（片手杖）。杖ごとに加護の種類が 1 つで、膜の色と杖の玉の色で見分ける。強さ × 武器種の種類ごとの係数が効き目。
+            // 強さはどの種類も効き目の % と読む（係数 0.01）。
+            //   守護（青い玉の Wand_Basic）… 被ダメージ −強さ%   聖印（黄色い玉の Wand_Epic）… 状態異常耐性 強さ%
+            //   血走り（Wand_Epic の玉を赤に）… クリティカル倍率に (1 ＋ 強さ%) を掛ける
+            // 不壊の聖杖は守護の杖に固定エンチャントを付けた物（見た目は守護と同じ形を光らせる）。固定エンチャントは「並び立つ者すべてを長く」に合わせて
+            // 数・持続時間（段は UniqueEnchantments.csv が正。数 4 段で 7 人、持続時間 5 段で 2 倍）。
+            yield return Blessing("Weapon_GuardianStaff", "守護の杖", WeaponRank.D, 20f, "掲げると、仲間の身を青い光の膜が包む。",
+                BlessingKind.DamageReduction, LowPolyWeapons + "Wand_Basic.prefab");
+            yield return Blessing("Weapon_HolySealScepter", "聖印の錫杖", WeaponRank.B, 80f, "刻まれた聖印が、仲間を災いから遠ざける。",
+                BlessingKind.AilmentResistance, LowPolyWeapons + "Wand_Epic.prefab");
+            var bloodrush = Blessing("Weapon_BloodrushStaff", "血走りの杖", WeaponRank.A, 100f, "膜に包まれた者は、敵の急所を見抜く目を得る。",
+                BlessingKind.CritMultiplier, LowPolyWeapons + "Wand_Epic.prefab");
+            bloodrush.GemGlow = new Color(2.4f, 0.12f, 0.1f, 1f);
+            yield return bloodrush;
+            var unbreakable = Blessing("Weapon_UnbreakableHolyStaff", "不壊の聖杖", WeaponRank.Unique, 20f, "その加護は、並び立つ者すべてを長く包み込む。",
+                BlessingKind.DamageReduction, LowPolyWeapons + "Wand_Basic.prefab",
+                EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount, EnchantmentKind.Duration);
+            // Wand_Basic は発光マップが無く、青い玉は暗いので、ユニークの光は青い玉の所に、玉と同じ青で付ける。
+            unbreakable.GlowHue = new Vector2(0.5f, 0.72f);
+            unbreakable.Glow = new Color(0.35f, 1.1f, 3.4f, 1f);
+            yield return unbreakable;
+
+            // 16 治癒（片手杖）。強さは 1 人への回復量。見た目は緑の玉の Wand_Medium。
+            yield return Wand("Weapon_HealingStaff", "癒しの杖", WeaponRank.D, 25f, "振るうと、傷ついた仲間に癒しの光が降りる。",
+                HealTypePath, LowPolyWeapons + "Wand_Medium.prefab", StaffSkin.None);
 
             // 30 召喚。強さはおとりの体力の元（× 武器種の係数）。持つ見た目と置物は仮。
             // ユニークの固定エンチャント（数 ×2・持続時間 ×1）は仮。「軍勢が」に合わせて 3 体呼ぶ。
@@ -592,6 +648,25 @@ namespace TpsDungeon.Items.Editor
                 Blade = new Color32(120, 90, 60, 255), Hilt = new Color32(80, 55, 35, 255),
                 FixedEnchantments = fixedEnchantments, Skin = skin,
             };
+        }
+
+        /// <summary>片手杖（ダメージ軽減・治癒）。片手杖の長さ・握る所で持ち、先に Tip を置く。</summary>
+        private static WeaponSpec Wand(string id, string name, WeaponRank rank, float strength, string description, string typePath,
+            string modelPath, StaffSkin skin, params EnchantmentKind[] fixedEnchantments)
+        {
+            WeaponSpec spec = Staff(id, name, rank, strength, description, typePath, modelPath, skin, fixedEnchantments);
+            spec.Length = WandLength;
+            spec.Grip = WandGrip;
+            return spec;
+        }
+
+        /// <summary>ダメージ軽減の杖。kind の加護を張る。</summary>
+        private static WeaponSpec Blessing(string id, string name, WeaponRank rank, float strength, string description, BlessingKind kind,
+            string modelPath, params EnchantmentKind[] fixedEnchantments)
+        {
+            WeaponSpec spec = Wand(id, name, rank, strength, description, BlessingTypePath, modelPath, StaffSkin.None, fixedEnchantments);
+            spec.BlessingKind = kind;
+            return spec;
         }
 
         /// <summary>お守り・盾。真ん中を原点に置く（手のひらに真ん中が来る）。</summary>
@@ -1278,6 +1353,75 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
+        /// ダメージ軽減（15、片手杖）。右手に杖を持ち、腕を振り切る瞬間（押して 0.22 秒）に、20 m 以内の仲間（自分も含む）のうち
+        /// その杖の種類の加護が付いていない人から 3 ＋ 数 人をランダムに選んで、その色の膜を 12 秒張る（足りなければ残りの短い人を掛け直す）。
+        /// 種類と効き目: 被ダメージ軽減 −強さ%（8 割まで、青）・クリティカル倍率 ×(1 ＋ 強さ%)（赤）・状態異常耐性 強さ%（黄）。
+        /// 多重で 0.5 秒ずつ遅れて選び直してもう一度掛け、持続時間で長く続く。撃つ間隔 6 秒。値は仮。片手杖なので盾が効く。
+        /// </summary>
+        private static WeaponTypeDefinition WriteBlessingType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring, GameObject redShield)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(BlessingTypePath);
+            SerializedObject serialized = BeginType(type, "15", "ダメージ軽減", 7, true, new[]
+            {
+                EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振る）
+
+            WriteSupportCommon(serialized, RangedAttackKind.Buff, 6f, ring);
+            WriteAllySupport(serialized);
+            serialized.FindProperty("supportDuration").floatValue = 12f;
+            serialized.FindProperty("damageReductionPerStrength").floatValue = 0.01f;
+            serialized.FindProperty("maxDamageReduction").floatValue = 0.8f;
+            serialized.FindProperty("critMultiplierPerStrength").floatValue = 0.01f;
+            serialized.FindProperty("ailmentResistancePerStrength").floatValue = 0.01f;
+            // Magic shield は足元に置く作りで、直径 2.8 m の球が 1 m 上に出る。キャラ（約 1.8 m）を包むくらいに縮める（直径 2.2 m、中心 0.8 m）。
+            serialized.FindProperty("damageReductionEffect").objectReferenceValue = LoadEffect(DamageReductionShieldEffectPath);
+            serialized.FindProperty("critMultiplierEffect").objectReferenceValue = redShield;
+            serialized.FindProperty("ailmentResistanceEffect").objectReferenceValue = LoadEffect(AilmentResistanceShieldEffectPath);
+            serialized.FindProperty("blessingEffectScale").floatValue = 0.8f;
+            serialized.FindProperty("supportHitEffect").objectReferenceValue = LoadEffect(BlessingHitEffectPath);
+            serialized.FindProperty("supportHitEffectScale").floatValue = 1f;
+            serialized.FindProperty("healSound").objectReferenceValue = LoadSound(BlessingSoundPath);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>
+        /// 治癒（16、片手杖）。ダメージ軽減と同じく、腕を振り切る瞬間に 20 m 以内の仲間（自分も含む）から体力の割合の低い順
+        /// （同じなら体力の少ない順）に 3 ＋ 数 人を選んで、強さ ×（1 ＋ 回復量増加）だけすぐ回復する。誰も減っていなくても選んで見た目と音は出す。
+        /// 多重で 0.5 秒ずつ遅れて選び直してもう一度回復する。撃つ間隔 3 秒。値は仮。片手杖なので盾が効く。
+        /// </summary>
+        private static WeaponTypeDefinition WriteHealType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
+            EnchantmentRollSettings roll, Material ring)
+        {
+            var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HealTypePath);
+            SerializedObject serialized = BeginType(type, "16", "治癒", 7, true, new[]
+            {
+                EnchantmentKind.HealUp, EnchantmentKind.Multishot, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
+            }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振る）
+
+            WriteSupportCommon(serialized, RangedAttackKind.Heal, 3f, ring);
+            WriteAllySupport(serialized);
+            // Healing は足元から大きな煙と光が立つ素材。足元に収まるくらいに縮める。
+            serialized.FindProperty("supportHitEffect").objectReferenceValue = LoadEffect(HealBurstEffectPath);
+            serialized.FindProperty("supportHitEffectScale").floatValue = 0.6f;
+            serialized.FindProperty("healSound").objectReferenceValue = LoadSound(HealSoundPath);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return type;
+        }
+
+        /// <summary>ダメージ軽減・治癒に共通の値。狙わずに近くの仲間を選ぶので、仲間の AI が「届く」と見る距離も相手を探す距離に揃える。</summary>
+        private static void WriteAllySupport(SerializedObject serialized)
+        {
+            serialized.FindProperty("aimMaxDistance").floatValue = 20f;
+            serialized.FindProperty("supportRange").floatValue = 20f;
+            serialized.FindProperty("supportRepeatInterval").floatValue = 0.5f;
+            serialized.FindProperty("supportTargetCount").intValue = 3;
+            serialized.FindProperty("healSoundVolume").floatValue = 0.8f;
+            serialized.FindProperty("swingSound").objectReferenceValue = null;
+        }
+
+        /// <summary>
         /// 治癒持続・召喚に共通の値。遠距離の欄を使うが敵には当てないので、矢・命中・弓の音は外し、基礎攻撃力も足さない。
         /// 右手で持ち、投擲と同じく腕を振り切る瞬間に放つ。照準へは体の前を向ける。
         /// </summary>
@@ -1716,6 +1860,41 @@ namespace TpsDungeon.Items.Editor
         /// 範囲連置の 1 列の見た目。Hovl の Crystals front attack のバリアントで、根の粒を 7 つの扇から +X へまっすぐ 1 つにする
         /// （根の粒が通り道に結晶・煙・石を残す作りはそのまま）。列の長さへの伸び縮みは RangedAttacker が出すときにやる。
         /// </summary>
+        /// <summary>
+        /// 赤い膜（クリティカル倍率の加護）。Hovl の桃色の膜を元に、粒の色（色は粒の開始色だけで付いていて、材質は白）の色相を赤に替え、鮮やかにする。
+        /// 明るさと透明度は元のまま。
+        /// </summary>
+        private static GameObject WriteRedShieldPrefab()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(CritMultiplierShieldEffectPath);
+            if (source == null)
+            {
+                Debug.LogWarning($"桃色の膜の素材が無い: {CritMultiplierShieldEffectPath}（クリティカル倍率の膜は出ない）");
+                return null;
+            }
+
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            try
+            {
+                instance.name = "Effect_ShieldRed";
+                foreach (ParticleSystem particles in instance.GetComponentsInChildren<ParticleSystem>())
+                {
+                    ParticleSystem.MainModule main = particles.main;
+                    Color c = main.startColor.color;
+                    Color.RGBToHSV(c, out _, out float sat, out float val);
+                    Color red = Color.HSVToRGB(0f, Mathf.Max(sat, 0.85f), val);
+                    red.a = c.a;
+                    main.startColor = red;
+                }
+
+                return PrefabUtility.SaveAsPrefabAsset(instance, RedShieldPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
         private static GameObject WriteCrystalLinePrefab()
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(CrystalsFrontAttackPath);
@@ -2136,6 +2315,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;
             serialized.FindProperty("thrownBounces").boolValue = spec.ThrownBounces;
             serialized.FindProperty("summonModel").objectReferenceValue = spec.SummonModel;
+            serialized.FindProperty("blessingKind").enumValueIndex = (int)spec.BlessingKind;
             if (spec.Rank == WeaponRank.Unique) DefaultUniqueEnchantments.Add((spec.Id, spec.FixedEnchantments));
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -2224,6 +2404,8 @@ namespace TpsDungeon.Items.Editor
                 // 塗り替える杖（氷杖）はユニークの光も塗り替えの中で付ける（結晶だけを光らせる）。
                 if (spec.Skin != StaffSkin.None) Reskin(parent, spec, material);
                 else if (spec.Glow.HasValue) Glow(parent, spec, material);
+                else if (spec.GemGlow.HasValue) RecolorGem(parent, spec, material);
+                if (spec.Orb.HasValue) AddOrb(parent, spec, material);
                 return;
             }
 
@@ -2233,6 +2415,88 @@ namespace TpsDungeon.Items.Editor
             Gen.Part(parent, PrimitiveType.Cube, hilt, new Vector3(0f, 0.17f, 0f), new Vector3(0.2f, 0.03f, 0.04f));
             Gen.Part(parent, PrimitiveType.Cube, blade, new Vector3(0f, 0.17f + (spec.Length - 0.17f) * 0.5f, 0f),
                 new Vector3(0.06f, spec.Length - 0.17f, 0.012f));
+        }
+
+        /// <summary>
+        /// 素材のマテリアルのうち発光するもの（宝石に発光マップの付いた Wand_Epic など）を複製し、発光の色を spec.GemGlow に替えたものに差し替える。
+        /// 宝石の色は発光の色で出ているので、地の絵は替えない。複製は Placeholder_{Id}_Gem{n}。
+        /// </summary>
+        private static void RecolorGem(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
+        {
+            var copies = new Dictionary<Material, Material>();
+            foreach (Renderer r in parent.GetComponentsInChildren<Renderer>())
+            {
+                Material[] shared = r.sharedMaterials;
+                for (int i = 0; i < shared.Length; i++)
+                {
+                    Material source = shared[i];
+                    if (source == null || !source.IsKeywordEnabled("_EMISSION")) continue;
+                    if (!copies.TryGetValue(source, out Material gem))
+                    {
+                        gem = material($"Placeholder_{spec.Id}_Gem{copies.Count}", Color.white);
+                        gem.shader = source.shader;
+                        gem.CopyPropertiesFromMaterial(source);
+                        gem.SetColor("_EmissionColor", spec.GemGlow.Value);
+                        gem.EnableKeyword("_EMISSION");
+                        gem.globalIlluminationFlags = EmissiveFlags;
+                        EditorUtility.SetDirty(gem);
+                        copies[source] = gem;
+                    }
+
+                    shared[i] = gem;
+                }
+
+                r.sharedMaterials = shared;
+            }
+        }
+
+        /// <summary>玉を置く所を探す、先から下への範囲（武器の長さに対する割合）。</summary>
+        private const float OrbRegion = 0.22f;
+
+        /// <summary>
+        /// 先の飾り（Staff4 の三日月）の内側に、spec.Orb の色で光る玉を足す。先から <see cref="OrbRegion"/> の範囲にある頂点の境界の真ん中に置く。
+        /// 三日月は輪を描いているので、そこが内側の空いた所になる。玉の材質は Placeholder_{Id}_Orb。
+        /// </summary>
+        private static void AddOrb(GameObject parent, WeaponSpec spec, Func<string, Color, Material> material)
+        {
+            Transform space = parent.transform;
+            float top = float.MinValue;
+            var points = new List<Vector3>();
+            foreach (MeshFilter filter in parent.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh == null) continue;
+                foreach (Vector3 v in filter.sharedMesh.vertices)
+                {
+                    Vector3 p = space.InverseTransformPoint(filter.transform.TransformPoint(v));
+                    points.Add(p);
+                    top = Mathf.Max(top, p.y);
+                }
+            }
+
+            if (points.Count == 0) return;
+
+            float floor = top - spec.Length * OrbRegion;
+            bool any = false;
+            var bounds = new Bounds();
+            foreach (Vector3 p in points)
+            {
+                if (p.y < floor) continue;
+                if (!any) bounds = new Bounds(p, Vector3.zero);
+                else bounds.Encapsulate(p);
+                any = true;
+            }
+
+            // 地の色は光の色を暗めにした物（光らせても白く飛ばず、緑のまま見えるように）。
+            Color glow = spec.Orb.Value;
+            float peak = Mathf.Max(glow.r, Mathf.Max(glow.g, glow.b));
+            Color baseColor = (peak > 1f ? glow / peak : glow) * 0.6f;
+            baseColor.a = 1f;
+            Material orb = material($"Placeholder_{spec.Id}_Orb", baseColor);
+            orb.SetColor("_EmissionColor", glow);
+            orb.EnableKeyword("_EMISSION");
+            orb.globalIlluminationFlags = EmissiveFlags;
+            EditorUtility.SetDirty(orb);
+            Gen.Part(parent, PrimitiveType.Sphere, orb, bounds.center + spec.OrbOffset, Vector3.one * spec.OrbSize);
         }
 
         /// <summary>
@@ -2262,7 +2526,7 @@ namespace TpsDungeon.Items.Editor
                             Texture baseMap = glow.HasProperty("_BaseMap") ? glow.GetTexture("_BaseMap") : null;
                             if (emissionMap == null && baseMap != null)
                             {
-                                emissionMap = GlowMask(spec.Id, copies.Count, baseMap);
+                                emissionMap = GlowMask(spec.Id, copies.Count, baseMap, spec.GlowHue);
                                 glow.SetTexture("_EmissionMap", emissionMap);
                             }
 
@@ -2373,12 +2637,15 @@ namespace TpsDungeon.Items.Editor
         /// <summary>暗い金属の飾りを、明るさを保ったまま金に塗る。</summary>
         private static Color Gilded(float v) => Color.HSVToRGB(0.11f, 0.65f, Mathf.Min(1f, 0.25f + v * 1.3f));
 
-        /// <summary>地の絵から、明るく色の濃い所（金の飾りや宝石）だけを白く抜いたユニークの光のマスク。</summary>
-        private static Texture2D GlowMask(string id, int index, Texture baseMap)
+        /// <summary>地の絵から、明るく色の濃い所（金の飾りや宝石）だけを白く抜いたユニークの光のマスク。hue を渡すとその色相の所だけを抜く。</summary>
+        private static Texture2D GlowMask(string id, int index, Texture baseMap, Vector2? hue)
         {
             return WriteTexture($"{id}_GlowMask{index}", baseMap, c =>
             {
-                Color.RGBToHSV(c, out _, out float s, out float v);
+                Color.RGBToHSV(c, out float h, out float s, out float v);
+                // 色相を決めたときは、その色の所（暗い宝石も）を光らせる。
+                if (hue.HasValue)
+                    return h >= hue.Value.x && h <= hue.Value.y ? Color.white * (Mathf.InverseLerp(0.25f, 0.5f, s) * Mathf.InverseLerp(0.1f, 0.35f, v)) : Color.black;
                 return Color.white * (Mathf.InverseLerp(0.3f, 0.6f, s) * Mathf.InverseLerp(0.45f, 0.8f, v));
             });
         }

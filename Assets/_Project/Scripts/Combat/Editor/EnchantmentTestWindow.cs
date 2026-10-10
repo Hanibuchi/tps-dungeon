@@ -16,7 +16,7 @@ namespace TpsDungeon.Combat.Editor
     /// 武器とエンチャントの組み合わせを手早く試す窓。
     ///   1. 武器を選び、その武器種に付けられるエンチャントの段を ± で決める（ランダムに振ることもできる。表に無い段も試せる）
     ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージ、弓の矢の数や雨の刻みなど）がその場で出る
-    ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（段を変えたら自動で持たせ直せる）
+    ///   3. Play 中は「持たせる」で、操作しているキャラ（パーティーの先頭）の選んでいるホットバーの枠へその武器を入れる（段を変えたら自動で持たせ直せる）
     ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃・雨に分けて記録し、実測の DPS を出す（近接も遠距離も）
     /// ゲーム側には何も足さない（的と持ち物は Play を止めれば消える）。
     /// </summary>
@@ -271,7 +271,7 @@ namespace TpsDungeon.Combat.Editor
                 return;
             }
 
-            if (type.IsSummon || type.IsHealField)
+            if (type.IsSummon || type.IsHealField || type.TargetsAllies)
             {
                 RangedWeaponStats support = weapon.ComputeRangedStats(totals, characterAttack, critChance, critMultiplier);
                 EditorGUILayout.HelpBox(SupportPreviewText(weapon, support), MessageType.None);
@@ -355,7 +355,7 @@ namespace TpsDungeon.Combat.Editor
             return text.ToString().TrimEnd();
         }
 
-        /// <summary>召喚・治癒持続（敵を傷つけない武器種）の値。</summary>
+        /// <summary>召喚・治癒持続・ダメージ軽減・治癒（敵を傷つけない武器種）の値。</summary>
         private static string SupportPreviewText(WeaponDefinition weapon, RangedWeaponStats stats)
         {
             WeaponTypeDefinition type = weapon.WeaponType;
@@ -367,6 +367,14 @@ namespace TpsDungeon.Combat.Editor
                                 + $"　居る時間 {stats.SummonDuration:0.#} 秒");
                 text.AppendLine($"おとりの体力: 1 体 {ItemInstance.SummonHealth(weapon)}（強さ × {type.SummonHealthPerStrength:0.#}。敵の攻撃はまだ無い）");
                 text.AppendLine($"呼び直しの待ち: {stats.FireInterval:0.00} 秒（呼び直すと前の分は消える）");
+            }
+            else if (type.TargetsAllies)
+            {
+                if (type.IsBuff)
+                    text.AppendLine($"加護（{ItemInstance.BlessingName(stats.BlessingKind)}）: {BlessingValue(stats)}　続く時間 {stats.BlessingDuration:0.#} 秒");
+                else text.AppendLine($"回復量: 1 人 {stats.HealAmount}");
+                text.AppendLine($"相手: {stats.TargetCount} 人（{type.SupportRange:0.#} m 以内の仲間から）× {volleys} 回（{type.SupportRepeatInterval:0.##} 秒ずつ遅れて選び直す）"
+                                + $"　撃つ間隔 {stats.FireInterval:0.00} 秒");
             }
             else
             {
@@ -381,6 +389,13 @@ namespace TpsDungeon.Combat.Editor
             text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}");
             return text.ToString().TrimEnd();
         }
+
+        private static string BlessingValue(RangedWeaponStats stats) => stats.BlessingKind switch
+        {
+            BlessingKind.DamageReduction => $"被ダメージ −{stats.BlessingAmount * 100f:0.#}%",
+            BlessingKind.CritMultiplier => $"クリティカル倍率 +{stats.BlessingAmount * 100f:0.#}%",
+            _ => $"状態異常耐性 {stats.BlessingAmount * 100f:0.#}%",
+        };
 
         private static string RangedPreviewText(WeaponTypeDefinition type, RangedWeaponStats stats, float characterAttack, bool fromPlayer)
         {
@@ -695,6 +710,15 @@ namespace TpsDungeon.Combat.Editor
             Repaint();
         }
 
-        private static MeleeAttacker FindAttacker() => Object.FindAnyObjectByType<MeleeAttacker>();
+        /// <summary>
+        /// 操作しているキャラ（パーティーの先頭）の攻撃の役。仲間も同じ攻撃の役を持つので、シーンから最初に見つかった物では仲間に当たることがある。
+        /// パーティーが居ないシーン（1 人だけのテストなど）では、シーンに居る 1 人を使う。
+        /// </summary>
+        private static MeleeAttacker FindAttacker()
+        {
+            GameObject leader = PartyRoster.Leader;
+            if (leader != null) return leader.GetComponent<MeleeAttacker>();
+            return Object.FindAnyObjectByType<MeleeAttacker>();
+        }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TpsDungeon.Player;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -32,6 +33,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("召喚の武器種で呼び出す置物（当たり判定の無い見た目）。召喚でなければ使わない。")]
         private GameObject summonModel;
 
+        [SerializeField, Tooltip("ダメージ軽減の武器種で張る加護の種類（膜の色もこれで決まる）。ダメージ軽減でなければ使わない。")]
+        private BlessingKind blessingKind;
+
         [SerializeField, Tooltip("ユニークに必ず付くエンチャントの種類と段（ユニークは振らない）。正は CSV（Items/Weapons/UniqueEnchantments.csv）で、保存すると取り込まれてここが書き換わる。ユニーク以外では使わない。")]
         private List<FixedEnchantmentEntry> fixedEnchantments = new List<FixedEnchantmentEntry>();
 
@@ -42,6 +46,7 @@ namespace TpsDungeon.Items
         public float ThrownSpinRate => thrownSpinRate;
         public bool ThrownBounces => thrownBounces;
         public GameObject SummonModel => summonModel;
+        public BlessingKind BlessingKind => blessingKind;
         public IReadOnlyList<FixedEnchantmentEntry> FixedEnchantments => fixedEnchantments;
 
         /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>
@@ -81,7 +86,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
-        /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
+        /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続・ダメージ軽減・治癒）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。
         /// </summary>
         public RangedWeaponStats ComputeRangedStats(EnchantmentTotals enchantments, float characterAttack,
             Func<float, float> critChanceModifier = null, Func<float, float> critMultiplierModifier = null)
@@ -99,6 +104,12 @@ namespace TpsDungeon.Items
                 HealDuration = weaponType != null ? weaponType.HealDuration : 0f,
                 HealTickInterval = weaponType != null ? weaponType.HealTickInterval : 0f,
                 SummonDuration = weaponType != null ? weaponType.SummonDuration : 0f,
+                BlessingDuration = weaponType != null ? weaponType.BlessingDuration : 0f,
+                BlessingKind = blessingKind,
+                SupportTargetCount = weaponType != null ? weaponType.SupportTargetCount : 0,
+                BlessingPerStrength = weaponType != null ? weaponType.BlessingPerStrength(blessingKind) : 0f,
+                BlessingCap = weaponType != null ? weaponType.BlessingCap(blessingKind) : 0f,
+                InstantHeal = weaponType != null && weaponType.IsHeal,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

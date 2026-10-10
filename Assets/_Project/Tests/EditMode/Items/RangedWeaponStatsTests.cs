@@ -1,8 +1,9 @@
 using NUnit.Framework;
+using TpsDungeon.Player;
 
 namespace TpsDungeon.Items.Tests
 {
-    /// <summary>遠距離武器（弓・持続弓・炎の杖・治癒持続・召喚）の数値（DPS からの 1 発の逆算、雨と炎と治癒の刻み、置物の居る時間、エンチャント）を確かめる。</summary>
+    /// <summary>遠距離武器（弓・持続弓・炎の杖・治癒持続・召喚・ダメージ軽減・治癒）の数値（DPS からの 1 発の逆算、雨と炎と治癒の刻み、置物の居る時間、加護、エンチャント）を確かめる。</summary>
     public sealed class RangedWeaponStatsTests
     {
         private static RangedWeaponStats Bow(float strength, EnchantmentTotals enchantments = null, float characterAttack = 0f)
@@ -74,6 +75,38 @@ namespace TpsDungeon.Items.Tests
                 Strength = 40f,
                 FireInterval = 8f,
                 SummonDuration = 12f,
+                Enchantments = enchantments,
+            });
+        }
+
+        // ダメージ軽減の仮の値: 撃つ間隔 6 秒、加護は 12 秒、3 人に掛ける。既定は被ダメージ軽減（強さ 1 で −1%、8 割まで）。
+        private static RangedWeaponStats Blessing(float strength, EnchantmentTotals enchantments = null,
+            BlessingKind kind = BlessingKind.DamageReduction, float perStrength = 0.01f, float cap = 0.8f)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttack = 50f,
+                FireInterval = 6f,
+                BlessingDuration = 12f,
+                BlessingKind = kind,
+                BlessingPerStrength = perStrength,
+                BlessingCap = cap,
+                SupportTargetCount = 3,
+                Enchantments = enchantments,
+            });
+        }
+
+        // 治癒の仮の値: 撃つ間隔 3 秒。強さは 1 人への回復量。
+        private static RangedWeaponStats InstantHeal(float strength, EnchantmentTotals enchantments = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttack = 50f,
+                FireInterval = 3f,
+                InstantHeal = true,
+                SupportTargetCount = 3,
                 Enchantments = enchantments,
             });
         }
@@ -314,6 +347,57 @@ namespace TpsDungeon.Items.Tests
         {
             Assert.AreEqual(0f, Bow(100f).SummonDuration);
             Assert.IsFalse(Bow(100f).IsSupport);
+        }
+    
+        [Test]
+        public void 加護は強さに種類の係数を掛けた効き目で_持続時間で長く続く()
+        {
+            RangedWeaponStats stats = Blessing(20f);
+            Assert.AreEqual(BlessingKind.DamageReduction, stats.BlessingKind);
+            Assert.AreEqual(0.2f, stats.BlessingAmount, 1e-5f);
+            RangedWeaponStats crit = Blessing(100f, kind: BlessingKind.CritMultiplier, perStrength: 0.01f, cap: float.MaxValue);
+            Assert.AreEqual(BlessingKind.CritMultiplier, crit.BlessingKind);
+            Assert.AreEqual(1f, crit.BlessingAmount, 1e-5f);
+            Assert.AreEqual(12f, stats.BlessingDuration, 1e-5f);
+            Assert.AreEqual(15f, Blessing(20f, With(EnchantmentKind.Duration, 0.25f)).BlessingDuration, 1e-5f);
+            Assert.IsTrue(stats.IsSupport);
+            Assert.AreEqual(0f, stats.AverageDps);
+        }
+
+        [Test]
+        public void 加護の値は上限で止まる()
+        {
+            Assert.AreEqual(0.8f, Blessing(100f).BlessingAmount, 1e-5f);
+            Assert.AreEqual(1f, Blessing(150f, kind: BlessingKind.AilmentResistance, perStrength: 0.01f, cap: 1f).BlessingAmount, 1e-5f);
+        }
+
+        [Test]
+        public void ダメージ軽減と治癒は武器種の人数と数の人数に掛け_多重と速射が効く()
+        {
+            Assert.AreEqual(3, Blessing(20f).TargetCount);
+            Assert.AreEqual(5, Blessing(20f, With(EnchantmentKind.ProjectileCount, 1f, 2)).TargetCount);
+            Assert.AreEqual(3, InstantHeal(25f).TargetCount);
+            Assert.AreEqual(2, InstantHeal(25f, With(EnchantmentKind.Multishot, 1f, 2)).MultishotCount);
+            Assert.AreEqual(3f / 1.5f, InstantHeal(25f, With(EnchantmentKind.RapidFire, 0.5f)).FireInterval, 1e-5f);
+        }
+
+        [Test]
+        public void 治癒は強さを1人への回復量と読み_回復量増加を掛ける()
+        {
+            Assert.AreEqual(25, InstantHeal(25f).HealAmount);
+            Assert.AreEqual(30, InstantHeal(25f, With(EnchantmentKind.HealUp, 0.2f)).HealAmount);
+            Assert.AreEqual(25, InstantHeal(25f, With(EnchantmentKind.DamageUp, 0.5f)).HealAmount, "ダメージ増加は効かない");
+            Assert.IsTrue(InstantHeal(25f).IsSupport);
+            Assert.AreEqual(0f, InstantHeal(25f).AverageDps);
+        }
+
+        [Test]
+        public void 加護を張らない武器種では加護も治癒も0()
+        {
+            Assert.AreEqual(0f, Bow(100f).BlessingDuration);
+            Assert.AreEqual(0f, Bow(100f).BlessingAmount);
+            Assert.AreEqual(0, Bow(100f).HealAmount);
+            Assert.AreEqual(0, Heal(30f).HealAmount, "治癒持続は刻みで回復するので、すぐの回復量は 0");
         }
     }
 }

@@ -59,6 +59,14 @@ weaponType,kind,E,D,C,B,A,S
 11,Duration,,1,2,3,4,5
 11,ProjectileCount,,,,1,2,4
 11,RapidFire,,1,2,3,4,5
+15,Multishot,,,,1,2,4
+15,Duration,,1,2,3,4,5
+15,ProjectileCount,,,,1,2,4
+15,RapidFire,,1,2,3,4,5
+16,HealUp,1,2,3,4,5,
+16,Multishot,,,,1,2,4
+16,ProjectileCount,,,,1,2,4
+16,RapidFire,,1,2,3,4,5
 17,HealUp,1,2,3,4,5,
 17,Multishot,,,,1,2,4
 17,Duration,,1,2,3,4,5

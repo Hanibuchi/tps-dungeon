@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// 遠距離武器を持っている間だけ、TPS カメラ（CinemachineThirdPersonFollow）を右へ寄せる。
+    /// 遠距離武器（カメラの狙いに体を合わせる物。仲間へ掛ける支援の杖は除く）を持っている間だけ、TPS カメラ（CinemachineThirdPersonFollow）を右へ寄せる。
     /// 普段のカメラは体のほぼ真後ろ（右へ 0.2 m）にあり、右肩が照準のすぐ手前に来るので、手から照準へ飛ぶ弾の出だしが体に隠れる。
     /// 寄せる量は ShoulderOffset と CameraSide から出る横のずれ（m）で決め、CameraSide を書き換えてなめらかに移す。
     /// 持ち替えて遠距離武器でなくなったら、シーンに置いたときの CameraSide へ戻す。
@@ -44,7 +44,7 @@ namespace TpsDungeon.Combat
             if (Mathf.Approximately(shoulder, 0f)) return;
 
             float current = Mathf.Lerp(-shoulder, shoulder, follow.CameraSide);
-            float target = ranged.HeldWeapon != null ? rangedSideOffset : Mathf.Lerp(-shoulder, shoulder, baseCameraSide);
+            float target = ranged.HeldWeapon != null && ranged.HeldWeapon.WeaponType.AimsWithCamera ? rangedSideOffset : Mathf.Lerp(-shoulder, shoulder, baseCameraSide);
             float next = Mathf.MoveTowards(current, target, sideChangeSpeed * Time.deltaTime);
             follow.CameraSide = Mathf.InverseLerp(-shoulder, shoulder, next);
         }
