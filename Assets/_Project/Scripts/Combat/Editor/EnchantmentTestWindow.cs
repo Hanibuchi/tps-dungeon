@@ -16,7 +16,7 @@ namespace TpsDungeon.Combat.Editor
     /// 武器とエンチャントの組み合わせを手早く試す窓。
     ///   1. 武器を選び、その武器種に付けられるエンチャントの段を ± で決める（ランダムに振ることもできる。表に無い段も試せる）
     ///   2. 数値の見込み（段ごとの 1 撃・DPS・範囲・叩きつけの数や追撃のダメージ、弓の矢の数や雨の刻みなど）がその場で出る
-    ///   3. Play 中は「持たせる」で、選んでいるホットバーの枠へその武器を入れる（段を変えたら自動で持たせ直せる）
+    ///   3. Play 中は「持たせる」で、操作しているキャラ（パーティーの先頭）の選んでいるホットバーの枠へその武器を入れる（段を変えたら自動で持たせ直せる）
     ///   4. 前方に硬い的を並べ、当てたダメージを本撃・爆発・追撃・雨に分けて記録し、実測の DPS を出す（近接も遠距離も）
     /// ゲーム側には何も足さない（的と持ち物は Play を止めれば消える）。
     /// </summary>
@@ -704,6 +704,15 @@ namespace TpsDungeon.Combat.Editor
             Repaint();
         }
 
-        private static MeleeAttacker FindAttacker() => Object.FindAnyObjectByType<MeleeAttacker>();
+        /// <summary>
+        /// 操作しているキャラ（パーティーの先頭）の攻撃の役。仲間も同じ攻撃の役を持つので、シーンから最初に見つかった物では仲間に当たることがある。
+        /// パーティーが居ないシーン（1 人だけのテストなど）では、シーンに居る 1 人を使う。
+        /// </summary>
+        private static MeleeAttacker FindAttacker()
+        {
+            GameObject leader = PartyRoster.Leader;
+            if (leader != null) return leader.GetComponent<MeleeAttacker>();
+            return Object.FindAnyObjectByType<MeleeAttacker>();
+        }
     }
 }
