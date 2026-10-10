@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// プレイヤーの入力を MeleeAttacker（と、あれば RangedAttacker）に渡す。攻撃キーの押下 → PressAttack、ホットバーで選んでいる物 → Equip、
+    /// プレイヤーの入力を MeleeAttacker（と、あれば RangedAttacker）に渡す。攻撃キーの押下（長押しの間は毎フレーム） → PressAttack、ホットバーで選んでいる物 → Equip、
     /// カメラの前 → AimForward、カメラの中心の線 → RangedAttacker.Aim、押している間 → RangedAttacker.AttackHeld（炎の杖が読む）。
     /// 押下は両方に渡し、今の武器を扱える方だけが攻撃する。
     /// 走る段（ダッシュ突き）で走っている間は、ThirdPersonController の歩きの速さを 0 にして（PlayerLocomotionSpeed.Locked）、入力で走りがぶれないようにする。
@@ -38,6 +38,7 @@ namespace TpsDungeon.Combat
         private PlayerInventory inventory;
         private InputAction attackAction;
         private Transform cameraTransform;
+        private bool holding;
 
         private PlayerLocomotionSpeed locomotion;
         private int framesSinceLunge = int.MaxValue;
@@ -81,6 +82,7 @@ namespace TpsDungeon.Combat
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             attackAction = null;
+            holding = false;
             SetLocomotionLocked(false);
         }
 
@@ -106,8 +108,11 @@ namespace TpsDungeon.Combat
             bool listening = attackAction != null && playerInput != null && attackAction.actionMap == playerInput.currentActionMap;
             if (ranged != null) ranged.AttackHeld = listening && attackAction.IsPressed();
 
-            bool pressed = listening && attackAction.WasPressedThisFrame();
-            if (!pressed) return;
+            // 長押しの間は毎フレーム押したことにする（近接は先行入力でコンボが続き、遠距離は待ちが明けるたびに撃つ）。
+            // メニューを閉じたときに押しっぱなしだったボタンで撃ち出さないよう、ゲーム中に押し始めたときだけ続ける。
+            if (!listening || !attackAction.IsPressed()) holding = false;
+            else if (attackAction.WasPressedThisFrame()) holding = true;
+            if (!holding) return;
 
             attacker.PressAttack();
             if (ranged != null) ranged.PressAttack();
