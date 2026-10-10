@@ -165,7 +165,7 @@ namespace TpsDungeon.Party
                 FollowerWeaponOption option = FollowerWeaponOption.From(hand[i], readyAt[i]);
                 WeaponTypeDefinition type = hand[i]?.Weapon != null ? hand[i].Weapon.WeaponType : null;
                 if (type != null && (type.IsHealField || type.IsHeal)) option.Usable = needHeal;
-                else if (type != null && type.IsBuff) option.Usable = SomeoneUnblessed(type.SupportRange);
+                else if (type != null && type.IsBuff) option.Usable = SomeoneUnblessed(type.SupportRange, hand[i].Weapon.BlessingKind);
                 options.Add(option);
             }
 
@@ -276,8 +276,8 @@ namespace TpsDungeon.Party
             return false;
         }
 
-        /// <summary>自分から range 以内に、加護の付いていない生きた仲間（自分も含む）が居るか。</summary>
-        private bool SomeoneUnblessed(float range)
+        /// <summary>自分から range 以内に、kind の加護が付いていない生きた仲間（自分も含む）が居るか。</summary>
+        private bool SomeoneUnblessed(float range, BlessingKind kind)
         {
             Party party = member != null ? member.Party : null;
             if (party == null) return false;
@@ -286,7 +286,7 @@ namespace TpsDungeon.Party
                 PlayerHealth health = m != null ? m.Health : null;
                 if (health == null || health.IsDead) continue;
                 if (Vector3.Distance(transform.position, health.transform.position) > range) continue;
-                if (!health.TryGetComponent(out CharacterBuffs buffs) || !buffs.HasBlessing) return true;
+                if (!health.TryGetComponent(out CharacterBuffs buffs) || !buffs.Has(kind)) return true;
             }
 
             return false;

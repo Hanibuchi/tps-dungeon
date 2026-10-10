@@ -27,8 +27,8 @@ namespace TpsDungeon.Combat
     ///            呼び直すと前の分は消える（持ち替えても残り、置いてから別の武器で戦える）。攻撃はしない
     ///   治癒持続 … 腕を振り切る瞬間に、狙いの線が当たった地面へ種を放物線で投げ、落ちた所に治癒の場を張って中の味方を刻みで回復する。
     ///            数で付近に場が増え、多重で同じ所にもう一度張り、サイズで広がる
-    ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうち加護の付いていない人から 1 ＋ 数 人をランダムに選び、
-    ///            加護の膜（被ダメージ軽減・クリティカル率・状態異常耐性）を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
+    ///   ダメージ軽減 … 腕を振り切る瞬間に、近くの仲間（自分も含む）のうちその杖の種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の加護が
+    ///            付いていない人から 1 ＋ 数 人をランダムに選び、その色の膜を張る。足りなければ残りの短い人を掛け直す。多重で選び直してもう一度。狙いは使わない
     ///   治癒   … 同じく、近くの体力が減っている仲間から 1 ＋ 数 人をランダムに選んですぐ回復する。多重で選び直してもう一度
     ///   炎     … 押している間、杖の先から照準へ炎を吐き、刻みごとに炎の円錐の中の敵にダメージ。決めた時間吐いたか離したら止まり、撃つ間隔 × 吐いた割合 だけ待つ。
     ///            サイズで太く、弾速で遠くまで届き、数で炎の筋が扇状に増え、ホーミングで筋が近くの敵へ曲がる
@@ -403,12 +403,12 @@ namespace TpsDungeon.Combat
                 critMultiplier = x => (float)modifiers.CritMultiplier.Apply(x);
             }
 
-            // 加護（ダメージ軽減の杖の膜）のクリティカル率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
-            float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritChanceBonus : 0f;
+            // 加護（血走りの杖の膜）のクリティカル倍率は、永続アップグレードの補正の後に足す。加護は掛けられたときに後から付く。
+            float blessingCrit = TryGetComponent(out CharacterBuffs buffs) ? buffs.CritMultiplierBonus : 0f;
             if (blessingCrit > 0f)
             {
-                Func<float, float> inner = critChance;
-                critChance = x => (inner != null ? inner(x) : x) + blessingCrit;
+                Func<float, float> inner = critMultiplier;
+                critMultiplier = x => (inner != null ? inner(x) : x) + blessingCrit;
             }
 
             EnchantmentTotals enchantments = held != null ? held.EnchantmentTotals() : new EnchantmentTotals();
@@ -768,7 +768,7 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// 範囲内の仲間（自分も含む）から 1 ＋ 数 人を選んで掛ける。
-        /// ダメージ軽減は加護の付いていない人からランダムに選び、足りなければ残りの短い人を掛け直す。治癒は体力が減っている人からランダムに選ぶ。
+        /// ダメージ軽減はその杖の種類の加護が付いていない人からランダムに選び、足りなければその種類の残りが短い人を掛け直す。治癒は体力が減っている人からランダムに選ぶ。
         /// </summary>
         private void CastSupport(WeaponTypeDefinition type, RangedWeaponStats shot)
         {
@@ -776,11 +776,12 @@ namespace TpsDungeon.Combat
             bool buff = type.IsBuff;
             CollectSupportPool(type.SupportRange, !buff);
             supportCandidates.Clear();
+            BlessingKind kind = shot.BlessingKind;
             foreach (PlayerHealth health in supportPool)
             {
                 CharacterBuffs buffs = buff ? health.GetComponent<CharacterBuffs>() : null;
-                bool blessed = buffs != null && buffs.HasBlessing;
-                supportCandidates.Add(new SupportCandidate { Fresh = !blessed, Remaining = blessed ? buffs.Remaining : 0f });
+                bool blessed = buffs != null && buffs.Has(kind);
+                supportCandidates.Add(new SupportCandidate { Fresh = !blessed, Remaining = blessed ? buffs.Remaining(kind) : 0f });
             }
 
             SupportTargeting.Pick(supportCandidates, shot.TargetCount, buff, supportRandom, supportPicks);
@@ -810,12 +811,11 @@ namespace TpsDungeon.Combat
 
         private void Bless(WeaponTypeDefinition type, RangedWeaponStats shot, PlayerHealth health)
         {
+            BlessingKind kind = shot.BlessingKind;
             CharacterBuffs buffs = CharacterBuffs.On(health.gameObject);
-            buffs.ApplyBlessing(shot.BlessingDamageReduction, shot.BlessingCritChance, shot.BlessingResistance, shot.BlessingDuration);
-            BlessingAura.Ensure(buffs, type.BlessingEffect, type.BlessingEffectScale);
-            if (logHits)
-                Debug.Log($"加護 → {health.name}: 被ダメージ −{shot.BlessingDamageReduction:P0}・クリティカル率 +{shot.BlessingCritChance:P1}・"
-                          + $"状態異常耐性 {shot.BlessingResistance:P0}（{shot.BlessingDuration:0.#} 秒）", health);
+            buffs.Apply(kind, shot.BlessingAmount, shot.BlessingDuration);
+            BlessingAura.Ensure(buffs, kind, type.BlessingEffect(kind), type.BlessingEffectScale);
+            if (logHits) Debug.Log($"加護 → {health.name}: {kind} {shot.BlessingAmount:0.###}（{shot.BlessingDuration:0.#} 秒）", health);
         }
 
         /// <summary>

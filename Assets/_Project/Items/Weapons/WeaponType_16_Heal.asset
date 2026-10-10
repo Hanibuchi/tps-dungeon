@@ -164,11 +164,13 @@ MonoBehaviour:
   supportRange: 20
   supportDuration: 12
   supportRepeatInterval: 0.5
-  blessingDamageReductionPerStrength: 0.01
-  blessingMaxDamageReduction: 0.8
-  blessingCritChancePerStrength: 0.005
-  blessingResistancePerStrength: 0.02
-  blessingEffect: {fileID: 0}
+  damageReductionPerStrength: 0.01
+  maxDamageReduction: 0.8
+  critMultiplierPerStrength: 0.02
+  ailmentResistancePerStrength: 0.02
+  damageReductionEffect: {fileID: 0}
+  critMultiplierEffect: {fileID: 0}
+  ailmentResistanceEffect: {fileID: 0}
   blessingEffectScale: 1
   supportHitEffect: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
   supportHitEffectScale: 1

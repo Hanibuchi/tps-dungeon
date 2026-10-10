@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_GuardianStaff
   displayName: "\u5B88\u8B77\u306E\u6756"
-  description: "\u63B2\u3052\u308B\u3068\u3001\u4EF2\u9593\u306E\u8EAB\u3092\u6DE1\u3044\u5149\u306E\u819C\u304C\u5305\u3080\u3002"
+  description: "\u63B2\u3052\u308B\u3068\u3001\u4EF2\u9593\u306E\u8EAB\u3092\u9752\u3044\u5149\u306E\u819C\u304C\u5305\u3080\u3002"
   icon: {fileID: 2800000, guid: dcf64ba7576b94ea59207b9b72d90304, type: 3}
   worldPrefab: {fileID: 2587775428598117454, guid: 992ab9df030b94e9d9ddf8561d482006, type: 3}
   rank: 1
@@ -24,4 +24,5 @@ MonoBehaviour:
   thrownSpinRate: 0
   thrownBounces: 0
   summonModel: {fileID: 0}
+  blessingKind: 0
   fixedEnchantments: []

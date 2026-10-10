@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using TpsDungeon.Player;
 
 namespace TpsDungeon.Items.Tests
 {
@@ -78,8 +79,9 @@ namespace TpsDungeon.Items.Tests
             });
         }
 
-        // ダメージ軽減の仮の値: 撃つ間隔 6 秒、加護は 12 秒。強さ 1 で被ダメージ −1%・クリティカル率 +0.5%・状態異常耐性 2%、軽減は 8 割まで。
-        private static RangedWeaponStats Blessing(float strength, EnchantmentTotals enchantments = null)
+        // ダメージ軽減の仮の値: 撃つ間隔 6 秒、加護は 12 秒。既定は被ダメージ軽減（強さ 1 で −1%、8 割まで）。
+        private static RangedWeaponStats Blessing(float strength, EnchantmentTotals enchantments = null,
+            BlessingKind kind = BlessingKind.DamageReduction, float perStrength = 0.01f, float cap = 0.8f)
         {
             return RangedWeaponStats.Compute(new RangedWeaponInputs
             {
@@ -87,10 +89,9 @@ namespace TpsDungeon.Items.Tests
                 CharacterAttack = 50f,
                 FireInterval = 6f,
                 BlessingDuration = 12f,
-                BlessingDamageReductionPerStrength = 0.01f,
-                BlessingCritChancePerStrength = 0.005f,
-                BlessingResistancePerStrength = 0.02f,
-                BlessingMaxDamageReduction = 0.8f,
+                BlessingKind = kind,
+                BlessingPerStrength = perStrength,
+                BlessingCap = cap,
                 Enchantments = enchantments,
             });
         }
@@ -347,12 +348,14 @@ namespace TpsDungeon.Items.Tests
         }
     
         [Test]
-        public void 加護は強さに係数を掛けた効き目で_持続時間で長く続く()
+        public void 加護は強さに種類の係数を掛けた効き目で_持続時間で長く続く()
         {
             RangedWeaponStats stats = Blessing(20f);
-            Assert.AreEqual(0.2f, stats.BlessingDamageReduction, 1e-5f);
-            Assert.AreEqual(0.1f, stats.BlessingCritChance, 1e-5f);
-            Assert.AreEqual(0.4f, stats.BlessingResistance, 1e-5f);
+            Assert.AreEqual(BlessingKind.DamageReduction, stats.BlessingKind);
+            Assert.AreEqual(0.2f, stats.BlessingAmount, 1e-5f);
+            RangedWeaponStats crit = Blessing(25f, kind: BlessingKind.CritMultiplier, perStrength: 0.02f, cap: float.MaxValue);
+            Assert.AreEqual(BlessingKind.CritMultiplier, crit.BlessingKind);
+            Assert.AreEqual(0.5f, crit.BlessingAmount, 1e-5f);
             Assert.AreEqual(12f, stats.BlessingDuration, 1e-5f);
             Assert.AreEqual(15f, Blessing(20f, With(EnchantmentKind.Duration, 0.25f)).BlessingDuration, 1e-5f);
             Assert.IsTrue(stats.IsSupport);
@@ -360,12 +363,10 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void 加護の被ダメージ軽減は上限で止まり_耐性は1で止まる()
+        public void 加護の値は上限で止まる()
         {
-            RangedWeaponStats stats = Blessing(100f);
-            Assert.AreEqual(0.8f, stats.BlessingDamageReduction, 1e-5f);
-            Assert.AreEqual(1f, stats.BlessingResistance, 1e-5f);
-            Assert.AreEqual(0.5f, stats.BlessingCritChance, 1e-5f);
+            Assert.AreEqual(0.8f, Blessing(100f).BlessingAmount, 1e-5f);
+            Assert.AreEqual(1f, Blessing(100f, kind: BlessingKind.AilmentResistance, perStrength: 0.02f, cap: 1f).BlessingAmount, 1e-5f);
         }
 
         [Test]
@@ -391,7 +392,7 @@ namespace TpsDungeon.Items.Tests
         public void 加護を張らない武器種では加護も治癒も0()
         {
             Assert.AreEqual(0f, Bow(100f).BlessingDuration);
-            Assert.AreEqual(0f, Bow(100f).BlessingDamageReduction);
+            Assert.AreEqual(0f, Bow(100f).BlessingAmount);
             Assert.AreEqual(0, Bow(100f).HealAmount);
             Assert.AreEqual(0, Heal(30f).HealAmount, "治癒持続は刻みで回復するので、すぐの回復量は 0");
         }

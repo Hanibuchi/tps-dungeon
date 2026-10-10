@@ -24,4 +24,5 @@ MonoBehaviour:
   thrownSpinRate: 0
   thrownBounces: 0
   summonModel: {fileID: 0}
+  blessingKind: 1
   fixedEnchantments: []

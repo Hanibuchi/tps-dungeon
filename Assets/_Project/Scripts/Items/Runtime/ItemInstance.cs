@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TpsDungeon.Player;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -131,7 +132,9 @@ namespace TpsDungeon.Items
                 text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Level, e.SecondaryAmount));
             }
 
-            string usage = GearUsage(type);
+            string usage = type != null && type.IsBuff
+                ? $"近くの仲間のうち、{BlessingName(weapon.BlessingKind)}の膜が付いていない人を選んで膜を張る。"
+                : GearUsage(type);
             if (!string.IsNullOrEmpty(usage)) text.Append("\n\n").Append(usage);
             if (!string.IsNullOrEmpty(Definition.Description)) text.Append("\n\n").Append(Definition.Description);
             return text.ToString();
@@ -144,25 +147,39 @@ namespace TpsDungeon.Items
             return Math.Max(1, (int)Math.Round(weapon.Strength * weapon.WeaponType.SummonHealthPerStrength, MidpointRounding.AwayFromZero));
         }
 
-        /// <summary>加護（ダメージ軽減）の効き目と続く時間（エンチャントの補正前）。例:「被ダメージ −15%・クリティカル率 +7.5%・状態異常耐性 30%（12 秒）」。</summary>
+        /// <summary>
+        /// 加護（ダメージ軽減）の効き目と続く時間（エンチャントの補正前）。武器ごとの種類で
+        /// 「被ダメージ −15%（12 秒）」「クリティカル倍率 +0.5（12 秒）」「状態異常耐性 40%（12 秒）」のように出す。
+        /// </summary>
         public static string BlessingText(WeaponDefinition weapon)
         {
             WeaponTypeDefinition type = weapon != null ? weapon.WeaponType : null;
             if (type == null || !type.IsBuff) return string.Empty;
-            float strength = Math.Max(0f, weapon.Strength);
-            float reduction = Math.Min(strength * type.BlessingDamageReductionPerStrength, type.BlessingMaxDamageReduction);
-            float crit = strength * type.BlessingCritChancePerStrength;
-            float resistance = Math.Min(1f, strength * type.BlessingResistancePerStrength);
-            return $"被ダメージ −{reduction * 100f:0.#}%・クリティカル率 +{crit * 100f:0.#}%・状態異常耐性 {resistance * 100f:0.#}%（{type.BlessingDuration:0.#} 秒）";
+            BlessingKind kind = weapon.BlessingKind;
+            float amount = Math.Min(Math.Max(0f, weapon.Strength) * type.BlessingPerStrength(kind), type.BlessingCap(kind));
+            string effect = kind switch
+            {
+                BlessingKind.DamageReduction => $"被ダメージ −{amount * 100f:0.#}%",
+                BlessingKind.CritMultiplier => $"クリティカル倍率 +{amount:0.##}",
+                _ => $"状態異常耐性 {amount * 100f:0.#}%",
+            };
+            return $"{effect}（{type.BlessingDuration:0.#} 秒）";
         }
 
-        /// <summary>お守り・盾・召喚・治癒持続・ダメージ軽減・治癒の効き方の一行。それ以外は空。</summary>
+        /// <summary>加護の種類の名前（「ダメージ軽減」など）。</summary>
+        public static string BlessingName(BlessingKind kind) => kind switch
+        {
+            BlessingKind.DamageReduction => "ダメージ軽減",
+            BlessingKind.CritMultiplier => "クリティカル倍率上昇",
+            _ => "状態異常耐性",
+        };
+
+        /// <summary>お守り・盾・召喚・治癒持続・治癒の効き方の一行（ダメージ軽減は武器ごとに DetailText で）。それ以外は空。</summary>
         private static string GearUsage(WeaponTypeDefinition type)
         {
             if (type == null) return string.Empty;
             if (type.IsSummon) return "狙った地面に、敵を引きつける置物を呼び出す。呼び直すと前の分は消える。";
             if (type.IsHealField) return "狙った地面に種を投げ、落ちた所に治癒の場を張る。";
-            if (type.IsBuff) return "近くの仲間のうち、加護の付いていない人を選んで加護の膜を張る。";
             if (type.IsHeal) return "近くの仲間のうち、体力が減っている人を選んで回復する。";
             if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
             if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";

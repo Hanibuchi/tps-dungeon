@@ -371,8 +371,7 @@ namespace TpsDungeon.Combat.Editor
             else if (type.TargetsAllies)
             {
                 if (type.IsBuff)
-                    text.AppendLine($"加護: 被ダメージ −{stats.BlessingDamageReduction * 100f:0.#}%・クリティカル率 +{stats.BlessingCritChance * 100f:0.#}%・"
-                                    + $"状態異常耐性 {stats.BlessingResistance * 100f:0.#}%　続く時間 {stats.BlessingDuration:0.#} 秒");
+                    text.AppendLine($"加護（{ItemInstance.BlessingName(stats.BlessingKind)}）: {BlessingValue(stats)}　続く時間 {stats.BlessingDuration:0.#} 秒");
                 else text.AppendLine($"回復量: 1 人 {stats.HealAmount}");
                 text.AppendLine($"相手: {stats.TargetCount} 人（{type.SupportRange:0.#} m 以内の仲間から）× {volleys} 回（{type.SupportRepeatInterval:0.##} 秒ずつ遅れて選び直す）"
                                 + $"　撃つ間隔 {stats.FireInterval:0.00} 秒");
@@ -390,6 +389,13 @@ namespace TpsDungeon.Combat.Editor
             text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}");
             return text.ToString().TrimEnd();
         }
+
+        private static string BlessingValue(RangedWeaponStats stats) => stats.BlessingKind switch
+        {
+            BlessingKind.DamageReduction => $"被ダメージ −{stats.BlessingAmount * 100f:0.#}%",
+            BlessingKind.CritMultiplier => $"クリティカル倍率 +{stats.BlessingAmount:0.##}",
+            _ => $"状態異常耐性 {stats.BlessingAmount * 100f:0.#}%",
+        };
 
         private static string RangedPreviewText(WeaponTypeDefinition type, RangedWeaponStats stats, float characterAttack, bool fromPlayer)
         {

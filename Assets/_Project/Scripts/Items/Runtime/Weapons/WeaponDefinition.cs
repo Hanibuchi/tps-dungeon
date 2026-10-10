@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TpsDungeon.Player;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -32,6 +33,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("召喚の武器種で呼び出す置物（当たり判定の無い見た目）。召喚でなければ使わない。")]
         private GameObject summonModel;
 
+        [SerializeField, Tooltip("ダメージ軽減の武器種で張る加護の種類（膜の色もこれで決まる）。ダメージ軽減でなければ使わない。")]
+        private BlessingKind blessingKind;
+
         [SerializeField, Tooltip("ユニークに必ず付くエンチャントの種類と段（ユニークは振らない）。正は CSV（Items/Weapons/UniqueEnchantments.csv）で、保存すると取り込まれてここが書き換わる。ユニーク以外では使わない。")]
         private List<FixedEnchantmentEntry> fixedEnchantments = new List<FixedEnchantmentEntry>();
 
@@ -42,6 +46,7 @@ namespace TpsDungeon.Items
         public float ThrownSpinRate => thrownSpinRate;
         public bool ThrownBounces => thrownBounces;
         public GameObject SummonModel => summonModel;
+        public BlessingKind BlessingKind => blessingKind;
         public IReadOnlyList<FixedEnchantmentEntry> FixedEnchantments => fixedEnchantments;
 
         /// <summary>エンチャントを振らず、<see cref="FixedEnchantments"/> を付けるか。今はユニークだけ。</summary>
@@ -100,10 +105,9 @@ namespace TpsDungeon.Items
                 HealTickInterval = weaponType != null ? weaponType.HealTickInterval : 0f,
                 SummonDuration = weaponType != null ? weaponType.SummonDuration : 0f,
                 BlessingDuration = weaponType != null ? weaponType.BlessingDuration : 0f,
-                BlessingDamageReductionPerStrength = weaponType != null ? weaponType.BlessingDamageReductionPerStrength : 0f,
-                BlessingCritChancePerStrength = weaponType != null ? weaponType.BlessingCritChancePerStrength : 0f,
-                BlessingResistancePerStrength = weaponType != null ? weaponType.BlessingResistancePerStrength : 0f,
-                BlessingMaxDamageReduction = weaponType != null ? weaponType.BlessingMaxDamageReduction : 0f,
+                BlessingKind = blessingKind,
+                BlessingPerStrength = weaponType != null ? weaponType.BlessingPerStrength(blessingKind) : 0f,
+                BlessingCap = weaponType != null ? weaponType.BlessingCap(blessingKind) : 0f,
                 InstantHeal = weaponType != null && weaponType.IsHeal,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,

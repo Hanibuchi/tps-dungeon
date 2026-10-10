@@ -1,4 +1,5 @@
 using System;
+using TpsDungeon.Player;
 
 namespace TpsDungeon.Items
 {
@@ -43,13 +44,12 @@ namespace TpsDungeon.Items
         /// <summary>加護（ダメージ軽減）の続く時間（秒、持続時間の補正前）。加護を張らない武器種では 0。</summary>
         public float BlessingDuration;
 
-        /// <summary>強さ 1 あたりの加護の被ダメージ軽減（割合）・クリティカル率の加算・状態異常耐性（割合）。</summary>
-        public float BlessingDamageReductionPerStrength;
-        public float BlessingCritChancePerStrength;
-        public float BlessingResistancePerStrength;
+        /// <summary>張る加護の種類（武器ごと）。</summary>
+        public BlessingKind BlessingKind;
 
-        /// <summary>加護の被ダメージ軽減の上限（割合）。</summary>
-        public float BlessingMaxDamageReduction;
+        /// <summary>強さ 1 あたりの加護の値（種類ごとの武器種の係数）と、値の上限。</summary>
+        public float BlessingPerStrength;
+        public float BlessingCap;
 
         /// <summary>仲間をすぐ回復する武器種（治癒）か。強さを 1 人への回復量と読む。</summary>
         public bool InstantHeal;
@@ -85,7 +85,7 @@ namespace TpsDungeon.Items
     ///
     /// 召喚は攻撃しないので、ダメージの値は使わない。置物が居る時間（持続時間で延びる）と、数・速射だけを使う。
     ///
-    /// ダメージ軽減は「強さ」を加護の強さと読み、武器種の係数を掛けて被ダメージ軽減・クリティカル率・状態異常耐性にする。
+    /// ダメージ軽減は「強さ」を加護の強さと読み、武器ごとの種類（被ダメージ軽減・クリティカル倍率・状態異常耐性）の係数を武器種から引いて掛ける。
     /// 持続時間は加護の続く時間を延ばす。治癒は「強さ」を 1 人への回復量と読み、回復量増加を掛ける。
     /// どちらも 1 ＋ 数 人に掛け、多重で選び直してもう一度掛ける。クリティカルは無い。
     /// </summary>
@@ -188,14 +188,13 @@ namespace TpsDungeon.Items
         /// <summary>加護の続く時間（秒、持続時間の補正後）。加護を張らない武器種では 0。</summary>
         public float BlessingDuration { get; private set; }
 
-        /// <summary>加護の被ダメージ軽減（割合、0.2 で 2 割減る）。</summary>
-        public float BlessingDamageReduction { get; private set; }
+        /// <summary>張る加護の種類。</summary>
+        public BlessingKind BlessingKind { get; private set; }
 
-        /// <summary>加護のクリティカル率の加算（0.1 で +10%）。</summary>
-        public float BlessingCritChance { get; private set; }
-
-        /// <summary>加護の状態異常耐性（割合、1 で無効）。</summary>
-        public float BlessingResistance { get; private set; }
+        /// <summary>
+        /// 加護の値（強さ × 係数、上限まで）。被ダメージ軽減は割合（0.2 で 2 割減る）、クリティカル倍率は加算（0.5 で +0.5）、状態異常耐性は割合（1 で無効）。
+        /// </summary>
+        public float BlessingAmount { get; private set; }
 
         /// <summary>治癒の 1 人への回復量（回復量増加の補正後）。四捨五入、最低 1。すぐ回復しない武器種では 0。</summary>
         public int HealAmount { get; private set; }
@@ -316,9 +315,8 @@ namespace TpsDungeon.Items
                 HealTickCount = baseHealTicks > 0 ? TickCount(inputs.HealDuration * durationScale, inputs.HealTickInterval) : 0,
                 SummonDuration = Math.Max(0f, inputs.SummonDuration) * durationScale,
                 BlessingDuration = blessingDuration,
-                BlessingDamageReduction = Clamp(blessingStrength * inputs.BlessingDamageReductionPerStrength, 0f, Clamp01(inputs.BlessingMaxDamageReduction)),
-                BlessingCritChance = Math.Max(0f, blessingStrength * inputs.BlessingCritChancePerStrength),
-                BlessingResistance = Clamp01(blessingStrength * inputs.BlessingResistancePerStrength),
+                BlessingKind = inputs.BlessingKind,
+                BlessingAmount = Clamp(blessingStrength * inputs.BlessingPerStrength, 0f, Math.Max(0f, inputs.BlessingCap)),
                 HealAmount = healAmount,
             };
         }
