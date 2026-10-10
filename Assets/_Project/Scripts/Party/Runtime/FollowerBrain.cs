@@ -11,7 +11,8 @@ namespace TpsDungeon.Party
     /// パーティーの後ろの人の戦い。敵を見つけたら手持ちの 4 枠から武器を選び（<see cref="FollowerWeaponPicker"/>）、
     /// 近接なら列を離れて寄って振り、遠距離なら列に並んだまま撃つ。敵がいなくなるか先頭から離れすぎたら列に戻る。
     /// 攻撃そのものは MeleeAttacker / RangedAttacker に任せ、ここは操作しているキャラの入力（PlayerMeleeInput）の代わりに押すだけ。
-    /// 武器ごとの待ちは自分で覚え、待ち中の武器から別の武器へ持ち替えても待ちを引き継がない（持ち替えの待ちはかかる）。
+    /// 武器ごとの待ちは攻撃の役が覚えている（持ち替えても他の武器へは移らない）。選ぶときは武器ごとの待ちだけを見て、持ち替えの待ちは見ない
+    /// （持ち替えた先を「待ち中」と見て、また別の武器へ持ち替え続けないように）。
     /// 持ち替えは PlayerHotbar.Select で行うので、ホットバーの表示・盾の効き（PlayerGear）は先頭のときと同じに動く。
     /// キャラのルートに付ける。パーティーの先頭の間は PartyMember が止める。
     /// </summary>
@@ -48,7 +49,6 @@ namespace TpsDungeon.Party
 
         private readonly Collider[] overlap = new Collider[OverlapBufferSize];
         private readonly RaycastHit[] rayHits = new RaycastHit[RayBufferSize];
-        private readonly float[] readyAt = new float[PlayerHotbar.SlotCount];
         private readonly List<FollowerWeaponOption> options = new List<FollowerWeaponOption>(PlayerHotbar.SlotCount);
 
         private PartyMember member;
@@ -60,7 +60,6 @@ namespace TpsDungeon.Party
 
         private EnemyHealth target;
         private float nextScan;
-        private int heldSlot = -1;
 
         /// <summary>今狙っている敵。いなければ null。</summary>
         public EnemyHealth Target => target;
@@ -82,7 +81,6 @@ namespace TpsDungeon.Party
             nextScan = Time.time + Random.value * scanInterval;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
             if (inventory != null) inventory.Changed += OnInventoryChanged;
-            heldSlot = hotbar != null ? hotbar.SelectedIndex : 0;
             Equip(false);
         }
 
@@ -94,12 +92,7 @@ namespace TpsDungeon.Party
             target = null;
         }
 
-        private void OnHotbarChanged(PlayerHotbar _)
-        {
-            RememberCooldown();
-            heldSlot = hotbar.SelectedIndex;
-            Equip(true);
-        }
+        private void OnHotbarChanged(PlayerHotbar _) => Equip(true);
 
         private void OnInventoryChanged(PlayerInventory _) => Equip(false);
 
@@ -108,14 +101,12 @@ namespace TpsDungeon.Party
         private void Equip(bool switched)
         {
             ItemInstance item = Current();
-            if (melee != null) melee.Equip(item, switched, inheritCooldown: false);
-            if (ranged != null) ranged.Equip(item, switched, inheritCooldown: false);
+            if (melee != null) melee.Equip(item, switched);
+            if (ranged != null) ranged.Equip(item, switched);
         }
 
         private void Update()
         {
-            RememberCooldown();
-
             if (Time.time >= nextScan)
             {
                 nextScan = Time.time + scanInterval;
@@ -142,18 +133,16 @@ namespace TpsDungeon.Party
             else Swing(type, chest, distance);
         }
 
-        /// <summary>今持っている枠の待ちを覚える（持ち替えた後も、その武器の待ちとして減っていく）。</summary>
-        private void RememberCooldown()
+        /// <summary>item の武器ごとの待ちが明ける時刻（持ち替えの待ちは含まない）。</summary>
+        private float ReadyAt(ItemInstance item)
         {
-            if (heldSlot < 0 || heldSlot >= readyAt.Length) return;
-
-            // 持ち替えで戻ってきた武器は、攻撃の役が持ち替えの待ちしか知らないので、覚えている待ちの方が長ければそちらを残す。
-            float remaining = Mathf.Max(melee != null ? melee.CooldownRemaining : 0f, ranged != null ? ranged.CooldownRemaining : 0f);
-            readyAt[heldSlot] = Mathf.Max(readyAt[heldSlot], Time.time + remaining);
+            float remaining = Mathf.Max(melee != null ? melee.WeaponCooldownRemaining(item) : 0f,
+                ranged != null ? ranged.WeaponCooldownRemaining(item) : 0f);
+            return Time.time + remaining;
         }
 
-        /// <summary>今持っている枠の待ちが明けているか。</summary>
-        private bool HeldReady() => heldSlot < 0 || heldSlot >= readyAt.Length || readyAt[heldSlot] <= Time.time;
+        /// <summary>今持っている武器で攻撃できるか（武器ごとの待ちも持ち替えの待ちも明けている）。</summary>
+        private bool HeldReady() => (melee == null || melee.CooldownRemaining <= 0f) && (ranged == null || ranged.CooldownRemaining <= 0f);
 
         private int ChooseSlot(float distance)
         {
@@ -162,7 +151,7 @@ namespace TpsDungeon.Party
             options.Clear();
             for (int i = 0; i < hand.Count; i++)
             {
-                FollowerWeaponOption option = FollowerWeaponOption.From(hand[i], readyAt[i]);
+                FollowerWeaponOption option = FollowerWeaponOption.From(hand[i], ReadyAt(hand[i]));
                 WeaponTypeDefinition type = hand[i]?.Weapon != null ? hand[i].Weapon.WeaponType : null;
                 if (type != null && (type.IsHealField || type.IsHeal)) option.Usable = needHeal;
                 else if (type != null && type.IsBuff) option.Usable = SomeoneUnblessed(type.SupportRange, hand[i].Weapon.BlessingKind);

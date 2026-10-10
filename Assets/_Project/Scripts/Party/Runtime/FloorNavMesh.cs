@@ -11,6 +11,7 @@ namespace TpsDungeon.Party
     /// <summary>
     /// フロアを生成し終えたら（FloorBuilder.Built）、その床と壁から NavMesh を焼く。パーティーの後ろの仲間が歩くのに使う。
     /// - 当たり（PhysicsColliders）から焼き、パーティーのメンバー（Ally レイヤー）は含めない。
+    /// - 高さメッシュも焼く。NavMesh はボクセルで近似されて床より少し上にできるので、それだけだと agent が浮いて見える。
     /// - 扉は開け閉めで通れるかが変わるので、焼くときは含めず、閉じている間だけ NavMeshObstacle で道を切る（<see cref="DoorNavObstacle"/>）。
     /// 焼き終えたら <see cref="Baked"/> を知らせる（パーティーが全員を先頭の後ろへ並べ直す）。
     /// FloorBuilder と同じ GameObject に付ける。NavMeshSurface はここで足す。
@@ -41,6 +42,7 @@ namespace TpsDungeon.Party
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = AllyLayer.Exclude(layers);
+            surface.buildHeightMesh = true;
         }
 
         private void OnEnable()

@@ -22,7 +22,8 @@ namespace TpsDungeon.Combat
     /// 段のモーションは判定の時計と同じフレームに、段のステートへ直接 CrossFade して頭から再生する（連打してもずれていかないように）。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない（撃つのは RangedAttacker）。見た目（Animator の WeaponType と手のモデル）だけ替える。
-    /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら全武器共通の待ち（switchCooldown）の間は振れない。
+    /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら持ち替えの待ち（switchCooldown）の間は振れない。
+    /// コンボの待ちは武器ごとに覚え（持ち替えても他の武器へは移らない）、持ち替えの待ちは別に数えて、両方明けたら振れる。
     /// コンボボーナスの段数（ComboChain）は周をまたいで数える。空振りするか、待ちが明けて comboKeepTime 秒振らなければ途切れる。
     /// サイズのエンチャントは判定に合わせて、振り・叩きつけ・追撃・爆発のエフェクトも大きくする。
     /// キャラのルート（CharacterController と同じ GameObject）に付ける。基礎攻撃力は同じ GameObject の CharacterProgression から読む。
@@ -61,7 +62,7 @@ namespace TpsDungeon.Combat
         [SerializeField, Tooltip("段を振り始めるときに、体を AimForward へ向ける。")]
         private bool faceAimOnAttack = true;
 
-        [SerializeField, Min(0f), Tooltip("持ち替えてから振れるまでの秒数。全武器共通。")]
+        [SerializeField, Min(0f), Tooltip("持ち替えてから振れるまでの秒数。コンボの待ちとは別に数え、両方明けたら振れる。")]
         private float switchCooldown = 0.5f;
 
         [SerializeField, Tooltip("素手や武器でない物を持っているときに振る武器（インベントリには入れない）。未設定なら素手では攻撃しない。")]
@@ -110,6 +111,9 @@ namespace TpsDungeon.Combat
         private WeaponDefinition heldWeapon;
         private GameObject heldModel;
         private MeleeComboState combo;
+        // 持ち替えの待ち。コンボの待ち（combo が持つ）は武器ごとに cooldowns に預け、戻ってきたら残りを引き継ぐ。
+        private float switchRemaining;
+        private readonly WeaponCooldowns cooldowns = new WeaponCooldowns();
         private MeleeWeaponStats stats;
         private bool pressQueued;
         private readonly ComboChain chain = new ComboChain();
@@ -169,11 +173,39 @@ namespace TpsDungeon.Combat
         public int ComboStep => combo != null ? combo.Step : -1;
 
         /// <summary>次に振れるまでの待ちの残りの割合（1 で待ち始め、0 で振れる）。振れる武器が無いときも 0。</summary>
-        public float CooldownFraction =>
-            combo != null && combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
+        public float CooldownFraction
+        {
+            get
+            {
+                if (combo == null) return 0f;
+                // コンボの待ちと持ち替えの待ちのうち、長く残っている方を出す。
+                if (switchRemaining > ComboCooldownRemaining) return switchCooldown > 0f ? Mathf.Clamp01(switchRemaining / switchCooldown) : 0f;
+                return combo.IsCoolingDown && combo.CooldownDuration > 0f ? Mathf.Clamp01(combo.CooldownRemaining / combo.CooldownDuration) : 0f;
+            }
+        }
 
-        /// <summary>次に振れるまでの待ちの残り（秒）。振っている途中や振れる武器が無いときは 0。</summary>
-        public float CooldownRemaining => combo != null && combo.IsCoolingDown ? combo.CooldownRemaining : 0f;
+        /// <summary>次に振れるまでの待ちの残り（秒、持ち替えの待ちも含む）。振っている途中や振れる武器が無いときは 0。</summary>
+        public float CooldownRemaining => combo != null ? Mathf.Max(ComboCooldownRemaining, switchRemaining) : 0f;
+
+        private float ComboCooldownRemaining => combo != null && combo.IsCoolingDown ? combo.CooldownRemaining : 0f;
+
+        /// <summary>
+        /// item で振るときのコンボの待ちの残り（秒）。持ち替えの待ちは含まない。今持っていない武器も、持ち替えて離れた後の残りを返す。
+        /// 素手（空き枠・お守りなど）はどれも同じ素手の待ち。近接でない武器は 0。
+        /// </summary>
+        public float WeaponCooldownRemaining(ItemInstance item)
+        {
+            if (equipped && CooldownKey(item) == CooldownKey(held)) return ComboCooldownRemaining;
+            return cooldowns.Remaining(CooldownKey(item), Time.time);
+        }
+
+        /// <summary>待ちを覚えるときの鍵。素手で殴る物（空き枠・お守り・盾・宝石など）は null（素手）にまとめる。</summary>
+        private static ItemInstance CooldownKey(ItemInstance item)
+        {
+            WeaponDefinition weapon = item?.Weapon;
+            bool isWeapon = weapon != null && weapon.WeaponType != null && !weapon.WeaponType.IsPassiveGear;
+            return isWeapon ? item : null;
+        }
 
         /// <summary>段を振っている途中か。</summary>
         public bool IsSwinging => combo != null && combo.IsSwinging;
@@ -239,16 +271,16 @@ namespace TpsDungeon.Combat
 
         /// <summary>
         /// item を手に持つ（null なら素手）。switched が真なら、中身が同じでも持ち替えとして待たせる（枠を選び直したときなど）。
-        /// 最初の 1 回は待たせない。inheritCooldown が真なら前の武器の待ちが長ければ引き継ぎ、往復で消させない。
-        /// 仲間の AI は武器ごとの待ちを自分で覚えているので、偽にして持ち替えの待ちだけにする。
+        /// 最初の 1 回は待たせない。コンボの待ちは武器ごとに覚え、持ち替えた先の武器は、前に振った待ちが残っていればその残りだけ待つ
+        /// （手放していた武器の待ちも減っていく）。それとは別に持ち替えの待ち（switchCooldown）がかかる。
         /// </summary>
-        public void Equip(ItemInstance item, bool switched = false, bool inheritCooldown = true)
+        public void Equip(ItemInstance item, bool switched = false)
         {
             if (equipped && item == held && !switched) return;
 
             Initialize();
-            float previous = inheritCooldown && combo != null ? combo.CooldownRemaining : 0f;
-            float switchWait = equipped ? Mathf.Max(switchCooldown, previous) : 0f;
+            if (equipped) cooldowns.Store(CooldownKey(held), Time.time, ComboCooldownRemaining);
+            switchRemaining = equipped ? switchCooldown : 0f;
             equipped = true;
             CancelExtraDashes();
             EndLunge();
@@ -263,7 +295,7 @@ namespace TpsDungeon.Combat
             stats = heldWeapon != null ? ComputeStats() : null;
             WeaponTypeDefinition heldType = heldWeapon != null ? heldWeapon.WeaponType : null;
             combo = heldType != null ? new MeleeComboState(Timings(heldType, stats), heldType.ComboChainGrace, heldType.ComboCooldown) : null;
-            combo?.StartCooldown(switchWait);
+            combo?.StartCooldown(cooldowns.Remaining(CooldownKey(item), Time.time), heldType.ComboCooldown);
 
             WeaponDefinition pose = isWeapon ? weapon : heldWeapon;
             if (animator != null && hasWeaponTypeParam)
@@ -280,7 +312,9 @@ namespace TpsDungeon.Combat
             if (lunge != null) TickLunge(dt);
             TickExtraDash(dt);
 
-            bool pressed = pressQueued;
+            switchRemaining = Mathf.Max(0f, switchRemaining - dt);
+            // 持ち替えの待ちの間の押下は捨てる（コンボの待ちの間と同じく先行入力にもしない）。
+            bool pressed = pressQueued && switchRemaining <= 0f;
             pressQueued = false;
             if (combo == null) return;
 
