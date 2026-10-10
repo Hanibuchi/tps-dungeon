@@ -33,16 +33,19 @@ namespace TpsDungeon.Audio.Editor
 
         private static readonly (string field, string file)[] UiSoundFiles =
         {
-            ("hover", "カーソル移動1.mp3"),
+            ("hover", "カーソル移動9.mp3"),
             ("click", "決定ボタンを押す29.mp3"),
             ("back", "キャンセル1.mp3"),
-            ("open", "メニューを開く4.mp3"),
+            ("open", "メニューを開く2.mp3"),
             ("close", "キャンセル8.mp3"),
             ("tab", "カーソル移動5.mp3"),
             ("pick", "決定ボタンを押す44.mp3"),
-            ("place", "決定ボタンを押す34.mp3"),
+            ("place", "決定ボタンを押す14.mp3"),
             ("denied", "ビープ音1.mp3"),
-            ("discard", "キャンセル2.mp3"),
+            ("discard", "キャンセル4.mp3"),
+            ("reorder", "カーソル移動8.mp3"),
+            ("toHand", "決定ボタンを押す14.mp3"),
+            ("toBag", "決定ボタンを押す32.mp3"),
         };
 
         [MenuItem("Tools/TPS Dungeon/Audio/Generate Game Audio Config And Prefab")]

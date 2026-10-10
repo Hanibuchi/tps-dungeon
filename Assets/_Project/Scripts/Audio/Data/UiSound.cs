@@ -27,7 +27,7 @@ namespace TpsDungeon.Audio.Data
         /// <summary>インベントリで物や札をつかんだ（ドラッグを始めた）。</summary>
         Pick = 6,
 
-        /// <summary>物を移した・装備した・札を並べ替えた。</summary>
+        /// <summary>札を並べ替えて離した。</summary>
         Place = 7,
 
         /// <summary>できない操作をした。</summary>
@@ -35,5 +35,14 @@ namespace TpsDungeon.Audio.Data
 
         /// <summary>物を足元に捨てた。</summary>
         Discard = 9,
+
+        /// <summary>札をドラッグしていて、仲間の並びが入れ替わった。</summary>
+        Reorder = 10,
+
+        /// <summary>物を仲間の手持ちの枠へ入れた。</summary>
+        ToHand = 11,
+
+        /// <summary>物を背嚢へ入れた。</summary>
+        ToBag = 12,
     }
 }

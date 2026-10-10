@@ -675,6 +675,7 @@ namespace TpsDungeon.Menu.UI
         {
             if (to == cardPreviewTo || to < 0) return;
             cardPreviewTo = to;
+            Play(UiSound.Reorder);
 
             for (int i = 0; i < cards.Count && i < cardSlotPositions.Count; i++)
             {
@@ -786,7 +787,7 @@ namespace TpsDungeon.Menu.UI
             {
                 if (QuickMove(slotRef))
                 {
-                    Play(UiSound.Place);
+                    Play(slotRef.Items == Bag ? UiSound.ToHand : UiSound.ToBag);
                 }
                 else
                 {
@@ -902,7 +903,8 @@ namespace TpsDungeon.Menu.UI
             else if (to >= 0)
             {
                 SlotRef target = slotRefs[to];
-                Play(InventoryTransfer.Move(source.Items, source.Index, target.Items, target.Index) ? UiSound.Place : UiSound.Denied);
+                bool moved = InventoryTransfer.Move(source.Items, source.Index, target.Items, target.Index);
+                Play(!moved ? UiSound.Denied : target.Items == Bag ? UiSound.ToBag : UiSound.ToHand);
             }
             else if (card >= 0)
             {
@@ -931,7 +933,7 @@ namespace TpsDungeon.Menu.UI
             int to = InventoryTransfer.FirstEmpty(hand);
             if (to >= 0 && InventoryTransfer.Move(source.Items, source.Index, hand, to))
             {
-                Play(UiSound.Place);
+                Play(UiSound.ToHand);
                 return;
             }
 

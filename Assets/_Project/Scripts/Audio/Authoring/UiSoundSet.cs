@@ -48,7 +48,7 @@ namespace TpsDungeon.Audio.Authoring
         [SerializeField, Tooltip("インベントリで物や札をつかんだとき。")]
         private Entry pick = new Entry(0.8f);
 
-        [SerializeField, Tooltip("物を移した・装備した・札を並べ替えたとき。")]
+        [SerializeField, Tooltip("仲間の札を並べ替えて離したとき。")]
         private Entry place = new Entry(0.8f);
 
         [SerializeField, Tooltip("できない操作をしたとき。")]
@@ -56,6 +56,15 @@ namespace TpsDungeon.Audio.Authoring
 
         [SerializeField, Tooltip("物を足元に捨てたとき。")]
         private Entry discard = new Entry(0.7f);
+
+        [SerializeField, Tooltip("仲間の札をドラッグしていて、並びが入れ替わったとき。")]
+        private Entry reorder = new Entry(0.6f);
+
+        [SerializeField, Tooltip("物を仲間の手持ちの枠へ入れたとき。")]
+        private Entry toHand = new Entry(0.8f);
+
+        [SerializeField, Tooltip("物を背嚢へ入れたとき。")]
+        private Entry toBag = new Entry(0.8f);
 
         [SerializeField, Min(0f), Tooltip("同じ音をこれより短い間隔では鳴らし直さない（秒）。枠の上を素早くなぞったときに音が団子にならないように。")]
         private float minInterval = 0.04f;
@@ -76,6 +85,9 @@ namespace TpsDungeon.Audio.Authoring
                 case UiSound.Place: return place;
                 case UiSound.Denied: return denied;
                 case UiSound.Discard: return discard;
+                case UiSound.Reorder: return reorder;
+                case UiSound.ToHand: return toHand;
+                case UiSound.ToBag: return toBag;
                 default: return default;
             }
         }
