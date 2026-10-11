@@ -28,7 +28,7 @@ namespace TpsDungeon.Enemies
         private float fuseRange = 2.2f;
 
         [SerializeField, Min(0.1f), Tooltip("導火してから爆発するまで（秒）。")]
-        private float fuseTime = 1.2f;
+        private float fuseTime = 3f;
 
         [SerializeField, Range(0f, 1f), Tooltip("導火の間の移動の速さの倍率。")]
         private float fuseSpeedScale = 0.4f;

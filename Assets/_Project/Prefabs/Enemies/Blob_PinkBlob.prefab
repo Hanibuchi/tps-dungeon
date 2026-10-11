@@ -224,7 +224,7 @@ MonoBehaviour:
   hitClip: {fileID: 0}
   volume: 1
   fuseRange: 2.2
-  fuseTime: 1.2
+  fuseTime: 3
   fuseSpeedScale: 0.4
   blastRadius: 3.5
   edgeDamageScale: 0.3

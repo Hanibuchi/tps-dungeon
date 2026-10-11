@@ -40,10 +40,14 @@ namespace TpsDungeon.Enemies.Editor
         private const string HeavyHitSound = MonsterSounds + "重いキック1.mp3";
         private const string LeapSound = MonsterSounds + "ジャンプ.mp3";
         private const string LandSound = MonsterSounds + "ジャンプの着地.mp3";
-        private const string WhooshSound = MonsterSounds + "パンチの風切り音（スローモーション）1.mp3";
+        // 浮遊近距離の体当たり。鋭く空を切る音。
+        private const string DiveSound = ArmsSounds + "手裏剣を投げる.mp3";
         private const string ChargeSound = MonsterSounds + "パワーチャージ.mp3";
-        // 自爆の導火。だんだん遅くなって止まる電子音で、爆発までの残りを知らせる。
+        // 自爆の導火。だんだん遅くなって止まる電子音で、爆発までの残りを知らせる（2.9 秒）。
         private const string FuseSound = MonsterSounds + "電子ルーレットが徐々に止まる.mp3";
+
+        /// <summary>導火から爆発までの秒数。導火の音（<see cref="FuseSound"/>）が鳴り終わってから爆発するよう、音より少し長くする。</summary>
+        private const float FuseTime = 3f;
         private const string ExplosionSound = MonsterSounds + "爆発3.mp3";
         private const string GasSound = MonsterSounds + "毒魔法2.mp3";
         private const string WindShotSound = MonsterSounds + "風魔法1.mp3";
@@ -117,7 +121,7 @@ namespace TpsDungeon.Enemies.Editor
             Damage = damage,
             Cooldown = 1.2f,
             Numbers = new[] { ("attackRange", 1.5f), ("hitRadius", 1f), ("windup", 0.4f), ("recovery", 0.4f) },
-            Assets = { ("attackClip", WhooshSound), ("hitClip", HitSound) },
+            Assets = { ("attackClip", DiveSound), ("hitClip", HitSound) },
         };
 
         /// <summary>04 自爆: 近づいて自爆。</summary>
@@ -127,7 +131,7 @@ namespace TpsDungeon.Enemies.Editor
             Brain = typeof(BomberEnemyBrain),
             Speed = speed,
             Damage = damage,
-            Numbers = new[] { ("fuseRange", 2.2f), ("fuseTime", 1.2f), ("blastRadius", blastRadius), ("explosionEffectScale", blastRadius / ExplosionEffectRadius) },
+            Numbers = new[] { ("fuseRange", 2.2f), ("fuseTime", FuseTime), ("blastRadius", blastRadius), ("explosionEffectScale", blastRadius / ExplosionEffectRadius) },
             Assets = { ("explosionEffect", ExplosionEffect), ("windupClip", FuseSound), ("attackClip", ExplosionSound) },
         };
 

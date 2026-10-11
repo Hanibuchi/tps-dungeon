@@ -225,7 +225,7 @@ MonoBehaviour:
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: a037ebb461f374e5d82774212efaad53, type: 3}
   windupClip: {fileID: 0}
-  attackClip: {fileID: 8300000, guid: 0c5e8c5f1c44b4921a5885ee0d3d31e1, type: 3}
+  attackClip: {fileID: 8300000, guid: eaa57906516414b28a3daf5354b5d265, type: 3}
   hitClip: {fileID: 8300000, guid: f99d28e21a5974a83b1dae6eff282b61, type: 3}
   volume: 1
   attackRange: 1.5
