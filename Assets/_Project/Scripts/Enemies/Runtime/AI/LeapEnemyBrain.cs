@@ -6,8 +6,9 @@ namespace TpsDungeon.Enemies
     /// <summary>
     /// 飛びついて攻撃する敵（02 飛びつき近距離）。
     ///
-    ///   追う → 間合い（<see cref="leapRange"/>）に入って見えていたら、屈んで溜める（<see cref="crouchTime"/> 秒、Jump を流す）
-    ///   → 溜め始めに見た相手の足元へ放物線で飛ぶ（agent を止めて自分で動かす。壁に当たったらそこで真下へ落ちる）
+    ///   追う → 間合い（<see cref="leapRange"/>）に入って見えていたら、屈んで溜める（<see cref="crouchTime"/> 秒、Duck を流す）
+    ///   → 溜め始めに見た相手の足元へ放物線で飛ぶ。飛び立つと同時に攻撃のアニメーションを流す（飛びかかりながら殴る）。
+    ///     agent を止めて自分で動かし、壁に当たったらそこで真下へ落ちる
     ///   → 飛んでいる間に体が触れた相手に 1 回ずつ当てる → 着地して <see cref="landRecovery"/> 秒の隙
     /// 飛ぶ先は溜め始めに決めるので、溜めを見て横へ動けば避けられる。着地の隙が反撃の機会。
     /// 溜めの間のスタン・気絶で取り消す。飛んでいる間にスタンしても止まらず落ちてくる（当たりは無くなる）。気絶なら倒れ込む。
@@ -18,8 +19,7 @@ namespace TpsDungeon.Enemies
     public sealed class LeapEnemyBrain : EnemyBrain
     {
         // 見本（Orc）が持っているクリップ。Big のグループならどのモンスターにもある。
-        private const string JumpParam = "Jump";
-        private const string AirParam = "Jump_Idle";
+        private const string CrouchParam = "Duck";
         private const string LandParam = "Jump_Land";
 
         private enum Phase { Chase, Crouch, Air, Land }
@@ -117,7 +117,7 @@ namespace TpsDungeon.Enemies
             to = landing;
             Motor.Destination = null;
             Motor.LookAt = landing;
-            Play(JumpParam);
+            Play(CrouchParam);
             PlaySound(windupClip, Center);
         }
 
@@ -134,7 +134,7 @@ namespace TpsDungeon.Enemies
             Vector3 heading = Flat(to - from);
             if (heading.sqrMagnitude > 1e-4f) transform.rotation = Quaternion.LookRotation(heading, Vector3.up);
 
-            Play(AirParam);
+            PlayAttack();
             PlaySound(attackClip, Center);
         }
 
@@ -186,7 +186,6 @@ namespace TpsDungeon.Enemies
         {
             phase = Phase.Land;
             timer = landRecovery;
-            Stop(AirParam);
             Play(LandParam);
             Motor.Resume();
         }
@@ -223,16 +222,11 @@ namespace TpsDungeon.Enemies
             if (ragdoll != null && ragdoll.IsRagdoll)
             {
                 phase = Phase.Chase;
-                Stop(AirParam);
-                Motor.Resume();
+                    Motor.Resume();
                 return;
             }
             Fly(dt, false);
         }
 
-        protected override void OnDeath()
-        {
-            Stop(AirParam);
-        }
     }
 }

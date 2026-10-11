@@ -7,7 +7,9 @@ namespace TpsDungeon.Enemies
     /// 敵の歩き（浮くものは飛び）。NavMeshAgent で <see cref="Destination"/> へ向かい、Animator の Speed を書く。
     /// どこへ行くか・どちらを向くかは EnemyBrain が決めて、ここに書き込む。
     ///
-    /// 浮く敵は agent の baseOffset で <see cref="hoverHeight"/> だけ持ち上げ、ゆっくり上下させる（足元がルートの原点なので見た目ごと浮く）。
+    /// 浮く敵は agent の baseOffset で <see cref="hoverHeight"/> だけ持ち上げる（足元がルートの原点なので見た目ごと浮く）。
+    /// 浮いている間は不規則に上下し（<see cref="hoverBob"/>）、撃たれるとさっと上か下へ逃げる（<see cref="evadeHeight"/>）。狙いにくくするため。
+    /// Brain が <see cref="Descend"/> を立てている間は <see cref="diveHeight"/> まで降りる（近接の敵が殴りに降りてくる）。
     /// スタン・気絶・ラグドールの間（ノックバックやラグドールが位置を直接動かす）と、
     /// 飛びつきなどで Brain が自分で動かしている間（<see cref="Suspend"/>）は agent に位置を書かせない。
     /// 動けるようになったら今の位置へ agent を合わせ直す。倒れたら agent を切る。
@@ -31,8 +33,17 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0f), Tooltip("地面から浮く高さ（m）。0 なら歩く。")]
         private float hoverHeight;
 
-        [SerializeField, Min(0f), Tooltip("浮いている間の上下の揺れ幅（m）。")]
-        private float hoverBob = 0.08f;
+        [SerializeField, Min(0f), Tooltip("浮いている間の上下の揺れ幅（m、片側）。")]
+        private float hoverBob = 0.4f;
+
+        [SerializeField, Min(0f), Tooltip("Descend の間に降りる高さ（m）。")]
+        private float diveHeight = 0.4f;
+
+        [SerializeField, Min(0f), Tooltip("撃たれたときに上か下へ逃げる幅（m）。")]
+        private float evadeHeight = 0.7f;
+
+        [SerializeField, Min(0.1f), Tooltip("浮く高さを変える速さ（m/秒）。")]
+        private float climbSpeed = 3.5f;
 
         [SerializeField, Min(0.05f), Tooltip("目的地を付け直す間隔（秒）。")]
         private float repathInterval = 0.2f;
@@ -46,6 +57,10 @@ namespace TpsDungeon.Enemies
         private float animationBlend;
         private float nextRepath;
         private float bobPhase;
+        private float bobTime;
+        private float currentHover;
+        private float evadeOffset;
+        private float evadeRemaining;
         private bool held;
         private bool suspended;
 
@@ -63,6 +78,12 @@ namespace TpsDungeon.Enemies
 
         public float MoveSpeed => moveSpeed;
         public float HoverHeight => hoverHeight;
+
+        /// <summary>浮く敵を <see cref="diveHeight"/> まで降ろす（殴りに降りる間）。歩く敵には効かない。</summary>
+        public bool Descend { get; set; }
+
+        /// <summary>浮く敵が降りきっている（歩く敵は常に真）。</summary>
+        public bool IsDown => hoverHeight <= 0f || currentHover <= diveHeight + 0.2f;
 
         /// <summary>NavMesh に乗っていて、agent で動ける。</summary>
         public bool IsReady => agent != null && agent.enabled && agent.isOnNavMesh && !held && !suspended;
@@ -88,13 +109,24 @@ namespace TpsDungeon.Enemies
             nextRepath = 0f;
             held = false;
             suspended = false;
-            if (health != null) health.Died += OnDied;
+            if (health != null)
+            {
+                health.Died += OnDied;
+                health.Damaged += OnDamaged;
+            }
+            currentHover = hoverHeight;
+            evadeRemaining = 0f;
+            Descend = false;
             TryPlaceAgent(transform.position);
         }
 
         private void OnDisable()
         {
-            if (health != null) health.Died -= OnDied;
+            if (health != null)
+            {
+                health.Died -= OnDied;
+                health.Damaged -= OnDamaged;
+            }
             if (agent != null) agent.enabled = false;
         }
 
@@ -102,6 +134,17 @@ namespace TpsDungeon.Enemies
         {
             enabled = false;
         }
+
+        /// <summary>撃たれたら、今の揺れと逆の向き（上に居れば下、下に居れば上）へさっと逃げる。</summary>
+        private void OnDamaged(EnemyHealth _, DamageInfo __, int ___)
+        {
+            if (hoverHeight <= 0f || Descend) return;
+            evadeOffset = (Bob() > 0f ? -1f : 1f) * evadeHeight;
+            evadeRemaining = 0.8f;
+        }
+
+        /// <summary>不規則な上下の揺れ（-hoverBob〜+hoverBob）。2 つの周期を重ねて、読まれにくくする。</summary>
+        private float Bob() => hoverBob * (0.7f * Mathf.Sin(bobTime * 1.6f + bobPhase) + 0.3f * Mathf.Sin(bobTime * 3.7f + bobPhase * 2f));
 
         /// <summary>Brain が自分で位置を動かす間、agent を止める（飛びつきの間など）。</summary>
         public void Suspend()
@@ -144,7 +187,7 @@ namespace TpsDungeon.Enemies
             if (!NavMesh.SamplePosition(near, out NavMeshHit hit, 4f, NavMesh.AllAreas)) return false;
 
             agent.enabled = true;
-            agent.baseOffset = hoverHeight;
+            agent.baseOffset = hoverHeight > 0f ? currentHover : 0f;
             agent.Warp(hit.position);
             return agent.isOnNavMesh;
         }
@@ -173,11 +216,7 @@ namespace TpsDungeon.Enemies
                 return;
             }
 
-            if (hoverHeight > 0f)
-            {
-                bobPhase += Time.deltaTime * 2.2f;
-                agent.baseOffset = hoverHeight + Mathf.Sin(bobPhase) * hoverBob;
-            }
+            if (hoverHeight > 0f) UpdateHover(Time.deltaTime);
 
             agent.speed = moveSpeed * Mathf.Max(0f, SpeedScale);
             agent.angularSpeed = turnSpeed;
@@ -201,6 +240,24 @@ namespace TpsDungeon.Enemies
             }
 
             WriteAnimator(Flat(agent.velocity).magnitude);
+        }
+
+        /// <summary>浮く高さを、狙う高さ（降りる・揺れ・逃げ）へ一定の速さで寄せる。</summary>
+        private void UpdateHover(float dt)
+        {
+            bobTime += dt;
+            if (evadeRemaining > 0f)
+            {
+                evadeRemaining -= dt;
+                if (evadeRemaining <= 0f) evadeOffset = 0f;
+            }
+
+            float want = Descend ? diveHeight : hoverHeight + Bob() + evadeOffset;
+            want = Mathf.Max(0.1f, want);
+            // 逃げるときは速く動く。
+            float speed = evadeRemaining > 0f ? climbSpeed * 2f : climbSpeed;
+            currentHover = Mathf.MoveTowards(currentHover, want, speed * dt);
+            agent.baseOffset = currentHover;
         }
 
         /// <summary>agent に位置を書かせないようにする（外から位置を動かす間）。</summary>

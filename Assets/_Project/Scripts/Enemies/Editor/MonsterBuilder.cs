@@ -176,13 +176,13 @@ namespace TpsDungeon.Enemies.Editor
         /// </summary>
         private static readonly (Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour)[] Monsters =
         {
-            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f)),
+            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")),
             (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f)),
             (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)),
-            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 0.6f, damage: 8)),
+            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 1.5f, damage: 8)),
             (Blob, "PinkBlob", 15, 5, EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 3.5f)),
             (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)),
-            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)),
+            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)),
             (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Pink)),
         };
 

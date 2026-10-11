@@ -181,7 +181,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 1.2
-  m_BaseOffset: 1
+  m_BaseOffset: 1.7
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 2
 --- !u!114 &8103712130992994613
@@ -198,8 +198,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
   moveSpeed: 3
   turnSpeed: 540
-  hoverHeight: 1
-  hoverBob: 0.08
+  hoverHeight: 1.7
+  hoverBob: 0.45
+  diveHeight: 0.4
+  evadeHeight: 0.7
+  climbSpeed: 3.5
   repathInterval: 0.2
 --- !u!114 &3249693108051686536
 MonoBehaviour:
@@ -219,6 +222,7 @@ MonoBehaviour:
   scanInterval: 0.2
   damage: 8
   cooldown: 2
+  attackAnimation: Attack
   windupClip: {fileID: 0}
   attackClip: {fileID: 8300000, guid: c1508187878e44bfab66bc669cdd003f, type: 3}
   hitClip: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}

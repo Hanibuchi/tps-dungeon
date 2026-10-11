@@ -123,7 +123,7 @@ namespace TpsDungeon.Enemies
         {
             aiming = false;
             CooldownRemaining = cooldown;
-            Play(AttackParam);
+            PlayAttack();
 
             Vector3 muzzle = Center + transform.forward * muzzleForward;
             Vector3 direction = Target.AimPoint - muzzle;

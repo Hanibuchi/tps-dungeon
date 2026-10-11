@@ -75,7 +75,8 @@ namespace TpsDungeon.Enemies
             emitting = true;
             timer = windup;
             Motor.Destination = null;
-            Play(HasParam(EmitParam) ? EmitParam : AttackParam);
+            if (HasParam(EmitParam)) Play(EmitParam);
+            else PlayAttack();
             PlaySound(windupClip, Center);
         }
 

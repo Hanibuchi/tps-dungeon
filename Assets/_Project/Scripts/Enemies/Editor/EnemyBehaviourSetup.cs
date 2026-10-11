@@ -29,6 +29,9 @@ namespace TpsDungeon.Enemies.Editor
         private const string ShotMaterialFolder = "Assets/_Project/Materials/Enemies";
         private const float ShotSize = 0.26f;
 
+        /// <summary>浮く敵の上下の揺れ幅（m、片側）。</summary>
+        private const float HoverBob = 0.45f;
+
         private const string SwingSound = ArmsSounds + "パンチ素振り.mp3";
         private const string HitSound = ArmsSounds + "打撃1.mp3";
         private const string HeavyHitSound = ArmsSounds + "打撃3.mp3";
@@ -50,6 +53,8 @@ namespace TpsDungeon.Enemies.Editor
             public float Hover;
             public int Damage;
             public float Cooldown;
+            /// <summary>攻撃で流す Animator のパラメータ。null なら Brain の既定（Attack）。</summary>
+            public string AttackAnimation;
             /// <summary>Brain のシリアライズするフィールドへ入れる数。</summary>
             public (string field, float value)[] Numbers = new (string, float)[0];
             /// <summary>Brain のシリアライズするフィールドへ入れるアセット（パス）。</summary>
@@ -58,13 +63,16 @@ namespace TpsDungeon.Enemies.Editor
 
         // ---- 敵種（Notion「敵種」）----
 
-        /// <summary>01 単純近距離: 単純に近づいて攻撃。</summary>
-        public static Behaviour Melee(float speed, int damage, float range, float hitRadius) => new Behaviour
+        /// <summary>
+        /// 01 単純近距離: 単純に近づいて攻撃。attackAnimation は武器を持っているモンスターなら "Weapon"（武器を振る。Big のグループにある）。
+        /// </summary>
+        public static Behaviour Melee(float speed, int damage, float range, float hitRadius, string attackAnimation = null) => new Behaviour
         {
             Label = "01 単純近距離",
             Brain = typeof(MeleeEnemyBrain),
             Speed = speed,
             Damage = damage,
+            AttackAnimation = attackAnimation,
             Cooldown = 1.4f,
             Numbers = new[] { ("attackRange", range), ("hitRadius", hitRadius), ("windup", 0.5f), ("recovery", 0.5f) },
             Assets = new[] { ("attackClip", SwingSound), ("hitClip", HitSound) },
@@ -82,7 +90,7 @@ namespace TpsDungeon.Enemies.Editor
             Assets = new[] { ("attackClip", SwingSound), ("hitClip", HeavyHitSound) },
         };
 
-        /// <summary>03 浮遊近距離: 浮遊して近距離攻撃。</summary>
+        /// <summary>03 浮遊近距離: 浮遊して近距離攻撃。ふだんは hover の高さを不規則に上下し、殴るときだけ降りてくる。</summary>
         public static Behaviour FloatingMelee(float speed, float hover, int damage) => new Behaviour
         {
             Label = "03 浮遊近距離",
@@ -252,11 +260,14 @@ namespace TpsDungeon.Enemies.Editor
             var motor = new SerializedObject(root.AddComponent<EnemyMotor>());
             motor.FindProperty("moveSpeed").floatValue = behaviour.Speed;
             motor.FindProperty("hoverHeight").floatValue = behaviour.Hover;
+            // 浮く敵は不規則に上下して狙いにくくする（揺れ幅は片側 m）。歩く敵は揺らさない。
+            motor.FindProperty("hoverBob").floatValue = behaviour.Hover > 0f ? HoverBob : 0f;
             motor.ApplyModifiedPropertiesWithoutUndo();
 
             var brain = new SerializedObject(root.AddComponent(behaviour.Brain));
             brain.FindProperty("damage").intValue = behaviour.Damage;
             brain.FindProperty("cooldown").floatValue = behaviour.Cooldown;
+            if (behaviour.AttackAnimation != null) brain.FindProperty("attackAnimation").stringValue = behaviour.AttackAnimation;
             foreach (var (field, value) in behaviour.Numbers)
             {
                 SerializedProperty p = brain.FindProperty(field);

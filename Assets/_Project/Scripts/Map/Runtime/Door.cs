@@ -67,6 +67,9 @@ namespace TpsDungeon.Map.Runtime
         /// <summary>開けた（開けている途中も含む）か。</summary>
         public bool IsOpen => isOpen;
 
+        /// <summary>開け閉めで回る軸（扉板はこの子）。NavMesh を焼くとき、動く部分だけを外すのに使う。</summary>
+        public Transform Hinge => hinge;
+
         /// <summary>開閉のアニメーションが終わっていないか。</summary>
         public bool IsSwinging => animator != null && IsAnimating(animator, isOpen ? OpenStateHash : ClosedStateHash);
 

@@ -9,6 +9,8 @@ namespace TpsDungeon.Enemies
     ///   追う → 間合い（<see cref="attackRange"/>）に入ったら止まって Attack を流す
     ///   → <see cref="windup"/> 秒後に体の前の球（<see cref="hitRadius"/>）の中の相手に当てる → <see cref="recovery"/> 秒の隙 → 間を置いて次
     /// 溜めの間は相手の方へ回るが、当たりの瞬間の向きで当てるので、横へ逃げれば避けられる。
+    /// 浮く敵（03）はふだん高く飛んでいて、殴れそうになったら降りてきて（<see cref="EnemyMotor.Descend"/>）、降りきってから溜める。
+    /// 殴り終えて次の攻撃を待つ間はまた上がる。降りている間が反撃の機会。
     /// スタン・気絶で溜めは取り消す。
     /// MonsterBuilder がプレハブのルートに付ける。
     /// </summary>
@@ -43,6 +45,10 @@ namespace TpsDungeon.Enemies
 
         protected override void Think(float dt)
         {
+            // 浮く敵は、殴っている間と、もうすぐ殴れそうな間だけ降りる。
+            Motor.Descend = phase != Phase.Chase
+                || (HasTarget && TargetVisible && CooldownRemaining <= 0.3f && TargetDistance <= attackRange + 2f);
+
             switch (phase)
             {
                 case Phase.Chase:
@@ -72,13 +78,13 @@ namespace TpsDungeon.Enemies
             Motor.Destination = ChasePoint();
             Motor.StopDistance = attackRange * 0.75f;
 
-            if (!HasTarget || !TargetVisible || CooldownRemaining > 0f || TargetDistance > attackRange) return;
+            if (!HasTarget || !TargetVisible || CooldownRemaining > 0f || TargetDistance > attackRange || !Motor.IsDown) return;
 
             phase = Phase.Windup;
             timer = windup;
             Motor.Destination = null;
             Motor.LookAt = Target.Position;
-            Play(AttackParam);
+            PlayAttack();
             PlaySound(windupClip, Center);
         }
 

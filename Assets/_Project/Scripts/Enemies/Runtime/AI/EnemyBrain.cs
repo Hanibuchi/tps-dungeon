@@ -44,6 +44,10 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0f), Tooltip("攻撃を終えてから次の攻撃までの間（秒）。")]
         protected float cooldown = 1.5f;
 
+        [SerializeField, Tooltip("攻撃で流す Animator のパラメータ。既定の Attack はグループの攻撃（Punch など）。" +
+            "武器を持っている敵は Weapon（武器を振る）にする。グループに無ければ Attack を流す。")]
+        protected string attackAnimation = AttackParam;
+
         [Header("効果音（未設定なら鳴らさない）")]
         [SerializeField, Tooltip("溜め始めの音。")]
         protected AudioClip windupClip;
@@ -280,6 +284,9 @@ namespace TpsDungeon.Enemies
             if (TryParam(name, out int hash, out AnimatorControllerParameterType type) && type == AnimatorControllerParameterType.Bool)
                 animator.SetBool(hash, false);
         }
+
+        /// <summary>攻撃のアニメーションを流す（<see cref="attackAnimation"/>、グループに無ければ Attack）。</summary>
+        protected void PlayAttack() => Play(!string.IsNullOrEmpty(attackAnimation) && HasParam(attackAnimation) ? attackAnimation : AttackParam);
 
         protected bool HasParam(string name) => animatorParams.ContainsKey(Animator.StringToHash(name));
 

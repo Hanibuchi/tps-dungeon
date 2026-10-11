@@ -208,6 +208,9 @@ MonoBehaviour:
   turnSpeed: 540
   hoverHeight: 0
   hoverBob: 0.08
+  diveHeight: 0.4
+  evadeHeight: 0.7
+  climbSpeed: 3.5
   repathInterval: 0.2
 --- !u!114 &4454430970248554815
 MonoBehaviour:
@@ -227,6 +230,7 @@ MonoBehaviour:
   scanInterval: 0.2
   damage: 12
   cooldown: 1.4
+  attackAnimation: Weapon
   windupClip: {fileID: 0}
   attackClip: {fileID: 8300000, guid: b2a0eba14200849be9c3a142941dca5a, type: 3}
   hitClip: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
