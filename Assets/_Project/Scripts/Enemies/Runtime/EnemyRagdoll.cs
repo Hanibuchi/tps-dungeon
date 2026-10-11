@@ -11,6 +11,9 @@ namespace TpsDungeon.Enemies
     ///
     /// 起き上がりは、腰の真下の床へルートを移してから Animator を戻し、
     /// 倒れていた姿勢から Animator の姿勢へ <see cref="getUpBlendTime"/> 秒かけて寄せる（いきなり立った姿勢に飛ばないように）。
+    ///
+    /// 倒れている間、骨組みの一番上の骨（Quaternius では Root。腰より上の、物理で動かない骨）を腰に付いていかせる。
+    /// この骨にも肉が付いているので、置いたままだと浮いていた所（浮く敵ならその高さ）に体の一部が残り、そこへ向かって体が伸びて見える。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Ragdoll")]
@@ -49,6 +52,13 @@ namespace TpsDungeon.Enemies
         private float blendElapsed = -1f;
 
         private Vector3 standingPelvisOffset;
+
+        // 倒れている間に腰へ付いていかせる、骨組みの一番上の骨（Model の直下で腰を含む子）。
+        private Transform anchor;
+        private Vector3 anchorLocalPosition;
+        private Quaternion anchorLocalRotation;
+        private Vector3 anchorFromPelvisPosition;
+        private Quaternion anchorFromPelvisRotation;
         private bool initialized;
 
         /// <summary>今、物理に任せて倒れているか。</summary>
@@ -130,6 +140,14 @@ namespace TpsDungeon.Enemies
             {
                 standingPelvisOffset = transform.InverseTransformPoint(bodies[0].position);
                 standingPelvisOffset.y = 0f;
+
+                // Model の直下の、腰を含む子が骨組みの一番上。腰そのものなら付いていかせる必要は無い。
+                if (animator != null)
+                {
+                    Transform t = bodies[0].transform;
+                    while (t.parent != null && t.parent != animator.transform) t = t.parent;
+                    if (t.parent == animator.transform && t != bodies[0].transform) anchor = t;
+                }
             }
 
             SetPhysical(false);
@@ -149,6 +167,15 @@ namespace TpsDungeon.Enemies
                 if (followers[i] == null || followTargets[i] == null) continue;
                 followLocalPositions[i] = followTargets[i].InverseTransformPoint(followers[i].position);
                 followLocalRotations[i] = Quaternion.Inverse(followTargets[i].rotation) * followers[i].rotation;
+            }
+
+            if (anchor != null)
+            {
+                Transform pelvis = bodies[0].transform;
+                anchorLocalPosition = anchor.localPosition;
+                anchorLocalRotation = anchor.localRotation;
+                anchorFromPelvisPosition = pelvis.InverseTransformPoint(anchor.position);
+                anchorFromPelvisRotation = Quaternion.Inverse(pelvis.rotation) * anchor.rotation;
             }
 
             if (animator != null) animator.enabled = false;
@@ -179,6 +206,8 @@ namespace TpsDungeon.Enemies
                 movedPositions[i] = moved[i].position;
                 movedRotations[i] = moved[i].rotation;
             }
+            // 腰に付いていかせていた一番上の骨は、元の（Model から見た）位置に戻す。下の骨はこのあと見た目の位置に戻すので崩れない。
+            if (anchor != null) anchor.SetLocalPositionAndRotation(anchorLocalPosition, anchorLocalRotation);
             transform.position = GroundBelow(bodies[0].position) - transform.TransformVector(standingPelvisOffset);
             for (int i = 0; i < moved.Length; i++)
             {
@@ -195,6 +224,29 @@ namespace TpsDungeon.Enemies
 
             foreach (Collider c in rootColliders) c.enabled = true;
             if (animator != null) animator.enabled = true;
+        }
+
+        /// <summary>
+        /// 骨組みの一番上の骨を、倒れ始めたときの腰との位置関係のまま腰へ付いていかせる。
+        /// その下にある物理の骨も一緒に動いてしまうので、動かす前の見た目の位置へ戻す。
+        /// </summary>
+        private void FollowPelvis()
+        {
+            if (anchor == null || bodies.Length == 0 || bodies[0] == null) return;
+
+            for (int i = 0; i < moved.Length; i++)
+            {
+                movedPositions[i] = moved[i].position;
+                movedRotations[i] = moved[i].rotation;
+            }
+
+            Transform pelvis = bodies[0].transform;
+            anchor.SetPositionAndRotation(pelvis.TransformPoint(anchorFromPelvisPosition), pelvis.rotation * anchorFromPelvisRotation);
+
+            for (int i = 0; i < moved.Length; i++)
+            {
+                moved[i].SetPositionAndRotation(movedPositions[i], movedRotations[i]);
+            }
         }
 
         private Vector3 GroundBelow(Vector3 point)
@@ -231,6 +283,7 @@ namespace TpsDungeon.Enemies
         {
             if (IsRagdoll)
             {
+                FollowPelvis();
                 for (int i = 0; i < followLocalPositions.Length; i++)
                 {
                     if (followers[i] == null || followTargets[i] == null) continue;

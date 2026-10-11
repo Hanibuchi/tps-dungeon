@@ -19,17 +19,30 @@ namespace TpsDungeon.Player.Editor
         private const string RootName = "[Items]";
         private const string EnemiesRootName = "[Enemies]";
 
+        /// <summary>敵種（Notion「敵種」）ごとに 1 体ずつ。01 は大小 2 体。</summary>
         private static readonly string[] EnemyPrefabs =
         {
-            "Assets/_Project/Prefabs/Enemies/Big_Orc.prefab",
-            "Assets/_Project/Prefabs/Enemies/Blob_GreenBlob.prefab",
+            "Assets/_Project/Prefabs/Enemies/Big_Orc.prefab",          // 01 単純近距離
+            "Assets/_Project/Prefabs/Enemies/Blob_GreenBlob.prefab",   // 01 単純近距離（小）
+            "Assets/_Project/Prefabs/Enemies/Big_Frog.prefab",         // 02 飛びつき近距離
+            "Assets/_Project/Prefabs/Enemies/Flying_Ghost.prefab",     // 03 浮遊近距離
+            "Assets/_Project/Prefabs/Enemies/Blob_PinkBlob.prefab",    // 04 自爆
+            "Assets/_Project/Prefabs/Enemies/Blob_Mushnub.prefab",     // 05 毒霧
+            "Assets/_Project/Prefabs/Enemies/Flying_Hywirl.prefab",    // 06 浮遊遠距離
+            "Assets/_Project/Prefabs/Enemies/Blob_Wizard.prefab",      // 07 遠距離
         };
 
-        /// <summary>扉の先のセルの中心から見た敵の置き場所（入口へ向かう向きを +Z とする）。</summary>
+        /// <summary>扉の先のセルの中心から見た敵の置き場所（入口へ向かう向きを +Z とする）。近接を手前、遠距離を奥に、セル（5m）の内側に 2 列で並べる。</summary>
         private static readonly Vector3[] EnemyOffsets =
         {
-            new Vector3(-1.1f, 0f, -0.5f),
-            new Vector3(1.1f, 0f, -0.5f),
+            new Vector3(-1.8f, 0f, 0.6f),
+            new Vector3(-0.6f, 0f, 0.6f),
+            new Vector3(0.6f, 0f, 0.6f),
+            new Vector3(1.8f, 0f, 0.6f),
+            new Vector3(-1.8f, 0f, -1.2f),
+            new Vector3(-0.6f, 0f, -1.2f),
+            new Vector3(0.6f, 0f, -1.2f),
+            new Vector3(1.8f, 0f, -1.2f),
         };
 
         /// <summary>

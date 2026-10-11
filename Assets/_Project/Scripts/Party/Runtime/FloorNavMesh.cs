@@ -12,7 +12,8 @@ namespace TpsDungeon.Party
     /// フロアを生成し終えたら（FloorBuilder.Built）、その床と壁から NavMesh を焼く。パーティーの後ろの仲間が歩くのに使う。
     /// - 当たり（PhysicsColliders）から焼き、パーティーのメンバー（Ally レイヤー）は含めない。
     /// - 高さメッシュも焼く。NavMesh はボクセルで近似されて床より少し上にできるので、それだけだと agent が浮いて見える。
-    /// - 扉は開け閉めで通れるかが変わるので、焼くときは含めず、閉じている間だけ NavMeshObstacle で道を切る（<see cref="DoorNavObstacle"/>）。
+    /// - 扉の板は開け閉めで通れるかが変わるので、焼くときは含めず、閉じている間だけ NavMeshObstacle で道を切る（<see cref="DoorNavObstacle"/>）。
+    ///   外すのは動く扉板（Hinge の下）と照準用のトリガーだけ。柱と鴨居は壁と同じく焼く（扉ごと外すと柱の所が通れてしまい、敵が壁を抜けてくる）。
     /// 焼き終えたら <see cref="Baked"/> を知らせる（パーティーが全員を先頭の後ろへ並べ直す）。
     /// FloorBuilder と同じ GameObject に付ける。NavMeshSurface はここで足す。
     /// </summary>
@@ -66,8 +67,11 @@ namespace TpsDungeon.Party
 
             foreach (Door door in builder.GeneratedRoot.GetComponentsInChildren<Door>(true))
             {
-                if (!door.TryGetComponent(out NavMeshModifier modifier)) modifier = door.gameObject.AddComponent<NavMeshModifier>();
-                modifier.ignoreFromBuild = true;
+                if (door.Hinge != null) IgnoreFromBuild(door.Hinge.gameObject);
+                foreach (Collider c in door.GetComponentsInChildren<Collider>(true))
+                {
+                    if (c.isTrigger) IgnoreFromBuild(c.gameObject);
+                }
                 if (!door.TryGetComponent(out DoorNavObstacle _)) door.gameObject.AddComponent<DoorNavObstacle>();
             }
 
@@ -75,6 +79,12 @@ namespace TpsDungeon.Party
             Physics.SyncTransforms();
             surface.BuildNavMesh();
             Baked?.Invoke();
+        }
+
+        private static void IgnoreFromBuild(GameObject target)
+        {
+            if (!target.TryGetComponent(out NavMeshModifier modifier)) modifier = target.AddComponent<NavMeshModifier>();
+            modifier.ignoreFromBuild = true;
         }
 
         // ドメインリロードを切っているので、再生のたびに前回の受け手を捨てる。

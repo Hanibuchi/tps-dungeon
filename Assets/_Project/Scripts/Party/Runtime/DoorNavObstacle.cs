@@ -35,7 +35,7 @@ namespace TpsDungeon.Party
         }
 
         /// <summary>
-        /// 扉の開口に合わせる。開口は扉を触る範囲（トリガーの箱）か、扉の板（Leaf）の箱で測る。柱や鴨居は壁と同じく焼いてあるので見ない。
+        /// 扉の開口に合わせる。開口は扉を触る範囲（トリガーの箱）か、扉の板（Leaf）の箱で測る。柱や鴨居は壁と同じく焼いてある（FloorNavMesh）ので見ない。
         /// 厚みは道を切れる程度にする。
         /// </summary>
         private void FitToOpening()
