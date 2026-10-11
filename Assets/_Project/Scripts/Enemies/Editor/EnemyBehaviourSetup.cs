@@ -32,14 +32,23 @@ namespace TpsDungeon.Enemies.Editor
         /// <summary>浮く敵の上下の揺れ幅（m、片側）。</summary>
         private const float HoverBob = 0.45f;
 
+        /// <summary>敵の声と攻撃の音（効果音ラボの「戦闘」から取ったもの）。MonsterBuilder もここから引く。</summary>
+        public const string MonsterSounds = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/";
+
         private const string SwingSound = ArmsSounds + "パンチ素振り.mp3";
-        private const string HitSound = ArmsSounds + "打撃1.mp3";
-        private const string HeavyHitSound = ArmsSounds + "打撃3.mp3";
-        private const string ExplosionSound = ArmsSounds + "爆発2.mp3";
-        private const string FuseSound = ArmsSounds + "雷魔法1.mp3";
-        private const string GasSound = ArmsSounds + "氷魔法2.mp3";
+        private const string HitSound = MonsterSounds + "打撃2.mp3";
+        private const string HeavyHitSound = MonsterSounds + "重いキック1.mp3";
+        private const string LeapSound = MonsterSounds + "ジャンプ.mp3";
+        private const string LandSound = MonsterSounds + "ジャンプの着地.mp3";
+        private const string WhooshSound = MonsterSounds + "パンチの風切り音（スローモーション）1.mp3";
+        private const string ChargeSound = MonsterSounds + "パワーチャージ.mp3";
+        // 自爆の導火。だんだん遅くなって止まる電子音で、爆発までの残りを知らせる。
+        private const string FuseSound = MonsterSounds + "電子ルーレットが徐々に止まる.mp3";
+        private const string ExplosionSound = MonsterSounds + "爆発3.mp3";
+        private const string GasSound = MonsterSounds + "毒魔法2.mp3";
+        private const string WindShotSound = MonsterSounds + "風魔法1.mp3";
         private const string MagicShotSound = ArmsSounds + "火炎魔法1.mp3";
-        private const string ThrowSound = ArmsSounds + "ナイフを投げる.mp3";
+        private const string ShotHitSound = MonsterSounds + "ショット命中.mp3";
 
         /// <summary>1 体ぶんの動きの作り方。</summary>
         public sealed class Behaviour
@@ -58,7 +67,15 @@ namespace TpsDungeon.Enemies.Editor
             /// <summary>Brain のシリアライズするフィールドへ入れる数。</summary>
             public (string field, float value)[] Numbers = new (string, float)[0];
             /// <summary>Brain のシリアライズするフィールドへ入れるアセット（パス）。</summary>
-            public (string field, string path)[] Assets = new (string, string)[0];
+            public List<(string field, string path)> Assets = new List<(string, string)>();
+
+            /// <summary>Brain のアセットを 1 つ差し替える（無ければ足す）。モンスターごとに声や音を変えるのに使う。</summary>
+            public Behaviour With(string field, string path)
+            {
+                Assets.RemoveAll(a => a.field == field);
+                Assets.Add((field, path));
+                return this;
+            }
         }
 
         // ---- 敵種（Notion「敵種」）----
@@ -75,7 +92,7 @@ namespace TpsDungeon.Enemies.Editor
             AttackAnimation = attackAnimation,
             Cooldown = 1.4f,
             Numbers = new[] { ("attackRange", range), ("hitRadius", hitRadius), ("windup", 0.5f), ("recovery", 0.5f) },
-            Assets = new[] { ("attackClip", SwingSound), ("hitClip", HitSound) },
+            Assets = { ("attackClip", SwingSound), ("hitClip", HitSound) },
         };
 
         /// <summary>02 飛びつき近距離: 飛びついて攻撃。</summary>
@@ -87,7 +104,7 @@ namespace TpsDungeon.Enemies.Editor
             Damage = damage,
             Cooldown = 2.2f,
             Numbers = new[] { ("leapRange", leapRange), ("crouchTime", 0.6f), ("leapSpeed", 9f), ("leapApex", 1.4f), ("landRecovery", 0.9f) },
-            Assets = new[] { ("attackClip", SwingSound), ("hitClip", HeavyHitSound) },
+            Assets = { ("attackClip", LeapSound), ("hitClip", HeavyHitSound), ("landClip", LandSound) },
         };
 
         /// <summary>03 浮遊近距離: 浮遊して近距離攻撃。ふだんは hover の高さを不規則に上下し、殴るときだけ降りてくる。</summary>
@@ -100,7 +117,7 @@ namespace TpsDungeon.Enemies.Editor
             Damage = damage,
             Cooldown = 1.2f,
             Numbers = new[] { ("attackRange", 1.5f), ("hitRadius", 1f), ("windup", 0.4f), ("recovery", 0.4f) },
-            Assets = new[] { ("attackClip", SwingSound), ("hitClip", HitSound) },
+            Assets = { ("attackClip", WhooshSound), ("hitClip", HitSound) },
         };
 
         /// <summary>04 自爆: 近づいて自爆。</summary>
@@ -111,7 +128,7 @@ namespace TpsDungeon.Enemies.Editor
             Speed = speed,
             Damage = damage,
             Numbers = new[] { ("fuseRange", 2.2f), ("fuseTime", 1.2f), ("blastRadius", blastRadius), ("explosionEffectScale", blastRadius / ExplosionEffectRadius) },
-            Assets = new[] { ("explosionEffect", ExplosionEffect), ("windupClip", FuseSound), ("attackClip", ExplosionSound) },
+            Assets = { ("explosionEffect", ExplosionEffect), ("windupClip", FuseSound), ("attackClip", ExplosionSound) },
         };
 
         /// <summary>05 毒霧: 近づくと毒霧を出す。damage は霧の 1 刻み（0.5 秒）のダメージ。</summary>
@@ -124,11 +141,11 @@ namespace TpsDungeon.Enemies.Editor
             Cooldown = 6f,
             Numbers = new[] { ("emitRange", 2.5f), ("cloudRadius", cloudRadius), ("cloudDuration", 5f), ("tickInterval", 0.5f),
                 ("cloudEffectRadius", PoisonCloudEffectRadius) },
-            Assets = new[] { ("cloudEffect", PoisonCloudEffect), ("attackClip", GasSound) },
+            Assets = { ("cloudEffect", PoisonCloudEffect), ("attackClip", GasSound) },
         };
 
         /// <summary>06 浮遊遠距離: 浮遊して遠距離攻撃。</summary>
-        public static Behaviour FloatingRanged(float speed, float hover, int damage, ShotColor color) => Ranged(speed, damage, color, ThrowSound,
+        public static Behaviour FloatingRanged(float speed, float hover, int damage, ShotColor color) => Ranged(speed, damage, color, WindShotSound,
             "06 浮遊遠距離", hover, minRange: 5f, maxRange: 13f);
 
         /// <summary>07 遠距離: 射線が通る所まで来て遠距離攻撃。</summary>
@@ -158,14 +175,44 @@ namespace TpsDungeon.Enemies.Editor
                 ("minRange", minRange), ("maxRange", maxRange), ("windup", 0.7f), ("projectileSpeed", 12f),
                 ("projectileEffectScale", 1f), ("impactEffectScale", 0.3f),
             },
-            Assets = new[]
+            Assets =
             {
+                ("windupClip", ChargeSound),
                 ("projectileEffect", ShotPath(color)),
                 ("impactEffect", $"{HovlPrefabs}Sparks/Sparks explode {color.ToString().ToLowerInvariant()}.prefab"),
                 ("attackClip", shotSound),
-                ("hitClip", HitSound),
+                ("hitClip", ShotHitSound),
             },
         };
+
+        /// <summary>
+        /// 作ってあるプレハブの Brain に、音（名前が Clip で終わるフィールド）だけを入れ直す。Animator やほかの値には触らない。
+        /// </summary>
+        public static void WriteSounds(GameObject root, Behaviour behaviour, List<string> log)
+        {
+            var component = root.GetComponent(behaviour.Brain);
+            if (component == null)
+            {
+                log.Add($"{root.name}: {behaviour.Brain.Name} が無いので音を入れなかった（作り直しが要る）");
+                return;
+            }
+            var brain = new SerializedObject(component);
+            WriteAssets(brain, behaviour, root.name, true, log);
+            brain.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WriteAssets(SerializedObject brain, Behaviour behaviour, string owner, bool soundsOnly, List<string> log)
+        {
+            foreach (var (field, path) in behaviour.Assets)
+            {
+                if (soundsOnly && !field.EndsWith("Clip", StringComparison.Ordinal)) continue;
+                SerializedProperty p = brain.FindProperty(field);
+                if (p == null) throw new ArgumentException($"{behaviour.Brain.Name} に {field} が無い");
+                var asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+                if (asset == null) log.Add($"{owner}: 見つからないので空のままにした: {path}");
+                p.objectReferenceValue = asset;
+            }
+        }
 
         // ---- 弾の見た目 ----
 
@@ -274,14 +321,7 @@ namespace TpsDungeon.Enemies.Editor
                 if (p == null) throw new ArgumentException($"{behaviour.Brain.Name} に {field} が無い");
                 p.floatValue = value;
             }
-            foreach (var (field, path) in behaviour.Assets)
-            {
-                SerializedProperty p = brain.FindProperty(field);
-                if (p == null) throw new ArgumentException($"{behaviour.Brain.Name} に {field} が無い");
-                var asset = AssetDatabase.LoadAssetAtPath<Object>(path);
-                if (asset == null) log.Add($"{root.name}: 見つからないので空のままにした: {path}");
-                p.objectReferenceValue = asset;
-            }
+            WriteAssets(brain, behaviour, root.name, false, log);
             brain.ApplyModifiedPropertiesWithoutUndo();
         }
     }

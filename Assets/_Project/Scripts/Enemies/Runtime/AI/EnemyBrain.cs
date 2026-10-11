@@ -24,6 +24,9 @@ namespace TpsDungeon.Enemies
         // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
         protected const string AttackParam = "Attack";
 
+        /// <summary>気付いたときの鳴き声を、続けて鳴らさない間（秒）。</summary>
+        private const float NoticeInterval = 6f;
+
         [Header("見つける")]
         [SerializeField, Min(1f), Tooltip("この距離の中で見えている相手に気付く（m）。")]
         private float detectRadius = 14f;
@@ -49,6 +52,9 @@ namespace TpsDungeon.Enemies
         protected string attackAnimation = AttackParam;
 
         [Header("効果音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("相手に気付いたときの鳴き声（見失って探し直したときも。続けては鳴らさない）。")]
+        protected AudioClip noticeClip;
+
         [SerializeField, Tooltip("溜め始めの音。")]
         protected AudioClip windupClip;
 
@@ -64,6 +70,7 @@ namespace TpsDungeon.Enemies
         private static readonly Collider[] overlap = new Collider[32];
 
         private float nextScan;
+        private float nextNotice;
         private float lastSeenTime = float.NegativeInfinity;
         private bool wasActing = true;
         private Collider body;
@@ -236,6 +243,13 @@ namespace TpsDungeon.Enemies
 
         private void SetTarget(EnemyTarget target)
         {
+            // 相手が居なかったところから気付いたら鳴く。群れで一斉に気付いたときや見失い直しで鳴きすぎないよう、間を空ける。
+            if (!HasTarget && Time.time >= nextNotice)
+            {
+                nextNotice = Time.time + NoticeInterval;
+                PlaySound(noticeClip, Center);
+            }
+
             Target = target;
             HasTarget = true;
             TargetVisible = true;

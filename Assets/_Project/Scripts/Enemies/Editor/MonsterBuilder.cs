@@ -41,9 +41,8 @@ namespace TpsDungeon.Enemies.Editor
         private const string OverrideFolder = AnimationFolder + "/Overrides";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
-        // 仮の効果音（効果音ラボ）。見つからなければ空のまま。
-        private const string StunClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/弓矢が刺さる (1).mp3";
-        private const string FaintClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/翼竜の鳴き声1.mp3";
+        // 敵の声（効果音ラボ）。見つからなければ空のまま。
+        private const string Voice = EnemyBehaviourSetup.MonsterSounds;
 
         public const string SpeedParam = "Speed";
         public const string AttackParam = "Attack";
@@ -86,6 +85,10 @@ namespace TpsDungeon.Enemies.Editor
             /// <summary>待機の最初のポーズでの背丈（m）。プレイヤーはおよそ 1.8 m。</summary>
             public float Height;
             public float Radius;
+            /// <summary>スタン（被弾のたびにも）・気絶・死亡の声。体のつくりが同じなら声も揃える。</summary>
+            public string StunSound;
+            public string FaintSound;
+            public string DeathSound;
             /// <summary>ラグドールにする骨。先頭が腰。</summary>
             public RagdollBone[] Ragdoll;
             /// <summary>倒れている間、Target の骨にくっついていく骨（物理の骨の子になっていない IK 用の足首など）。</summary>
@@ -109,6 +112,9 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 2.0f,
             Radius = 0.45f,
+            StunSound = Voice + "ゴブリンの鳴き声1.mp3",
+            FaintSound = Voice + "ゴブリンの鳴き声3.mp3",
+            DeathSound = Voice + "ゾンビの断末魔.mp3",
             // 脚は Hips ではなく Body の子。足首（Foot）は IK 用に Root の直下にある。
             Ragdoll = new[]
             {
@@ -137,6 +143,9 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 1.2f,
             Radius = 0.45f,
+            StunSound = Voice + "翼竜の鳴き声2.mp3",
+            FaintSound = Voice + "翼竜の鳴き声1.mp3",
+            DeathSound = Voice + "ゾンビの声2.mp3",
             // 胴（Torso）と尾（Body1〜4）は Root の下で兄弟になっている。
             Ragdoll = new[]
             {
@@ -160,6 +169,9 @@ namespace TpsDungeon.Enemies.Editor
             Death = "Death",
             Height = 0.9f,
             Radius = 0.4f,
+            StunSound = Voice + "スライムの攻撃.mp3",
+            FaintSound = Voice + "スライムの攻撃.mp3",
+            DeathSound = Voice + "打撃8.mp3",
             Ragdoll = new[]
             {
                 new RagdollBone("Body", null, null, 0.3f, 2f),
@@ -173,18 +185,82 @@ namespace TpsDungeon.Enemies.Editor
         /// プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。
         /// hp は最大 HP（<see cref="EnemyHealth"/>）、exp は倒したときの経験値（<see cref="EnemyExpReward"/>）、
         /// behaviour は敵種（Notion「敵種」の 01〜07）と、その動きの数（速さ・ダメージなど）。どれも 1 層を想定した仮の値。
+        /// 音は敵種ごとの既定に、気付いたときの声（noticeClip）などをモンスターごとに With で重ねる。
         /// </summary>
         private static readonly (Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour)[] Monsters =
         {
-            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")),
-            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f)),
-            (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)),
-            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 1.5f, damage: 8)),
-            (Blob, "PinkBlob", 15, 5, EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 3.5f)),
-            (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)),
-            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)),
-            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Pink)),
+            // 棍棒を振る（剣の素振り 1 は大剣を振る音）。重く当たる。
+            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")
+                .With("noticeClip", Voice + "ゴブリンの鳴き声2.mp3")
+                .With("attackClip", "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/剣の素振り1.mp3")
+                .With("hitClip", Voice + "打撃5.mp3")),
+            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f)
+                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+            (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)
+                .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")),
+            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 1.5f, damage: 8)
+                .With("noticeClip", Voice + "ゾンビの声1.mp3")),
+            (Blob, "PinkBlob", 15, 5, EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 3.5f)
+                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+            (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)
+                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)
+                .With("noticeClip", Voice + "翼竜の鳴き声2.mp3")),
+            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Pink)
+                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
         };
+
+        /// <summary>
+        /// 作ってあるプレハブに、声と攻撃の音だけを入れ直す（Animator もほかの値も作り直さない）。
+        /// 音を差し替えたいときはこのファイル（グループの声・<see cref="Monsters"/> の With）と EnemyBehaviourSetup を直してからこれを回す。
+        /// 開いているシーンには触らないので、敵の居るシーンを開いたままでもよい。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの音だけ入れ直す")]
+        public static void ApplySoundsFromMenu()
+        {
+            Debug.Log(ApplySounds());
+        }
+
+        public static string ApplySounds()
+        {
+            var log = new List<string>();
+            foreach (var (group, model, _, _, behaviour) in Monsters)
+            {
+                string path = $"{PrefabFolder}/{group.Name}_{model}.prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
+                {
+                    log.Add($"飛ばした（プレハブが無い）: {path}");
+                    continue;
+                }
+
+                GameObject root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    WriteVoices(root, group, log);
+                    EnemyBehaviourSetup.WriteSounds(root, behaviour, log);
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    log.Add($"音を入れ直した: {path}");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+            return "モンスターの音を入れ直した\n  " + string.Join("\n  ", log);
+        }
+
+        /// <summary>グループの声（スタン・気絶・死亡）を入れる。</summary>
+        private static void WriteVoices(GameObject root, Group group, List<string> log)
+        {
+            var reaction = new SerializedObject(root.GetComponent<EnemyDamageReaction>());
+            reaction.FindProperty("stunClip").objectReferenceValue = LoadClip(group.StunSound, log);
+            reaction.FindProperty("faintClip").objectReferenceValue = LoadClip(group.FaintSound, log);
+            reaction.ApplyModifiedPropertiesWithoutUndo();
+
+            var death = new SerializedObject(root.GetComponent<EnemyDeath>());
+            death.FindProperty("deathClip").objectReferenceValue = LoadClip(group.DeathSound, log);
+            death.ApplyModifiedPropertiesWithoutUndo();
+        }
 
         [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの Animator とプレハブを作る")]
         public static void GenerateFromMenu()
@@ -214,8 +290,6 @@ namespace TpsDungeon.Enemies.Editor
 
             EnemyBehaviourSetup.WriteShots(log);
 
-            var stunClip = LoadClip(StunClipPath, log);
-            var faintClip = LoadClip(FaintClipPath, log);
 
             foreach (var (group, model, hp, exp, behaviour) in Monsters)
             {
@@ -228,7 +302,7 @@ namespace TpsDungeon.Enemies.Editor
                 }
                 var overrides = BuildOverride(group, model, controllers[group], clips);
                 log.Add($"プレハブ（{behaviour.Label}）: " + BuildPrefab(group, model, hp, exp, behaviour, overrides,
-                    clips[group.Locomotion[0].clip], stunClip, faintClip, log));
+                    clips[group.Locomotion[0].clip], log));
             }
 
             AssetDatabase.SaveAssets();
@@ -410,7 +484,7 @@ namespace TpsDungeon.Enemies.Editor
         // ---- プレハブ ----
 
         private static string BuildPrefab(Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour,
-            AnimatorOverrideController overrides, AnimationClip idle, AudioClip stunClip, AudioClip faintClip, List<string> log)
+            AnimatorOverrideController overrides, AnimationClip idle, List<string> log)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(model));
             string prefabName = $"{group.Name}_{model}";
@@ -446,13 +520,10 @@ namespace TpsDungeon.Enemies.Editor
                 health.FindProperty("maxHp").intValue = hp;
                 health.ApplyModifiedPropertiesWithoutUndo();
 
-                var reaction = new SerializedObject(root.AddComponent<EnemyDamageReaction>());
-                reaction.FindProperty("stunClip").objectReferenceValue = stunClip;
-                reaction.FindProperty("faintClip").objectReferenceValue = faintClip;
-                reaction.ApplyModifiedPropertiesWithoutUndo();
-
+                root.AddComponent<EnemyDamageReaction>();
                 BuildRagdoll(group, root, animator);
                 EnemyDeathSetup.Assign(root.AddComponent<EnemyDeath>(), EnemyDeathSetup.EnsureFadeTemplate());
+                WriteVoices(root, group, log);
                 EnemyBehaviourSetup.Assign(root, behaviour, group.Radius, group.Height, log);
 
                 PrefabUtility.SaveAsPrefabAsset(root, path);

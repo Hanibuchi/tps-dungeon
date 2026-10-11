@@ -114,8 +114,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   knockbackSkin: 0.4
   hitClip: {fileID: 0}
-  stunClip: {fileID: 8300000, guid: 0e625dcf092fe43618c9354f4deabc38, type: 3}
-  faintClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
+  stunClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
+  faintClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
   volume: 1
 --- !u!114 &8210441769460623867
 MonoBehaviour:
@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDeath
   deathPush: 3
-  deathClip: {fileID: 0}
+  deathClip: {fileID: 8300000, guid: 23d7f7cb96b644842ad39978bf7808be, type: 3}
   volume: 1
   corpseDelay: 2
   fadeDuration: 1.5
@@ -195,6 +195,9 @@ MonoBehaviour:
   turnSpeed: 540
   hoverHeight: 0
   hoverBob: 0.08
+  diveHeight: 0.4
+  evadeHeight: 0.7
+  climbSpeed: 3.5
   repathInterval: 0.2
 --- !u!114 &3936261480461675952
 MonoBehaviour:
@@ -214,9 +217,11 @@ MonoBehaviour:
   scanInterval: 0.2
   damage: 8
   cooldown: 2
-  windupClip: {fileID: 0}
+  attackAnimation: Attack
+  noticeClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
+  windupClip: {fileID: 8300000, guid: b4298b1bd349f47f8a7dfdd94438e0b2, type: 3}
   attackClip: {fileID: 8300000, guid: ca272340699484764b94f64887cbee73, type: 3}
-  hitClip: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
+  hitClip: {fileID: 8300000, guid: 5b4eb0ce7ed684149883ef786ed23a01, type: 3}
   volume: 1
   minRange: 4
   maxRange: 12

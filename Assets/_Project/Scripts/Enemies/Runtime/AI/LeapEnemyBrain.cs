@@ -46,6 +46,9 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0f), Tooltip("着地してから動き出すまで（秒）。")]
         private float landRecovery = 0.9f;
 
+        [SerializeField, Tooltip("着地の音。")]
+        private AudioClip landClip;
+
         [SerializeField, Tooltip("飛ぶ途中の壁の判定の対象。")]
         private LayerMask wallMask = ~0;
 
@@ -187,6 +190,7 @@ namespace TpsDungeon.Enemies
             phase = Phase.Land;
             timer = landRecovery;
             Play(LandParam);
+            PlaySound(landClip, transform.position);
             Motor.Resume();
         }
 
