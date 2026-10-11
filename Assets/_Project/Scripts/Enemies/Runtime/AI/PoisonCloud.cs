@@ -23,6 +23,8 @@ namespace TpsDungeon.Enemies
             public float Duration;
             public float TickInterval;
             public int TickDamage;
+            /// <summary>霧を出した敵（記録用）。</summary>
+            public GameObject Source;
 
             public GameObject Effect;
             /// <summary>Effect の素材そのままの半径（m）。</summary>
@@ -85,7 +87,7 @@ namespace TpsDungeon.Enemies
                 if (offset.y < -0.5f || offset.y > settings.Height) continue;
                 offset.y = 0f;
                 if (offset.magnitude > settings.Radius) continue;
-                target.Damage(settings.TickDamage);
+                target.Damage(settings.TickDamage, settings.Source);
             }
         }
     }

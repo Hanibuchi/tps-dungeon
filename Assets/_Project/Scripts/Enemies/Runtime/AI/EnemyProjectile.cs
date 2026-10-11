@@ -61,7 +61,7 @@ namespace TpsDungeon.Enemies
 
             if (TryHit(from, step, out Vector3 point, out EnemyTarget target, out bool hitSomething))
             {
-                target.Damage(settings.Damage);
+                target.Damage(settings.Damage, settings.Owner != null ? settings.Owner.gameObject : null);
                 Finish(point, true);
                 return;
             }

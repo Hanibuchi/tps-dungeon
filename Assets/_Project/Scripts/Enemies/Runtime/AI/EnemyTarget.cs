@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TpsDungeon.Player;
 using UnityEngine;
@@ -57,12 +58,36 @@ namespace TpsDungeon.Enemies
 
         public bool SameAs(EnemyTarget other) => Character == other.Character && Decoy == other.Decoy;
 
-        /// <summary>amount だけ体力を減らす。メンバーなら盾と加護の軽減が掛かる。</summary>
-        public void Damage(int amount)
+        /// <summary>名前（記録や確認用）。</summary>
+        public string Name => Transform != null ? Transform.name : "（なし）";
+
+        /// <summary>
+        /// 敵の攻撃で誰かの体力が減った（攻撃した敵、相手、実際に減った量）。確認用の窓などが聞く。
+        /// 盾や加護で減らなかった分は含まない。
+        /// </summary>
+        public static event Action<GameObject, EnemyTarget, int> Damaged;
+
+        // ドメインの読み直しを切っているので、Play のたびに聞き手を外す。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Damaged = null;
+
+        /// <summary>amount だけ体力を減らす。メンバーなら盾と加護の軽減が掛かる。source は攻撃した敵（記録用、null でもよい）。</summary>
+        public void Damage(int amount, GameObject source)
         {
             if (amount <= 0 || !IsValid) return;
-            if (Character != null) Character.Damage(amount);
-            else Decoy.TakeDamage(amount);
+
+            int dealt;
+            if (Character != null)
+            {
+                int before = Character.CurrentHp;
+                Character.Damage(amount);
+                dealt = before - Character.CurrentHp;
+            }
+            else
+            {
+                dealt = Decoy.TakeDamage(amount);
+            }
+            if (dealt > 0) Damaged?.Invoke(source, this, dealt);
         }
 
         /// <summary>当たり判定から相手を引く。メンバーでも置物でもなければ false。</summary>

@@ -71,17 +71,23 @@ namespace TpsDungeon.Enemies
         protected EnemyDamageReaction Reaction { get; private set; }
 
         /// <summary>今狙っている相手。<see cref="HasTarget"/> が偽なら意味がない。</summary>
-        protected EnemyTarget Target { get; private set; }
-        protected bool HasTarget { get; private set; }
+        public EnemyTarget Target { get; private set; }
+        public bool HasTarget { get; private set; }
 
         /// <summary>今相手が見えている（最後の探し直しの時点で）。</summary>
-        protected bool TargetVisible { get; private set; }
+        public bool TargetVisible { get; private set; }
 
         /// <summary>最後に相手を見た所（足元）。</summary>
-        protected Vector3 LastSeenPosition { get; private set; }
+        public Vector3 LastSeenPosition { get; private set; }
 
         /// <summary>次の攻撃までの残り（秒）。0 で撃てる。</summary>
-        protected float CooldownRemaining { get; set; }
+        public float CooldownRemaining { get; protected set; }
+
+        /// <summary>今何をしているか（確認用の窓やシーンの表示に出す短い言葉）。</summary>
+        public abstract string StateLabel { get; }
+
+        /// <summary>この敵の攻撃の 1 回のダメージ（毒霧なら 1 刻み）。</summary>
+        public int Damage => damage;
 
         /// <summary>体の中心（当たり判定の中心、無ければ足元から 1 m 上）。</summary>
         protected Vector3 Center => body != null && body.enabled ? body.bounds.center : transform.position + Vector3.up;
@@ -300,5 +306,30 @@ namespace TpsDungeon.Enemies
         }
 
         protected static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+
+        // ---- 確認用の表示（シーンで選んだときだけ） ----
+
+        private void OnDrawGizmosSelected()
+        {
+            Disc(transform.position, detectRadius, new Color(1f, 0.9f, 0.2f, 0.5f));
+            Disc(transform.position, loseRadius, new Color(1f, 0.9f, 0.2f, 0.2f));
+            DrawRanges();
+
+            if (!Application.isPlaying || !HasTarget) return;
+            Gizmos.color = TargetVisible ? Color.red : Color.gray;
+            Gizmos.DrawLine(Center, TargetVisible ? Target.AimPoint : LastSeenPosition + Vector3.up);
+        }
+
+        /// <summary>種類ごとの間合い（選んだときに足元へ円で描く）。</summary>
+        protected virtual void DrawRanges() { }
+
+        /// <summary>足元に水平の円を描く（エディタの中だけ）。</summary>
+        protected static void Disc(Vector3 center, float radius, Color color)
+        {
+#if UNITY_EDITOR
+            UnityEditor.Handles.color = color;
+            UnityEditor.Handles.DrawWireDisc(center + Vector3.up * 0.05f, Vector3.up, radius);
+#endif
+        }
     }
 }

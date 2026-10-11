@@ -93,11 +93,22 @@ namespace TpsDungeon.Enemies
                 Duration = cloudDuration,
                 TickInterval = tickInterval,
                 TickDamage = damage,
+                Source = gameObject,
                 Effect = cloudEffect,
                 EffectRadius = cloudEffectRadius,
                 Tint = cloudTint,
             });
             PlaySound(attackClip, Center);
+        }
+
+        public override string StateLabel => emitting ? $"溜め {timer:0.0}s"
+            : CooldownRemaining > 0f ? $"次の霧まで {CooldownRemaining:0.0}s"
+            : HasTarget ? "追う" : "待つ";
+
+        protected override void DrawRanges()
+        {
+            Disc(transform.position, emitRange, new Color(1f, 0.3f, 0.2f, 0.9f));
+            Disc(transform.position, cloudRadius, new Color(0.4f, 1f, 0.3f, 0.6f));
         }
 
         protected override void Interrupted()

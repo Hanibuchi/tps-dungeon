@@ -150,10 +150,18 @@ namespace TpsDungeon.Enemies
                 Vector3 aim = target.AimPoint;
                 if (!EnemyHits.Clear(center, aim, transform)) continue;
                 int dealt = EnemyAttackRules.ExplosionDamage(damage, Vector3.Distance(center, aim), blastRadius, edgeDamageScale);
-                target.Damage(dealt);
+                target.Damage(dealt, gameObject);
             }
 
             Destroy(gameObject);
+        }
+
+        public override string StateLabel => fusing ? $"導火 {Mathf.Max(0f, fuseTime - fuseElapsed):0.0}s" : HasTarget ? "追う" : "待つ";
+
+        protected override void DrawRanges()
+        {
+            Disc(transform.position, fuseRange, new Color(1f, 0.3f, 0.2f, 0.9f));
+            Disc(transform.position, blastRadius, new Color(1f, 0.6f, 0f, 0.6f));
         }
 
         protected override void OnDeath()

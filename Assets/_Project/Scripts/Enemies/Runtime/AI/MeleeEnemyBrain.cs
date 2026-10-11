@@ -96,9 +96,21 @@ namespace TpsDungeon.Enemies
             EnemyHits.Collect(center, hitRadius, hits);
             foreach (EnemyTarget target in hits)
             {
-                target.Damage(damage);
+                target.Damage(damage, gameObject);
                 PlaySound(hitClip, target.AimPoint);
             }
+        }
+
+        public override string StateLabel => phase switch
+        {
+            Phase.Windup => $"溜め {timer:0.0}s",
+            Phase.Recover => $"隙 {timer:0.0}s",
+            _ => HasTarget ? "追う" : "待つ",
+        };
+
+        protected override void DrawRanges()
+        {
+            Disc(transform.position, attackRange, new Color(1f, 0.3f, 0.2f, 0.9f));
         }
 
         protected override void Interrupted()

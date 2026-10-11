@@ -54,6 +54,7 @@ namespace TpsDungeon.Enemies
 
         private bool aiming;
         private float timer;
+        private RangedStance stance;
 
         protected override void OnEnable()
         {
@@ -63,7 +64,7 @@ namespace TpsDungeon.Enemies
 
         protected override void Think(float dt)
         {
-            RangedStance stance = HasTarget
+            stance = HasTarget
                 ? EnemyAttackRules.Stance(TargetDistance, TargetVisible, minRange, maxRange)
                 : RangedStance.Approach;
 
@@ -141,6 +142,27 @@ namespace TpsDungeon.Enemies
                 Volume = volume,
             });
             PlaySound(attackClip, muzzle);
+        }
+
+        public override string StateLabel
+        {
+            get
+            {
+                if (aiming) return $"狙う {timer:0.0}s";
+                if (!HasTarget) return "待つ";
+                return stance switch
+                {
+                    RangedStance.Hold => "止まる",
+                    RangedStance.Retreat => "下がる",
+                    _ => TargetVisible ? "寄る" : "回り込む",
+                };
+            }
+        }
+
+        protected override void DrawRanges()
+        {
+            Disc(transform.position, minRange, new Color(0.3f, 0.6f, 1f, 0.9f));
+            Disc(transform.position, maxRange, new Color(1f, 0.3f, 0.2f, 0.9f));
         }
 
         protected override void Interrupted()

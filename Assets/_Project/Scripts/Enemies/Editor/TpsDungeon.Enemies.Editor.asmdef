@@ -3,7 +3,10 @@
     "rootNamespace": "TpsDungeon.Enemies.Editor",
     "references": [
         "TpsDungeon.Progression",
-        "TpsDungeon.Enemies"
+        "TpsDungeon.Enemies",
+        "TpsDungeon.Player",
+        "TpsDungeon.Party",
+        "TpsDungeon.Map"
     ],
     "includePlatforms": [
         "Editor"

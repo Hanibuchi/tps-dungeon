@@ -162,7 +162,7 @@ namespace TpsDungeon.Enemies
                 foreach (EnemyTarget target in touching)
                 {
                     if (!EnemyHits.AddOnce(struck, target)) continue;
-                    target.Damage(damage);
+                    target.Damage(damage, gameObject);
                     PlaySound(hitClip, target.AimPoint);
                 }
             }
@@ -189,6 +189,20 @@ namespace TpsDungeon.Enemies
             Stop(AirParam);
             Play(LandParam);
             Motor.Resume();
+        }
+
+        public override string StateLabel => phase switch
+        {
+            Phase.Crouch => $"屈む {timer:0.0}s",
+            Phase.Air => $"飛ぶ {progress:P0}",
+            Phase.Land => $"着地の隙 {timer:0.0}s",
+            _ => HasTarget ? "追う" : "待つ",
+        };
+
+        protected override void DrawRanges()
+        {
+            Disc(transform.position, leapRange, new Color(1f, 0.3f, 0.2f, 0.9f));
+            if (phase == Phase.Crouch || phase == Phase.Air) Disc(to, contactRadius, new Color(1f, 0.5f, 0f, 0.9f));
         }
 
         protected override void Interrupted()
