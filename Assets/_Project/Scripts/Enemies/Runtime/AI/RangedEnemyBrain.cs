@@ -43,6 +43,9 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0.01f)]
         private float projectileEffectScale = 0.5f;
 
+        [SerializeField, Tooltip("撃ち出した瞬間に撃ち出す所へ出すエフェクト。")]
+        private GameObject muzzleEffect;
+
         [SerializeField, Tooltip("弾が当たった所に出すエフェクト。")]
         private GameObject impactEffect;
 
@@ -51,6 +54,9 @@ namespace TpsDungeon.Enemies
 
         [SerializeField, Tooltip("撃ち出す所。体の中心から前へこの距離（m）。")]
         private float muzzleForward = 0.5f;
+
+        /// <summary>撃ち出す所（体の中心から前へ）。</summary>
+        private Vector3 Muzzle => Center + transform.forward * muzzleForward;
 
         private bool aiming;
         private float timer;
@@ -74,6 +80,7 @@ namespace TpsDungeon.Enemies
                 if (!HasTarget || stance == RangedStance.Approach)
                 {
                     aiming = false;
+                    StopWindupEffect();
                 }
                 else
                 {
@@ -117,6 +124,7 @@ namespace TpsDungeon.Enemies
             aiming = true;
             timer = windup;
             PlaySound(windupClip, Center);
+            StartWindupEffect(Muzzle);
         }
 
         private void Fire()
@@ -124,10 +132,12 @@ namespace TpsDungeon.Enemies
             aiming = false;
             CooldownRemaining = cooldown;
             PlayAttack();
+            StopWindupEffect();
 
-            Vector3 muzzle = Center + transform.forward * muzzleForward;
+            Vector3 muzzle = Muzzle;
             Vector3 direction = Target.AimPoint - muzzle;
             if (direction.sqrMagnitude < 1e-4f) direction = transform.forward;
+            EnemyEffects.Spawn(muzzleEffect, muzzle, Quaternion.LookRotation(direction, Vector3.up), 1f, 1f);
 
             EnemyProjectile.Launch(projectileEffect, projectileEffectScale, muzzle, direction, new EnemyProjectile.Settings
             {

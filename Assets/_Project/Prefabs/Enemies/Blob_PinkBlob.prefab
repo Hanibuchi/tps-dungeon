@@ -223,6 +223,8 @@ MonoBehaviour:
   attackClip: {fileID: 8300000, guid: 8fde0c6d407694a96b25f417a709aed4, type: 3}
   hitClip: {fileID: 0}
   volume: 1
+  windupEffect: {fileID: 0}
+  hitEffect: {fileID: 0}
   fuseRange: 2.2
   fuseTime: 3
   fuseSpeedScale: 0.4

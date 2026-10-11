@@ -11,6 +11,7 @@ namespace TpsDungeon.Enemies
             if (prefab == null) return null;
             GameObject instance = Object.Instantiate(prefab, position, rotation);
             Prepare(instance, scale, false);
+            if (instance.GetComponentInChildren<Light>() != null) instance.AddComponent<EffectLightFade>();
             Object.Destroy(instance, lifetime);
             return instance;
         }
@@ -30,7 +31,7 @@ namespace TpsDungeon.Enemies
         }
 
         /// <summary>
-        /// 放出を止め、出ている粒と尾が消えてから消す。粒でも尾でもない見た目（弾の球など）はすぐ隠す。
+        /// 放出を止め、出ている粒と尾が消えてから消す。粒でも尾でもない見た目（弾の球など）と光はすぐ消す。
         /// </summary>
         public static void Release(GameObject instance, float linger)
         {
@@ -38,6 +39,7 @@ namespace TpsDungeon.Enemies
             instance.transform.SetParent(null, true);
             foreach (ParticleSystem particles in instance.GetComponentsInChildren<ParticleSystem>())
                 particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+            foreach (Light light in instance.GetComponentsInChildren<Light>()) light.enabled = false;
             foreach (Renderer r in instance.GetComponentsInChildren<Renderer>())
             {
                 if (r is TrailRenderer trail) trail.emitting = false;

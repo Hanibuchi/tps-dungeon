@@ -49,6 +49,9 @@ namespace TpsDungeon.Enemies
         [SerializeField, Tooltip("着地の音。")]
         private AudioClip landClip;
 
+        [SerializeField, Tooltip("着地の足元に出す効果（土煙）。")]
+        private GameObject landEffect;
+
         [SerializeField, Tooltip("飛ぶ途中の壁の判定の対象。")]
         private LayerMask wallMask = ~0;
 
@@ -122,6 +125,7 @@ namespace TpsDungeon.Enemies
             Motor.LookAt = landing;
             Play(CrouchParam);
             PlaySound(windupClip, Center);
+            StartWindupEffect(HeadPoint);
         }
 
         private void TakeOff()
@@ -134,6 +138,7 @@ namespace TpsDungeon.Enemies
 
             Motor.LookAt = null;
             Motor.Suspend();
+            StopWindupEffect();
             Vector3 heading = Flat(to - from);
             if (heading.sqrMagnitude > 1e-4f) transform.rotation = Quaternion.LookRotation(heading, Vector3.up);
 
@@ -167,6 +172,7 @@ namespace TpsDungeon.Enemies
                     if (!EnemyHits.AddOnce(struck, target)) continue;
                     target.Damage(damage, gameObject);
                     PlaySound(hitClip, target.AimPoint);
+                    SpawnHitEffect(target.AimPoint);
                 }
             }
 
@@ -191,6 +197,7 @@ namespace TpsDungeon.Enemies
             timer = landRecovery;
             Play(LandParam);
             PlaySound(landClip, transform.position);
+            EnemyEffects.Spawn(landEffect, transform.position + Vector3.up * 0.05f, Quaternion.identity, 1f, 1.5f);
             Motor.Resume();
         }
 

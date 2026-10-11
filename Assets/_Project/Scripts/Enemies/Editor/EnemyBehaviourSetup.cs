@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using Object = UnityEngine.Object;
+using FxColor = TpsDungeon.Enemies.Editor.EnemyEffectsBuilder.FxColor;
 
 namespace TpsDungeon.Enemies.Editor
 {
@@ -24,10 +25,6 @@ namespace TpsDungeon.Enemies.Editor
         private const string PoisonCloudEffect = HovlPrefabs + "Smoke effects/Smoke hemisphere loop.prefab";
         private const float PoisonCloudEffectRadius = 6f;
 
-        // 遠距離の敵の弾。光る球に尾を引かせたものをここで作る（Hovl の粒の素材は細かい火花で、飛ぶ弾に見えないため）。
-        private const string ShotFolder = "Assets/_Project/Prefabs/Enemies/Shots";
-        private const string ShotMaterialFolder = "Assets/_Project/Materials/Enemies";
-        private const float ShotSize = 0.26f;
 
         /// <summary>浮く敵の上下の揺れ幅（m、片側）。</summary>
         private const float HoverBob = 0.45f;
@@ -87,7 +84,8 @@ namespace TpsDungeon.Enemies.Editor
         /// <summary>
         /// 01 単純近距離: 単純に近づいて攻撃。attackAnimation は武器を持っているモンスターなら "Weapon"（武器を振る。Big のグループにある）。
         /// </summary>
-        public static Behaviour Melee(float speed, int damage, float range, float hitRadius, string attackAnimation = null) => new Behaviour
+        public static Behaviour Melee(float speed, int damage, float range, float hitRadius, string attackAnimation = null,
+            FxColor hitColor = FxColor.Orange) => new Behaviour
         {
             Label = "01 単純近距離",
             Brain = typeof(MeleeEnemyBrain),
@@ -96,7 +94,11 @@ namespace TpsDungeon.Enemies.Editor
             AttackAnimation = attackAnimation,
             Cooldown = 1.4f,
             Numbers = new[] { ("attackRange", range), ("hitRadius", hitRadius), ("windup", 0.5f), ("recovery", 0.5f) },
-            Assets = { ("attackClip", SwingSound), ("hitClip", HitSound) },
+            Assets =
+            {
+                ("attackClip", SwingSound), ("hitClip", HitSound),
+                ("windupEffect", EnemyEffectsBuilder.GlintPath), ("hitEffect", EnemyEffectsBuilder.ImpactPath(hitColor)),
+            },
         };
 
         /// <summary>02 飛びつき近距離: 飛びついて攻撃。</summary>
@@ -108,7 +110,12 @@ namespace TpsDungeon.Enemies.Editor
             Damage = damage,
             Cooldown = 2.2f,
             Numbers = new[] { ("leapRange", leapRange), ("crouchTime", 0.6f), ("leapSpeed", 9f), ("leapApex", 1.4f), ("landRecovery", 0.9f) },
-            Assets = { ("attackClip", LeapSound), ("hitClip", HeavyHitSound), ("landClip", LandSound) },
+            Assets =
+            {
+                ("attackClip", LeapSound), ("hitClip", HeavyHitSound), ("landClip", LandSound),
+                ("windupEffect", EnemyEffectsBuilder.GlintPath), ("hitEffect", EnemyEffectsBuilder.ImpactPath(FxColor.Orange)),
+                ("landEffect", EnemyEffectsBuilder.DustPath),
+            },
         };
 
         /// <summary>03 浮遊近距離: 浮遊して近距離攻撃。ふだんは hover の高さを不規則に上下し、殴るときだけ降りてくる。</summary>
@@ -121,7 +128,11 @@ namespace TpsDungeon.Enemies.Editor
             Damage = damage,
             Cooldown = 1.2f,
             Numbers = new[] { ("attackRange", 1.5f), ("hitRadius", 1f), ("windup", 0.4f), ("recovery", 0.4f) },
-            Assets = { ("attackClip", DiveSound), ("hitClip", HitSound) },
+            Assets =
+            {
+                ("attackClip", DiveSound), ("hitClip", HitSound),
+                ("windupEffect", EnemyEffectsBuilder.GlintPath), ("hitEffect", EnemyEffectsBuilder.ImpactPath(FxColor.Purple)),
+            },
         };
 
         /// <summary>04 自爆: 近づいて自爆。</summary>
@@ -149,23 +160,15 @@ namespace TpsDungeon.Enemies.Editor
         };
 
         /// <summary>06 浮遊遠距離: 浮遊して遠距離攻撃。</summary>
-        public static Behaviour FloatingRanged(float speed, float hover, int damage, ShotColor color) => Ranged(speed, damage, color, WindShotSound,
+        public static Behaviour FloatingRanged(float speed, float hover, int damage, FxColor color) => Ranged(speed, damage, color, WindShotSound,
             "06 浮遊遠距離", hover, minRange: 5f, maxRange: 13f);
 
         /// <summary>07 遠距離: 射線が通る所まで来て遠距離攻撃。</summary>
-        public static Behaviour Ranged(float speed, int damage, ShotColor color) => Ranged(speed, damage, color, MagicShotSound,
+        public static Behaviour Ranged(float speed, int damage, FxColor color) => Ranged(speed, damage, color, MagicShotSound,
             "07 遠距離", 0f, minRange: 4f, maxRange: 12f);
 
-        /// <summary>弾の色。名前は Hovl の Sparks の色（当たると同じ色の火花が散る）。</summary>
-        public enum ShotColor { Blue, Pink }
-
-        private static Color GlowOf(ShotColor color) => color == ShotColor.Blue
-            ? new Color(0.35f, 0.75f, 1.6f, 1f)
-            : new Color(1.6f, 0.35f, 1.2f, 1f);
-
-        private static string ShotPath(ShotColor color) => $"{ShotFolder}/EnemyShot_{color}.prefab";
-
-        private static Behaviour Ranged(float speed, int damage, ShotColor color, string shotSound, string label, float hover,
+        /// <summary>color は弾・溜め・撃ち出し・当たりの色（<see cref="EnemyEffectsBuilder"/> は Pink と Blue の弾を作る）。</summary>
+        private static Behaviour Ranged(float speed, int damage, FxColor color, string shotSound, string label, float hover,
             float minRange, float maxRange) => new Behaviour
         {
             Label = label,
@@ -177,22 +180,25 @@ namespace TpsDungeon.Enemies.Editor
             Numbers = new[]
             {
                 ("minRange", minRange), ("maxRange", maxRange), ("windup", 0.7f), ("projectileSpeed", 12f),
-                ("projectileEffectScale", 1f), ("impactEffectScale", 0.3f),
+                ("projectileEffectScale", 1f), ("impactEffectScale", 1f),
             },
             Assets =
             {
                 ("windupClip", ChargeSound),
-                ("projectileEffect", ShotPath(color)),
-                ("impactEffect", $"{HovlPrefabs}Sparks/Sparks explode {color.ToString().ToLowerInvariant()}.prefab"),
+                ("projectileEffect", EnemyEffectsBuilder.ShotPath(color)),
+                ("impactEffect", EnemyEffectsBuilder.ImpactPath(color)),
+                ("windupEffect", EnemyEffectsBuilder.ChargePath(color)),
+                ("muzzleEffect", EnemyEffectsBuilder.MuzzlePath(color)),
                 ("attackClip", shotSound),
                 ("hitClip", ShotHitSound),
             },
         };
 
         /// <summary>
-        /// 作ってあるプレハブの Brain に、音（名前が Clip で終わるフィールド）だけを入れ直す。Animator やほかの値には触らない。
+        /// 作ってあるプレハブの Brain に、音と見た目（Assets の全部と、名前が EffectScale で終わる数）だけを入れ直す。
+        /// Animator や動きの数（速さ・間合い・導火の時間など）には触らない。
         /// </summary>
-        public static void WriteSounds(GameObject root, Behaviour behaviour, List<string> log)
+        public static void WritePresentation(GameObject root, Behaviour behaviour, List<string> log)
         {
             var component = root.GetComponent(behaviour.Brain);
             if (component == null)
@@ -201,7 +207,11 @@ namespace TpsDungeon.Enemies.Editor
                 return;
             }
             var brain = new SerializedObject(component);
-            WriteAssets(brain, behaviour, root.name, true, log);
+            WriteAssets(brain, behaviour, root.name, false, log);
+            foreach (var (field, value) in behaviour.Numbers)
+            {
+                if (field.EndsWith("EffectScale", StringComparison.Ordinal)) brain.FindProperty(field).floatValue = value;
+            }
             brain.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -218,77 +228,10 @@ namespace TpsDungeon.Enemies.Editor
             }
         }
 
-        // ---- 弾の見た目 ----
+        // ---- 見た目 ----
 
-        /// <summary>弾の見た目（光る球と尾）を色ごとに作り直す。敵のプレハブより先に呼ぶ。</summary>
-        public static void WriteShots(List<string> log)
-        {
-            EnsureFolder(ShotFolder);
-            EnsureFolder(ShotMaterialFolder);
-
-            // 尾は頂点色で色を付ける（矢の雨の円と同じ Sprites/Default）。
-            Material trailMaterial = LoadOrCreateMaterial($"{ShotMaterialFolder}/EnemyShotTrail.mat", "Sprites/Default");
-
-            foreach (ShotColor color in Enum.GetValues(typeof(ShotColor)))
-            {
-                Color glow = GlowOf(color);
-                Material orb = LoadOrCreateMaterial($"{ShotMaterialFolder}/EnemyShot_{color}.mat", "Universal Render Pipeline/Lit");
-                Color baseColor = new Color(Mathf.Min(1f, glow.r), Mathf.Min(1f, glow.g), Mathf.Min(1f, glow.b), 1f);
-                orb.SetColor("_BaseColor", baseColor);
-                orb.EnableKeyword("_EMISSION");
-                orb.SetColor("_EmissionColor", glow * 1.5f);
-                // None だと検証し直しで _EMISSION が外れて光らなくなる。
-                orb.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
-                EditorUtility.SetDirty(orb);
-
-                var root = new GameObject($"EnemyShot_{color}");
-                try
-                {
-                    var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    ball.name = "Orb";
-                    Object.DestroyImmediate(ball.GetComponent<Collider>());
-                    ball.transform.SetParent(root.transform, false);
-                    ball.transform.localScale = Vector3.one * ShotSize;
-                    var renderer = ball.GetComponent<MeshRenderer>();
-                    renderer.sharedMaterial = orb;
-                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-                    var trail = root.AddComponent<TrailRenderer>();
-                    trail.sharedMaterial = trailMaterial;
-                    trail.time = 0.2f;
-                    trail.widthMultiplier = ShotSize * 0.8f;
-                    trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
-                    trail.startColor = new Color(baseColor.r, baseColor.g, baseColor.b, 0.8f);
-                    trail.endColor = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
-                    trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    trail.receiveShadows = false;
-
-                    PrefabUtility.SaveAsPrefabAsset(root, ShotPath(color));
-                    log.Add($"弾: {ShotPath(color)}");
-                }
-                finally
-                {
-                    Object.DestroyImmediate(root);
-                }
-            }
-        }
-
-        private static Material LoadOrCreateMaterial(string path, string shaderName)
-        {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material != null) return material;
-            material = new Material(Shader.Find(shaderName)) { name = System.IO.Path.GetFileNameWithoutExtension(path) };
-            AssetDatabase.CreateAsset(material, path);
-            return material;
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path)) return;
-            int slash = path.LastIndexOf('/');
-            EnsureFolder(path.Substring(0, slash));
-            AssetDatabase.CreateFolder(path.Substring(0, slash), path.Substring(slash + 1));
-        }
+        /// <summary>敵の攻撃の見た目のプレハブを作り直す。敵のプレハブより先に呼ぶ。</summary>
+        public static void WriteEffects(List<string> log) => EnemyEffectsBuilder.WriteAll(log);
 
         // ---- プレハブに付ける ----
 

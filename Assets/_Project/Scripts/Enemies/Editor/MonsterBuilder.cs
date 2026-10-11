@@ -194,7 +194,8 @@ namespace TpsDungeon.Enemies.Editor
                 .With("noticeClip", Voice + "ゴブリンの鳴き声2.mp3")
                 .With("attackClip", "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/剣の素振り1.mp3")
                 .With("hitClip", Voice + "打撃5.mp3")),
-            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f)
+            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f,
+                    hitColor: EnemyEffectsBuilder.FxColor.Green)
                 .With("noticeClip", Voice + "スライムの攻撃.mp3")),
             (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)
                 .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")),
@@ -204,26 +205,27 @@ namespace TpsDungeon.Enemies.Editor
                 .With("noticeClip", Voice + "スライムの攻撃.mp3")),
             (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)
                 .With("noticeClip", Voice + "スライムの攻撃.mp3")),
-            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)
+            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyEffectsBuilder.FxColor.Blue)
                 .With("noticeClip", Voice + "翼竜の鳴き声2.mp3")),
-            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Pink)
+            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyEffectsBuilder.FxColor.Pink)
                 .With("noticeClip", Voice + "スライムの攻撃.mp3")),
         };
 
         /// <summary>
-        /// 作ってあるプレハブに、声と攻撃の音だけを入れ直す（Animator もほかの値も作り直さない）。
-        /// 音を差し替えたいときはこのファイル（グループの声・<see cref="Monsters"/> の With）と EnemyBehaviourSetup を直してからこれを回す。
-        /// 開いているシーンには触らないので、敵の居るシーンを開いたままでもよい。
+        /// 作ってあるプレハブに、声・攻撃の音・攻撃の見た目だけを入れ直す（見た目のプレハブは作り直す。Animator も動きの数も作り直さない）。
+        /// 音や見た目を差し替えたいときはこのファイル（グループの声・<see cref="Monsters"/> の With）・EnemyBehaviourSetup・
+        /// EnemyEffectsBuilder を直してからこれを回す。開いているシーンには触らないので、敵の居るシーンを開いたままでもよい。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの音だけ入れ直す")]
-        public static void ApplySoundsFromMenu()
+        [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの音と見た目だけ入れ直す")]
+        public static void ApplyPresentationFromMenu()
         {
-            Debug.Log(ApplySounds());
+            Debug.Log(ApplyPresentation());
         }
 
-        public static string ApplySounds()
+        public static string ApplyPresentation()
         {
             var log = new List<string>();
+            EnemyBehaviourSetup.WriteEffects(log);
             foreach (var (group, model, _, _, behaviour) in Monsters)
             {
                 string path = $"{PrefabFolder}/{group.Name}_{model}.prefab";
@@ -237,16 +239,16 @@ namespace TpsDungeon.Enemies.Editor
                 try
                 {
                     WriteVoices(root, group, log);
-                    EnemyBehaviourSetup.WriteSounds(root, behaviour, log);
+                    EnemyBehaviourSetup.WritePresentation(root, behaviour, log);
                     PrefabUtility.SaveAsPrefabAsset(root, path);
-                    log.Add($"音を入れ直した: {path}");
+                    log.Add($"音と見た目を入れ直した: {path}");
                 }
                 finally
                 {
                     PrefabUtility.UnloadPrefabContents(root);
                 }
             }
-            return "モンスターの音を入れ直した\n  " + string.Join("\n  ", log);
+            return "モンスターの音と見た目を入れ直した\n  " + string.Join("\n  ", log);
         }
 
         /// <summary>グループの声（スタン・気絶・死亡）を入れる。</summary>
@@ -288,7 +290,7 @@ namespace TpsDungeon.Enemies.Editor
                 log.Add($"コントローラ: {group.ControllerPath}（{clips.Count} クリップ）");
             }
 
-            EnemyBehaviourSetup.WriteShots(log);
+            EnemyBehaviourSetup.WriteEffects(log);
 
 
             foreach (var (group, model, hp, exp, behaviour) in Monsters)

@@ -228,6 +228,8 @@ MonoBehaviour:
   attackClip: {fileID: 8300000, guid: eaa57906516414b28a3daf5354b5d265, type: 3}
   hitClip: {fileID: 8300000, guid: f99d28e21a5974a83b1dae6eff282b61, type: 3}
   volume: 1
+  windupEffect: {fileID: 7063366685381866213, guid: 32956b3de14a64e65ad17558c4423bcb, type: 3}
+  hitEffect: {fileID: 2635763173150528539, guid: db5a4fb984dd94e2abcc4255b12f0d6e, type: 3}
   attackRange: 1.5
   hitRadius: 1
   windup: 0.4

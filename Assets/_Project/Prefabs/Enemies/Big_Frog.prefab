@@ -236,6 +236,8 @@ MonoBehaviour:
   attackClip: {fileID: 8300000, guid: 3203102d6bbfe4fda929b36aba1fd1a5, type: 3}
   hitClip: {fileID: 8300000, guid: fa6e0a0ceb93d48d79bfd458884bdc2d, type: 3}
   volume: 1
+  windupEffect: {fileID: 7063366685381866213, guid: 32956b3de14a64e65ad17558c4423bcb, type: 3}
+  hitEffect: {fileID: 8531300159004226574, guid: 8730eb415e0b948a095c354149c03adc, type: 3}
   leapRange: 6
   crouchTime: 0.6
   leapSpeed: 9
@@ -244,6 +246,7 @@ MonoBehaviour:
   contactRadius: 0.9
   landRecovery: 0.9
   landClip: {fileID: 8300000, guid: f50620f242b9848bcb78420272125b49, type: 3}
+  landEffect: {fileID: 5079736196863022346, guid: a95be1b8bc39647f9b284e252ca9c195, type: 3}
   wallMask:
     serializedVersion: 2
     m_Bits: 4294967295

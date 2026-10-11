@@ -228,16 +228,19 @@ MonoBehaviour:
   attackClip: {fileID: 8300000, guid: 63c4ab587b39b46a9882c1a1d4c9cb53, type: 3}
   hitClip: {fileID: 8300000, guid: 5b4eb0ce7ed684149883ef786ed23a01, type: 3}
   volume: 1
+  windupEffect: {fileID: 1386788889045153469, guid: cc935878c11cd482eb07a37f9f3ed584, type: 3}
+  hitEffect: {fileID: 0}
   minRange: 5
   maxRange: 13
   windup: 0.7
   retreatStep: 3
   projectileSpeed: 12
   projectileRadius: 0.25
-  projectileEffect: {fileID: 4858786472020328239, guid: afaed3509044a4c179487c8dbe56bc8b, type: 3}
+  projectileEffect: {fileID: 4386055606796133815, guid: 48aa811119b2940ca978b4b01334fc75, type: 3}
   projectileEffectScale: 1
-  impactEffect: {fileID: 952961124639765284, guid: 1095a5c9f65bfbe4383f63d5d1886c65, type: 3}
-  impactEffectScale: 0.3
+  muzzleEffect: {fileID: 5408700733949793762, guid: 79df02f08ac714b65bbd545e29cc495a, type: 3}
+  impactEffect: {fileID: 7105975018429309799, guid: a1e8e892f5d57498ea7d1ae5a6904e2b, type: 3}
+  impactEffectScale: 1
   muzzleForward: 0.5
 --- !u!1001 &6411993167701820121
 PrefabInstance:

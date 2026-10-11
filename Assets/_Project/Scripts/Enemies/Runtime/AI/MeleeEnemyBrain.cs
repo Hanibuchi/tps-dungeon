@@ -86,6 +86,7 @@ namespace TpsDungeon.Enemies
             Motor.LookAt = Target.Position;
             PlayAttack();
             PlaySound(windupClip, Center);
+            StartWindupEffect(HeadPoint);
         }
 
         private void Strike()
@@ -93,6 +94,7 @@ namespace TpsDungeon.Enemies
             phase = Phase.Recover;
             timer = recovery;
             Motor.LookAt = null;
+            StopWindupEffect();
 
             // 球は体の前、高さは体の中心と相手の胸の間（浮いている敵が下の相手に届くように）。
             Vector3 center = Center + transform.forward * (attackRange * 0.5f);
@@ -104,6 +106,7 @@ namespace TpsDungeon.Enemies
             {
                 target.Damage(damage, gameObject);
                 PlaySound(hitClip, target.AimPoint);
+                SpawnHitEffect(target.AimPoint);
             }
         }
 

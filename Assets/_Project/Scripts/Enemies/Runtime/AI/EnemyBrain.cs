@@ -67,8 +67,16 @@ namespace TpsDungeon.Enemies
         [SerializeField, Range(0f, 1f)]
         protected float volume = 1f;
 
+        [Header("見た目（未設定なら出さない）")]
+        [SerializeField, Tooltip("溜めの間に出す効果。近接は頭の上の予兆、遠距離は撃ち出す所に集まる光。溜めが終わるか取り消されたら消す。")]
+        protected GameObject windupEffect;
+
+        [SerializeField, Tooltip("攻撃が相手に当たった所に出す効果。")]
+        protected GameObject hitEffect;
+
         private static readonly Collider[] overlap = new Collider[32];
 
+        private GameObject activeWindupEffect;
         private float nextScan;
         private float nextNotice;
         private float lastSeenTime = float.NegativeInfinity;
@@ -106,6 +114,17 @@ namespace TpsDungeon.Enemies
         /// <summary>体の高さ（m）。</summary>
         protected float BodyHeight => body != null ? body.bounds.size.y : 1.8f;
 
+        /// <summary>頭の少し上（予兆を出す所）。</summary>
+        protected Vector3 HeadPoint
+        {
+            get
+            {
+                Vector3 p = transform.position;
+                float top = body != null && body.enabled ? body.bounds.max.y : p.y + 1.8f;
+                return new Vector3(p.x, top + 0.25f, p.z);
+            }
+        }
+
         /// <summary>相手の足元までの水平の距離（m）。</summary>
         protected float TargetDistance => HasTarget ? Flat(Target.Position - transform.position).magnitude : float.PositiveInfinity;
 
@@ -138,6 +157,7 @@ namespace TpsDungeon.Enemies
 
         private void OnDied(EnemyHealth _)
         {
+            StopWindupEffect();
             OnDeath();
             enabled = false;
         }
@@ -153,7 +173,11 @@ namespace TpsDungeon.Enemies
             bool acting = Reaction == null || Reaction.CanAct;
             if (!acting)
             {
-                if (wasActing) Interrupted();
+                if (wasActing)
+                {
+                    StopWindupEffect();
+                    Interrupted();
+                }
                 wasActing = false;
                 WhileHeld(dt);
                 return;
@@ -327,6 +351,29 @@ namespace TpsDungeon.Enemies
         }
 
         protected static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+
+        /// <summary>溜めの効果を at に出す。体の子にして一緒に動かす（向きを変えても付いてくる）。</summary>
+        protected void StartWindupEffect(Vector3 at)
+        {
+            StopWindupEffect();
+            if (windupEffect == null) return;
+            activeWindupEffect = Instantiate(windupEffect, at, transform.rotation, transform);
+            EnemyEffects.Prepare(activeWindupEffect, 1f, true);
+        }
+
+        /// <summary>溜めの効果を止める。出ている粒は消えるまで残す。</summary>
+        protected void StopWindupEffect()
+        {
+            if (activeWindupEffect == null) return;
+            EnemyEffects.Release(activeWindupEffect, 0.6f);
+            activeWindupEffect = null;
+        }
+
+        /// <summary>当たりの効果を at に出す。</summary>
+        protected void SpawnHitEffect(Vector3 at)
+        {
+            EnemyEffects.Spawn(hitEffect, at, Quaternion.identity, 1f, 1.5f);
+        }
 
         // ---- 確認用の表示（シーンで選んだときだけ） ----
 

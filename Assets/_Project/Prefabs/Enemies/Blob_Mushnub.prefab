@@ -223,6 +223,8 @@ MonoBehaviour:
   attackClip: {fileID: 8300000, guid: 305394498c14c455ca33035835b5e7bf, type: 3}
   hitClip: {fileID: 0}
   volume: 1
+  windupEffect: {fileID: 0}
+  hitEffect: {fileID: 0}
   emitRange: 2.5
   windup: 0.6
   cloudRadius: 3
