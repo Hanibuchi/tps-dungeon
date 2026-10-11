@@ -27,8 +27,9 @@ namespace TpsDungeon.Enemies.Editor
     /// ステート名がクリップ名なので、animator.CrossFade("Wave", 0.1f) のように直接流してもよい。
     /// 死んでいる間（Dead が true）は Dead を戻すまでどれも流れない。
     ///
-    /// プレハブは「ルート（CapsuleCollider・EnemyHealth・EnemyDamageReaction・EnemyRagdoll・EnemyDeath・EnemyExpReward）
-    /// ＋子の Model（FBX と Animator）」。足元がルートの原点、背丈はグループの <see cref="Group.Height"/> にそろえる。
+    /// プレハブは「ルート（CapsuleCollider・EnemyHealth・EnemyDamageReaction・EnemyRagdoll・EnemyDeath・EnemyExpReward・
+    /// NavMeshAgent・EnemyMotor・敵種ごとの EnemyBrain）＋子の Model（FBX と Animator）」。
+    /// 足元がルートの原点、背丈はグループの <see cref="Group.Height"/> にそろえる。動きの付け方は <see cref="EnemyBehaviourSetup"/>。
     /// ルートモーションは使わない。
     ///
     /// 気絶で倒れ込むためのラグドールも骨に焼き込む（<see cref="Group.Ragdoll"/>）。
@@ -170,13 +171,19 @@ namespace TpsDungeon.Enemies.Editor
 
         /// <summary>
         /// プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。
-        /// hp は最大 HP（<see cref="EnemyHealth"/>）、exp は倒したときの経験値（<see cref="EnemyExpReward"/>）。1 層を想定した仮の値。
+        /// hp は最大 HP（<see cref="EnemyHealth"/>）、exp は倒したときの経験値（<see cref="EnemyExpReward"/>）、
+        /// behaviour は敵種（Notion「敵種」の 01〜07）と、その動きの数（速さ・ダメージなど）。どれも 1 層を想定した仮の値。
         /// </summary>
-        private static readonly (Group group, string model, int hp, int exp)[] Monsters =
+        private static readonly (Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour)[] Monsters =
         {
-            (Big, "Orc", 60, 12),
-            (Flying, "Ghost", 30, 6),
-            (Blob, "GreenBlob", 20, 3),
+            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f)),
+            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f)),
+            (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)),
+            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 0.6f, damage: 8)),
+            (Blob, "PinkBlob", 15, 5, EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 3.5f)),
+            (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)),
+            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Blue)),
+            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyBehaviourSetup.ShotColor.Pink)),
         };
 
         [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの Animator とプレハブを作る")]
@@ -205,10 +212,12 @@ namespace TpsDungeon.Enemies.Editor
                 log.Add($"コントローラ: {group.ControllerPath}（{clips.Count} クリップ）");
             }
 
+            EnemyBehaviourSetup.WriteShots(log);
+
             var stunClip = LoadClip(StunClipPath, log);
             var faintClip = LoadClip(FaintClipPath, log);
 
-            foreach (var (group, model, hp, exp) in Monsters)
+            foreach (var (group, model, hp, exp, behaviour) in Monsters)
             {
                 // 差し替えは名前で引くので、見本と同じ名前のクリップが全部そろっていないと骨組みの違う動きが残ってしまう。
                 string path = group.ModelPath(model);
@@ -218,8 +227,8 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
                 var overrides = BuildOverride(group, model, controllers[group], clips);
-                log.Add("プレハブ: " + BuildPrefab(group, model, hp, exp, overrides, clips[group.Locomotion[0].clip],
-                    stunClip, faintClip));
+                log.Add($"プレハブ（{behaviour.Label}）: " + BuildPrefab(group, model, hp, exp, behaviour, overrides,
+                    clips[group.Locomotion[0].clip], stunClip, faintClip, log));
             }
 
             AssetDatabase.SaveAssets();
@@ -400,8 +409,8 @@ namespace TpsDungeon.Enemies.Editor
 
         // ---- プレハブ ----
 
-        private static string BuildPrefab(Group group, string model, int hp, int exp, AnimatorOverrideController overrides,
-            AnimationClip idle, AudioClip stunClip, AudioClip faintClip)
+        private static string BuildPrefab(Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour,
+            AnimatorOverrideController overrides, AnimationClip idle, AudioClip stunClip, AudioClip faintClip, List<string> log)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(model));
             string prefabName = $"{group.Name}_{model}";
@@ -444,6 +453,7 @@ namespace TpsDungeon.Enemies.Editor
 
                 BuildRagdoll(group, root, animator);
                 EnemyDeathSetup.Assign(root.AddComponent<EnemyDeath>(), EnemyDeathSetup.EnsureFadeTemplate());
+                EnemyBehaviourSetup.Assign(root, behaviour, group.Radius, group.Height, log);
 
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }

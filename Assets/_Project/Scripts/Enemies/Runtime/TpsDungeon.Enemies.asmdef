@@ -3,7 +3,8 @@
     "rootNamespace": "TpsDungeon.Enemies",
     "references": [
         "TpsDungeon.Audio",
-        "TpsDungeon.Progression"
+        "TpsDungeon.Progression",
+        "TpsDungeon.Player"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

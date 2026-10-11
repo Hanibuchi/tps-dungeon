@@ -1,0 +1,304 @@
+using System.Collections.Generic;
+using TpsDungeon.Audio.Runtime;
+using TpsDungeon.Player;
+using UnityEngine;
+
+namespace TpsDungeon.Enemies
+{
+    /// <summary>
+    /// 敵の頭の共通部分。狙う相手を探して覚え、種類ごとの動き（派生クラスの <see cref="Think"/>）を毎フレーム呼ぶ。
+    ///
+    /// 狙う相手:
+    ///   ・召喚した置物（<see cref="DecoyTarget"/>）が見えていれば、メンバーより先に狙う
+    ///   ・次に、見えている一番近いメンバー（Ally レイヤーの <see cref="PlayerHealth"/>）
+    ///   ・見失っても <see cref="memoryTime"/> 秒は最後に見た所へ向かう。<see cref="loseRadius"/> より離れたら諦める
+    ///   ・撃たれたら、見えていなくても近くのメンバーを狙う
+    /// スタン・気絶の間は <see cref="Think"/> を呼ばず、代わりに <see cref="Interrupted"/> を 1 回呼ぶ（溜めていた攻撃を取り消す）。
+    /// 攻撃には必ず溜め（予備動作）を挟んで、見てから避けられるようにする。
+    /// 動き（歩く先・向き）は <see cref="EnemyMotor"/> に書き込む。
+    /// </summary>
+    [RequireComponent(typeof(EnemyMotor))]
+    [RequireComponent(typeof(EnemyHealth))]
+    public abstract class EnemyBrain : MonoBehaviour
+    {
+        // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
+        protected const string AttackParam = "Attack";
+
+        [Header("見つける")]
+        [SerializeField, Min(1f), Tooltip("この距離の中で見えている相手に気付く（m）。")]
+        private float detectRadius = 14f;
+
+        [SerializeField, Min(1f), Tooltip("狙っている相手がこれより離れたら諦める（m）。")]
+        private float loseRadius = 22f;
+
+        [SerializeField, Min(0f), Tooltip("見失ってから、最後に見た所へ向かい続ける時間（秒）。")]
+        private float memoryTime = 5f;
+
+        [SerializeField, Min(0.05f), Tooltip("相手を探し直す間隔（秒）。敵ごとにずらす。")]
+        private float scanInterval = 0.2f;
+
+        [Header("攻撃")]
+        [SerializeField, Min(0), Tooltip("1 回の攻撃のダメージ。")]
+        protected int damage = 10;
+
+        [SerializeField, Min(0f), Tooltip("攻撃を終えてから次の攻撃までの間（秒）。")]
+        protected float cooldown = 1.5f;
+
+        [Header("効果音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("溜め始めの音。")]
+        protected AudioClip windupClip;
+
+        [SerializeField, Tooltip("攻撃を出した瞬間の音（振り・発射・爆発・霧を出す）。")]
+        protected AudioClip attackClip;
+
+        [SerializeField, Tooltip("攻撃が当たった音。")]
+        protected AudioClip hitClip;
+
+        [SerializeField, Range(0f, 1f)]
+        protected float volume = 1f;
+
+        private static readonly Collider[] overlap = new Collider[32];
+
+        private float nextScan;
+        private float lastSeenTime = float.NegativeInfinity;
+        private bool wasActing = true;
+        private Collider body;
+        private Animator animator;
+        private readonly Dictionary<int, AnimatorControllerParameterType> animatorParams = new Dictionary<int, AnimatorControllerParameterType>();
+
+        protected EnemyMotor Motor { get; private set; }
+        protected EnemyHealth Health { get; private set; }
+        protected EnemyDamageReaction Reaction { get; private set; }
+
+        /// <summary>今狙っている相手。<see cref="HasTarget"/> が偽なら意味がない。</summary>
+        protected EnemyTarget Target { get; private set; }
+        protected bool HasTarget { get; private set; }
+
+        /// <summary>今相手が見えている（最後の探し直しの時点で）。</summary>
+        protected bool TargetVisible { get; private set; }
+
+        /// <summary>最後に相手を見た所（足元）。</summary>
+        protected Vector3 LastSeenPosition { get; private set; }
+
+        /// <summary>次の攻撃までの残り（秒）。0 で撃てる。</summary>
+        protected float CooldownRemaining { get; set; }
+
+        /// <summary>体の中心（当たり判定の中心、無ければ足元から 1 m 上）。</summary>
+        protected Vector3 Center => body != null && body.enabled ? body.bounds.center : transform.position + Vector3.up;
+
+        /// <summary>体の高さ（m）。</summary>
+        protected float BodyHeight => body != null ? body.bounds.size.y : 1.8f;
+
+        /// <summary>相手の足元までの水平の距離（m）。</summary>
+        protected float TargetDistance => HasTarget ? Flat(Target.Position - transform.position).magnitude : float.PositiveInfinity;
+
+        protected virtual void Awake()
+        {
+            Motor = GetComponent<EnemyMotor>();
+            Health = GetComponent<EnemyHealth>();
+            Reaction = GetComponent<EnemyDamageReaction>();
+            body = GetComponent<Collider>();
+            animator = GetComponentInChildren<Animator>();
+            if (animator != null && animator.runtimeAnimatorController != null)
+            {
+                foreach (AnimatorControllerParameter p in animator.parameters) animatorParams[p.nameHash] = p.type;
+            }
+        }
+
+        protected virtual void OnEnable()
+        {
+            nextScan = Time.time + UnityEngine.Random.value * scanInterval;
+            wasActing = true;
+            Health.Damaged += OnDamaged;
+            Health.Died += OnDied;
+        }
+
+        protected virtual void OnDisable()
+        {
+            Health.Damaged -= OnDamaged;
+            Health.Died -= OnDied;
+        }
+
+        private void OnDied(EnemyHealth _)
+        {
+            OnDeath();
+            enabled = false;
+        }
+
+        /// <summary>倒れた。溜めていた物の後始末をする（見た目を消すなど）。</summary>
+        protected virtual void OnDeath() { }
+
+        private void Update()
+        {
+            float dt = Time.deltaTime;
+            CooldownRemaining = Mathf.Max(0f, CooldownRemaining - dt);
+
+            bool acting = Reaction == null || Reaction.CanAct;
+            if (!acting)
+            {
+                if (wasActing) Interrupted();
+                wasActing = false;
+                WhileHeld(dt);
+                return;
+            }
+            wasActing = true;
+
+            if (Time.time >= nextScan)
+            {
+                nextScan = Time.time + scanInterval;
+                Scan();
+            }
+
+            Think(dt);
+        }
+
+        /// <summary>種類ごとの動き。動ける間、毎フレーム呼ぶ。</summary>
+        protected abstract void Think(float deltaTime);
+
+        /// <summary>スタン・気絶で動けなくなった瞬間。溜めていた攻撃を取り消す。</summary>
+        protected virtual void Interrupted() { }
+
+        /// <summary>動けない間、毎フレーム呼ぶ（自爆の導火のように止まらない物だけが使う）。</summary>
+        protected virtual void WhileHeld(float deltaTime) { }
+
+        // ---- 相手を探す ----
+
+        private void Scan()
+        {
+            if (HasTarget && !Target.IsValid) Forget();
+
+            if (HasTarget)
+            {
+                float distance = Vector3.Distance(transform.position, Target.Position);
+                TargetVisible = distance <= loseRadius && CanSee(Target);
+                if (TargetVisible) Remember();
+                else if (distance > loseRadius || Time.time - lastSeenTime > memoryTime) Forget();
+            }
+
+            // 置物は見えたらすぐ乗り換える（置物どうしなら今のままでよい）。
+            if (HasTarget && Target.Decoy != null) return;
+            if (TryFindDecoy(out EnemyTarget decoy))
+            {
+                SetTarget(decoy);
+                return;
+            }
+
+            if (!HasTarget && TryFindCharacter(detectRadius, true, out EnemyTarget character)) SetTarget(character);
+        }
+
+        private bool TryFindDecoy(out EnemyTarget found)
+        {
+            found = default;
+            float best = detectRadius;
+            foreach (DecoyTarget decoy in DecoyTarget.All)
+            {
+                var target = new EnemyTarget(decoy);
+                float distance = Vector3.Distance(transform.position, target.Position);
+                if (!target.IsValid || distance > best || !CanSee(target)) continue;
+                best = distance;
+                found = target;
+            }
+            return found.Decoy != null;
+        }
+
+        private bool TryFindCharacter(float radius, bool needSight, out EnemyTarget found)
+        {
+            found = default;
+            int mask = AllyLayer.Mask;
+            if (mask == 0) mask = ~0;
+
+            float best = float.MaxValue;
+            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, overlap, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                var character = overlap[i].GetComponentInParent<PlayerHealth>();
+                if (character == null) continue;
+
+                var target = new EnemyTarget(character);
+                float distance = Vector3.Distance(transform.position, target.Position);
+                if (!target.IsValid || distance >= best) continue;
+                if (needSight && !CanSee(target)) continue;
+                best = distance;
+                found = target;
+            }
+            return found.Character != null;
+        }
+
+        private void SetTarget(EnemyTarget target)
+        {
+            Target = target;
+            HasTarget = true;
+            TargetVisible = true;
+            Remember();
+        }
+
+        private void Remember()
+        {
+            lastSeenTime = Time.time;
+            LastSeenPosition = Target.Position;
+        }
+
+        private void Forget()
+        {
+            HasTarget = false;
+            TargetVisible = false;
+            Target = default;
+        }
+
+        /// <summary>撃たれたら、見えていなくても近くのメンバーへ向かう（背中から撃たれて棒立ちにならないように）。</summary>
+        private void OnDamaged(EnemyHealth _, DamageInfo __, int ___)
+        {
+            if (HasTarget || Health.IsDead) return;
+            if (TryFindCharacter(loseRadius, false, out EnemyTarget character)) SetTarget(character);
+        }
+
+        /// <summary>体の中心から相手の狙う所まで、壁に遮られていないか。</summary>
+        protected bool CanSee(EnemyTarget target) => EnemyHits.Clear(Center, target.AimPoint, transform);
+
+        // ---- 便利なもの ----
+
+        /// <summary>
+        /// Animator のクリップを流す。trigger なら 1 回、bool（ループするクリップ）なら立てる。
+        /// プレハブのグループに無いパラメータなら何もしない。
+        /// </summary>
+        protected void Play(string name)
+        {
+            if (!TryParam(name, out int hash, out AnimatorControllerParameterType type)) return;
+            if (type == AnimatorControllerParameterType.Trigger) animator.SetTrigger(hash);
+            else if (type == AnimatorControllerParameterType.Bool) animator.SetBool(hash, true);
+        }
+
+        /// <summary><see cref="Play"/> で立てた bool を下ろす。trigger なら何もしない。</summary>
+        protected void Stop(string name)
+        {
+            if (TryParam(name, out int hash, out AnimatorControllerParameterType type) && type == AnimatorControllerParameterType.Bool)
+                animator.SetBool(hash, false);
+        }
+
+        protected bool HasParam(string name) => animatorParams.ContainsKey(Animator.StringToHash(name));
+
+        private bool TryParam(string name, out int hash, out AnimatorControllerParameterType type)
+        {
+            hash = Animator.StringToHash(name);
+            type = default;
+            return animator != null && animator.isActiveAndEnabled && animatorParams.TryGetValue(hash, out type);
+        }
+
+        protected void PlaySound(AudioClip clip, Vector3 position)
+        {
+            if (clip != null) GameAudio.Instance?.PlaySeAt(clip, position, volume);
+        }
+
+        /// <summary>
+        /// 相手の足元の近くの点を、迷わず向かえる先として返す。相手が居なければ最後に見た所。
+        /// 見失って覚えている時間も過ぎたら null。
+        /// </summary>
+        protected Vector3? ChasePoint()
+        {
+            if (!HasTarget) return null;
+            return TargetVisible ? Target.Position : LastSeenPosition;
+        }
+
+        protected static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+    }
+}

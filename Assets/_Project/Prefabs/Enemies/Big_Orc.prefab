@@ -15,6 +15,9 @@ GameObject:
   - component: {fileID: 9212439754897847678}
   - component: {fileID: 706407542563773294}
   - component: {fileID: 7425609431104318837}
+  - component: {fileID: 8063763919823294536}
+  - component: {fileID: 8401000658158950904}
+  - component: {fileID: 4454430970248554815}
   m_Layer: 0
   m_Name: Big_Orc
   m_TagString: Untagged
@@ -87,6 +90,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
   maxHp: 60
+  immortal: 0
 --- !u!114 &9212439754897847678
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -110,7 +114,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   knockbackSkin: 0.4
   hitClip: {fileID: 0}
-  stunClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
+  stunClip: {fileID: 8300000, guid: 0e625dcf092fe43618c9354f4deabc38, type: 3}
   faintClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
   volume: 1
 --- !u!114 &706407542563773294
@@ -166,6 +170,71 @@ MonoBehaviour:
   corpseDelay: 2
   fadeDuration: 1.5
   fadeTemplate: {fileID: 2100000, guid: 5908f5acdfb3d42dbb8a216f5aea1d12, type: 2}
+--- !u!195 &8063763919823294536
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5526345836102086532}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 0.45
+  m_Speed: 3
+  m_Acceleration: 20
+  avoidancePriority: 50
+  m_AngularSpeed: 540
+  m_StoppingDistance: 0.5
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 2
+--- !u!114 &8401000658158950904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5526345836102086532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0789c297628e34e1c993a76b1df86857, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
+  moveSpeed: 3
+  turnSpeed: 540
+  hoverHeight: 0
+  hoverBob: 0.08
+  repathInterval: 0.2
+--- !u!114 &4454430970248554815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5526345836102086532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b4dd304a3b924916bd424105c6bdfe1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.MeleeEnemyBrain
+  detectRadius: 14
+  loseRadius: 22
+  memoryTime: 5
+  scanInterval: 0.2
+  damage: 12
+  cooldown: 1.4
+  windupClip: {fileID: 0}
+  attackClip: {fileID: 8300000, guid: b2a0eba14200849be9c3a142941dca5a, type: 3}
+  hitClip: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
+  volume: 1
+  attackRange: 1.8
+  hitRadius: 1
+  windup: 0.5
+  recovery: 0.5
 --- !u!1001 &8097619201129507205
 PrefabInstance:
   m_ObjectHideFlags: 0

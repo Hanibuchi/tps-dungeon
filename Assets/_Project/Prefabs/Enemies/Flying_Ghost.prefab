@@ -15,6 +15,9 @@ GameObject:
   - component: {fileID: 8095566003129583855}
   - component: {fileID: 3859361104688361733}
   - component: {fileID: 2403543796848323949}
+  - component: {fileID: 478663117965459295}
+  - component: {fileID: 3539796023849411636}
+  - component: {fileID: 38489489320552757}
   m_Layer: 0
   m_Name: Flying_Ghost
   m_TagString: Untagged
@@ -87,6 +90,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
   maxHp: 30
+  immortal: 0
 --- !u!114 &8095566003129583855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158,6 +162,71 @@ MonoBehaviour:
   corpseDelay: 2
   fadeDuration: 1.5
   fadeTemplate: {fileID: 2100000, guid: 5908f5acdfb3d42dbb8a216f5aea1d12, type: 2}
+--- !u!195 &478663117965459295
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 0.45
+  m_Speed: 3.5
+  m_Acceleration: 20
+  avoidancePriority: 50
+  m_AngularSpeed: 540
+  m_StoppingDistance: 0.5
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1.2
+  m_BaseOffset: 0.6
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 2
+--- !u!114 &3539796023849411636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0789c297628e34e1c993a76b1df86857, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
+  moveSpeed: 3.5
+  turnSpeed: 540
+  hoverHeight: 0.6
+  hoverBob: 0.08
+  repathInterval: 0.2
+--- !u!114 &38489489320552757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b4dd304a3b924916bd424105c6bdfe1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.MeleeEnemyBrain
+  detectRadius: 14
+  loseRadius: 22
+  memoryTime: 5
+  scanInterval: 0.2
+  damage: 8
+  cooldown: 1.2
+  windupClip: {fileID: 0}
+  attackClip: {fileID: 8300000, guid: b2a0eba14200849be9c3a142941dca5a, type: 3}
+  hitClip: {fileID: 8300000, guid: c9e94cef3f6fd478dbd2363c8cf03dbb, type: 3}
+  volume: 1
+  attackRange: 1.5
+  hitRadius: 1
+  windup: 0.4
+  recovery: 0.4
 --- !u!1001 &7758115122663712730
 PrefabInstance:
   m_ObjectHideFlags: 0
