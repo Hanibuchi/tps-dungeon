@@ -580,6 +580,15 @@ namespace TpsDungeon.Items.Editor
             // 16 治癒（片手杖）。強さは 1 人への回復量。見た目は緑の玉の Wand_Medium。
             yield return Wand("Weapon_HealingStaff", "癒しの杖", WeaponRank.D, 25f, "振るうと、傷ついた仲間に癒しの光が降りる。",
                 HealTypePath, LowPolyWeapons + "Wand_Medium.prefab", StaffSkin.None);
+            // 女神の涙は癒しの杖に固定エンチャントを付けた物（見た目は癒しの杖と同じ形を光らせる。強さも同じ 25）。固定エンチャントは「倒れかけた者たちを次々と」に合わせて
+            // 数・回復量増加（段は UniqueEnchantments.csv が正。数 4 段で 7 人、回復量増加 5 段で 2 倍）。
+            var goddessTear = Wand("Weapon_GoddessTear", "女神の涙", WeaponRank.Unique, 25f, "零れた一滴が、倒れかけた者たちを次々と立ち上がらせる。",
+                HealTypePath, LowPolyWeapons + "Wand_Medium.prefab", StaffSkin.None,
+                EnchantmentKind.ProjectileCount, EnchantmentKind.HealUp);
+            // 不壊の聖杖と同じく、ユニークの光は緑の玉の所に、玉と同じ緑で付ける。
+            goddessTear.GlowHue = new Vector2(0.22f, 0.45f);
+            goddessTear.Glow = new Color(0.4f, 3.2f, 0.6f, 1f);
+            yield return goddessTear;
 
             // 30 召喚。強さはおとりの体力の元（× 武器種の係数）。持つ見た目と置物は仮。
             // ユニークの固定エンチャント（数 ×2・持続時間 ×1）は仮。「軍勢が」に合わせて 3 体呼ぶ。
