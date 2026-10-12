@@ -67,9 +67,11 @@ namespace TpsDungeon.Combat
         /// </summary>
         private const float ThrowCycleSeconds = 1.1f * 0.85f / 1.5f;
 
-        /// <summary>持続弓で上に放つ見た目の矢の速さ（m/s）と、飛ぶ距離（m）。</summary>
-        private const float UpShotSpeed = 40f;
-        private const float UpShotRange = 14f;
+        /// <summary>持続弓の火の矢が空の点まで飛ぶ秒数の下限（弾速で降り始めが早まっても、飛ぶのが見えるように）。</summary>
+        private const float MinRainShotFlight = 0.15f;
+
+        /// <summary>数で増えた火の矢を、照準の向きから左右へ開く角度（度、1 本ごと）。</summary>
+        private const float RainShotSpread = 8f;
 
         /// <summary>雨の 1 刻みの命中の音の大きさ（武器種の音量に対して）。刻みは何度も来るので控えめに。</summary>
         private const float TickHitSoundRatio = 0.4f;
@@ -601,23 +603,22 @@ namespace TpsDungeon.Combat
 
         private void FireRain(WeaponTypeDefinition type, RangedWeaponStats shot, Vector3 muzzle, Vector3 target)
         {
-            // 見た目だけ、狙った所の方へ少し傾けて真上に放つ。
-            Vector3 toward = Flat(target - muzzle, transform.forward);
-            ArrowProjectile.Launch(type.ProjectilePrefab, muzzle, Vector3.up * 3f + toward, new ArrowProjectile.Settings
-            {
-                Speed = UpShotSpeed,
-                Range = UpShotRange,
-                Radius = 0.03f,
-                HitMask = hitMask,
-                IgnoreRoot = transform,
-                VisualOnly = true,
-            });
-
             float radius = type.RainRadius * shot.SizeScale;
             float startDelay = type.RainDelay / shot.ProjectileSpeedScale;
             var centers = new List<Vector3> { target };
             for (int i = 0; i < shot.ExtraProjectiles; i++)
                 centers.Add(ScatterPoint(target, type.RainScatterMin * shot.SizeScale, type.RainScatterMax * shot.SizeScale));
+
+            // 雨 1 つに火の矢 1 本。狙った所の方へ少し傾けて空へ放ち（数で増えた分は左右に開く）、弧を描いて雨の真上の空の点へ、
+            // 降り始めの瞬間に着くよう飛ばす（着いた所で魔法陣が開いて降り始める）。多重で同じ所にもう一度降る分は、魔法陣だけがまた開く。
+            Vector3 toward = Flat(target - muzzle, transform.forward);
+            float flight = Mathf.Max(MinRainShotFlight, startDelay - ArrowRainZone.LeadTime(type.RainSkyHeight));
+            for (int i = 0; i < centers.Count; i++)
+            {
+                float yaw = (i + 1) / 2 * RainShotSpread * (i % 2 == 1 ? 1f : -1f);
+                Vector3 launch = Quaternion.AngleAxis(yaw, Vector3.up) * (Vector3.up * 1.5f + toward);
+                RainShotArrow.Launch(type.ProjectilePrefab, type.RainShotEffect, muzzle, launch, centers[i] + Vector3.up * type.RainSkyHeight, flight);
+            }
 
             foreach (float delay in RangedPattern.RepeatDelays(shot.MultishotCount, type.RainRepeatInterval))
             {
@@ -635,6 +636,8 @@ namespace TpsDungeon.Combat
                         EffectRadius = type.RainEffectRadius,
                         RingMaterial = type.RangeRingMaterial,
                         RingColor = type.RainRingColor,
+                        SkyHeight = type.RainSkyHeight,
+                        SkyEffect = type.RainSkyEffect,
                     }, (c, r, h) => RainTick(type, shot, c, r, h, ticks++ == 0));
                 }
             }

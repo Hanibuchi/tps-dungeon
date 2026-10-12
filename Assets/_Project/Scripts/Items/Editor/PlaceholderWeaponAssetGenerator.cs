@@ -64,6 +64,8 @@ namespace TpsDungeon.Items.Editor
         private const string SummonHumanMeshPath = SummonsFolder + "/Mesh_SummonHuman.asset";
         public const string CrystalLinePrefabPath = Gen.PrefabsFolder + "/Effect_CrystalLine.prefab";
         public const string FlamePrefabPath = Gen.PrefabsFolder + "/Effect_Flame.prefab";
+        public const string RainShotPrefabPath = Gen.PrefabsFolder + "/Effect_RainShot.prefab";
+        public const string RainSkyPrefabPath = Gen.PrefabsFolder + "/Effect_RainSky.prefab";
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
         public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
         public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
@@ -1237,6 +1239,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("rainEffect").objectReferenceValue = LoadEffect(MeteorsEffectPath);
             serialized.FindProperty("rainEffectRadius").floatValue = 4f;
             serialized.FindProperty("rainAimPitch").floatValue = 35f;
+            WriteRainShotEffects(serialized);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -1923,6 +1926,238 @@ namespace TpsDungeon.Items.Editor
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        // ---- 持続弓の火の矢と空の魔法陣 ----
+
+        private const string HovlMaterials = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Materials/";
+
+        /// <summary>火の矢・空の魔法陣の色（隕石の火と範囲の円の橙に合わせる）。</summary>
+        private static readonly Color RainFire = new Color(1f, 0.55f, 0.18f, 1f);
+
+        [MenuItem("Tools/TPS Dungeon/Items/持続弓の演出だけ入れ直す")]
+        public static void RewriteRainShotEffects()
+        {
+            var type = AssetDatabase.LoadAssetAtPath<WeaponTypeDefinition>(RainBowTypePath);
+            if (type == null)
+            {
+                Debug.LogWarning($"持続弓の武器種が無い: {RainBowTypePath}");
+                return;
+            }
+
+            var serialized = new SerializedObject(type);
+            WriteRainShotEffects(serialized);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// 持続弓は「火の矢が空で弾けて雨になる」魔法にする。雨 1 つに火の矢 1 本を空へ放ち、雨の真上 3.5 m の空の点で
+        /// 魔法陣が開き、そこから隕石が降る。高さは壁（3 m）のすぐ上。肩越しのカメラ（縦の画角 40°）は狙った地面を見下ろすので、
+        /// 5 m では 10 m 先を狙っても空の点が画面の上に外れる。火の矢（Effect_RainShot）と空の魔法陣（Effect_RainSky）を作って武器種に入れる。
+        /// </summary>
+        private static void WriteRainShotEffects(SerializedObject serialized)
+        {
+            serialized.FindProperty("rainSkyHeight").floatValue = 3.5f;
+            serialized.FindProperty("rainShotEffect").objectReferenceValue = WriteRainShotPrefab();
+            serialized.FindProperty("rainSkyEffect").objectReferenceValue = WriteRainSkyPrefab();
+        }
+
+        /// <summary>
+        /// 火の矢が纏う炎。矢の先に、白く光る芯・橙のぼんやりした光輪・通った跡に残る火の粉・尾・まわりを照らす橙の明かり。
+        /// 芯と光輪は矢と一緒に動き（ローカル）、火の粉は世界に置いていく。
+        /// </summary>
+        private static GameObject WriteRainShotPrefab()
+        {
+            var root = new GameObject("Effect_RainShot");
+            try
+            {
+                ParticleSystem core = AddFx(root, "Core", "GlowFree1", false);
+                FxMain(core, 0.12f, 0.45f, 0.55f, Color.Lerp(RainFire, Color.white, 0.55f));
+                FxRate(core, 45f);
+
+                ParticleSystem halo = AddFx(root, "Halo", "GlowFree1", false);
+                FxMain(halo, 0.16f, 0.9f, 1.1f, new Color(RainFire.r, RainFire.g * 0.8f, RainFire.b, 0.45f));
+                FxRate(halo, 30f);
+
+                ParticleSystem embers = AddFx(root, "Embers", "Point", true);
+                FxMain(embers, 0.5f, 0.05f, 0.12f, new Color(1f, 0.38f, 0.08f, 1f));
+                ParticleSystem.EmissionModule emission = embers.emission;
+                emission.rateOverTime = 0f;
+                emission.rateOverDistance = 8f;
+                ParticleSystem.MainModule emberMain = embers.main;
+                emberMain.startSpeed = new ParticleSystem.MinMaxCurve(0.3f, 1.2f);
+                emberMain.gravityModifier = 0.3f;
+                ParticleSystem.ShapeModule shape = embers.shape;
+                shape.enabled = true;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.1f;
+                FxFadeOut(embers, shrink: true);
+
+                var trail = root.AddComponent<TrailRenderer>();
+                trail.sharedMaterial = LoadHovlMaterial("Trail67");
+                trail.time = 0.25f;
+                trail.widthMultiplier = 0.3f;
+                trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+                trail.startColor = new Color(RainFire.r, RainFire.g, RainFire.b, 0.9f);
+                trail.endColor = new Color(RainFire.r, RainFire.g * 0.6f, RainFire.b, 0f);
+                trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                trail.receiveShadows = false;
+
+                AddFxLight(root, RainFire, 4f, 2.5f);
+                return PrefabUtility.SaveAsPrefabAsset(root, RainShotPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>
+        /// 火の矢が空の点に着いて開く魔法陣（半径 1 m の作り。雨の半径に合わせて大きさを変える）。
+        /// 着いた瞬間に閃光と下へ散る火の粉が弾け、雨の間は魔法陣がゆっくり回りながら脈打ち、真ん中が橙に灯る。
+        /// 魔法陣はカメラを向けて描く（水平に寝かせると、肩越しのカメラからは真横に近い角度で見上げることになり、細い線にしか見えない）。
+        /// ずっと出す粒は寿命が短いので、雨が終わって放出を止めると自然に消える。
+        /// </summary>
+        private static GameObject WriteRainSkyPrefab()
+        {
+            var root = new GameObject("Effect_RainSky");
+            try
+            {
+                ParticleSystem flash = AddFx(root, "Flash", "Flash", false);
+                // 閃光は控えめに（Flash の絵はぎざぎざの白い塊なので、大きくすると画面を覆う）。
+                FxMain(flash, 0.15f, 1.2f, 1.4f, Color.Lerp(RainFire, Color.white, 0.25f));
+                FxBurst(flash, 1);
+                FxFadeOut(flash, shrink: false);
+
+                ParticleSystem sparks = AddFx(root, "Sparks", "Point", true);
+                FxMain(sparks, 0.6f, 0.05f, 0.1f, RainFire);
+                FxBurst(sparks, 26);
+                ParticleSystem.MainModule sparkMain = sparks.main;
+                sparkMain.startSpeed = new ParticleSystem.MinMaxCurve(3f, 7f);
+                sparkMain.gravityModifier = 1f;
+                ParticleSystem.ShapeModule sparkShape = sparks.shape;
+                sparkShape.enabled = true;
+                sparkShape.shapeType = ParticleSystemShapeType.Sphere;
+                sparkShape.radius = 0.1f;
+                ParticleSystemRenderer sparkRenderer = sparks.GetComponent<ParticleSystemRenderer>();
+                sparkRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+                sparkRenderer.lengthScale = 2.5f;
+                sparkRenderer.velocityScale = 0.04f;
+                FxFadeOut(sparks, shrink: false);
+
+                // 魔法陣。寿命の短い陣を重ねて出し続け、少しずつ大きく・薄くして脈打たせる（止めれば 0.6 秒で消える）。
+                ParticleSystem circle = AddFx(root, "MagicCircle", "MagicCircle", false);
+                FxMain(circle, 0.6f, 2.3f, 2.3f, new Color(RainFire.r, RainFire.g, RainFire.b, 0.55f));
+                FxRate(circle, 5f);
+                ParticleSystem.MainModule circleMain = circle.main;
+                circleMain.loop = true;
+                ParticleSystem.SizeOverLifetimeModule circleSize = circle.sizeOverLifetime;
+                circleSize.enabled = true;
+                circleSize.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.92f, 1f, 1.08f));
+                ParticleSystem.RotationOverLifetimeModule spin = circle.rotationOverLifetime;
+                spin.enabled = true;
+                spin.z = Mathf.Deg2Rad * 60f;
+                FxFadeInOut(circle);
+
+                ParticleSystem glow = AddFx(root, "Glow", "GlowFree1", false);
+                FxMain(glow, 0.3f, 1.4f, 1.8f, new Color(RainFire.r, RainFire.g, RainFire.b, 0.5f));
+                FxRate(glow, 12f);
+                ParticleSystem.MainModule glowMain = glow.main;
+                glowMain.loop = true;
+                FxFadeInOut(glow);
+
+                AddFxLight(root, RainFire, 7f, 3f);
+                return PrefabUtility.SaveAsPrefabAsset(root, RainSkyPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        private static Material LoadHovlMaterial(string name)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(HovlMaterials + name + ".mat");
+            if (material == null) Debug.LogWarning($"効果の材質が無い: {HovlMaterials}{name}.mat");
+            return material;
+        }
+
+        /// <summary>粒を 1 つ足す。既定は 1 回だけ（FxRate で出し続ける）。world なら出た粒を世界に置いていく。</summary>
+        private static ParticleSystem AddFx(GameObject parent, string name, string material, bool world)
+        {
+            ParticleSystem particles = AddParticles(parent, name, LoadHovlMaterial(material));
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.duration = 0.5f;
+            main.startSpeed = 0f;
+            main.maxParticles = 200;
+            main.simulationSpace = world ? ParticleSystemSimulationSpace.World : ParticleSystemSimulationSpace.Local;
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.enabled = false;
+            return particles;
+        }
+
+        private static void FxMain(ParticleSystem particles, float life, float minSize, float maxSize, Color color)
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.startLifetime = life;
+            main.startSize = new ParticleSystem.MinMaxCurve(minSize, maxSize);
+            main.startColor = color;
+        }
+
+        private static void FxRate(ParticleSystem particles, float perSecond)
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = true;
+            main.duration = 1f;
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = perSecond;
+        }
+
+        private static void FxBurst(ParticleSystem particles, int count)
+        {
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+        }
+
+        private static void FxFadeOut(ParticleSystem particles, bool shrink)
+        {
+            ParticleSystem.ColorOverLifetimeModule over = particles.colorOverLifetime;
+            over.enabled = true;
+            over.color = new Gradient
+            {
+                colorKeys = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                alphaKeys = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.4f), new GradientAlphaKey(0f, 1f) },
+            };
+            if (!shrink) return;
+            ParticleSystem.SizeOverLifetimeModule size = particles.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.2f));
+        }
+
+        private static void FxFadeInOut(ParticleSystem particles)
+        {
+            ParticleSystem.ColorOverLifetimeModule over = particles.colorOverLifetime;
+            over.enabled = true;
+            over.color = new Gradient
+            {
+                colorKeys = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                alphaKeys = new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.3f), new GradientAlphaKey(0f, 1f) },
+            };
+        }
+
+        private static void AddFxLight(GameObject root, Color color, float range, float intensity)
+        {
+            var go = new GameObject("Light");
+            go.transform.SetParent(root.transform, false);
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = color;
+            light.range = range;
+            light.intensity = intensity;
+            light.shadows = LightShadows.None;
         }
 
         /// <summary>炎の素材そのままの届く距離（m）。粒は秒速 15 m で 0.4 秒飛ぶ。</summary>

@@ -8,13 +8,15 @@ namespace TpsDungeon.Combat
     /// 降っている間は TickInterval 秒ごとに onTick(中心, 半径, 高さ) を呼ぶ（ダメージは RangedAttacker が与える）。
     /// 見た目は Effect（Meteors AOE など、上から落ちてくる素材）を、最初の刻みに落ち始めが届くよう少し早めて中心に出し、
     /// 水平だけ半径に合わせて縮め、繰り返すバーストを雨の長さまで延ばす。TickCount 回刻んだら放出を止め、円を消して自分も消える。
+    /// 落ちてくる物は中心の SkyHeight m 上（空の点）から出し、出し始めに空の点へ SkyEffect（魔法陣）を出す。
+    /// 持続弓の火の矢（RainShotArrow）は、ちょうどこの瞬間に空の点へ着くよう飛ぶ（<see cref="LeadTime"/>）。
     /// RangedAttacker が出す。シーンに置く物ではない。
     /// </summary>
     [AddComponentMenu("")]
     public sealed class ArrowRainZone : MonoBehaviour
     {
-        /// <summary>見た目の素材で、出してから最初の落下物が地面に届くまでの秒数（Meteors AOE は高さ 8 m を秒速 25 m）。</summary>
-        private const float EffectLeadTime = 0.32f;
+        /// <summary>見た目の素材の落下物が落ちる速さ（m/秒。Meteors AOE は秒速 25 m）。</summary>
+        private const float FallSpeed = 25f;
 
         /// <summary>雨が終わって放出を止めてから、出ている粒（着弾の火花や土煙）が消えるまで待つ秒数。</summary>
         private const float EffectLingerTime = 2f;
@@ -41,12 +43,22 @@ namespace TpsDungeon.Combat
 
             public Material RingMaterial;
             public Color RingColor;
+
+            /// <summary>落ちてくる物を出す、中心からの高さ（m）。Effect の一番上の粒の出る所をここへ移す。</summary>
+            public float SkyHeight;
+
+            /// <summary>降り始めに空の点へ出す見た目（任意）。半径 1 m の作りで、雨の半径に合わせて大きさを変える。雨の間続け、終わったら放出を止める。</summary>
+            public GameObject SkyEffect;
         }
+
+        /// <summary>見た目を出してから最初の落下物が地面に届くまでの秒数。雨は StartDelay のこれだけ前に空の点から降り始める。</summary>
+        public static float LeadTime(float skyHeight) => skyHeight / FallSpeed;
 
         private Settings settings;
         private Action<Vector3, float, float> onTick;
         private RangeRing ring;
         private GameObject effect;
+        private GameObject skyEffect;
         private bool effectStarted;
         private float elapsed;
         private int ticksDone;
@@ -71,7 +83,7 @@ namespace TpsDungeon.Combat
             elapsed += Time.deltaTime;
             Vector3 center = transform.position;
 
-            if (!effectStarted && elapsed >= settings.StartDelay - EffectLeadTime) StartEffect();
+            if (!effectStarted && elapsed >= settings.StartDelay - LeadTime(settings.SkyHeight)) StartEffect();
 
             while (ticksDone < settings.TickCount && elapsed >= settings.StartDelay + ticksDone * settings.TickInterval)
             {
@@ -99,6 +111,7 @@ namespace TpsDungeon.Combat
         private void StartEffect()
         {
             effectStarted = true;
+            StartSkyEffect();
             if (settings.Effect == null) return;
 
             effect = Instantiate(settings.Effect, transform.position, Quaternion.identity, transform);
@@ -127,22 +140,51 @@ namespace TpsDungeon.Combat
                 }
             }
 
-            // サブエミッタは親が着弾で出すので、親（一番上）から子ごと流す。
+            // サブエミッタは親が着弾で出すので、親（一番上）から子ごと流す。落ちてくる物は空の点から出す。
             ParticleSystem root = effect.GetComponent<ParticleSystem>();
+            if (root != null && settings.SkyHeight > 0f)
+            {
+                ParticleSystem.ShapeModule shape = root.shape;
+                shape.position = new Vector3(shape.position.x, settings.SkyHeight / Mathf.Max(0.01f, effect.transform.lossyScale.y), shape.position.z);
+            }
+
             if (root != null) root.Play(true);
             else foreach (ParticleSystem particles in systems) particles.Play(false);
+        }
+
+        /// <summary>空の点に魔法陣を出す。ずっと出す粒は ReleaseEffect で止めるまで続く。</summary>
+        private void StartSkyEffect()
+        {
+            if (settings.SkyEffect == null) return;
+
+            Vector3 sky = transform.position + Vector3.up * settings.SkyHeight;
+            skyEffect = Instantiate(settings.SkyEffect, sky, Quaternion.identity, transform);
+            skyEffect.transform.localScale = settings.SkyEffect.transform.localScale * settings.Radius;
+            foreach (ParticleSystem particles in skyEffect.GetComponentsInChildren<ParticleSystem>())
+            {
+                ParticleSystem.MainModule main = particles.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
         }
 
         /// <summary>見た目を雨から切り離し、放出を止めて、出ている粒が消えてから消す。</summary>
         private void ReleaseEffect()
         {
-            if (effect == null) return;
+            Release(effect);
+            Release(skyEffect);
+            effect = skyEffect = null;
+        }
 
-            effect.transform.SetParent(null, true);
-            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
+        private static void Release(GameObject go)
+        {
+            if (go == null) return;
+
+            go.transform.SetParent(null, true);
+            foreach (ParticleSystem particles in go.GetComponentsInChildren<ParticleSystem>())
                 particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
-            Destroy(effect, EffectLingerTime);
-            effect = null;
+            foreach (Light light in go.GetComponentsInChildren<Light>())
+                light.enabled = false;
+            Destroy(go, EffectLingerTime);
         }
     }
 }

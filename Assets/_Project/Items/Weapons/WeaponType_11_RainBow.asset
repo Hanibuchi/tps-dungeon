@@ -204,6 +204,9 @@ MonoBehaviour:
   rainEffect: {fileID: 7957833072274404953, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
   rainEffectRadius: 4
   rainAimPitch: 35
+  rainSkyHeight: 3.5
+  rainShotEffect: {fileID: 8773939419942883390, guid: 44139cfc1735a4c1a9aee105ddbaf2ca, type: 3}
+  rainSkyEffect: {fileID: 4703639969020414239, guid: 48ee33ae643984e8aa39e0f67f49b4b5, type: 3}
   castDelay: 0.12
   chainAimAngle: 10
   chainJumps: 3
@@ -260,6 +263,20 @@ MonoBehaviour:
   healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
   healSound: {fileID: 0}
   healSoundVolume: 0.8
+  supportRange: 20
+  supportDuration: 12
+  supportRepeatInterval: 0.5
+  supportTargetCount: 3
+  damageReductionPerStrength: 0.01
+  maxDamageReduction: 0.8
+  critMultiplierPerStrength: 0.01
+  ailmentResistancePerStrength: 0.01
+  damageReductionEffect: {fileID: 0}
+  critMultiplierEffect: {fileID: 0}
+  ailmentResistanceEffect: {fileID: 0}
+  blessingEffectScale: 1
+  supportHitEffect: {fileID: 0}
+  supportHitEffectScale: 1
   drawSound: {fileID: 8300000, guid: 9fae71eb8ca8147d4955767b4d1c3872, type: 3}
   stickSound: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stickSoundVolume: 0.6

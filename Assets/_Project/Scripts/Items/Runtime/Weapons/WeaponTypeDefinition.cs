@@ -162,6 +162,15 @@ namespace TpsDungeon.Items
         [SerializeField, Range(-30f, 80f), Tooltip("持続弓を構えている間、上半身を上へ反らせる角度（度）。空へ放つ構えに見せる。")]
         private float rainAimPitch = 35f;
 
+        [SerializeField, Min(0f), Tooltip("雨の落ちてくる物を出す、雨の中心からの高さ（m）。撃った火の矢はここへ飛んで弾け、ここから降り始める。壁（3 m）より上で、肩越しのカメラで狙った地面を見下ろしても画面に入る高さにする。")]
+        private float rainSkyHeight = 3.5f;
+
+        [SerializeField, Tooltip("空へ放つ火の矢に纏わせる見た目（任意）。矢の先に付けて一緒に動かす。")]
+        private GameObject rainShotEffect;
+
+        [SerializeField, Tooltip("火の矢が空の点に着いて開く魔法陣（任意）。半径 1 m の作りで、雨の半径に合わせて大きさを変え、雨の間続ける。")]
+        private GameObject rainSkyEffect;
+
         [Header("杖（雷・連置）・投擲・召喚・治癒持続・ダメージ軽減・治癒。値は仮")]
         [SerializeField, Min(0f), Tooltip("押してから実際に放つまでの秒数。撃ち出しのモーションで杖を突き出す瞬間（投擲・召喚・治癒持続は腕を振り切る瞬間）に合わせる。狙いは放つ瞬間のもの。炎には効かない。腕を振る武器種は速射でモーションを速めた分だけ縮む。")]
         private float castDelay = 0.12f;
@@ -504,6 +513,9 @@ namespace TpsDungeon.Items
         public GameObject RainEffect => rainEffect;
         public float RainEffectRadius => rainEffectRadius;
         public float RainAimPitch => rainAimPitch;
+        public float RainSkyHeight => rainSkyHeight;
+        public GameObject RainShotEffect => rainShotEffect;
+        public GameObject RainSkyEffect => rainSkyEffect;
         public float CastDelay => castDelay;
         public float ChainAimAngle => chainAimAngle;
         public float ChainRange => chainRange;
