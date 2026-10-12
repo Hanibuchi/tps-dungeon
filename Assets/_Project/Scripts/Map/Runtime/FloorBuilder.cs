@@ -175,6 +175,7 @@ namespace TpsDungeon.Map.Runtime
             Spawn(layout.StairUpRoom, config.stairUpPrefab, "StairUp");
             Spawn(layout.StairDownRoom, config.stairDownPrefab, "StairDown");
             Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop");
+            PlaceSpawnPoint(layout, parent);
 
             void Spawn(int roomIndex, GameObject prefab, string label)
             {
@@ -187,6 +188,21 @@ namespace TpsDungeon.Map.Runtime
                 marker.name = $"{label}_Room{roomIndex}";
                 marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.identity);
             }
+        }
+
+        /// <summary>
+        /// 階の入口（上り階段の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。
+        /// FeatureCell の中心には階段の印（1.4 角）が立つので、セルの中で横へずらす。
+        /// </summary>
+        private void PlaceSpawnPoint(FloorLayout layout, Transform parent)
+        {
+            var room = layout.RoomAt(layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0);
+            if (room == null) return;
+
+            var spawn = new GameObject("PlayerSpawn");
+            spawn.transform.SetParent(parent, false);
+            spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.3f, 0.05f, 0f);
+            spawn.AddComponent<PlayerSpawnPoint>();
         }
 
         /// <summary>1 セルの一辺（メートル）。最後に Build したときの FloorConfig の値。</summary>

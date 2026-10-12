@@ -95,6 +95,8 @@ namespace TpsDungeon.Interaction
                     Texture2D icon = source.DetailIcon;
                     detailsIcon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
                     detailsIcon.style.display = icon != null ? DisplayStyle.Flex : DisplayStyle.None;
+                    // 絵の無いもの（門など）は、絵を収める窪みごと隠す。
+                    if (detailsIcon.parent != null) detailsIcon.parent.style.display = icon != null ? DisplayStyle.Flex : DisplayStyle.None;
                     ItemSlot.SetRankGlow(detailsIcon.parent, source.DetailBackground);
                 }
             }

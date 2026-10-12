@@ -36,8 +36,12 @@ namespace TpsDungeon.Player.Tests
             Assert.IsTrue(health.IsDead);
 
             health.Heal(500);
+            Assert.AreEqual(0, health.CurrentHp, "倒れていたら回復では起きない");
+
+            health.SetCurrent(1);
+            health.Heal(500);
             Assert.AreEqual(health.MaxHp, health.CurrentHp);
-            Assert.AreEqual(3, changes);
+            Assert.AreEqual(4, changes);
         }
 
         [Test]

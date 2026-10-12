@@ -111,7 +111,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>index 番目のメンバーの名前・見た目・保存の ID・最初の装備を入れる。</summary>
-        private static PartyMember Configure(GameObject character, int index)
+        internal static PartyMember Configure(GameObject character, int index)
         {
             character.name = index == 0 ? character.name : $"Character ({Names[index]})";
 
