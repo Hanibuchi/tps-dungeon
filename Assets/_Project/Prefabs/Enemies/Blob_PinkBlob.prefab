@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 9100501786451510702}
   - component: {fileID: 414746015381943775}
   - component: {fileID: 1398019233879214497}
+  - component: {fileID: 7246818998042096078}
   m_Layer: 0
   m_Name: Blob_PinkBlob
   m_TagString: Untagged
@@ -234,6 +235,23 @@ MonoBehaviour:
   explosionEffectScale: 0.5
   flashColor: {r: 1, g: 0.15, b: 0.05, a: 1}
   swell: 0.3
+--- !u!114 &7246818998042096078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762044567568048416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  enemyId: Blob_PinkBlob
+  scatter: 0.3
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &8415214523307464335
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -331,7 +331,7 @@ namespace TpsDungeon.Combat.Editor
             if (stats.ExplosionRatio > 0f)
                 text.AppendLine($"爆発: 1 撃ごとに 半径 {stats.ExplosionRadius:0.#} m へ {string.Join(" / ", hits.Select(stats.ExplosionDamage))}");
             if (stats.DropRateBonus > 0f)
-                text.AppendLine($"ドロップ率 +{stats.DropRateBonus:P0}（ドロップの仕組みはまだ読まない）");
+                text.AppendLine($"ドロップ率 +{stats.DropRateBonus:P0}");
 
             IReadOnlyList<MeleeComboStep> steps = type.ComboSteps;
             for (int i = 0; i < steps.Count; i++)
@@ -453,7 +453,7 @@ namespace TpsDungeon.Combat.Editor
             text.AppendLine($"クリティカル: {stats.CritChance:P0} で ×{stats.CritMultiplier:0.##}");
             text.AppendLine($"攻撃速度 ×{stats.AttackSpeed:0.##}　ノックバック +{stats.KnockbackBonus:0.#} m/s　スタン判定 ×{stats.ReactionScale:0.##}");
             if (stats.DropRateBonus > 0f)
-                text.AppendLine($"ドロップ率 +{stats.DropRateBonus:P0}（ドロップの仕組みはまだ読まない）");
+                text.AppendLine($"ドロップ率 +{stats.DropRateBonus:P0}");
             return text.ToString().TrimEnd();
         }
 

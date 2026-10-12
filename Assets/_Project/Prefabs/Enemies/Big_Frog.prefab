@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 194105244145838394}
   - component: {fileID: 3570283723940086528}
   - component: {fileID: 8519871171864436212}
+  - component: {fileID: 8937380465853707207}
   m_Layer: 0
   m_Name: Big_Frog
   m_TagString: Untagged
@@ -248,6 +249,23 @@ MonoBehaviour:
   landClip: {fileID: 8300000, guid: f50620f242b9848bcb78420272125b49, type: 3}
   landEffect: {fileID: 5079736196863022346, guid: a95be1b8bc39647f9b284e252ca9c195, type: 3}
   wallMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &8937380465853707207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7061645022734581897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  enemyId: Big_Frog
+  scatter: 0.3
+  groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
 --- !u!1001 &8204301414139919424

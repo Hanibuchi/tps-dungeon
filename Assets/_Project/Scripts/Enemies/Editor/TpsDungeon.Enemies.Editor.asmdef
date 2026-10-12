@@ -4,6 +4,7 @@
     "references": [
         "TpsDungeon.Progression",
         "TpsDungeon.Enemies",
+        "TpsDungeon.Items",
         "TpsDungeon.Player",
         "TpsDungeon.Party",
         "TpsDungeon.Map"

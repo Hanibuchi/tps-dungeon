@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 6827799706177829050}
   - component: {fileID: 5543144839644413720}
   - component: {fileID: 3936261480461675952}
+  - component: {fileID: 4985206741502736705}
   m_Layer: 0
   m_Name: Blob_Wizard
   m_TagString: Untagged
@@ -237,6 +238,23 @@ MonoBehaviour:
   impactEffect: {fileID: 4693723897207509154, guid: d22e8c05187494b2e8ee835cb43dce72, type: 3}
   impactEffectScale: 1
   muzzleForward: 0.5
+--- !u!114 &4985206741502736705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6413533938175864059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  enemyId: Blob_Wizard
+  scatter: 0.3
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &3858760430218391856
 PrefabInstance:
   m_ObjectHideFlags: 0
