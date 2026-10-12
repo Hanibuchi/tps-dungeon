@@ -23,3 +23,5 @@ Weapon_HeroicSpiritHorn,ProjectileCount,4
 Weapon_HeroicSpiritHorn,Duration,5
 Weapon_UnbreakableHolyStaff,ProjectileCount,4
 Weapon_UnbreakableHolyStaff,Duration,5
+Weapon_GoddessTear,ProjectileCount,4
+Weapon_GoddessTear,HealUp,5
