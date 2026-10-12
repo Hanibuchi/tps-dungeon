@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 1025224706504830284}
   - component: {fileID: 8103712130992994613}
   - component: {fileID: 3249693108051686536}
+  - component: {fileID: 8184738049475428838}
   m_Layer: 0
   m_Name: Flying_Hywirl
   m_TagString: Untagged
@@ -242,6 +243,23 @@ MonoBehaviour:
   impactEffect: {fileID: 7105975018429309799, guid: a1e8e892f5d57498ea7d1ae5a6904e2b, type: 3}
   impactEffectScale: 1
   muzzleForward: 0.5
+--- !u!114 &8184738049475428838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8378275289127162891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  enemyId: Flying_Hywirl
+  scatter: 0.3
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &6411993167701820121
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -3,6 +3,7 @@
     "rootNamespace": "TpsDungeon.Items",
     "references": [
         "TpsDungeon.Audio",
+        "TpsDungeon.Enemies",
         "TpsDungeon.Interaction",
         "TpsDungeon.Player",
         "TpsDungeon.Progression"
