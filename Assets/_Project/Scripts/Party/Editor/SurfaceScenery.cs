@@ -5,6 +5,7 @@ using TpsDungeon.Enemies.Editor;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
 using Unity.AI.Navigation;
+using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -554,6 +555,16 @@ namespace TpsDungeon.Party.Editor
                 foreach (Camera camera in root.GetComponentsInChildren<Camera>(true))
                 {
                     if (camera.CompareTag("MainCamera")) camera.farClipPlane = 1200f;
+                }
+
+                // カメラの遠景は追従カメラ（Cinemachine）のレンズが毎フレーム上書きするので、こちらも延ばす。
+                // 足りないと空のドーム（半径 590 m ほど）が画面の真ん中から切れて、裏の既定の空（青）が見える。
+                foreach (CinemachineCamera vcam in root.GetComponentsInChildren<CinemachineCamera>(true))
+                {
+                    LensSettings lens = vcam.Lens;
+                    lens.FarClipPlane = 1200f;
+                    vcam.Lens = lens;
+                    EditorUtility.SetDirty(vcam);
                 }
             }
 
