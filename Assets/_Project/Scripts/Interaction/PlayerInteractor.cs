@@ -68,6 +68,9 @@ namespace TpsDungeon.Interaction
             // パーティーの味方の体で照準が止まらないように。
             int ally = LayerMask.NameToLayer("Ally");
             if (ally >= 0) aimMask &= ~(1 << ally);
+            // 攻撃で壊せる草花（Breakable レイヤー）も素通しする。足元の草で落ちている物を拾えなくならないように。
+            int breakable = LayerMask.NameToLayer("Breakable");
+            if (breakable >= 0) aimMask &= ~(1 << breakable);
         }
 
         private void OnEnable()

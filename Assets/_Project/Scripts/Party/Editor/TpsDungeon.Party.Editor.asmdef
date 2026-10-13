@@ -19,7 +19,9 @@
         "TpsDungeon.Interaction.Editor",
         "TpsDungeon.Progression.Editor",
         "TpsDungeon.Player.Editor",
-        "Unity.ProBuilder"
+        "Unity.ProBuilder",
+        "TpsDungeon.Enemies",
+        "TpsDungeon.Enemies.Editor"
     ],
     "includePlatforms": [
         "Editor"

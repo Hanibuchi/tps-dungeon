@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TpsDungeon.Enemies;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
 using Unity.AI.Navigation;
@@ -294,7 +295,7 @@ namespace TpsDungeon.Party.Editor
             var surface = world.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
-            surface.layerMask = AllyLayer.Exclude(~0);
+            surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));
             surface.buildHeightMesh = true;
 
             Physics.SyncTransforms();

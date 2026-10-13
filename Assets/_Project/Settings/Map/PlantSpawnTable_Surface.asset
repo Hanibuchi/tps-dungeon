@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a16578ac6a94e5589924fde5d46a91, type: 3}
+  m_Name: PlantSpawnTable_Surface
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.PlantSpawnTable
+  entries:
+  - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+    chance: 0.05
+  - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+    chance: 0.04
+  - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+    chance: 0.02
+  - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+    chance: 0.01

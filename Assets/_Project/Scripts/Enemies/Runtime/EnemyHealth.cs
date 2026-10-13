@@ -18,6 +18,9 @@ namespace TpsDungeon.Enemies
         [SerializeField, Tooltip("デバッグ用。倒れず、HP が尽きる一撃を受けたら満タンに戻る。スタン・気絶・ノックバックを好きな最大 HP で試すときに使う。")]
         private bool immortal;
 
+        [SerializeField, Tooltip("敵ではなく、攻撃で壊せる置物（草花など）。攻撃は当たるが、狙い（雷の的・連鎖・追尾・仲間の標的）には選ばれず、ダメージの数字やコンボにも数えない。")]
+        private bool prop;
+
         private int currentHp = -1;
 
         public int MaxHp => Mathf.Max(1, maxHp);
@@ -35,6 +38,9 @@ namespace TpsDungeon.Enemies
         public bool IsDead => CurrentHp <= 0;
 
         public bool Immortal => immortal;
+
+        /// <summary>敵ではなく壊せる置物か（<see cref="prop"/>）。狙う相手を探すときはこれを除く。</summary>
+        public bool IsProp => prop;
 
         /// <summary>
         /// ダメージを受けた。dealt は実際に減った量（残り HP より大きな一撃でも残り HP まで）。
@@ -70,6 +76,12 @@ namespace TpsDungeon.Enemies
         {
             maxHp = Mathf.Max(1, value);
             currentHp = maxHp;
+        }
+
+        /// <summary>壊せる置物にする（<see cref="IsProp"/>）。</summary>
+        public void SetProp(bool value)
+        {
+            prop = value;
         }
 
         /// <summary>死なないようにする（デバッグ用）。外すとき HP が残っていればそのまま。</summary>

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using TpsDungeon.Enemies;
+using TpsDungeon.Enemies.Editor;
 using TpsDungeon.Map.Runtime;
+using TpsDungeon.Player;
 using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -106,6 +109,7 @@ namespace TpsDungeon.Party.Editor
             BuildSky(placer, Group(scenery, "Sky"));
             placer.RemoveSamplingColliders();
             RefitColliders(village);
+            MakePlantsBreakable(village);
             PlaceSpawnOnGround(surface, placer);
             ApplyLighting(scene);
 
@@ -718,6 +722,42 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
+        [MenuItem("Tools/TPS Dungeon/地上の草花を壊せるようにする")]
+        public static void MakePlantsBreakableFromMenu()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            GameObject surface = FindRoot(scene, "[Surface]");
+            Transform village = surface != null ? surface.transform.Find("Village") : null;
+            if (village == null)
+            {
+                Debug.LogError("開いているシーンに [Surface]/Village が無い。地上のシーンを開いてから実行すること。");
+                return;
+            }
+
+            int count = MakePlantsBreakable(village);
+            BakeNavMesh(surface);
+            EditorSceneManager.MarkSceneDirty(scene);
+            Debug.Log($"地上の草花 {count} 本を攻撃で壊せるようにした（壊すと {BreakablePlantSetup.SpawnTablePath} の表で敵が出る）。シーンは保存していない。");
+        }
+
+        /// <summary>村の草・花・草木（茂みは除く）を、攻撃で壊せて敵が出てくることのある草花にする。配置は変えない。壊せるようにした数を返す。</summary>
+        internal static int MakePlantsBreakable(Transform village)
+        {
+            PlantSpawnTable table = BreakablePlantSetup.EnsureAssets();
+            int count = 0;
+            foreach (Transform group in village)
+            {
+                if (group.name == "Ground" || group.name == "Roads") continue;
+                foreach (Transform item in group)
+                {
+                    if (!BreakablePlantSetup.IsPlant(item.gameObject)) continue;
+                    BreakablePlantSetup.MakeBreakable(item.gameObject, table);
+                    count++;
+                }
+            }
+            return count;
+        }
+
         // 草花・茂みは通り抜ける。
         private static readonly string[] Passable = { "grass", "flower", "plant", "bush" };
 
@@ -765,6 +805,9 @@ namespace TpsDungeon.Party.Editor
 
         private static bool Refit(GameObject item)
         {
+            // 壊せる草花は、すり抜けられるレイヤーの箱を自分で持つ（BreakablePlantSetup）。
+            if (item.GetComponent<BreakablePlant>() != null) return false;
+
             foreach (Collider c in item.GetComponentsInChildren<Collider>(true))
             {
                 if (!c.isTrigger) Object.DestroyImmediate(c);
@@ -832,6 +875,8 @@ namespace TpsDungeon.Party.Editor
             var surface = surfaceRoot.GetComponent<NavMeshSurface>();
             if (surface == null) return;
 
+            // 味方と、すり抜けられる壊せる草花（Breakable）は焼かない。
+            surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));
             Physics.SyncTransforms();
             surface.BuildNavMesh();
             AssetDatabase.DeleteAsset(NavMeshPath);

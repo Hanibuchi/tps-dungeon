@@ -1,4 +1,5 @@
 using System;
+using TpsDungeon.Enemies;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
@@ -42,7 +43,8 @@ namespace TpsDungeon.Party
 
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-            surface.layerMask = AllyLayer.Exclude(layers);
+            // 味方と、すり抜けられる壊せる草花（Breakable）は焼かない。
+            surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(layers));
             surface.buildHeightMesh = true;
         }
 
