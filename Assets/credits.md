@@ -18,6 +18,8 @@
 | [Horror Ambient Album - 082318](https://assetstore.unity.com/packages/audio/ambient/horror-ambient-album-082318-127190?utm_source=gemini) | GWriterStudio | [Unity Asset Store](https://assetstore.unity.com/packages/audio/ambient/horror-ambient-album-082318-127190?utm_source=gemini) | Standard Unity Asset Store EULA (Extension Asset)<br>※商用/非商用利用可。再配布・自作発言は不可。 |
 | Human Melee Animations FREE | Kevin Iglesias | [Unity Asset Store](https://assetstore.unity.com/packages/3d/animations/human-melee-animations-free-165785) | Standard Unity Asset Store EULA (Extension Asset) |
 | FREE - Modular Character - Fantasy RPG Human Male | Blink | [Unity Asset Store](https://assetstore.unity.com/packages/3d/characters/humanoids/humans/free-modular-character-fantasy-rpg-human-male-228952) | Standard Unity Asset Store EULA (Extension Asset) |
+| RPG Poly Pack - Lite | Gigel3d | [Unity Asset Store](https://assetstore.unity.com/packages/3d/environments/landscapes/rpg-poly-pack-lite-148410) | Standard Unity Asset Store EULA (Extension Asset) |
+
 
 # BGM
 ## 地上

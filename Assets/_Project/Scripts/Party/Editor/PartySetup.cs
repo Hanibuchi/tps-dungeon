@@ -27,6 +27,9 @@ namespace TpsDungeon.Party.Editor
     /// </summary>
     public static class PartySetup
     {
+        /// <summary>キャラが歩いて登れる坂の角度。</summary>
+        public const float ClimbableSlope = 60f;
+
         public const string CharacterPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
         public const string PartyPrefabPath = "Assets/_Project/Prefabs/Character/Party.prefab";
         public const string CatalogPath = "Assets/_Project/Settings/Party/CharacterAccessoryCatalog.asset";
@@ -276,6 +279,8 @@ namespace TpsDungeon.Party.Editor
 
                 var agent = GetOrAdd<NavMeshAgent>(root);
                 var controller = root.GetComponent<CharacterController>();
+                // 地上の三角屋根（多くは 50〜60 度）を歩いて登れるように。Starter Assets の既定は 45 度。
+                if (controller != null) controller.slopeLimit = ClimbableSlope;
                 agent.radius = controller != null ? Mathf.Max(0.25f, controller.radius) : 0.3f;
                 agent.height = controller != null ? controller.height : 1.8f;
                 agent.baseOffset = 0f;
