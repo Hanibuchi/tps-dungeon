@@ -16,6 +16,7 @@ namespace TpsDungeon.Party.Editor
     /// <summary>
     /// 地上（城の前の広場）のシーンを作る。何度実行しても同じ形に作り直す。
     /// - 地形は ProBuilder の箱で組む（あとからシーンで ProBuilder の道具で手直しできる）。広場の北が城で、上へ行くほど太い。
+    /// - 歩けるのは地面の範囲だけ。塀は置かず、地面のまわりを見えない壁（[Bounds]）で囲む。
     /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）を 1 つだけ付ける。ダンジョンの入口はここだけ（ショートカットはあとで別の場所に作る）。
     /// - 広場の西に拠点の建物（武器屋・銀行）を置く。入口は今は閉じていて「準備中」と出る。強化は死んだときに行く別の場所でするので、ここには置かない。
     /// - パーティー一式（操作台・仲間 4 人・カメラ）を [Party Rig] にまとめ、<see cref="GameFlow"/> で城の中へ持ち越す。
@@ -31,11 +32,14 @@ namespace TpsDungeon.Party.Editor
         private const string FirstFloorScene = "Floor_1_1";
         private const int Followers = 4;
 
-        // 広場の大きさ（メートル）。原点が広場の中心、+Z が城。
-        private const float PlazaHalf = 30f;
-        private const float FenceHeight = 2f;
-        private const float FenceThickness = 1f;
-        private const float CastleFront = PlazaHalf;
+        // 地面の範囲（メートル）。+Z が城。歩けるのはこの範囲だけで、まわりを見えない壁で囲む。
+        private const float GroundMinX = -50f;
+        private const float GroundMaxX = 50f;
+        private const float GroundMinZ = -31f;
+        private const float GroundMaxZ = 69f;
+        private const float BoundsHeight = 30f;
+        private const float BoundsThickness = 2f;
+        private const float CastleFront = 30f;
 
         [MenuItem("Tools/TPS Dungeon/地上シーンを作る")]
         public static void GenerateFromMenu() => Debug.Log(Generate());
@@ -62,6 +66,7 @@ namespace TpsDungeon.Party.Editor
                 CreateLighting();
                 Transform world = new GameObject("[Surface]").transform;
                 BuildPlaza(world, materials);
+                BuildBounds();
                 BuildCastle(world, materials);
                 BuildHub(world, materials);
                 Transform spawn = CreateSpawn(world);
@@ -80,7 +85,7 @@ namespace TpsDungeon.Party.Editor
                 EditorSceneManager.CloseScene(scene, true);
             }
 
-            return $"{ScenePath} を作った（広場 {PlazaHalf * 2}m 四方、1F の門 → {FirstFloorScene}、拠点 2 つは閉じている、パーティー {Followers + 1} 人）。";
+            return $"{ScenePath} を作った（地面 {GroundMaxX - GroundMinX}×{GroundMaxZ - GroundMinZ}m を見えない壁で囲む、1F の門 → {FirstFloorScene}、拠点 2 つは閉じている、パーティー {Followers + 1} 人）。";
         }
 
         private static Dictionary<string, Material> LoadMaterials()
@@ -119,14 +124,38 @@ namespace TpsDungeon.Party.Editor
             Transform group = Group(world, "Plaza");
 
             // 床の上面を y = 0 にする（階のシーンと同じ）。
-            Box(group, "Ground", m["Floor"], new Vector3(0f, -0.25f, 0f), new Vector3(PlazaHalf * 2f + FenceThickness * 2f, 0.5f, PlazaHalf * 2f + FenceThickness * 2f));
+            var center = new Vector3((GroundMinX + GroundMaxX) * 0.5f, -0.25f, (GroundMinZ + GroundMaxZ) * 0.5f);
+            Box(group, "Ground", m["Floor"], center, new Vector3(GroundMaxX - GroundMinX, 0.5f, GroundMaxZ - GroundMinZ));
+        }
 
-            // 外へ出られないよう、城の無い 3 方を低い塀で囲む。飛び越えられない高さ（跳躍は 1.2 m）。
-            float y = FenceHeight * 0.5f;
-            float edge = PlazaHalf + FenceThickness * 0.5f;
-            Box(group, "Fence_S", m["Wall"], new Vector3(0f, y, -edge), new Vector3(PlazaHalf * 2f + FenceThickness * 2f, FenceHeight, FenceThickness));
-            Box(group, "Fence_W", m["Wall"], new Vector3(-edge, y, 0f), new Vector3(FenceThickness, FenceHeight, PlazaHalf * 2f));
-            Box(group, "Fence_E", m["Wall"], new Vector3(edge, y, 0f), new Vector3(FenceThickness, FenceHeight, PlazaHalf * 2f));
+        /// <summary>
+        /// 地面の外へ出られないよう、地面の 4 辺のすぐ外に見えない壁（当たりだけの箱）を立てる。
+        /// - [Surface] の外に置く。NavMesh は [Surface] の下だけを焼くので、壁の上面に NavMesh ができない。
+        /// - レイヤーは Ignore Raycast。キャラは止めるが、照準などのレイ（既定のマスク）やカメラの壁よけ（Default だけを見る）には掛からない。
+        /// </summary>
+        private static void BuildBounds()
+        {
+            var root = new GameObject("[Bounds]").transform;
+            float width = GroundMaxX - GroundMinX + BoundsThickness * 2f;
+            float depth = GroundMaxZ - GroundMinZ;
+            float centerX = (GroundMinX + GroundMaxX) * 0.5f;
+            float centerZ = (GroundMinZ + GroundMaxZ) * 0.5f;
+            float y = BoundsHeight * 0.5f;
+            float half = BoundsThickness * 0.5f;
+
+            InvisibleWall(root, "Bound_S", new Vector3(centerX, y, GroundMinZ - half), new Vector3(width, BoundsHeight, BoundsThickness));
+            InvisibleWall(root, "Bound_N", new Vector3(centerX, y, GroundMaxZ + half), new Vector3(width, BoundsHeight, BoundsThickness));
+            InvisibleWall(root, "Bound_W", new Vector3(GroundMinX - half, y, centerZ), new Vector3(BoundsThickness, BoundsHeight, depth));
+            InvisibleWall(root, "Bound_E", new Vector3(GroundMaxX + half, y, centerZ), new Vector3(BoundsThickness, BoundsHeight, depth));
+        }
+
+        private static void InvisibleWall(Transform parent, string name, Vector3 center, Vector3 size)
+        {
+            var wall = new GameObject(name) { layer = 2 };
+            wall.transform.SetParent(parent, false);
+            wall.transform.localPosition = center;
+            wall.AddComponent<BoxCollider>().size = size;
+            GameObjectUtility.SetStaticEditorFlags(wall, StaticEditorFlags.BatchingStatic);
         }
 
         /// <summary>
@@ -187,7 +216,7 @@ namespace TpsDungeon.Party.Editor
             var spawn = new GameObject("PlayerSpawn");
             spawn.transform.SetParent(world, false);
             // 南の塀の手前で、城を向いて立つ。
-            spawn.transform.SetLocalPositionAndRotation(new Vector3(0f, 0.05f, -PlazaHalf + 6f), Quaternion.identity);
+            spawn.transform.SetLocalPositionAndRotation(new Vector3(0f, 0.05f, GroundMinZ + 7f), Quaternion.identity);
             spawn.AddComponent<PlayerSpawnPoint>();
             return spawn.transform;
         }
