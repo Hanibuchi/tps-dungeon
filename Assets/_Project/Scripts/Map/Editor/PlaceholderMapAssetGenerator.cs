@@ -35,8 +35,9 @@ namespace TpsDungeon.Map.Editor
         private const float FloorThickness = 0.1f;
 
         // ドアの開口。セル幅と壁高に対する比で持つので、CellSize を変えても通れる幅のまま追従する。
-        private const float DoorOpeningWidth = 0.4f;
-        private const float DoorOpeningHeight = 0.75f;
+        // 5 m のセル・5 m の壁なら幅 1.5 m、高さ 2.8 m ほど。
+        private const float DoorOpeningWidth = 0.3f;
+        private const float DoorOpeningHeight = 0.5625f;
 
         // 扉板の厚みと、枠との隙間（メートル）。枠より薄くして、閉めたときに枠と重ならないようにする。
         private const float DoorLeafThickness = 0.08f;
