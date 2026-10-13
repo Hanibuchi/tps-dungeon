@@ -204,16 +204,16 @@ namespace TpsDungeon.Party.Editor
 
         private static void BuildBuildings(Placer p, Transform parent)
         {
-            // 扉はどの建物も自分の +Z の妻側にある。yaw 90 で東（+X）、-90 で西を向く。
-            GameObject shop = p.Place("Buildings/Bld_closed/rpgpp_lt_building_02", parent, new Vector3(-25f, 0f, 6f), 90f, Vector3.one, Collide.None, true);
+            // 向きは扉が向く方角で決める（90 で東、-90 で西）。
+            GameObject shop = PlaceBuilding(p, "rpgpp_lt_building_02", parent, new Vector3(-25f, 0f, 6f), 90f);
             AddDoorGate(shop, "武器屋", "武器を売り買いできる。（準備中）");
-            GameObject bank = p.Place("Buildings/Bld_closed/rpgpp_lt_building_04", parent, new Vector3(-25f, 0f, -13f), 90f, Vector3.one, Collide.None, true);
+            GameObject bank = PlaceBuilding(p, "rpgpp_lt_building_04", parent, new Vector3(-25f, 0f, -13f), 90f);
             AddDoorGate(bank, "銀行", "持ち物を預けられる。（準備中）");
 
             // 東の民家（入れない）。
-            p.Place("Buildings/Bld_closed/rpgpp_lt_building_01", parent, new Vector3(25f, 0f, -14f), -90f, Vector3.one, Collide.None, true);
-            p.Place("Buildings/Bld_closed/rpgpp_lt_building_05", parent, new Vector3(30f, 0f, 8f), -90f, Vector3.one, Collide.None, true);
-            p.Place("Buildings/Bld_closed/rpgpp_lt_building_03", parent, new Vector3(-36f, 0f, 20f), 90f, Vector3.one, Collide.None, true);
+            PlaceBuilding(p, "rpgpp_lt_building_01", parent, new Vector3(25f, 0f, -14f), -90f);
+            PlaceBuilding(p, "rpgpp_lt_building_05", parent, new Vector3(30f, 0f, 8f), -90f);
+            PlaceBuilding(p, "rpgpp_lt_building_03", parent, new Vector3(-36f, 0f, 20f), 90f);
 
             p.Block(Rect.MinMaxRect(-31f, 0f, -19f, 12f));
             p.Block(Rect.MinMaxRect(-31f, -19f, -19f, -7f));
@@ -222,13 +222,23 @@ namespace TpsDungeon.Party.Editor
             p.Block(Rect.MinMaxRect(-43f, 13f, -29f, 27f));
         }
 
-        /// <summary>建物の扉の前に照準用のトリガーを張り、SceneGate（閉じている）を付ける。扉は建物の +Z の妻側の真ん中。</summary>
+        /// <summary>
+        /// 建物の扉が向く向き（建物のローカルで、+Z からの角度）。building_04 だけは扉が -X の長い側にあり、ほかは +Z の妻側。
+        /// </summary>
+        public static float DoorYaw(string prefabName) => prefabName.EndsWith("building_04") ? -90f : 0f;
+
+        /// <summary>扉が doorYaw の方角（ワールド）を向くように建物を置く。</summary>
+        private static GameObject PlaceBuilding(Placer p, string prefabName, Transform parent, Vector3 at, float doorYaw)
+        {
+            return p.Place("Buildings/Bld_closed/" + prefabName, parent, at, doorYaw - DoorYaw(prefabName), Vector3.one, Collide.None, true);
+        }
+
+        /// <summary>建物の扉の前に照準用のトリガーを張り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。</summary>
         private static void AddDoorGate(GameObject building, string title, string body)
         {
-            Bounds local = LocalBounds(building);
             var door = new GameObject("Door");
             door.transform.SetParent(building.transform, false);
-            door.transform.localPosition = new Vector3(local.center.x, 1.3f, local.max.z + 0.3f);
+            PlaceDoor(building, door.transform);
             var trigger = door.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
             trigger.size = new Vector3(2.4f, 2.6f, 0.8f);
@@ -242,6 +252,18 @@ namespace TpsDungeon.Party.Editor
             serialized.FindProperty("title").stringValue = title;
             serialized.FindProperty("description").stringValue = body;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>扉のトリガーを、建物の扉の面の真ん中の少し外に置き、その面に向ける。</summary>
+        public static void PlaceDoor(GameObject building, Transform door)
+        {
+            Bounds local = LocalBounds(building);
+            float yaw = DoorYaw(SourceName(building));
+            Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            float reach = Mathf.Abs(dir.x) * local.extents.x + Mathf.Abs(dir.z) * local.extents.z + 0.3f;
+            Vector3 at = local.center + dir * reach;
+            door.localPosition = new Vector3(at.x, 1.3f, at.z);
+            door.localRotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
         // --- 小物 ---
