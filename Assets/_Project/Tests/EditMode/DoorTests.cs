@@ -25,7 +25,7 @@ namespace TpsDungeon.Map.Tests
             var (root, door, frame, hinge, leaf) = CreateDoor();
             try
             {
-                // FloorBuilder と同じく幅 cellSize=5、高さ wallHeight=3 に合わせる。
+                // 幅 5 m・高さ 3 m に合わせる（FloorBuilder は cellSize と FloorConfig.wallHeight を渡す）。
                 door.Fit(5f, 3f);
 
                 AssertVector(Vector3.one, root.transform.lossyScale, "ルートはスケールしない");

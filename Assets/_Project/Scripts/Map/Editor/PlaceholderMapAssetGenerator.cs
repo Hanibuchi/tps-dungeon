@@ -21,8 +21,14 @@ namespace TpsDungeon.Map.Editor
         private const string SettingsFolder = "Assets/_Project/Settings/Map";
 
         private const float CellSize = 5f;
-        private const float WallHeight = 3f;
+        private const float WallHeight = 5f;
         private const float WallThickness = 0.15f;
+        private const float CeilingThickness = 0.2f;
+
+        // 窓の開口。壁の幅と高さに対する比。腰の高さ（下端）と上端を比で持つので、壁の高さを変えても形が保たれる。
+        private const float WindowOpeningWidth = 0.5f;
+        private const float WindowSill = 0.3f;
+        private const float WindowTop = 0.75f;
         private const float FloorThickness = 0.1f;
 
         // ドアの開口。セル幅と壁高に対する比で持つので、CellSize を変えても通れる幅のまま追従する。
@@ -90,6 +96,7 @@ namespace TpsDungeon.Map.Editor
                 ["Stair"] = Material("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
                 ["StairUp"] = Material("Placeholder_StairUp", new Color(0.25f, 0.85f, 0.35f)),
                 ["StairDown"] = Material("Placeholder_StairDown", new Color(0.95f, 0.45f, 0.15f)),
+                ["Ceiling"] = Material("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f)),
             };
 
             var parts = BuildParts(materials);
@@ -116,8 +123,84 @@ namespace TpsDungeon.Map.Editor
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
+                ["Window"] = BuildWindowPrefab("Window_Basic", materials["Wall"]),
+                ["Ceiling"] = BuildCeilingPrefab("Ceiling_Basic", materials["Ceiling"]),
             };
             return parts;
+        }
+
+        /// <summary>
+        /// 窓付きの壁と天井だけを作り直して、今の FloorConfig に差す。
+        /// 一式の生成はドア（Animator を後から付けてある）も作り直すので、それを避けたいときに使う。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/天井と窓のパーツを生成")]
+        public static void GenerateCeilingAndWindow()
+        {
+            string path = $"{SettingsFolder}/Floor_L1_Config.asset";
+            var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(path);
+            if (config == null)
+            {
+                Debug.LogError($"{path} が無い。先に「プレースホルダのマップ一式を生成」を実行すること。");
+                return;
+            }
+
+            EnsureFolder(PartsFolder);
+            EnsureFolder(MaterialsFolder);
+            var wall = Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f));
+            var ceiling = Material("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f));
+
+            config.wallHeight = WallHeight;
+            config.windowWallPrefab = BuildWindowPrefab("Window_Basic", wall);
+            config.ceilingPrefab = BuildCeilingPrefab("Ceiling_Basic", ceiling);
+            EditorUtility.SetDirty(config);
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"天井と窓のパーツを生成して {config.name} に差した（壁の高さ {config.wallHeight} m）");
+        }
+
+        /// <summary>
+        /// 窓付きの壁。壁と同じくルートが (cellSize, wallHeight, 1) にスケールされる前提で、1x1 単位で
+        /// 左右の柱・腰壁・上の壁を組んで真ん中を開ける。開口には見えない当たりを張り、外へ出られないようにする。
+        /// </summary>
+        private static GameObject BuildWindowPrefab(string name, Material material)
+        {
+            var root = new GameObject(name);
+
+            float side = (1f - WindowOpeningWidth) * 0.5f;
+            float sideOffset = (WindowOpeningWidth + side) * 0.5f;
+            AddDoorPiece(root, "PillarLeft", material,
+                new Vector3(-sideOffset, 0.5f, 0f), new Vector3(side, 1f, WallThickness));
+            AddDoorPiece(root, "PillarRight", material,
+                new Vector3(sideOffset, 0.5f, 0f), new Vector3(side, 1f, WallThickness));
+            AddDoorPiece(root, "Sill", material,
+                new Vector3(0f, WindowSill * 0.5f, 0f), new Vector3(WindowOpeningWidth, WindowSill, WallThickness));
+            AddDoorPiece(root, "Lintel", material,
+                new Vector3(0f, (1f + WindowTop) * 0.5f, 0f), new Vector3(WindowOpeningWidth, 1f - WindowTop, WallThickness));
+
+            var blocker = new GameObject("Blocker");
+            blocker.transform.SetParent(root.transform, false);
+            blocker.transform.localPosition = new Vector3(0f, (WindowSill + WindowTop) * 0.5f, 0f);
+            blocker.AddComponent<BoxCollider>().size = new Vector3(WindowOpeningWidth, WindowTop - WindowSill, WallThickness);
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// 天井 1 セル分。ルートの原点が下面の中心で、FloorBuilder が x と z を cellSize にスケールする。
+        /// 影は落とさない（部屋の上を全部覆うので、落とすと室内が真っ暗になる）。
+        /// </summary>
+        private static GameObject BuildCeilingPrefab(string name, Material material)
+        {
+            var root = new GameObject(name);
+            var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mesh.name = "Mesh";
+            mesh.transform.SetParent(root.transform, false);
+            mesh.transform.localPosition = new Vector3(0f, CeilingThickness * 0.5f, 0f);
+            mesh.transform.localScale = new Vector3(1f, CeilingThickness, 1f);
+            Paint(mesh, material);
+            mesh.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
         }
 
         /// <summary>壁・ドア用。ルートのスケールが (cellSize, wallHeight, 1) に上書きされる前提。</summary>
@@ -286,6 +369,7 @@ namespace TpsDungeon.Map.Editor
             config.widthInCells = 64;
             config.heightInCells = 64;
             config.cellSize = CellSize;
+            config.wallHeight = WallHeight;
             config.minRoomCount = 10;
             config.maxRoomCount = 20;
             config.maxPackAttempts = 6;
@@ -298,6 +382,8 @@ namespace TpsDungeon.Map.Editor
             config.stairUpPrefab = parts["StairUp"];
             config.stairDownPrefab = parts["StairDown"];
             config.shopMarkerPrefab = parts["ShopMarker"];
+            config.windowWallPrefab = parts["Window"];
+            config.ceilingPrefab = parts["Ceiling"];
 
             EditorUtility.SetDirty(config);
             return config;

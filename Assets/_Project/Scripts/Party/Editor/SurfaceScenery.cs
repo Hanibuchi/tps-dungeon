@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TpsDungeon.Enemies;
 using TpsDungeon.Enemies.Editor;
+using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
 using Unity.AI.Navigation;
@@ -27,6 +28,7 @@ namespace TpsDungeon.Party.Editor
     ///   平らな [Surface]/Plaza/Ground（ProBuilder の板）は描画も当たりも止める（平らな当たりと凹凸のある見た目がずれて、物もキャラも浮いて見えたため）。
     /// - 物は置く所の真下の見た目の地面の高さに合わせる。足元（大きさに応じた円）の一番低い所に置くので、坂でも端が浮かない。城の箱も少し沈める。
     /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧だけ。
+    /// 階（Floor_1_1）の窓の外にも、同じ草地・丘・山・空と光と霧を置く（<see cref="BuildOutlook"/>）。
     /// </summary>
     public static class SurfaceScenery
     {
@@ -48,6 +50,13 @@ namespace TpsDungeon.Party.Editor
 
         // 城の箱を沈める量（地面の凹みの深い所に合わせる）。
         private const float CastleSink = -0.35f;
+
+        // 階の窓の外の景色。地上の座標（歩ける範囲の真ん中）で組んでから、階のグリッドの真ん中へずらす。
+        private const string FloorScenePath = "Assets/_Project/Scenes/Floor_1_1.unity";
+        private static readonly Vector3 SurfaceCenter = new Vector3(0f, 0f, (MinZ + MaxZ) * 0.5f);
+
+        // 階では景色ごとこれだけ下げる。草地の凹凸の上端が部屋の床（下面 −0.1 m）を突き抜けないように。
+        private const float OutlookSink = -0.6f;
 
         [MenuItem("Tools/TPS Dungeon/地上の景色を置き直す")]
         public static void RebuildFromMenu() => Debug.Log(Rebuild());
@@ -115,6 +124,78 @@ namespace TpsDungeon.Party.Editor
             ApplyLighting(scene);
 
             return $"地上の景色を置いた（村 {CountChildren(village)} 個、外の景色 {CountChildren(scenery)} 個）。";
+        }
+
+        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く")]
+        public static void BuildOutlookFromMenu()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != FloorScenePath)
+            {
+                if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+                scene = EditorSceneManager.OpenScene(FloorScenePath, OpenSceneMode.Single);
+            }
+
+            FloorConfig config = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (FloorBootstrap bootstrap in root.GetComponentsInChildren<FloorBootstrap>(true))
+                {
+                    config = new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue as FloorConfig;
+                    if (config != null) break;
+                }
+                if (config != null) break;
+            }
+            if (config == null)
+            {
+                Debug.LogError($"{scene.path} に FloorConfig の付いた FloorBootstrap が無い。");
+                return;
+            }
+
+            // 部屋は (0, 0) の角から並ぶグリッドの真ん中あたりに生える。
+            var center = new Vector3(config.widthInCells, 0f, config.heightInCells) * (config.cellSize * 0.5f);
+            Debug.Log(BuildOutlook(scene, center));
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// 階の窓から見える景色を置く（保存はしない）。地上と同じ草地・丘・山・空・雲と、光・環境光・霧。
+        /// 当たりは付けない（FloorBuilder の子でもないので NavMesh にも入らない）。center は階の真ん中（ワールド座標）。
+        /// </summary>
+        internal static string BuildOutlook(Scene scene, Vector3 center)
+        {
+            var placer = new Placer(new Random(Seed));
+
+            GameObject old = FindRoot(scene, "[Scenery]");
+            if (old != null) Object.DestroyImmediate(old);
+
+            var scenery = new GameObject("[Scenery]").transform;
+            SceneManager.MoveGameObjectToScene(scenery.gameObject, scene);
+
+            BuildOutlookGround(placer, Group(scenery, "Ground"));
+            BuildFarLand(placer, Group(scenery, "Land"));
+            BuildSky(placer, Group(scenery, "Sky"));
+            placer.RemoveSamplingColliders();
+
+            scenery.position = center - SurfaceCenter + Vector3.up * OutlookSink;
+            ApplySunAndFog(scene);
+
+            return $"階の外の景色を置いた（{CountChildren(scenery)} 個、真ん中 {center}）。";
+        }
+
+        /// <summary>階のまわりの草地。地上の外側の大きなタイルと同じもので、建物の下まで穴をあけずに敷く。</summary>
+        private static void BuildOutlookGround(Placer p, Transform parent)
+        {
+            const float step = 48f;
+            for (float x = -330f; x <= 330f; x += step)
+            {
+                for (float z = -330f; z <= 330f; z += step)
+                {
+                    string tile = p.Chance(0.5f) ? "Nature/Terrain/rpgpp_lt_terrain_grass_01" : "Nature/Terrain/rpgpp_lt_terrain_grass_02";
+                    p.Place(tile, parent, new Vector3(x + p.Range(-4f, 4f), -0.55f, SurfaceCenter.z + z + p.Range(-4f, 4f)), p.Quarter() + p.Range(-10f, 10f), new Vector3(3.3f, 1.2f, 3.3f), Collide.None, true);
+                }
+            }
         }
 
         // --- 地面・道 ---
@@ -541,17 +622,10 @@ namespace TpsDungeon.Party.Editor
         /// <summary>光は素材のデモに合わせて斜め後ろからの暖色、霧で遠くを空の色に溶かす。カメラは遠くの山まで写るよう遠景を延ばす。</summary>
         private static void ApplyLighting(Scene scene)
         {
+            ApplySunAndFog(scene);
+
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                foreach (Light light in root.GetComponentsInChildren<Light>(true))
-                {
-                    if (light.type != LightType.Directional) continue;
-                    light.transform.rotation = Quaternion.Euler(48f, 330f, 0f);
-                    light.color = new Color(0.98f, 0.95f, 0.83f);
-                    light.intensity = 1.2f;
-                    light.shadows = LightShadows.Soft;
-                }
-
                 foreach (Camera camera in root.GetComponentsInChildren<Camera>(true))
                 {
                     if (camera.CompareTag("MainCamera")) camera.farClipPlane = 1200f;
@@ -565,6 +639,22 @@ namespace TpsDungeon.Party.Editor
                     lens.FarClipPlane = 1200f;
                     vcam.Lens = lens;
                     EditorUtility.SetDirty(vcam);
+                }
+            }
+        }
+
+        /// <summary>日の光・環境光・霧。地上と階の窓の外で同じにする。RenderSettings はアクティブなシーンに掛かる。</summary>
+        private static void ApplySunAndFog(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Light light in root.GetComponentsInChildren<Light>(true))
+                {
+                    if (light.type != LightType.Directional) continue;
+                    light.transform.rotation = Quaternion.Euler(48f, 330f, 0f);
+                    light.color = new Color(0.98f, 0.95f, 0.83f);
+                    light.intensity = 1.2f;
+                    light.shadows = LightShadows.Soft;
                 }
             }
 

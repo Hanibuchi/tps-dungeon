@@ -36,9 +36,19 @@ namespace TpsDungeon.Map.Authoring
         [Min(0), Tooltip("行き止まりを減らすために追加で開けるドアの本数の上限。ドア候補がたまたま向かい合った所にしか開かないので、必ずこの本数になるわけではない。")]
         public int extraDoorCount = 2;
 
+        [Header("高さ")]
+        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張る。壁・窓・ドアの枠はこの高さに合わせて伸びる。")]
+        public float wallHeight = 5f;
+
         [Header("共通パーツ")]
         [Tooltip("セル 1 つ分の壁。ローカル原点が壁の中心で、+Z 側が部屋の外を向く。")]
         public GameObject wallPrefab;
+        [Tooltip("セル 1 つ分の窓付きの壁。外に面した壁にだけ使う。向きと大きさの合わせ方は壁と同じ。未設定なら窓を開けない。")]
+        public GameObject windowWallPrefab;
+        [Range(0f, 1f), Tooltip("外に面した壁 1 枚ごとに、窓付きの壁にする確率。")]
+        public float windowChance = 0.35f;
+        [Tooltip("セル 1 つ分の天井。ローカル原点が下面の中心で、FloorBuilder が (cellSize, 1, cellSize) にスケールする。未設定なら天井を張らない。")]
+        public GameObject ceilingPrefab;
         [Tooltip("セル 1 つ分のドア。向きは壁と同じ規約。")]
         public GameObject doorPrefab;
         [Tooltip("上り階段。上り階段の部屋の中央に 1 つ置かれる。")]
