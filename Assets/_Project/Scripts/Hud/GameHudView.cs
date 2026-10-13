@@ -228,6 +228,9 @@ namespace TpsDungeon.Hud
 
         private void LateUpdate()
         {
+            // シーンを移ってフロアが消えたら（パーティーは次のシーンへ持ち越す）、前の階の地図を捨てて探し直す。
+            if (floorBuilder == null && !ReferenceEquals(floorBuilder, null)) UnbindFloor();
+
             // フロアはプレイヤーより後に生成されることがあるので、見つかるまでときどき探す。
             if (floorBuilder == null && Time.unscaledTime >= nextFloorSearchTime)
             {

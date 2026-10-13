@@ -82,10 +82,10 @@ namespace TpsDungeon.Player
             return Mathf.Max(1, Mathf.RoundToInt(amount * Mathf.Clamp01(taken)));
         }
 
-        /// <summary>amount だけ回復する。最大を超えない。</summary>
+        /// <summary>amount だけ回復する。最大を超えない。倒れている（HP 0）なら回復しない（起こすのは <see cref="SetCurrent"/> で）。</summary>
         public void Heal(int amount)
         {
-            if (amount <= 0) return;
+            if (amount <= 0 || IsDead) return;
             SetCurrent(currentHp + amount);
         }
 

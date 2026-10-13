@@ -18,7 +18,8 @@
         "TpsDungeon.Menu.Editor",
         "TpsDungeon.Interaction.Editor",
         "TpsDungeon.Progression.Editor",
-        "TpsDungeon.Player.Editor"
+        "TpsDungeon.Player.Editor",
+        "Unity.ProBuilder"
     ],
     "includePlatforms": [
         "Editor"
