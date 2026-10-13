@@ -176,9 +176,9 @@ namespace TpsDungeon.Map.Runtime
                         piece.name = window ? $"Window_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
+                        // 壁と窓は実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
                         // ドアは中で扉板を回すので、ルートを非一様スケールすると歪む。枠だけを合わせてもらう。
                         if (piece.TryGetComponent<Door>(out var door)) door.Fit(cellSize, wallHeight);
-                        else piece.transform.localScale = new Vector3(cellSize, wallHeight, piece.transform.localScale.z);
                     }
                 }
             }
@@ -199,7 +199,6 @@ namespace TpsDungeon.Map.Runtime
                     var piece = Instantiate(config.ceilingPrefab, parent);
                     piece.name = $"Ceiling_{x}_{y}";
                     piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.up * wallHeight, Quaternion.identity);
-                    piece.transform.localScale = new Vector3(cellSize, piece.transform.localScale.y, cellSize);
                 }
             }
         }
@@ -212,8 +211,6 @@ namespace TpsDungeon.Map.Runtime
         {
             if (config.foundationPrefab == null || config.elevation <= 0f) return;
 
-            // 地面の凹凸に隠れるよう、少し深めに伸ばす。
-            float depth = config.elevation + 1f;
             for (int y = 0; y < occupancy.Height; y++)
             {
                 for (int x = 0; x < occupancy.Width; x++)
@@ -225,7 +222,6 @@ namespace TpsDungeon.Map.Runtime
                     piece.name = $"Foundation_{x}_{y}";
                     // 部屋の床の板（厚み 0.1）の下から。
                     piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * 0.1f, Quaternion.identity);
-                    piece.transform.localScale = new Vector3(cellSize, depth, cellSize);
                 }
             }
         }
