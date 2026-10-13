@@ -1,3 +1,4 @@
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Interaction;
 using UnityEngine;
 
@@ -8,12 +9,11 @@ namespace TpsDungeon.Map.Runtime
     /// 各ステートのクリップが Hinge を回して扉板を振る）。開き方や速さはクリップ（Animation/Door/）を直せばよい。
     /// 開いている途中・閉じている途中は触れない（開く用と閉じる用でクリップが別なので、途中で反転すると位置が飛ぶ）。
     /// 扉板の当たり判定は閉じきっているときだけ効かせる。動いている扉板に押されたり引っかかったりしないように。
+    /// 音は開け始めに開ける音、閉まりきったときに閉める音（「バタン」が頭にあるので、閉め始めではなく当たったときに鳴らす）。
     ///
-    /// 壁は FloorBuilder がルートを (cellSize, wallHeight, 1) に非一様スケールして大きさを合わせるが、
-    /// ドアのルートをそうすると、その下で回す扉板が歪む（親の非一様スケールは子の回転の後に掛かるので、
-    /// 子側で逆数を掛けても角度 0 のときしか打ち消せない）。
-    /// そこでドアはルートをスケールせず、FloorBuilder が Fit を呼ぶ。枠（Frame）だけを 1x1 単位のまま
-    /// スケールし、Hinge と扉板はスケールの掛からないところにメートルで置く。
+    /// 枠も扉板も実寸（メートル）で作ってあり、どこもスケールしない。素材の模様の密度を壁と揃えるためと、
+    /// 親を非一様スケールすると回した扉板が歪むため（親の非一様スケールは子の回転の後に掛かる）。
+    /// 大きさを変えるときは生成器（壁・床・天井のパーツを生成）で作り直す。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Door")]
@@ -28,32 +28,26 @@ namespace TpsDungeon.Map.Runtime
         private static readonly int ClosedStateHash = Animator.StringToHash(ClosedState);
         private static readonly int OpenStateHash = Animator.StringToHash(OpenState);
 
-        [SerializeField, Tooltip("柱・鴨居・照準用トリガーをまとめた子。1x1 単位で作ってあり、Fit で (幅, 高さ, 1) にスケールする。")]
-        private Transform frame;
-
         [SerializeField, Tooltip("回す軸。開口の左端に置く。スケールしない。クリップはこれの回転を動かす。")]
         private Transform hinge;
 
-        [SerializeField, Tooltip("扉板。Hinge の子。")]
+        [SerializeField, Tooltip("扉板。Hinge の子。当たり判定は BoxCollider（閉じたときに人が居ないかもこの箱で見る）。")]
         private Transform leaf;
 
         [SerializeField, Tooltip("開閉のアニメーションを流す Animator。未設定ならこの GameObject から探す。")]
         private Animator animator;
 
-        [SerializeField, Tooltip("開口の幅。ドア全体の幅に対する比（枠と同じ比）。")]
-        private float openingWidth = 0.4f;
-
-        [SerializeField, Tooltip("開口の高さ。ドア全体の高さに対する比（枠と同じ比）。")]
-        private float openingHeight = 0.75f;
-
-        [SerializeField, Tooltip("扉板の厚み（メートル）。枠より薄くして、閉めたときに枠と重ならないようにする。")]
-        private float leafThickness = 0.08f;
-
-        [SerializeField, Tooltip("扉板と枠の隙間（メートル）。")]
-        private float leafGap = 0.02f;
-
         [SerializeField, Tooltip("起動時に開けておく。")]
         private bool startOpen;
+
+        [SerializeField, Tooltip("開け始めに鳴らす音。")]
+        private AudioClip openSound;
+
+        [SerializeField, Tooltip("閉まりきったときに鳴らす音。")]
+        private AudioClip closeSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("開け閉めの音の大きさ。")]
+        private float soundVolume = 0.8f;
 
         [SerializeField] private string openLabel = "開ける";
         [SerializeField] private string closeLabel = "閉める";
@@ -61,8 +55,9 @@ namespace TpsDungeon.Map.Runtime
         // 閉じたときに扉板の位置に誰かいないか調べる用。自分の枠や扉板も拾うので少し余裕を持たせる。
         private readonly Collider[] overlaps = new Collider[8];
 
-        private Collider leafCollider;
+        private BoxCollider leafCollider;
         private bool isOpen;
+        private bool closeSoundPending;
 
         /// <summary>開けた（開けている途中も含む）か。</summary>
         public bool IsOpen => isOpen;
@@ -83,7 +78,7 @@ namespace TpsDungeon.Map.Runtime
         private void Awake()
         {
             if (animator == null) animator = GetComponent<Animator>();
-            if (leaf != null) leafCollider = leaf.GetComponent<Collider>();
+            if (leaf != null) leafCollider = leaf.GetComponent<BoxCollider>();
         }
 
         private void Start()
@@ -102,6 +97,12 @@ namespace TpsDungeon.Map.Runtime
         private void Update()
         {
             UpdateLeafCollider();
+
+            if (closeSoundPending && !isOpen && !IsSwinging)
+            {
+                closeSoundPending = false;
+                PlaySound(closeSound);
+            }
         }
 
         public bool CanInteract(GameObject interactor) => animator != null && !IsSwinging;
@@ -113,29 +114,16 @@ namespace TpsDungeon.Map.Runtime
             isOpen = !isOpen;
             animator.SetBool(OpenParamHash, isOpen);
             UpdateLeafCollider();
+
+            if (isOpen) PlaySound(openSound);
+            else closeSoundPending = true;
         }
 
-        /// <summary>
-        /// ドア全体を幅 width・高さ height（メートル）に合わせる。FloorBuilder が置いた直後に呼ぶ。
-        /// 生成器がプレハブを作るときにも呼んで、エディタ上の見た目を揃える。
-        /// </summary>
-        public void Fit(float width, float height)
+        private void PlaySound(AudioClip clip)
         {
-            if (frame != null) frame.localScale = new Vector3(width, height, 1f);
-            if (hinge == null || leaf == null) return;
-
-            float leafWidth = openingWidth * width;
-            float leafHeight = openingHeight * height;
-
-            hinge.localPosition = new Vector3(-leafWidth * 0.5f, 0f, 0f);
-            hinge.localScale = Vector3.one;
-
-            leaf.localPosition = new Vector3(leafWidth * 0.5f, leafHeight * 0.5f, 0f);
-            leaf.localRotation = Quaternion.identity;
-            leaf.localScale = new Vector3(
-                Mathf.Max(0.01f, leafWidth - leafGap * 2f),
-                Mathf.Max(0.01f, leafHeight - leafGap),
-                leafThickness);
+            if (clip == null) return;
+            Vector3 at = leaf != null ? leaf.position : transform.position;
+            GameAudio.Instance?.PlaySeAt(clip, at, soundVolume);
         }
 
         /// <summary>
@@ -158,8 +146,10 @@ namespace TpsDungeon.Map.Runtime
 
         private bool IsDoorwayOccupied()
         {
+            Transform t = leafCollider.transform;
             int count = Physics.OverlapBoxNonAlloc(
-                leaf.position, leaf.lossyScale * 0.5f, overlaps, leaf.rotation, ~0, QueryTriggerInteraction.Ignore);
+                t.TransformPoint(leafCollider.center), Vector3.Scale(leafCollider.size, t.lossyScale) * 0.5f,
+                overlaps, t.rotation, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 if (!overlaps[i].transform.IsChildOf(transform)) return true;

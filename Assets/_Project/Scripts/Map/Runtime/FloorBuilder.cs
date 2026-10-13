@@ -18,17 +18,17 @@ namespace TpsDungeon.Map.Runtime
     {
         private const string GeneratedRootName = "[Generated Floor]";
 
-        [SerializeField, Tooltip("壁の高さ（メートル）。壁 Prefab のスケールに使う。")]
-        private float wallHeight = 3f;
-
         /// <summary>NavMesh のベイクなど、具現化が終わってから走らせたい処理のためのフック。</summary>
         public event Action<FloorLayout> Built;
 
         public FloorLayout CurrentLayout { get; private set; }
         public FloorOccupancy CurrentOccupancy { get; private set; }
         public Transform GeneratedRoot { get; private set; }
+        /// <summary>天井をまとめた子。NavMesh を焼くとき、天井の上を歩ける所にしないよう外すのに使う。</summary>
+        public Transform CeilingRoot { get; private set; }
 
         private float cellSize = 3f;
+        private float wallHeight = 5f;
 
         public FloorLayout Build(FloorConfig config, int seed)
         {
@@ -37,6 +37,7 @@ namespace TpsDungeon.Map.Runtime
             Clear();
 
             cellSize = config.cellSize;
+            wallHeight = config.wallHeight;
             var layout = FloorLayoutGenerator.Generate(config.BuildParams(), seed);
             var occupancy = new FloorOccupancy(layout);
 
@@ -46,12 +47,17 @@ namespace TpsDungeon.Map.Runtime
             var rooms = NewGroup(root, "Rooms");
             var boundaries = NewGroup(root, "Walls");
             var features = NewGroup(root, "Features");
+            var ceiling = NewGroup(root, "Ceiling");
+            var foundation = NewGroup(root, "Foundation");
 
             BuildRooms(layout, config, rooms);
-            BuildBoundaries(occupancy, config, boundaries);
+            BuildBoundaries(occupancy, config, boundaries, new System.Random(seed));
             BuildFeatures(layout, config, features);
+            BuildCeiling(occupancy, config, ceiling);
+            BuildFoundation(occupancy, config, foundation);
 
             GeneratedRoot = root;
+            CeilingRoot = ceiling;
             CurrentLayout = layout;
             CurrentOccupancy = occupancy;
 
@@ -64,6 +70,7 @@ namespace TpsDungeon.Map.Runtime
             CurrentLayout = null;
             CurrentOccupancy = null;
             GeneratedRoot = null;
+            CeilingRoot = null;
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
             // エディタから作り直したときに前回分が残らないよう、子を全部見る。
@@ -127,8 +134,9 @@ namespace TpsDungeon.Map.Runtime
         /// セル境界を 1 つずつ見て壁かドアを建てる。
         /// 各境界を 1 回だけ処理するため、North と East 方向だけを見る。
         /// グリッド外側の境界も拾えるよう、走査は -1 から始める。
+        /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。
         /// </summary>
-        private void BuildBoundaries(FloorOccupancy occupancy, FloorConfig config, Transform parent)
+        private void BuildBoundaries(FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
         {
             if (config.wallPrefab == null)
             {
@@ -147,25 +155,71 @@ namespace TpsDungeon.Map.Runtime
                     {
                         var neighbor = cell + dir.Offset();
 
+                        bool cellFilled = occupancy.KindAt(cell) != CellKind.Empty;
+                        bool neighborFilled = occupancy.KindAt(neighbor) != CellKind.Empty;
+
                         BoundaryKind kind;
-                        if (occupancy.KindAt(cell) != CellKind.Empty) kind = occupancy.BoundaryAt(cell, dir);
-                        else if (occupancy.KindAt(neighbor) != CellKind.Empty) kind = occupancy.BoundaryAt(neighbor, dir.Opposite());
+                        if (cellFilled) kind = occupancy.BoundaryAt(cell, dir);
+                        else if (neighborFilled) kind = occupancy.BoundaryAt(neighbor, dir.Opposite());
                         else continue;
 
                         if (kind == BoundaryKind.None) continue;
 
-                        var prefab = kind == BoundaryKind.Door && config.doorPrefab != null
-                            ? config.doorPrefab
+                        bool window = kind == BoundaryKind.Wall && cellFilled != neighborFilled
+                            && config.windowWallPrefab != null && random.NextDouble() < config.windowChance;
+
+                        var prefab = kind == BoundaryKind.Door && config.doorPrefab != null ? config.doorPrefab
+                            : window ? config.windowWallPrefab
                             : config.wallPrefab;
 
                         var piece = Instantiate(prefab, parent);
-                        piece.name = $"{kind}_{x}_{y}_{dir}";
+                        piece.name = window ? $"Window_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
-                        // ドアは中で扉板を回すので、ルートを非一様スケールすると歪む。枠だけを合わせてもらう。
-                        if (piece.TryGetComponent<Door>(out var door)) door.Fit(cellSize, wallHeight);
-                        else piece.transform.localScale = new Vector3(cellSize, wallHeight, piece.transform.localScale.z);
+                        // 壁・窓・ドアは実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
                     }
+                }
+            }
+        }
+
+        /// <summary>部屋のセルごとに、壁の上端の高さへ天井を 1 枚ずつ張る。</summary>
+        private void BuildCeiling(FloorOccupancy occupancy, FloorConfig config, Transform parent)
+        {
+            if (config.ceilingPrefab == null) return;
+
+            for (int y = 0; y < occupancy.Height; y++)
+            {
+                for (int x = 0; x < occupancy.Width; x++)
+                {
+                    var cell = new GridPos(x, y);
+                    if (occupancy.KindAt(cell) == CellKind.Empty) continue;
+
+                    var piece = Instantiate(config.ceilingPrefab, parent);
+                    piece.name = $"Ceiling_{x}_{y}";
+                    piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.up * wallHeight, Quaternion.identity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 部屋のセルごとに、床の下から地面まで土台を伸ばす。この階は高い建物の上にある体なので、
+        /// 窓から隣の棟を見たときに宙に浮いて見えないように。見せるだけなので当たりは持たせない。
+        /// </summary>
+        private void BuildFoundation(FloorOccupancy occupancy, FloorConfig config, Transform parent)
+        {
+            if (config.foundationPrefab == null || config.elevation <= 0f) return;
+
+            for (int y = 0; y < occupancy.Height; y++)
+            {
+                for (int x = 0; x < occupancy.Width; x++)
+                {
+                    var cell = new GridPos(x, y);
+                    if (occupancy.KindAt(cell) == CellKind.Empty) continue;
+
+                    var piece = Instantiate(config.foundationPrefab, parent);
+                    piece.name = $"Foundation_{x}_{y}";
+                    // 部屋の床の板（厚み 0.1）の下から。
+                    piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * 0.1f, Quaternion.identity);
                 }
             }
         }

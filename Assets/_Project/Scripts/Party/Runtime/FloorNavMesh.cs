@@ -15,6 +15,7 @@ namespace TpsDungeon.Party
     /// - 高さメッシュも焼く。NavMesh はボクセルで近似されて床より少し上にできるので、それだけだと agent が浮いて見える。
     /// - 扉の板は開け閉めで通れるかが変わるので、焼くときは含めず、閉じている間だけ NavMeshObstacle で道を切る（<see cref="DoorNavObstacle"/>）。
     ///   外すのは動く扉板（Hinge の下）と照準用のトリガーだけ。柱と鴨居は壁と同じく焼く（扉ごと外すと柱の所が通れてしまい、敵が壁を抜けてくる）。
+    /// - 天井（FloorBuilder.CeilingRoot）は焼かない。上面に届かない歩ける所ができるだけなので。
     /// 焼き終えたら <see cref="Baked"/> を知らせる（パーティーが全員を先頭の後ろへ並べ直す）。
     /// FloorBuilder と同じ GameObject に付ける。NavMeshSurface はここで足す。
     /// </summary>
@@ -76,6 +77,9 @@ namespace TpsDungeon.Party
                 }
                 if (!door.TryGetComponent(out DoorNavObstacle _)) door.gameObject.AddComponent<DoorNavObstacle>();
             }
+
+            // 天井は上面が平らで広いので、焼くとその上に歩ける所ができてしまう。
+            if (builder.CeilingRoot != null) IgnoreFromBuild(builder.CeilingRoot.gameObject);
 
             // 生成したばかりの物の当たりを、焼く前に物理へ反映させる。
             Physics.SyncTransforms();

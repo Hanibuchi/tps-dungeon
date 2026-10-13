@@ -36,9 +36,23 @@ namespace TpsDungeon.Map.Authoring
         [Min(0), Tooltip("行き止まりを減らすために追加で開けるドアの本数の上限。ドア候補がたまたま向かい合った所にしか開かないので、必ずこの本数になるわけではない。")]
         public int extraDoorCount = 2;
 
+        [Header("高さ")]
+        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張り、ドアの枠はこの高さに伸びる。壁・窓は実寸で作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
+        public float wallHeight = 5f;
+        [Min(0f), Tooltip("この階の床が地面からどれだけ高いか（メートル）。高い建物の上の階なら大きくする。窓の外の景色はこの分だけ下に置き、部屋の下には地面まで土台を置く。変えたら「壁・床・天井のパーツを生成」と「階の外の景色を置く」を回すこと。")]
+        public float elevation = 40f;
+
         [Header("共通パーツ")]
-        [Tooltip("セル 1 つ分の壁。ローカル原点が壁の中心で、+Z 側が部屋の外を向く。")]
+        [Tooltip("セル 1 つ分の壁。ローカル原点が壁の下端の中心で、+Z 側が部屋の外を向く。幅 cellSize・高さ wallHeight の実寸で作る（FloorBuilder はスケールしない）。")]
         public GameObject wallPrefab;
+        [Tooltip("セル 1 つ分の窓付きの壁。外に面した壁にだけ使う。向きと大きさは壁と同じ。未設定なら窓を開けない。")]
+        public GameObject windowWallPrefab;
+        [Range(0f, 1f), Tooltip("外に面した壁 1 枚ごとに、窓付きの壁にする確率。")]
+        public float windowChance = 0.35f;
+        [Tooltip("セル 1 つ分の天井。ローカル原点が下面の中心で、cellSize 四方の実寸で作る。未設定なら天井を張らない。")]
+        public GameObject ceilingPrefab;
+        [Tooltip("セル 1 つ分の土台（建物の下の部分）。ローカル原点が上面の中心で、cellSize 四方・深さ elevation（＋少し）の実寸で作る。未設定か elevation が 0 なら置かない。")]
+        public GameObject foundationPrefab;
         [Tooltip("セル 1 つ分のドア。向きは壁と同じ規約。")]
         public GameObject doorPrefab;
         [Tooltip("上り階段。上り階段の部屋の中央に 1 つ置かれる。")]

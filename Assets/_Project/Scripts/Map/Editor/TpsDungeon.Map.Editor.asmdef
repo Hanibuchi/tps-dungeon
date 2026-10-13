@@ -3,7 +3,8 @@
     "rootNamespace": "TpsDungeon.Map.Editor",
     "references": [
         "TpsDungeon.Map",
-        "TpsDungeon.Interaction"
+        "TpsDungeon.Interaction",
+        "Unity.ProBuilder"
     ],
     "includePlatforms": [
         "Editor"

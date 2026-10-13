@@ -3,7 +3,8 @@
     "rootNamespace": "TpsDungeon.Map",
     "references": [
         "Unity.InputSystem",
-        "TpsDungeon.Interaction"
+        "TpsDungeon.Interaction",
+        "TpsDungeon.Audio"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
