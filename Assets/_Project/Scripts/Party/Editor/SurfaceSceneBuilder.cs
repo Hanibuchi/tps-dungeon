@@ -16,8 +16,8 @@ namespace TpsDungeon.Party.Editor
     /// <summary>
     /// 地上（城の前の広場）のシーンを作る。何度実行しても同じ形に作り直す。
     /// - 地形は ProBuilder の箱で組む（あとからシーンで ProBuilder の道具で手直しできる）。広場の北が城で、上へ行くほど太い。
-    /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）と、第 2〜5 層へのショートカットの門（閉じている）を並べる。
-    /// - 広場の左右に拠点の建物（武器屋・銀行・強化所）を置く。入口は今は閉じていて「準備中」と出る。
+    /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）を 1 つだけ付ける。ダンジョンの入口はここだけ（ショートカットはあとで別の場所に作る）。
+    /// - 広場の西に拠点の建物（武器屋・銀行）を置く。入口は今は閉じていて「準備中」と出る。強化は死んだときに行く別の場所でするので、ここには置かない。
     /// - パーティー一式（操作台・仲間 4 人・カメラ）を [Party Rig] にまとめ、<see cref="GameFlow"/> で城の中へ持ち越す。
     /// - 床と壁から NavMesh を焼いてシーンと一緒に保存する（地上は毎回同じ形なので実行中には焼かない）。
     /// Build Settings では先頭（起動したときのシーン）にする。
@@ -80,13 +80,13 @@ namespace TpsDungeon.Party.Editor
                 EditorSceneManager.CloseScene(scene, true);
             }
 
-            return $"{ScenePath} を作った（広場 {PlazaHalf * 2}m 四方、1F の門 → {FirstFloorScene}、ショートカット 4 つと拠点 3 つは閉じている、パーティー {Followers + 1} 人）。";
+            return $"{ScenePath} を作った（広場 {PlazaHalf * 2}m 四方、1F の門 → {FirstFloorScene}、拠点 2 つは閉じている、パーティー {Followers + 1} 人）。";
         }
 
         private static Dictionary<string, Material> LoadMaterials()
         {
             var result = new Dictionary<string, Material>();
-            foreach (string key in new[] { "Floor", "Wall", "Door", "DoorLeaf", "Shop", "Stair", "StairUp" })
+            foreach (string key in new[] { "Floor", "Wall", "Door", "DoorLeaf", "Shop" })
             {
                 var material = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsFolder}/Placeholder_{key}.mat");
                 if (material == null) return null;
@@ -130,7 +130,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>
-        /// 城。正面の壁（広場の北の端）に大門とショートカットの門を付け、上の段ほど幅も奥行きも広げて「上に行くほど太い」塔にする。
+        /// 城。正面の壁（広場の北の端）に大門を付け、上の段ほど幅も奥行きも広げて「上に行くほど太い」塔にする。
         /// </summary>
         private static void BuildCastle(Transform world, Dictionary<string, Material> m)
         {
@@ -157,26 +157,14 @@ namespace TpsDungeon.Party.Editor
             Box(group, "Gate_Lintel", m["Door"], new Vector3(0f, gateHeight + 0.5f, CastleFront - 0.6f), new Vector3(gateWidth + 2.4f, 1f, 1.2f));
             GameObject gate = Box(group, "Gate_1F", m["DoorLeaf"], new Vector3(0f, gateHeight * 0.5f, CastleFront - 0.2f), new Vector3(gateWidth, gateHeight, 0.4f));
             AddGate(gate, FirstFloorScene, true, "城へ入る", "まだ開いていない", "城の大門", "第 1 層「玄関」へ入る。");
-
-            // 第 2〜5 層へのショートカット。左右に 2 つずつ並べ、層の番号が小さいほど大門に近い。
-            float[] xs = { -12f, 12f, -22f, 22f };
-            for (int i = 0; i < xs.Length; i++)
-            {
-                int layer = i + 2;
-                Vector3 at = new Vector3(xs[i], 0f, CastleFront);
-                Box(group, $"Shortcut_{layer}_Frame", m["Wall"], at + new Vector3(0f, 2.25f, -0.4f), new Vector3(3.6f, 4.5f, 0.8f));
-                GameObject door = Box(group, $"Shortcut_{layer}", m["Stair"], at + new Vector3(0f, 1.75f, -0.9f), new Vector3(2.6f, 3.5f, 0.3f));
-                AddGate(door, string.Empty, false, "入る", "まだ開いていない", $"第 {layer} 層へのショートカット", $"第 {layer - 1} 層のボスを倒すと開く。");
-            }
         }
 
-        /// <summary>拠点。左（西）に武器屋と銀行、右（東）に強化所。入口は広場の中央を向く。</summary>
+        /// <summary>拠点。左（西）に武器屋と銀行。入口は広場の中央を向く。</summary>
         private static void BuildHub(Transform world, Dictionary<string, Material> m)
         {
             Transform group = Group(world, "Hub");
             Building(group, m, "Shop", new Vector3(-20f, 0f, 4f), +1, "武器屋", "武器を売り買いできる。（準備中）");
             Building(group, m, "Bank", new Vector3(-20f, 0f, -12f), +1, "銀行", "持ち物を預けられる。（準備中）");
-            Building(group, m, "Upgrade", new Vector3(20f, 0f, -4f), -1, "強化所", "メタ通貨で永続強化ができる。（準備中）");
         }
 
         /// <summary>箱の建物と扉。facing は扉の向き（+1 なら東、-1 なら西）。</summary>
