@@ -64,8 +64,8 @@ Transform:
   m_GameObject: {fileID: 982597171328451908}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.15, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.3, z: 0.15}
+  m_LocalPosition: {x: 0, y: 0.3, z: 0}
+  m_LocalScale: {x: 0.25, y: 0.6, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1696356426585529907}
@@ -176,8 +176,8 @@ Transform:
   m_GameObject: {fileID: 1330133106347745414}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.875, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.25, z: 0.15}
+  m_LocalPosition: {x: 0, y: 0.9, z: 0}
+  m_LocalScale: {x: 0.25, y: 0.19999999, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1696356426585529907}
@@ -288,8 +288,8 @@ Transform:
   m_GameObject: {fileID: 4367647978837179640}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.375, y: 0.5, z: 0}
-  m_LocalScale: {x: 0.25, y: 1, z: 0.15}
+  m_LocalPosition: {x: -0.3125, y: 0.5, z: 0}
+  m_LocalScale: {x: 0.375, y: 1, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1696356426585529907}
@@ -400,8 +400,8 @@ Transform:
   m_GameObject: {fileID: 5493883114358599068}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.375, y: 0.5, z: 0}
-  m_LocalScale: {x: 0.25, y: 1, z: 0.15}
+  m_LocalPosition: {x: 0.3125, y: 0.5, z: 0}
+  m_LocalScale: {x: 0.375, y: 1, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1696356426585529907}
@@ -510,7 +510,7 @@ Transform:
   m_GameObject: {fileID: 8185992715089154812}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.525, z: 0}
+  m_LocalPosition: {x: 0, y: 0.70000005, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -535,5 +535,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.5, y: 0.45, z: 0.15}
+  m_Size: {x: 0.25, y: 0.19999999, z: 0.15}
   m_Center: {x: 0, y: 0, z: 0}

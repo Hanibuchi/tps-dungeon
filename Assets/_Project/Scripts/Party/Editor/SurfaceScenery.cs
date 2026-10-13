@@ -55,7 +55,7 @@ namespace TpsDungeon.Party.Editor
         private const string FloorScenePath = "Assets/_Project/Scenes/Floor_1_1.unity";
         private static readonly Vector3 SurfaceCenter = new Vector3(0f, 0f, (MinZ + MaxZ) * 0.5f);
 
-        // 階では景色ごとこれだけ下げる。草地の凹凸の上端が部屋の床（下面 −0.1 m）を突き抜けないように。
+        // 階では景色ごと、階の高さ（FloorConfig.elevation）に加えてこれだけ下げる。地上と同じく草地の上面が地面の高さ（土台の底より少し上）に来るように。
         private const float OutlookSink = -0.6f;
 
         [MenuItem("Tools/TPS Dungeon/地上の景色を置き直す")]
@@ -154,6 +154,8 @@ namespace TpsDungeon.Party.Editor
 
             // 部屋は (0, 0) の角から並ぶグリッドの真ん中あたりに生える。
             var center = new Vector3(config.widthInCells, 0f, config.heightInCells) * (config.cellSize * 0.5f);
+            // 高い建物の上の階なので、景色は階の高さの分だけ下に置く。
+            center.y = -config.elevation;
             Debug.Log(BuildOutlook(scene, center));
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -161,7 +163,7 @@ namespace TpsDungeon.Party.Editor
 
         /// <summary>
         /// 階の窓から見える景色を置く（保存はしない）。地上と同じ草地・丘・山・空・雲と、光・環境光・霧。
-        /// 当たりは付けない（FloorBuilder の子でもないので NavMesh にも入らない）。center は階の真ん中（ワールド座標）。
+        /// 当たりは付けない（FloorBuilder の子でもないので NavMesh にも入らない）。center は階の真ん中の地面（ワールド座標）。
         /// </summary>
         internal static string BuildOutlook(Scene scene, Vector3 center)
         {

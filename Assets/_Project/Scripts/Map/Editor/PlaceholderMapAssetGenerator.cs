@@ -26,9 +26,11 @@ namespace TpsDungeon.Map.Editor
         private const float CeilingThickness = 0.2f;
 
         // 窓の開口。壁の幅と高さに対する比。腰の高さ（下端）と上端を比で持つので、壁の高さを変えても形が保たれる。
-        private const float WindowOpeningWidth = 0.5f;
-        private const float WindowSill = 0.3f;
-        private const float WindowTop = 0.75f;
+        // 高い建物の上の階なので、小さめの窓を上の方に開ける（5 m の壁なら幅 1.25 m、高さ 3.0〜4.0 m）。
+        private const float WindowOpeningWidth = 0.25f;
+        private const float WindowSill = 0.6f;
+        private const float WindowTop = 0.8f;
+        private const float Elevation = 40f;
         private const float FloorThickness = 0.1f;
 
         // ドアの開口。セル幅と壁高に対する比で持つので、CellSize を変えても通れる幅のまま追従する。
@@ -125,6 +127,7 @@ namespace TpsDungeon.Map.Editor
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
                 ["Window"] = BuildWindowPrefab("Window_Basic", materials["Wall"]),
                 ["Ceiling"] = BuildCeilingPrefab("Ceiling_Basic", materials["Ceiling"]),
+                ["Foundation"] = BuildFoundationPrefab("Foundation_Basic", materials["Wall"]),
             };
             return parts;
         }
@@ -146,12 +149,16 @@ namespace TpsDungeon.Map.Editor
 
             EnsureFolder(PartsFolder);
             EnsureFolder(MaterialsFolder);
-            var wall = Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f));
+            // 壁の素材は一式の生成で作ってあるものをそのまま使う（作り直すと色の値が丸めで書き換わる）。
+            var wall = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsFolder}/Placeholder_Wall.mat")
+                ?? Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f));
             var ceiling = Material("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f));
 
             config.wallHeight = WallHeight;
             config.windowWallPrefab = BuildWindowPrefab("Window_Basic", wall);
             config.ceilingPrefab = BuildCeilingPrefab("Ceiling_Basic", ceiling);
+            config.elevation = Elevation;
+            config.foundationPrefab = BuildFoundationPrefab("Foundation_Basic", wall);
             EditorUtility.SetDirty(config);
 
             AssetDatabase.SaveAssets();
@@ -181,6 +188,23 @@ namespace TpsDungeon.Map.Editor
             blocker.transform.SetParent(root.transform, false);
             blocker.transform.localPosition = new Vector3(0f, (WindowSill + WindowTop) * 0.5f, 0f);
             blocker.AddComponent<BoxCollider>().size = new Vector3(WindowOpeningWidth, WindowTop - WindowSill, WallThickness);
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// 土台 1 セル分。ルートの原点が上面の中心で、下へ 1 の箱。FloorBuilder が (cellSize, 深さ, cellSize) にスケールする。
+        /// 窓の外に見せるだけなので当たりは外す。
+        /// </summary>
+        private static GameObject BuildFoundationPrefab(string name, Material material)
+        {
+            var root = new GameObject(name);
+            var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mesh.name = "Mesh";
+            mesh.transform.SetParent(root.transform, false);
+            mesh.transform.localPosition = new Vector3(0f, -0.5f, 0f);
+            Object.DestroyImmediate(mesh.GetComponent<BoxCollider>());
+            Paint(mesh, material);
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
         }
@@ -384,6 +408,8 @@ namespace TpsDungeon.Map.Editor
             config.shopMarkerPrefab = parts["ShopMarker"];
             config.windowWallPrefab = parts["Window"];
             config.ceilingPrefab = parts["Ceiling"];
+            config.elevation = Elevation;
+            config.foundationPrefab = parts["Foundation"];
 
             EditorUtility.SetDirty(config);
             return config;

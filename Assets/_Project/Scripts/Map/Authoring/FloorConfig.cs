@@ -39,6 +39,8 @@ namespace TpsDungeon.Map.Authoring
         [Header("高さ")]
         [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張る。壁・窓・ドアの枠はこの高さに合わせて伸びる。")]
         public float wallHeight = 5f;
+        [Min(0f), Tooltip("この階の床が地面からどれだけ高いか（メートル）。高い建物の上の階なら大きくする。窓の外の景色はこの分だけ下に置き、部屋の下には地面まで土台を伸ばす。")]
+        public float elevation = 40f;
 
         [Header("共通パーツ")]
         [Tooltip("セル 1 つ分の壁。ローカル原点が壁の中心で、+Z 側が部屋の外を向く。")]
@@ -49,6 +51,8 @@ namespace TpsDungeon.Map.Authoring
         public float windowChance = 0.35f;
         [Tooltip("セル 1 つ分の天井。ローカル原点が下面の中心で、FloorBuilder が (cellSize, 1, cellSize) にスケールする。未設定なら天井を張らない。")]
         public GameObject ceilingPrefab;
+        [Tooltip("セル 1 つ分の土台（建物の下の部分）。ローカル原点が上面の中心で、FloorBuilder が (cellSize, elevation, cellSize) にスケールする。未設定か elevation が 0 なら置かない。")]
+        public GameObject foundationPrefab;
         [Tooltip("セル 1 つ分のドア。向きは壁と同じ規約。")]
         public GameObject doorPrefab;
         [Tooltip("上り階段。上り階段の部屋の中央に 1 つ置かれる。")]

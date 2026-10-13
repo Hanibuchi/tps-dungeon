@@ -48,11 +48,13 @@ namespace TpsDungeon.Map.Runtime
             var boundaries = NewGroup(root, "Walls");
             var features = NewGroup(root, "Features");
             var ceiling = NewGroup(root, "Ceiling");
+            var foundation = NewGroup(root, "Foundation");
 
             BuildRooms(layout, config, rooms);
             BuildBoundaries(occupancy, config, boundaries, new System.Random(seed));
             BuildFeatures(layout, config, features);
             BuildCeiling(occupancy, config, ceiling);
+            BuildFoundation(occupancy, config, foundation);
 
             GeneratedRoot = root;
             CeilingRoot = ceiling;
@@ -198,6 +200,32 @@ namespace TpsDungeon.Map.Runtime
                     piece.name = $"Ceiling_{x}_{y}";
                     piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.up * wallHeight, Quaternion.identity);
                     piece.transform.localScale = new Vector3(cellSize, piece.transform.localScale.y, cellSize);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 部屋のセルごとに、床の下から地面まで土台を伸ばす。この階は高い建物の上にある体なので、
+        /// 窓から隣の棟を見たときに宙に浮いて見えないように。見せるだけなので当たりは持たせない。
+        /// </summary>
+        private void BuildFoundation(FloorOccupancy occupancy, FloorConfig config, Transform parent)
+        {
+            if (config.foundationPrefab == null || config.elevation <= 0f) return;
+
+            // 地面の凹凸に隠れるよう、少し深めに伸ばす。
+            float depth = config.elevation + 1f;
+            for (int y = 0; y < occupancy.Height; y++)
+            {
+                for (int x = 0; x < occupancy.Width; x++)
+                {
+                    var cell = new GridPos(x, y);
+                    if (occupancy.KindAt(cell) == CellKind.Empty) continue;
+
+                    var piece = Instantiate(config.foundationPrefab, parent);
+                    piece.name = $"Foundation_{x}_{y}";
+                    // 部屋の床の板（厚み 0.1）の下から。
+                    piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * 0.1f, Quaternion.identity);
+                    piece.transform.localScale = new Vector3(cellSize, depth, cellSize);
                 }
             }
         }
