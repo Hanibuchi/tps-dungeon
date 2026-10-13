@@ -43,6 +43,17 @@ namespace TpsDungeon.Map.Editor
         private const float DoorLeafThickness = 0.08f;
         private const float DoorLeafGap = 0.02f;
 
+        // ドアノブ。床からの高さ、扉板の端（蝶番の反対）からの距離、首の長さと太さ、玉の直径（メートル）。
+        private const float KnobHeight = 1.0f;
+        private const float KnobInset = 0.14f;
+        private const float KnobNeckLength = 0.05f;
+        private const float KnobNeckWidth = 0.03f;
+        private const float KnobSize = 0.08f;
+
+        // 開け閉めの音（効果音ラボ）。ThirdParty は git に上げないので、無ければ空のまま（鳴らない）。
+        private const string DoorOpenSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/ドアを開ける2.mp3";
+        private const string DoorCloseSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/ドアを閉める2.mp3";
+
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
         private const float DoorInteractVolumeDepth = 0.3f;
 
@@ -97,6 +108,7 @@ namespace TpsDungeon.Map.Editor
                 ["Wall"] = Material("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f)),
                 ["Door"] = Material("Placeholder_Door", new Color(0.65f, 0.35f, 0.15f)),
                 ["DoorLeaf"] = Material("Placeholder_DoorLeaf", new Color(0.42f, 0.24f, 0.12f)),
+                ["DoorKnob"] = KnobMaterial(),
                 ["Shop"] = Material("Placeholder_Shop", new Color(0.85f, 0.72f, 0.18f)),
                 ["Stair"] = Material("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
                 ["StairUp"] = Material("Placeholder_StairUp", new Color(0.25f, 0.85f, 0.35f)),
@@ -122,7 +134,7 @@ namespace TpsDungeon.Map.Editor
             {
                 // 壁・窓・天井・土台は ProBuilder で実寸に作り、FloorBuilder はスケールしない（素材の模様の密度を揃えるため）。
                 ["Wall"] = BuildWallPrefab("Wall_Basic", materials["Wall"], CellSize, WallHeight),
-                ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"], CellSize, WallHeight),
+                ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"], materials["DoorKnob"], CellSize, WallHeight),
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
@@ -156,10 +168,11 @@ namespace TpsDungeon.Map.Editor
             var ceiling = ExistingMaterial("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f));
             var doorFrame = ExistingMaterial("Placeholder_Door", new Color(0.65f, 0.35f, 0.15f));
             var doorLeaf = ExistingMaterial("Placeholder_DoorLeaf", new Color(0.42f, 0.24f, 0.12f));
+            var doorKnob = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsFolder}/Placeholder_DoorKnob.mat") ?? KnobMaterial();
 
             config.wallPrefab = BuildWallPrefab("Wall_Basic", wall, config.cellSize, config.wallHeight);
             config.windowWallPrefab = BuildWindowPrefab("Window_Basic", wall, config.cellSize, config.wallHeight);
-            config.doorPrefab = BuildDoorPrefab("Door_Basic", doorFrame, doorLeaf, config.cellSize, config.wallHeight, reuseAnimator: true);
+            config.doorPrefab = BuildDoorPrefab("Door_Basic", doorFrame, doorLeaf, doorKnob, config.cellSize, config.wallHeight, reuseAnimator: true);
             config.ceilingPrefab = BuildCeilingPrefab("Ceiling_Basic", ceiling, config.cellSize);
             config.foundationPrefab = BuildFoundationPrefab("Foundation_Basic", wall, config.cellSize, config.elevation);
             EditorUtility.SetDirty(config);
@@ -306,8 +319,8 @@ namespace TpsDungeon.Map.Editor
         /// 左右の柱と鴨居（子の Frame）で真ん中を開け、その開口に扉板（Hinge の子の Leaf）を吊る。
         /// 開閉の動きはルートの Animator が DoorAnimatorBuilder の作るクリップで Hinge を回す。
         /// </summary>
-        private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial, float width, float height,
-            bool reuseAnimator = false)
+        private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial, Material knobMaterial,
+            float width, float height, bool reuseAnimator = false)
         {
             var root = new GameObject(name);
 
@@ -345,6 +358,11 @@ namespace TpsDungeon.Map.Editor
             var leaf = Box(hinge.transform, "Leaf", leafMaterial,
                 new Vector3(openW * 0.5f, openH * 0.5f, 0f), leafSize, true);
 
+            // ドアノブは扉板の子（一緒に回る）。蝶番の反対の端の、表と裏に 1 つずつ。
+            var knobAt = new Vector3(leafSize.x * 0.5f - KnobInset, KnobHeight - openH * 0.5f, 0f);
+            AddKnob(leaf.transform, "Knob_Front", knobMaterial, knobAt, 1f);
+            AddKnob(leaf.transform, "Knob_Back", knobMaterial, knobAt, -1f);
+
             var animator = root.AddComponent<Animator>();
             // コントローラは組み直すと中の ID が全部変わるので、寸法だけ作り直すときは今のものを使う。
             var controller = reuseAnimator
@@ -357,9 +375,50 @@ namespace TpsDungeon.Map.Editor
             serialized.FindProperty("animator").objectReferenceValue = animator;
             serialized.FindProperty("hinge").objectReferenceValue = hinge.transform;
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
+            serialized.FindProperty("openSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorOpenSoundPath);
+            serialized.FindProperty("closeSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorCloseSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// ドアノブ 1 つ。扉板の面から首を出し、その先に玉を付ける。side は +1 で表（+Z）、-1 で裏。
+        /// 当たりは持たない（通るときや扉板の当たりの邪魔をしないように）。
+        /// </summary>
+        private static void AddKnob(Transform leaf, string name, Material material, Vector3 at, float side)
+        {
+            var knob = new GameObject(name).transform;
+            knob.SetParent(leaf, false);
+            knob.localPosition = new Vector3(at.x, at.y, side * DoorLeafThickness * 0.5f);
+
+            var neck = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            neck.name = "Neck";
+            neck.transform.SetParent(knob, false);
+            neck.transform.localPosition = new Vector3(0f, 0f, side * KnobNeckLength * 0.5f);
+            neck.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            // 円柱は高さ 2 で作られるので、y は長さの半分。
+            neck.transform.localScale = new Vector3(KnobNeckWidth, KnobNeckLength * 0.5f, KnobNeckWidth);
+            Object.DestroyImmediate(neck.GetComponent<Collider>());
+            Paint(neck, material);
+
+            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            ball.name = "Ball";
+            ball.transform.SetParent(knob, false);
+            ball.transform.localPosition = new Vector3(0f, 0f, side * (KnobNeckLength + KnobSize * 0.4f));
+            ball.transform.localScale = Vector3.one * KnobSize;
+            Object.DestroyImmediate(ball.GetComponent<Collider>());
+            Paint(ball, material);
+        }
+
+        /// <summary>ドアノブの真鍮っぽい素材。</summary>
+        private static Material KnobMaterial()
+        {
+            var material = Material("Placeholder_DoorKnob", new Color(0.78f, 0.62f, 0.3f));
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.85f);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.6f);
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static GameObject BuildMarkerPrefab(string name, Material material, PrimitiveType primitive)

@@ -28,8 +28,10 @@ namespace TpsDungeon.Map.Tests
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(DoorPrefabPath);
             Assert.IsNotNull(prefab, $"{DoorPrefabPath} が無い");
 
+            // ドアノブ（Knob_*）は小さな球と円柱を縮めて作った飾りなので見ない。
             foreach (Transform t in prefab.GetComponentsInChildren<Transform>(true))
             {
+                if (IsUnderKnob(t)) continue;
                 AssertVector(Vector3.one, t.localScale, $"{t.name} はスケールしない");
             }
         }
@@ -67,6 +69,15 @@ namespace TpsDungeon.Map.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        private static bool IsUnderKnob(Transform t)
+        {
+            for (; t != null; t = t.parent)
+            {
+                if (t.name.StartsWith("Knob_")) return true;
+            }
+            return false;
         }
 
         private static void AssertVector(Vector3 expected, Vector3 actual, string message)

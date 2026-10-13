@@ -1,3 +1,4 @@
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Interaction;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace TpsDungeon.Map.Runtime
     /// 各ステートのクリップが Hinge を回して扉板を振る）。開き方や速さはクリップ（Animation/Door/）を直せばよい。
     /// 開いている途中・閉じている途中は触れない（開く用と閉じる用でクリップが別なので、途中で反転すると位置が飛ぶ）。
     /// 扉板の当たり判定は閉じきっているときだけ効かせる。動いている扉板に押されたり引っかかったりしないように。
+    /// 音は開け始めに開ける音、閉まりきったときに閉める音（「バタン」が頭にあるので、閉め始めではなく当たったときに鳴らす）。
     ///
     /// 枠も扉板も実寸（メートル）で作ってあり、どこもスケールしない。素材の模様の密度を壁と揃えるためと、
     /// 親を非一様スケールすると回した扉板が歪むため（親の非一様スケールは子の回転の後に掛かる）。
@@ -38,6 +40,15 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("起動時に開けておく。")]
         private bool startOpen;
 
+        [SerializeField, Tooltip("開け始めに鳴らす音。")]
+        private AudioClip openSound;
+
+        [SerializeField, Tooltip("閉まりきったときに鳴らす音。")]
+        private AudioClip closeSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("開け閉めの音の大きさ。")]
+        private float soundVolume = 0.8f;
+
         [SerializeField] private string openLabel = "開ける";
         [SerializeField] private string closeLabel = "閉める";
 
@@ -46,6 +57,7 @@ namespace TpsDungeon.Map.Runtime
 
         private BoxCollider leafCollider;
         private bool isOpen;
+        private bool closeSoundPending;
 
         /// <summary>開けた（開けている途中も含む）か。</summary>
         public bool IsOpen => isOpen;
@@ -85,6 +97,12 @@ namespace TpsDungeon.Map.Runtime
         private void Update()
         {
             UpdateLeafCollider();
+
+            if (closeSoundPending && !isOpen && !IsSwinging)
+            {
+                closeSoundPending = false;
+                PlaySound(closeSound);
+            }
         }
 
         public bool CanInteract(GameObject interactor) => animator != null && !IsSwinging;
@@ -96,6 +114,16 @@ namespace TpsDungeon.Map.Runtime
             isOpen = !isOpen;
             animator.SetBool(OpenParamHash, isOpen);
             UpdateLeafCollider();
+
+            if (isOpen) PlaySound(openSound);
+            else closeSoundPending = true;
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (clip == null) return;
+            Vector3 at = leaf != null ? leaf.position : transform.position;
+            GameAudio.Instance?.PlaySeAt(clip, at, soundVolume);
         }
 
         /// <summary>
