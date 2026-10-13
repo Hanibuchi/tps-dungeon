@@ -617,7 +617,15 @@ namespace TpsDungeon.Combat
             Vector3 direction = FlatDirection(transform.position, enemy.transform.position, transform.forward);
             int dealt = enemy.TakeDamage(new DamageInfo(damage, point, direction, critical,
                 shape.knockback + stats.KnockbackBonus, ReactionScale(shape)));
+            // 草花などの置物は壊れるだけ（壊れる音と見た目は置物の側が出す）。当てた数（空振りか・コンボ）にも数字にも数えない。
+            if (enemy.IsProp)
+            {
+                Explode(point, stats.ExplosionDamage(damage), step);
+                return;
+            }
+
             if (hits == 0 && playHitSound) PlaySound(shape.hitSound != null ? shape.hitSound : type.HitSound, point, type.SoundVolume);
+
             if (critical && !criticalSoundThisSwing)
             {
                 criticalSoundThisSwing = true;

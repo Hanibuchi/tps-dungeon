@@ -298,7 +298,7 @@ namespace TpsDungeon.Party
             for (int i = 0; i < count; i++)
             {
                 EnemyHealth enemy = overlap[i].GetComponentInParent<EnemyHealth>();
-                if (enemy == null || enemy.IsDead) continue;
+                if (enemy == null || enemy.IsDead || enemy.IsProp) continue;
 
                 float distance = Vector3.Distance(transform.position, enemy.transform.position);
                 if (distance >= bestDistance || !CanSee(enemy)) continue;

@@ -964,7 +964,7 @@ namespace TpsDungeon.Combat
             for (int i = 0; i < count; i++)
             {
                 EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
-                if (enemy == null || enemy.IsDead) continue;
+                if (enemy == null || enemy.IsDead || enemy.IsProp) continue;
 
                 Vector3 center = wideOverlap[i].bounds.center;
                 Vector3 toCenter = center - aim.origin;
@@ -993,7 +993,7 @@ namespace TpsDungeon.Combat
             for (int i = 0; i < count; i++)
             {
                 EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
-                if (enemy == null || enemy.IsDead || exclude.Contains(enemy)) continue;
+                if (enemy == null || enemy.IsDead || enemy.IsProp || exclude.Contains(enemy)) continue;
 
                 Vector3 center = wideOverlap[i].bounds.center;
                 float distance = Vector3.Distance(from, center);

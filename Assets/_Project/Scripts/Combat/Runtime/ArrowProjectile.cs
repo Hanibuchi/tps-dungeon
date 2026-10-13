@@ -159,6 +159,8 @@ namespace TpsDungeon.Combat
                     // 流し始めから重なっていた物は hit.point が取れない（ゼロ）。体の面の近い点で代える。
                     Vector3 point = hit.distance <= 0f ? other.ClosestPoint(position) : hit.point;
                     onHit?.Invoke(enemy, point, direction);
+                    // 草花などの置物は壊して抜ける（貫通の数を使わない）。
+                    if (enemy.IsProp) continue;
                     if (pierceLeft-- <= 0)
                     {
                         Destroy(gameObject);
@@ -294,7 +296,7 @@ namespace TpsDungeon.Combat
                 Collider other = Nearby[i];
                 EnemyHealth enemy = other.GetComponentInParent<EnemyHealth>();
                 // 当てた敵は追わない（貫通して次の敵へ向かう）。
-                if (enemy == null || enemy.IsDead || struck.Contains(enemy)) continue;
+                if (enemy == null || enemy.IsDead || enemy.IsProp || struck.Contains(enemy)) continue;
 
                 Vector3 to = other.bounds.center - position;
                 float distance = to.magnitude;

@@ -160,7 +160,8 @@ namespace TpsDungeon.Hud
 
         private void OnDealt(MeleeHitRecord record)
         {
-            if (record.Damage <= 0) return;
+            // 草花などの置物を壊した分は数字を出さない。
+            if (record.Damage <= 0 || (record.Enemy != null && record.Enemy.IsProp)) return;
             Show(record.Point, record.Damage, record.IsCritical, record.Kind == MeleeHitKind.Explosion || record.Kind == MeleeHitKind.Tick, record.Combo);
         }
 
