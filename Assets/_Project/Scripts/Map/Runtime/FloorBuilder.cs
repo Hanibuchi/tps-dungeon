@@ -176,9 +176,7 @@ namespace TpsDungeon.Map.Runtime
                         piece.name = window ? $"Window_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
-                        // 壁と窓は実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
-                        // ドアは中で扉板を回すので、ルートを非一様スケールすると歪む。枠だけを合わせてもらう。
-                        if (piece.TryGetComponent<Door>(out var door)) door.Fit(cellSize, wallHeight);
+                        // 壁・窓・ドアは実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
                     }
                 }
             }

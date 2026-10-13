@@ -38,8 +38,9 @@ namespace TpsDungeon.Map.Editor
         private const float DoorOpeningWidth = 0.4f;
         private const float DoorOpeningHeight = 0.75f;
 
-        // 扉板の見た目。厚み（メートル）は Door の既定値と揃えて枠より薄くしてある。
+        // 扉板の厚みと、枠との隙間（メートル）。枠より薄くして、閉めたときに枠と重ならないようにする。
         private const float DoorLeafThickness = 0.08f;
+        private const float DoorLeafGap = 0.02f;
 
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
         private const float DoorInteractVolumeDepth = 0.3f;
@@ -119,9 +120,8 @@ namespace TpsDungeon.Map.Editor
             var parts = new Dictionary<string, GameObject>
             {
                 // 壁・窓・天井・土台は ProBuilder で実寸に作り、FloorBuilder はスケールしない（素材の模様の密度を揃えるため）。
-                // ドアは扉板を回すのでルートはスケールせず、Door.Fit が枠（Frame）だけを (cellSize, wallHeight, 1) にする。
                 ["Wall"] = BuildWallPrefab("Wall_Basic", materials["Wall"], CellSize, WallHeight),
-                ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"]),
+                ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"], CellSize, WallHeight),
                 ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
                 ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
@@ -133,9 +133,9 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// 壁・窓付きの壁・天井・土台と、部屋の床を、今の FloorConfig の寸法（cellSize・wallHeight・elevation）で
+        /// 壁・窓付きの壁・ドア・天井・土台と、部屋の床を、今の FloorConfig の寸法（cellSize・wallHeight・elevation）で
         /// ProBuilder の実寸の箱に作り直す。FloorConfig の高さを変えたらこれを回す。
-        /// 一式の生成はドア（Animator を後から付けてある）も作り直すので、それを避けたいときにも使う。
+        /// 一式の生成と違い、部屋の並びやカタログ・FloorConfig の他の値には触らない。
         /// </summary>
         [MenuItem("Tools/TPS Dungeon/壁・床・天井のパーツを生成")]
         public static void GenerateStructureParts()
@@ -153,9 +153,12 @@ namespace TpsDungeon.Map.Editor
             // 一式の生成で作ってある素材はそのまま使う（作り直すと色の値が丸めで書き換わる）。
             var wall = ExistingMaterial("Placeholder_Wall", new Color(0.35f, 0.34f, 0.33f));
             var ceiling = ExistingMaterial("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f));
+            var doorFrame = ExistingMaterial("Placeholder_Door", new Color(0.65f, 0.35f, 0.15f));
+            var doorLeaf = ExistingMaterial("Placeholder_DoorLeaf", new Color(0.42f, 0.24f, 0.12f));
 
             config.wallPrefab = BuildWallPrefab("Wall_Basic", wall, config.cellSize, config.wallHeight);
             config.windowWallPrefab = BuildWindowPrefab("Window_Basic", wall, config.cellSize, config.wallHeight);
+            config.doorPrefab = BuildDoorPrefab("Door_Basic", doorFrame, doorLeaf, config.cellSize, config.wallHeight, reuseAnimator: true);
             config.ceilingPrefab = BuildCeilingPrefab("Ceiling_Basic", ceiling, config.cellSize);
             config.foundationPrefab = BuildFoundationPrefab("Foundation_Basic", wall, config.cellSize, config.elevation);
             EditorUtility.SetDirty(config);
@@ -170,7 +173,7 @@ namespace TpsDungeon.Map.Editor
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"壁・床・天井のパーツを ProBuilder で作り直して {config.name} に差した（セル {config.cellSize} m、壁の高さ {config.wallHeight} m、土台 {config.elevation} m、部屋の床 {floors} 個）");
+            Debug.Log($"壁・ドア・床・天井のパーツを ProBuilder で作り直して {config.name} に差した（セル {config.cellSize} m、壁の高さ {config.wallHeight} m、土台 {config.elevation} m、作り直した部屋の床 {floors} 個）");
         }
 
         private static Material ExistingMaterial(string name, Color color) =>
@@ -250,6 +253,11 @@ namespace TpsDungeon.Map.Editor
                 var old = root.transform.Find("Floor");
                 if (template == null || old == null) return false;
 
+                // もう同じ大きさの ProBuilder の床なら触らない（作り直すと中の ID が変わって差分だけが出る）。
+                var size = new Vector3(template.SizeInCells.x * cellSize, FloorThickness, template.SizeInCells.y * cellSize);
+                if (old.GetComponent<ProBuilderMesh>() != null && old.TryGetComponent(out BoxCollider current)
+                    && Vector3.Distance(current.size, size) < 0.001f && old.localScale == Vector3.one) return false;
+
                 var material = old.GetComponent<MeshRenderer>() != null ? old.GetComponent<MeshRenderer>().sharedMaterial : null;
                 int index = old.GetSiblingIndex();
                 Object.DestroyImmediate(old.gameObject);
@@ -293,76 +301,64 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// ドア用。ルートはスケールせず、枠は子の Frame に 1x1 単位で建て、FloorBuilder が Door.Fit で
-        /// Frame だけを (cellSize, wallHeight, 1) にスケールする。左右の柱と鴨居で真ん中を開け、
-        /// その開口に Door が開け閉めする扉板（Hinge の子）を吊る。開閉の動きはルートの Animator が
-        /// DoorAnimatorBuilder の作るクリップで Hinge を回す。
+        /// ドア 1 セル分。壁と同じく幅 width・高さ height の実寸で、どこもスケールしない。
+        /// 左右の柱と鴨居（子の Frame）で真ん中を開け、その開口に扉板（Hinge の子の Leaf）を吊る。
+        /// 開閉の動きはルートの Animator が DoorAnimatorBuilder の作るクリップで Hinge を回す。
         /// </summary>
-        private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial)
+        private static GameObject BuildDoorPrefab(string name, Material material, Material leafMaterial, float width, float height,
+            bool reuseAnimator = false)
         {
             var root = new GameObject(name);
 
             var frame = new GameObject("Frame");
             frame.transform.SetParent(root.transform, false);
 
-            float pillarWidth = (1f - DoorOpeningWidth) * 0.5f;
-            float pillarOffsetX = (DoorOpeningWidth + pillarWidth) * 0.5f;
-            float lintelHeight = 1f - DoorOpeningHeight;
+            float openW = DoorOpeningWidth * width;
+            float openH = DoorOpeningHeight * height;
+            float pillarWidth = (width - openW) * 0.5f;
+            float pillarOffsetX = (openW + pillarWidth) * 0.5f;
+            float lintelHeight = height - openH;
 
-            AddDoorPiece(frame, "Pillar_L", material,
-                new Vector3(-pillarOffsetX, 0.5f, 0f), new Vector3(pillarWidth, 1f, WallThickness));
-            AddDoorPiece(frame, "Pillar_R", material,
-                new Vector3(pillarOffsetX, 0.5f, 0f), new Vector3(pillarWidth, 1f, WallThickness));
-            AddDoorPiece(frame, "Lintel", material,
-                new Vector3(0f, DoorOpeningHeight + lintelHeight * 0.5f, 0f),
-                new Vector3(DoorOpeningWidth, lintelHeight, WallThickness));
+            Box(frame.transform, "Pillar_L", material,
+                new Vector3(-pillarOffsetX, height * 0.5f, 0f), new Vector3(pillarWidth, height, WallThickness), true);
+            Box(frame.transform, "Pillar_R", material,
+                new Vector3(pillarOffsetX, height * 0.5f, 0f), new Vector3(pillarWidth, height, WallThickness), true);
+            Box(frame.transform, "Lintel", material,
+                new Vector3(0f, openH + lintelHeight * 0.5f, 0f), new Vector3(openW, lintelHeight, WallThickness), true);
 
             // 開けた後に開口を覗いても「閉める」が出るよう、開口いっぱいに照準用のトリガーを張る。
-            // 当たり判定は持たないので通行の邪魔はしない。Frame の z スケールは 1 なので奥行きはメートル。
+            // 当たり判定は持たないので通行の邪魔はしない。
             var volume = new GameObject("InteractVolume");
             volume.transform.SetParent(frame.transform, false);
-            volume.transform.localPosition = new Vector3(0f, DoorOpeningHeight * 0.5f, 0f);
+            volume.transform.localPosition = new Vector3(0f, openH * 0.5f, 0f);
             var trigger = volume.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = new Vector3(DoorOpeningWidth, DoorOpeningHeight, DoorInteractVolumeDepth);
+            trigger.size = new Vector3(openW, openH, DoorInteractVolumeDepth);
 
+            // 回す軸は開口の左端。扉板は軸から右へ開口いっぱい（枠との隙間だけ小さく）。
             var hinge = new GameObject("Hinge");
             hinge.transform.SetParent(root.transform, false);
+            hinge.transform.localPosition = new Vector3(-openW * 0.5f, 0f, 0f);
 
-            var leaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            leaf.name = "Leaf";
-            leaf.transform.SetParent(hinge.transform, false);
-            Paint(leaf, leafMaterial);
+            var leafSize = new Vector3(openW - DoorLeafGap * 2f, openH - DoorLeafGap, DoorLeafThickness);
+            var leaf = Box(hinge.transform, "Leaf", leafMaterial,
+                new Vector3(openW * 0.5f, openH * 0.5f, 0f), leafSize, true);
 
             var animator = root.AddComponent<Animator>();
-            animator.runtimeAnimatorController = DoorAnimatorBuilder.Build();
+            // コントローラは組み直すと中の ID が全部変わるので、寸法だけ作り直すときは今のものを使う。
+            var controller = reuseAnimator
+                ? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(DoorAnimatorBuilder.ControllerPath)
+                : null;
+            animator.runtimeAnimatorController = controller != null ? controller : DoorAnimatorBuilder.Build();
 
             var door = root.AddComponent<Door>();
             var serialized = new SerializedObject(door);
             serialized.FindProperty("animator").objectReferenceValue = animator;
-            serialized.FindProperty("frame").objectReferenceValue = frame.transform;
             serialized.FindProperty("hinge").objectReferenceValue = hinge.transform;
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
-            serialized.FindProperty("openingWidth").floatValue = DoorOpeningWidth;
-            serialized.FindProperty("openingHeight").floatValue = DoorOpeningHeight;
-            serialized.FindProperty("leafThickness").floatValue = DoorLeafThickness;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // プレハブ単体で見ても実寸のドアになるよう、既定のセルと壁の大きさに合わせておく。
-            door.Fit(CellSize, WallHeight);
-
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
-        }
-
-        private static void AddDoorPiece(
-            GameObject root, string name, Material material, Vector3 localPosition, Vector3 localScale)
-        {
-            var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            piece.name = name;
-            piece.transform.SetParent(root.transform, false);
-            piece.transform.localPosition = localPosition;
-            piece.transform.localScale = localScale;
-            Paint(piece, material);
         }
 
         private static GameObject BuildMarkerPrefab(string name, Material material, PrimitiveType primitive)
