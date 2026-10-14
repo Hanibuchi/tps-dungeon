@@ -6,7 +6,7 @@ namespace TpsDungeon.Map.Runtime
     /// <summary>
     /// 階のシーンにいる間だけ、Main Camera の post-processing を有効にする（階の Global Volume を効かせるため）。
     /// カメラは地上から持ち越されるので、階を出るとき（このシーンが閉じるとき）に元へ戻し、地上の見た目は変えない。
-    /// 階の [Global Volume] に付ける。
+    /// FloorBuilder が階と一緒に生成する Global Volume に付く。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Floor Post Processing")]

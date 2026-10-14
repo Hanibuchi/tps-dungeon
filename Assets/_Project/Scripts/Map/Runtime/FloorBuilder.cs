@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Generation;
@@ -62,6 +63,7 @@ namespace TpsDungeon.Map.Runtime
             BuildFeatures(layout, config, features, roomObjects);
             BuildCeiling(occupancy, config, ceiling);
             BuildFoundation(occupancy, config, foundation);
+            BuildVolume(config, root);
 
             GeneratedRoot = root;
             CeilingRoot = ceiling;
@@ -238,6 +240,22 @@ namespace TpsDungeon.Map.Runtime
                     piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * Mathf.Max(0.1f, depth), Quaternion.identity);
                 }
             }
+        }
+
+        /// <summary>
+        /// 階の Global Volume を生成ルートの下に置く。どのシーンで階を作っても（Floor_1_1 でも確認用シーンでも）同じ見た目になるよう、シーンには置かない。
+        /// カメラの post-processing は FloorPostProcessing が Play 中だけ有効にし、作り直しや片付けで消えるときに戻す。
+        /// </summary>
+        private static void BuildVolume(FloorConfig config, Transform parent)
+        {
+            if (config.volumeProfile == null) return;
+
+            var holder = new GameObject("Global Volume");
+            holder.transform.SetParent(parent, false);
+            var volume = holder.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = config.volumeProfile;
+            holder.AddComponent<FloorPostProcessing>();
         }
 
         /// <summary>

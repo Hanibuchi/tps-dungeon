@@ -5,6 +5,7 @@
         "Unity.InputSystem",
         "TpsDungeon.Interaction",
         "TpsDungeon.Audio",
+        "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],

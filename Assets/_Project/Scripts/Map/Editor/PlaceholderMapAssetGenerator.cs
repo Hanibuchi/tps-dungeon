@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
@@ -200,6 +201,7 @@ namespace TpsDungeon.Map.Editor
             };
             config.stairUpPrefab = BuildStairUpPrefab("Stair_Up", stairs, config.cellSize, config.wallHeight);
             config.stairDownPrefab = BuildStairDownPrefab("Stair_Down", stairs, config.cellSize);
+            if (config.volumeProfile == null) config.volumeProfile = LoadOrCreateVolumeProfile();
             EditorUtility.SetDirty(config);
 
             int floors = 0;
@@ -712,9 +714,40 @@ namespace TpsDungeon.Map.Editor
             config.ceilingPrefab = parts["Ceiling"];
             config.elevation = Elevation;
             config.foundationPrefab = parts["Foundation"];
+            if (config.volumeProfile == null) config.volumeProfile = LoadOrCreateVolumeProfile();
 
             EditorUtility.SetDirty(config);
             return config;
+        }
+
+        /// <summary>
+        /// 階の Volume の profile。無ければ作る。既にあれば読むだけ（手で調節した値を上書きしない）。
+        /// 天井が日の光を遮るので、室内は環境光だけで暗い。暗部を持ち上げて、窓の外は飛ばさずに室内を見えるようにする。
+        /// </summary>
+        private static VolumeProfile LoadOrCreateVolumeProfile()
+        {
+            string path = $"{SettingsFolder}/Floor_VolumeProfile.asset";
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile != null) return profile;
+
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+
+            // 暗部と中間を持ち上げる（w が明るさのずらし）。明るい所はそのままなので、窓の外の景色は飛ばない。
+            var tones = profile.Add<ShadowsMidtonesHighlights>();
+            tones.shadows.Override(new Vector4(1f, 1f, 1f, 0.35f));
+            tones.midtones.Override(new Vector4(1f, 1f, 1f, 0.15f));
+
+            // 窓から入る日向が白く飛ばないよう、明るい所をなだらかに丸める。
+            var tonemapping = profile.Add<Tonemapping>();
+            tonemapping.mode.Override(TonemappingMode.Neutral);
+
+            var color = profile.Add<ColorAdjustments>();
+            color.postExposure.Override(0.3f);
+
+            foreach (var component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
+            EditorUtility.SetDirty(profile);
+            return profile;
         }
 
         private static Material Material(string name, Color color)

@@ -33,3 +33,4 @@ MonoBehaviour:
   stairUpPrefab: {fileID: 6897905109614482074, guid: 9e6c8bd3e34674ca3b4cbea28143cfda, type: 3}
   stairDownPrefab: {fileID: 5910611291598227447, guid: bf72a56f8a78e4636a8b2b2522935ace, type: 3}
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
+  volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}

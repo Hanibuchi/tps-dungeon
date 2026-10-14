@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using TpsDungeon.Map.Generation;
 
 namespace TpsDungeon.Map.Authoring
@@ -61,6 +62,10 @@ namespace TpsDungeon.Map.Authoring
         public GameObject stairDownPrefab;
         [Tooltip("ショップの目印。ショップ部屋の中央に 1 つ置かれる。")]
         public GameObject shopMarkerPrefab;
+
+        [Header("見た目")]
+        [Tooltip("階の明るさ・色味（天井で日の光が遮られる室内を持ち上げるなど）。生成のたびに Global Volume として置く。未設定なら置かない。")]
+        public VolumeProfile volumeProfile;
 
         public FloorGenerationParams BuildParams()
         {
