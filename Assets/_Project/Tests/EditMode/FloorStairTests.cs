@@ -49,6 +49,10 @@ namespace TpsDungeon.Map.Tests
             Assert.IsNotNull(builder.ExitStair, $"seed {seed}: 出口に階段が無い");
             Assert.IsNull(builder.ExitStair.GetComponentInChildren<SceneGate>(), "上り階段は見た目だけ");
 
+            // 入口・出口の部屋はドアが 1 つだけで、階段はそのドアを背にせず向かいの壁沿いにある（階段のローカルでドアは -Z の側）。
+            AssertSingleDoorBehindStair(builder, entrance, builder.EntranceStair, seed);
+            AssertSingleDoorBehindStair(builder, exit, builder.ExitStair, seed);
+
             // 入口の部屋の床は階段の床（穴の空いた床）に置き換わる。
             var entranceRoom = FindRoom(builder, entrance.Index);
             if (entrance.Bounds.Width == 1 && entrance.Bounds.Height == 1)
@@ -69,6 +73,19 @@ namespace TpsDungeon.Map.Tests
                 float depth = builder.EntranceStair.GetComponent<FloorFeature>().depthBelowFloor;
                 Assert.AreEqual(-depth, foundation.localPosition.y, 0.001f, "入口のセルの土台は竪穴の底から");
             }
+        }
+
+        private static void AssertSingleDoorBehindStair(FloorBuilder builder, RoomInstance room, GameObject stair, int seed)
+        {
+            int doors = 0;
+            foreach (var socket in room.UsedSockets())
+            {
+                doors++;
+                var door = builder.transform.TransformPoint(builder.BoundaryCenter(socket.Cell, socket.Facing));
+                var local = stair.transform.InverseTransformPoint(door);
+                Assert.Less(local.z, -builder.CellSize * 0.4f, $"seed {seed}: 部屋 {room.Index} のドアが階段の -Z の側に無い（{local}）");
+            }
+            Assert.AreEqual(1, doors, $"seed {seed}: 部屋 {room.Index} のドアは 1 つだけ");
         }
 
         private static GameObject FindRoom(FloorBuilder builder, int index)

@@ -278,7 +278,8 @@ namespace TpsDungeon.Map.Runtime
 
                 var marker = Instantiate(prefab, parent);
                 marker.name = $"{label}_Room{roomIndex}";
-                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.identity);
+                // 部屋と同じだけ回す。階段は部屋の Prefab のドアの向き（南）を前提に作ってあるので、回した部屋のドアと向きが合う。
+                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.Euler(0f, 90f * room.Rotation, 0f));
 
                 if (marker.TryGetComponent(out FloorFeature feature))
                 {
@@ -312,8 +313,8 @@ namespace TpsDungeon.Map.Runtime
 
         /// <summary>
         /// 階の入口（入口の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。
-        /// FeatureCell の中心には階段（らせんと手すりで差し渡し 3 m ほど）があり、壁の真ん中にはドアが開くので、
-        /// どちらにも掛からないセルの隅へずらす。
+        /// 入口の階段が子に SpawnPoint を持っていれば、その位置と向き（階段を避けて、ドアの方を向く）。
+        /// 無ければ、壁の真ん中のドアに掛からないセルの隅。
         /// </summary>
         private void PlaceSpawnPoint(FloorLayout layout, Transform parent)
         {
@@ -322,7 +323,9 @@ namespace TpsDungeon.Map.Runtime
 
             var spawn = new GameObject("PlayerSpawn");
             spawn.transform.SetParent(parent, false);
-            spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.38f, 0.05f, cellSize * 0.38f);
+            var at = EntranceStair != null ? EntranceStair.transform.Find("SpawnPoint") : null;
+            if (at != null) spawn.transform.SetPositionAndRotation(at.position, at.rotation);
+            else spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.38f, 0.05f, cellSize * 0.38f);
             spawn.AddComponent<PlayerSpawnPoint>();
         }
 

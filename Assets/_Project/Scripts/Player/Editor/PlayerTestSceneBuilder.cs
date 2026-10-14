@@ -94,15 +94,15 @@ namespace TpsDungeon.Player.Editor
 
         /// <summary>
         /// 入口の部屋にスポーン地点を取る。
-        /// FeatureCell の中心には下り階段（手すりまで半幅 1.45 ほど）がある。
-        /// FloorBuilder.PlaceSpawnPoint と同じく、階段にもドアにも掛からないセルの隅へずらす。
+        /// 下り階段は入口の部屋のドアの向かいの壁沿いにあり、セルの真ん中は空いている。
+        /// FloorBuilder.PlaceSpawnPoint（階段の SpawnPoint）とほぼ同じ、セルの真ん中に立たせる。
         /// </summary>
         private static bool TryFindSpawn(FloorConfig config, out Vector3 spawn, out string note)
         {
             spawn = Vector3.zero;
             if (!TryFindEntrance(config, out Vector3 center, out note)) return false;
 
-            spawn = center + new Vector3(config.cellSize * 0.38f, SpawnLift, config.cellSize * 0.38f);
+            spawn = center + new Vector3(0f, SpawnLift, 0f);
             return true;
         }
 
