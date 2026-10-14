@@ -68,17 +68,14 @@ namespace TpsDungeon.Map.Editor
         private const float StairUpRise = 0.25f;
         // 階段と奥の壁の内側との隙間（壁の厚みの半分＋少し）。
         private const float StairWallClearance = 0.2f;
-        // 階段の始まる所の、ドアの壁からの距離。扉板（1.5 m）が部屋の内へ開いても段や手すりに当たらないよう、それより少し先から。
+        // 階段の始まる所の、ドアの壁からの距離。扉板（1.5 m）が部屋の内へ開いても段や穴に掛からないよう、それより少し先から。
         private const float StairDoorClearance = 1.6f;
         // 上り階段の天井の穴の、ドア側の端（セルの中心からの Z）。
         private const float StairUpOpeningStart = 0.4f;
-        // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ、下り階段の穴の脇の手すりの高さ。
+        // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ、下り階段の穴の上に張る見えない当たりの高さ。
         private const float StairwellDepth = 3f;
         private const float StairUpShaft = 2f;
-        private const float RailingHeight = 1f;
-        // 手すりの柱・横木の太さと、柱の間隔の目安。
-        private const float RailingBar = 0.08f;
-        private const float RailingPostSpacing = 1f;
+        private const float StairBlockerHeight = 1.5f;
         // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
         private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
 
@@ -325,7 +322,7 @@ namespace TpsDungeon.Map.Editor
         /// 入口に置く、下の階へ続く下り階段。原点がセルの中心の床の高さで、ドアは -Z の側（階段の部屋の南）。
         /// 部屋の床の代わりに、ドアの正面から奥の壁まで細長い穴の空いた床を持ち（FloorFeature.replacesRoomFloor）、
         /// ドアから入ってそのまま +Z へ真っ直ぐ下りる階段を穴の下の竪穴に置く。
-        /// 穴の両脇には手すり、降り口（ドア側）は開けたままにして、穴の上の見えない当たりで落ちないようにする。
+        /// 穴のまわりには手すりを付けず（ドアから入ってすぐ下りられるように見せる）、穴の上の見えない当たりで落ちないようにする。
         /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする。
         /// 調べると下の階へ移る（子の Stairwell の SceneGate。行き先は FloorBootstrap が入れる）。子の SpawnPoint に入口に着いたパーティーが立つ。
         /// </summary>
@@ -347,22 +344,17 @@ namespace TpsDungeon.Map.Editor
                 new Vector3(holeCenter.x, -StairwellDepth - CeilingThickness * 0.5f, holeCenter.y),
                 new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
 
-            // 調べられるのは穴まわり（段・手すり・当たり）だけ。床を見て「下の階へ」が出ないよう、床とは別の子にまとめる。
+            // 調べられるのは穴まわり（段・当たり）だけ。床を見て「下の階へ」が出ないよう、床とは別の子にまとめる。
             var well = new GameObject("Stairwell");
             well.transform.SetParent(root.transform, false);
 
             int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
             Flight(well.transform, m.Steps, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
 
-            // 手すりは穴の両脇（東西）の長辺。北は部屋の壁、南は降り口。
-            // 板にすると下りていく段が隠れるので、柱と横木だけにして透かす（落ちないのは見えない当たりで止める）。
-            Railing(well.transform, "Railing_W", m.Wall, holeMin.x - RailingBar * 0.5f, holeMin.y, holeMax.y);
-            Railing(well.transform, "Railing_E", m.Wall, holeMax.x + RailingBar * 0.5f, holeMin.y, holeMax.y);
-
             var blocker = new GameObject("Blocker");
             blocker.transform.SetParent(well.transform, false);
-            blocker.transform.localPosition = new Vector3(holeCenter.x, RailingHeight * 0.75f, holeCenter.y);
-            blocker.AddComponent<BoxCollider>().size = new Vector3(holeSize.x, RailingHeight * 1.5f, holeSize.y);
+            blocker.transform.localPosition = new Vector3(holeCenter.x, StairBlockerHeight * 0.5f, holeCenter.y);
+            blocker.AddComponent<BoxCollider>().size = new Vector3(holeSize.x, StairBlockerHeight, holeSize.y);
 
             var gate = well.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -426,26 +418,6 @@ namespace TpsDungeon.Map.Editor
             float half = cellSize * 0.5f;
             min = new Vector2(-StairWidth * 0.5f, -half + StairDoorClearance);
             max = new Vector2(StairWidth * 0.5f, half - StairWallClearance);
-        }
-
-        /// <summary>x の位置に、z = minZ〜maxZ の長さで立てる、柱と横木だけの手すり。当たりは無し（穴の見えない当たりで止める）。</summary>
-        private static void Railing(Transform parent, string name, Material material, float x, float minZ, float maxZ)
-        {
-            var railing = new GameObject(name);
-            railing.transform.SetParent(parent, false);
-
-            float length = maxZ - minZ;
-            Box(railing.transform, "Bar", material,
-                new Vector3(x, RailingHeight - RailingBar * 0.5f, (minZ + maxZ) * 0.5f),
-                new Vector3(RailingBar, RailingBar, length), false);
-            int posts = Mathf.Max(2, Mathf.CeilToInt(length / RailingPostSpacing) + 1);
-            for (int i = 0; i < posts; i++)
-            {
-                float z = Mathf.Lerp(minZ + RailingBar * 0.5f, maxZ - RailingBar * 0.5f, i / (float)(posts - 1));
-                Box(railing.transform, $"Post{i}", material,
-                    new Vector3(x, (RailingHeight - RailingBar) * 0.5f, z),
-                    new Vector3(RailingBar, RailingHeight - RailingBar, RailingBar), false);
-            }
         }
 
         /// <summary>
