@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.ProBuilder;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
@@ -57,6 +59,26 @@ namespace TpsDungeon.Map.Editor
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
         private const float DoorInteractVolumeDepth = 0.3f;
 
+        // 階段。入口の下り・出口の上りとも、ドアから入って正面へ +Z に真っ直ぐ伸びる 1 本の階段で、段は飾り（登り降りはしない）。
+        // 階段の部屋はドアを南（-Z）の 1 面にだけ開けるので、ドアの真正面（x = 0）から奥の北の壁際まで伸ばす。
+        // 階段の幅（X）、下りの 1 段の奥行きと高さ、上りの 1 段の高さ（メートル）。上りの奥行きは天井まで届く段数で割り付けるので急になる（5 m の壁で 0.16 m）。
+        private const float StairWidth = 1.4f;
+        private const float StairDownRun = 0.3f;
+        private const float StairDownRise = 0.2f;
+        private const float StairUpRise = 0.25f;
+        // 階段と奥の壁の内側との隙間（壁の厚みの半分＋少し）。
+        private const float StairWallClearance = 0.2f;
+        // 階段の始まる所の、ドアの壁からの距離。扉板（1.5 m）が部屋の内へ開いても段や穴に掛からないよう、それより少し先から。
+        private const float StairDoorClearance = 1.6f;
+        // 上り階段の天井の穴の、ドア側の端（セルの中心からの Z）。
+        private const float StairUpOpeningStart = 0.4f;
+        // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ、下り階段の穴の上に張る見えない当たりの高さ。
+        private const float StairwellDepth = 3f;
+        private const float StairUpShaft = 2f;
+        private const float StairBlockerHeight = 1.5f;
+        // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
+        private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
+
         private readonly struct RoomSpec
         {
             public readonly string Name;
@@ -66,8 +88,11 @@ namespace TpsDungeon.Map.Editor
             public readonly bool AllowRotation;
             public readonly float Weight;
             public readonly string MaterialKey;
+            /// <summary>ドア候補を打つ辺。null なら外周全部。</summary>
+            public readonly Direction? DoorSide;
 
-            public RoomSpec(string name, int width, int height, RoomTag tags, bool allowRotation, float weight, string materialKey)
+            public RoomSpec(string name, int width, int height, RoomTag tags, bool allowRotation, float weight, string materialKey,
+                Direction? doorSide = null)
             {
                 Name = name;
                 Width = width;
@@ -76,7 +101,12 @@ namespace TpsDungeon.Map.Editor
                 AllowRotation = allowRotation;
                 Weight = weight;
                 MaterialKey = materialKey;
+                DoorSide = doorSide;
             }
+
+            public List<DoorSocketData> Sockets() => DoorSide.HasValue
+                ? RoomTemplateFactory.CreateSocketsOnSide(Width, Height, DoorSide.Value)
+                : RoomTemplateFactory.CreateDefaultSockets(Width, Height);
         }
 
         /// <summary>
@@ -91,7 +121,8 @@ namespace TpsDungeon.Map.Editor
             new RoomSpec("Room_1x2", 1, 2, RoomTag.Normal, true, 0.8f, "Floor"),
             new RoomSpec("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f, "Floor"),
             new RoomSpec("Room_Shop", 1, 1, RoomTag.Shop, true, 0.2f, "Shop"),
-            new RoomSpec("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f, "Stair"),
+            // 入口・出口になる部屋。ドアは南の 1 面だけにして入りやすくする（階段は北の壁沿いに置かれる）。
+            new RoomSpec("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f, "Stair", Direction.South),
         };
 
         [MenuItem("Tools/TPS Dungeon/プレースホルダのマップ一式を生成")]
@@ -111,9 +142,8 @@ namespace TpsDungeon.Map.Editor
                 ["DoorKnob"] = KnobMaterial(),
                 ["Shop"] = Material("Placeholder_Shop", new Color(0.85f, 0.72f, 0.18f)),
                 ["Stair"] = Material("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
-                ["StairUp"] = Material("Placeholder_StairUp", new Color(0.25f, 0.85f, 0.35f)),
-                ["StairDown"] = Material("Placeholder_StairDown", new Color(0.95f, 0.45f, 0.15f)),
                 ["Ceiling"] = Material("Placeholder_Ceiling", new Color(0.28f, 0.27f, 0.26f)),
+                ["Void"] = Material("Placeholder_Void", new Color(0.03f, 0.03f, 0.035f)),
             };
 
             var parts = BuildParts(materials);
@@ -135,8 +165,8 @@ namespace TpsDungeon.Map.Editor
                 // 壁・窓・天井・土台は ProBuilder で実寸に作り、FloorBuilder はスケールしない（素材の模様の密度を揃えるため）。
                 ["Wall"] = BuildWallPrefab("Wall_Basic", materials["Wall"], CellSize, WallHeight),
                 ["Door"] = BuildDoorPrefab("Door_Basic", materials["Door"], materials["DoorLeaf"], materials["DoorKnob"], CellSize, WallHeight),
-                ["StairUp"] = BuildMarkerPrefab("Stair_Up", materials["StairUp"], PrimitiveType.Cube),
-                ["StairDown"] = BuildMarkerPrefab("Stair_Down", materials["StairDown"], PrimitiveType.Cube),
+                ["StairUp"] = BuildStairUpPrefab("Stair_Up", StairMaterials.From(materials), CellSize, WallHeight),
+                ["StairDown"] = BuildStairDownPrefab("Stair_Down", StairMaterials.From(materials), CellSize),
                 ["ShopMarker"] = BuildMarkerPrefab("Shop_Marker", materials["Shop"], PrimitiveType.Cylinder),
                 ["Window"] = BuildWindowPrefab("Window_Basic", materials["Wall"], CellSize, WallHeight),
                 ["Ceiling"] = BuildCeilingPrefab("Ceiling_Basic", materials["Ceiling"], CellSize),
@@ -146,7 +176,7 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// 壁・窓付きの壁・ドア・天井・土台と、部屋の床を、今の FloorConfig の寸法（cellSize・wallHeight・elevation）で
+        /// 壁・窓付きの壁・ドア・天井・土台・階段と、部屋の床・ドア候補を、今の FloorConfig の寸法（cellSize・wallHeight・elevation）で
         /// ProBuilder の実寸の箱に作り直す。FloorConfig の高さを変えたらこれを回す。
         /// 一式の生成と違い、部屋の並びやカタログ・FloorConfig の他の値には触らない。
         /// </summary>
@@ -175,19 +205,32 @@ namespace TpsDungeon.Map.Editor
             config.doorPrefab = BuildDoorPrefab("Door_Basic", doorFrame, doorLeaf, doorKnob, config.cellSize, config.wallHeight, reuseAnimator: true);
             config.ceilingPrefab = BuildCeilingPrefab("Ceiling_Basic", ceiling, config.cellSize);
             config.foundationPrefab = BuildFoundationPrefab("Foundation_Basic", wall, config.cellSize, config.elevation);
+            var stairs = new StairMaterials
+            {
+                Room = ExistingMaterial("Placeholder_Stair", new Color(0.35f, 0.55f, 0.75f)),
+                Steps = ExistingMaterial("Placeholder_Floor", new Color(0.55f, 0.53f, 0.50f)),
+                Wall = wall,
+                Ceiling = ceiling,
+                Void = ExistingMaterial("Placeholder_Void", new Color(0.03f, 0.03f, 0.035f)),
+            };
+            config.stairUpPrefab = BuildStairUpPrefab("Stair_Up", stairs, config.cellSize, config.wallHeight);
+            config.stairDownPrefab = BuildStairDownPrefab("Stair_Down", stairs, config.cellSize);
+            if (config.volumeProfile == null) config.volumeProfile = LoadOrCreateVolumeProfile();
             EditorUtility.SetDirty(config);
 
             int floors = 0;
+            int sockets = 0;
             if (config.roomCatalog != null)
             {
                 foreach (var entry in config.roomCatalog.Entries)
                 {
                     if (entry.prefab != null && RebuildRoomFloor(entry.prefab, config.cellSize)) floors++;
+                    if (entry.prefab != null && SyncRoomSockets(entry.prefab, config.cellSize)) sockets++;
                 }
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"壁・ドア・床・天井のパーツを ProBuilder で作り直して {config.name} に差した（セル {config.cellSize} m、壁の高さ {config.wallHeight} m、土台 {config.elevation} m、作り直した部屋の床 {floors} 個）");
+            Debug.Log($"壁・ドア・床・天井・階段のパーツを ProBuilder で作り直して {config.name} に差した（セル {config.cellSize} m、壁の高さ {config.wallHeight} m、土台 {config.elevation} m、作り直した部屋の床 {floors} 個、ドア候補を揃えた部屋 {sockets} 個）");
         }
 
         private static Material ExistingMaterial(string name, Color color) =>
@@ -245,15 +288,203 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 天井 1 セル分。原点が下面の中心。
-        /// 影は落とさない（部屋の上を全部覆うので、落とすと室内が真っ暗になる）。
+        /// 日の光が室内へ抜けないよう影を落とす（裏表とも）。室内の暗さは階のシーンの Global Volume で持ち上げる。
         /// </summary>
         private static GameObject BuildCeilingPrefab(string name, Material material, float width)
         {
             var root = new GameObject(name);
             var mesh = Box(root.transform, "Mesh", material,
                 new Vector3(0f, CeilingThickness * 0.5f, 0f), new Vector3(width, CeilingThickness, width), true);
-            mesh.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mesh.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.TwoSided;
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>階段に使う素材。部屋の床（Room）は階段の部屋の床と同じ色にして、置き換えた床の継ぎ目を見せない。</summary>
+        private sealed class StairMaterials
+        {
+            public Material Room;
+            public Material Steps;
+            public Material Wall;
+            public Material Ceiling;
+            public Material Void;
+
+            public static StairMaterials From(Dictionary<string, Material> materials) => new StairMaterials
+            {
+                Room = materials["Stair"],
+                Steps = materials["Floor"],
+                Wall = materials["Wall"],
+                Ceiling = materials["Ceiling"],
+                Void = materials["Void"],
+            };
+        }
+
+        /// <summary>
+        /// 入口に置く、下の階へ続く下り階段。原点がセルの中心の床の高さで、ドアは -Z の側（階段の部屋の南）。
+        /// 部屋の床の代わりに、ドアの正面から奥の壁まで細長い穴の空いた床を持ち（FloorFeature.replacesRoomFloor）、
+        /// ドアから入ってそのまま +Z へ真っ直ぐ下りる階段を穴の下の竪穴に置く。
+        /// 穴のまわりには手すりを付けず（ドアから入ってすぐ下りられるように見せる）、穴の上の見えない当たりで落ちないようにする。
+        /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする。
+        /// 調べると下の階へ移る（子の Stairwell の SceneGate。行き先は FloorBootstrap が入れる）。子の SpawnPoint に入口に着いたパーティーが立つ。
+        /// </summary>
+        private static GameObject BuildStairDownPrefab(string name, StairMaterials m, float cellSize)
+        {
+            var root = new GameObject(name);
+            var feature = root.AddComponent<FloorFeature>();
+            feature.replacesRoomFloor = true;
+            feature.depthBelowFloor = StairwellDepth + CeilingThickness;
+
+            StairFootprint(cellSize, out var holeMin, out var holeMax);
+            var holeCenter = (holeMin + holeMax) * 0.5f;
+            var holeSize = holeMax - holeMin;
+
+            HoledSlab(root.transform, "Floor", m.Room, cellSize, holeMin, holeMax, -FloorThickness, FloorThickness, true);
+            var shaft = Shaft(root.transform, m.Wall, holeMin, holeMax, -StairwellDepth, -FloorThickness);
+            shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = m.Void;
+            Box(root.transform, "Bottom", m.Void,
+                new Vector3(holeCenter.x, -StairwellDepth - CeilingThickness * 0.5f, holeCenter.y),
+                new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
+
+            // 調べられるのは穴まわり（段・当たり）だけ。床を見て「下の階へ」が出ないよう、床とは別の子にまとめる。
+            var well = new GameObject("Stairwell");
+            well.transform.SetParent(root.transform, false);
+
+            int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
+            Flight(well.transform, m.Steps, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
+
+            var blocker = new GameObject("Blocker");
+            blocker.transform.SetParent(well.transform, false);
+            blocker.transform.localPosition = new Vector3(holeCenter.x, StairBlockerHeight * 0.5f, holeCenter.y);
+            blocker.AddComponent<BoxCollider>().size = new Vector3(holeSize.x, StairBlockerHeight, holeSize.y);
+
+            var gate = well.AddComponent<SceneGate>();
+            var serialized = new SerializedObject(gate);
+            serialized.FindProperty("openLabel").stringValue = "下の階へ";
+            serialized.FindProperty("closedLabel").stringValue = "下へは降りられない";
+            serialized.FindProperty("title").stringValue = "下り階段";
+            serialized.FindProperty("description").stringValue = "下の階へ続く階段。";
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var spawn = new GameObject("SpawnPoint");
+            spawn.transform.SetParent(root.transform, false);
+            spawn.transform.SetLocalPositionAndRotation(StairSpawnPosition, Quaternion.Euler(0f, 180f, 0f));
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
+        /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
+        /// 蓋をした竪穴の中へ段が消えていくように見せる。段は登れないよう、まわりを 1 つの当たりで囲む。
+        /// </summary>
+        private static GameObject BuildStairUpPrefab(string name, StairMaterials m, float cellSize, float wallHeight)
+        {
+            var root = new GameObject(name);
+            var feature = root.AddComponent<FloorFeature>();
+            feature.replacesCeiling = true;
+
+            StairFootprint(cellSize, out var footMin, out var footMax);
+            var holeMin = new Vector2(footMin.x, StairUpOpeningStart);
+            var holeMax = footMax;
+            var holeCenter = (holeMin + holeMax) * 0.5f;
+            var holeSize = holeMax - holeMin;
+
+            var ceiling = HoledSlab(root.transform, "Ceiling", m.Ceiling, cellSize, holeMin, holeMax, wallHeight, CeilingThickness, true);
+            foreach (var renderer in ceiling.GetComponentsInChildren<MeshRenderer>()) renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
+
+            float shaftTop = wallHeight + CeilingThickness + StairUpShaft;
+            Shaft(root.transform, m.Wall, holeMin, holeMax, wallHeight, shaftTop);
+            Box(root.transform, "Cap", m.Wall,
+                new Vector3(holeCenter.x, shaftTop + CeilingThickness * 0.5f, holeCenter.y),
+                new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
+
+            // ドア側の端から奥の壁際まで。段数は一番上の段が天井の高さに届く数にし、奥行きはその数で割り付ける（壁の高さを変えても届く）。
+            var footSize = footMax - footMin;
+            int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
+            Flight(root.transform, m.Steps, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
+
+            var blocker = new GameObject("Blocker");
+            blocker.transform.SetParent(root.transform, false);
+            blocker.transform.localPosition = new Vector3(0f, wallHeight * 0.5f, (footMin.y + footMax.y) * 0.5f);
+            blocker.AddComponent<BoxCollider>().size = new Vector3(footSize.x, wallHeight, footSize.y);
+
+            return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// 階段の占める XZ の矩形。ドアの正面（x = 0 を中心に幅 StairWidth）で、扉板の開く範囲の先から奥の壁際まで。
+        /// </summary>
+        private static void StairFootprint(float cellSize, out Vector2 min, out Vector2 max)
+        {
+            float half = cellSize * 0.5f;
+            min = new Vector2(-StairWidth * 0.5f, -half + StairDoorClearance);
+            max = new Vector2(StairWidth * 0.5f, half - StairWallClearance);
+        }
+
+        /// <summary>
+        /// 一辺 size の板に、XZ の矩形 holeMin〜holeMax の穴を空けたもの。下面が y = bottom、厚み thickness。
+        /// 箱 4 枚（南北は全幅、東西は穴の長さ）で、穴が端に接して幅の無くなる箱は作らない。
+        /// </summary>
+        private static GameObject HoledSlab(Transform parent, string name, Material material, float size,
+            Vector2 holeMin, Vector2 holeMax, float bottom, float thickness, bool collider)
+        {
+            var group = new GameObject(name);
+            group.transform.SetParent(parent, false);
+
+            float h = size * 0.5f;
+            float y = bottom + thickness * 0.5f;
+            Piece("South", -h, h, -h, holeMin.y);
+            Piece("North", -h, h, holeMax.y, h);
+            Piece("West", -h, holeMin.x, holeMin.y, holeMax.y);
+            Piece("East", holeMax.x, h, holeMin.y, holeMax.y);
+            return group;
+
+            void Piece(string pieceName, float minX, float maxX, float minZ, float maxZ)
+            {
+                if (maxX - minX < 0.001f || maxZ - minZ < 0.001f) return;
+                Box(group.transform, pieceName, material,
+                    new Vector3((minX + maxX) * 0.5f, y, (minZ + maxZ) * 0.5f),
+                    new Vector3(maxX - minX, thickness, maxZ - minZ), collider);
+            }
+        }
+
+        /// <summary>XZ の矩形 holeMin〜holeMax の穴のまわりを、y = bottom から top まで壁 4 枚で囲む竪穴。壁は穴の外側に立つ。当たりは無し（届かない所なので）。</summary>
+        private static GameObject Shaft(Transform parent, Material material, Vector2 holeMin, Vector2 holeMax, float bottom, float top)
+        {
+            var group = new GameObject("Shaft");
+            group.transform.SetParent(parent, false);
+
+            float height = top - bottom;
+            float y = bottom + height * 0.5f;
+            var center = (holeMin + holeMax) * 0.5f;
+            var size = holeMax - holeMin;
+            float t = WallThickness;
+            Box(group.transform, "North", material, new Vector3(center.x, y, holeMax.y + t * 0.5f), new Vector3(size.x + t * 2f, height, t), false);
+            Box(group.transform, "South", material, new Vector3(center.x, y, holeMin.y - t * 0.5f), new Vector3(size.x + t * 2f, height, t), false);
+            Box(group.transform, "East", material, new Vector3(holeMax.x + t * 0.5f, y, center.y), new Vector3(t, height, size.y), false);
+            Box(group.transform, "West", material, new Vector3(holeMin.x - t * 0.5f, y, center.y), new Vector3(t, height, size.y), false);
+            return group;
+        }
+
+        /// <summary>
+        /// +Z へ真っ直ぐ伸びる階段。count 段を、z = startZ から run ずつ、最初の段の上面を y = 0（下りなら床と同じ高さ）か rise（上り）にして
+        /// 1 段ごとに rise ずつ（負なら下へ）ずらす。X は minX〜maxX。段は y = baseY まで詰まった塊にして、横から見ても浮かないようにする。当たりは無し（飾り）。
+        /// </summary>
+        private static void Flight(Transform parent, Material material, float startZ, float minX, float maxX,
+            int count, float run, float rise, float baseY)
+        {
+            var group = new GameObject("Steps");
+            group.transform.SetParent(parent, false);
+
+            float firstTop = rise > 0f ? rise : 0f;
+            for (int i = 0; i < count; i++)
+            {
+                float top = firstTop + rise * i;
+                float low = Mathf.Min(top, baseY);
+                float high = Mathf.Max(top, baseY);
+                Box(group.transform, $"Step{i:00}", material,
+                    new Vector3((minX + maxX) * 0.5f, (low + high) * 0.5f, startZ + run * (i + 0.5f)),
+                    new Vector3(maxX - minX, high - low, run), false);
+            }
         }
 
         /// <summary>部屋 Prefab の床（子の Floor）を、今の大きさの ProBuilder の箱に差し替える。</summary>
@@ -446,20 +677,60 @@ namespace TpsDungeon.Map.Editor
 
             AddRoomFloor(root, spec.Width, spec.Height, CellSize, material);
 
-            var socketsRoot = new GameObject("DoorSockets");
-            socketsRoot.transform.SetParent(root.transform, false);
+            AddSockets(root, spec.Sockets(), CellSize);
 
-            foreach (var data in RoomTemplateFactory.CreateDefaultSockets(spec.Width, spec.Height))
+            return SavePrefab(root, $"{RoomsFolder}/{spec.Name}.prefab");
+        }
+
+        /// <summary>部屋 Prefab にドア候補（子の DoorSockets の下）を打つ。</summary>
+        private static void AddSockets(GameObject room, List<DoorSocketData> sockets, float cellSize)
+        {
+            var socketsRoot = new GameObject("DoorSockets");
+            socketsRoot.transform.SetParent(room.transform, false);
+
+            foreach (var data in sockets)
             {
                 var socketObject = new GameObject($"Socket_{data.Facing}_{data.LocalCell.X}_{data.LocalCell.Y}");
                 socketObject.transform.SetParent(socketsRoot.transform, false);
 
                 var socket = socketObject.AddComponent<DoorSocket>();
                 socket.Configure(new Vector2Int(data.LocalCell.X, data.LocalCell.Y), data.Facing);
-                socket.SnapToCell(CellSize);
+                socket.SnapToCell(cellSize);
             }
+        }
 
-            return SavePrefab(root, $"{RoomsFolder}/{spec.Name}.prefab");
+        /// <summary>
+        /// 部屋 Prefab のドア候補を Rooms の指定に揃える（階段の部屋をドア 1 面にした、など）。
+        /// もう揃っていれば触らない（作り直すと中の ID が変わって差分だけが出る）。
+        /// </summary>
+        private static bool SyncRoomSockets(GameObject prefab, float cellSize)
+        {
+            RoomSpec? found = null;
+            foreach (var spec in Rooms) if (spec.Name == prefab.name) found = spec;
+            if (!found.HasValue) return false;
+
+            var wanted = new HashSet<DoorSocketData>(found.Value.Sockets());
+            var current = new HashSet<DoorSocketData>();
+            foreach (var socket in prefab.GetComponentsInChildren<DoorSocket>(true)) current.Add(socket.ToData());
+            if (wanted.SetEquals(current)) return false;
+
+            string path = AssetDatabase.GetAssetPath(prefab);
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var old = root.transform.Find("DoorSockets");
+                int index = old != null ? old.GetSiblingIndex() : root.transform.childCount;
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+
+                AddSockets(root, found.Value.Sockets(), cellSize);
+                root.transform.Find("DoorSockets").SetSiblingIndex(index);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                return true;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static RoomTemplateCatalog BuildCatalog(List<GameObject> roomPrefabs)
@@ -510,9 +781,40 @@ namespace TpsDungeon.Map.Editor
             config.ceilingPrefab = parts["Ceiling"];
             config.elevation = Elevation;
             config.foundationPrefab = parts["Foundation"];
+            if (config.volumeProfile == null) config.volumeProfile = LoadOrCreateVolumeProfile();
 
             EditorUtility.SetDirty(config);
             return config;
+        }
+
+        /// <summary>
+        /// 階の Volume の profile。無ければ作る。既にあれば読むだけ（手で調節した値を上書きしない）。
+        /// 天井が日の光を遮るので、室内は環境光だけで暗い。暗部を持ち上げて、窓の外は飛ばさずに室内を見えるようにする。
+        /// </summary>
+        private static VolumeProfile LoadOrCreateVolumeProfile()
+        {
+            string path = $"{SettingsFolder}/Floor_VolumeProfile.asset";
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile != null) return profile;
+
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+
+            // 暗部と中間を持ち上げる（w が明るさのずらし）。明るい所はそのままなので、窓の外の景色は飛ばない。
+            var tones = profile.Add<ShadowsMidtonesHighlights>();
+            tones.shadows.Override(new Vector4(1f, 1f, 1f, 0.35f));
+            tones.midtones.Override(new Vector4(1f, 1f, 1f, 0.15f));
+
+            // 窓から入る日向が白く飛ばないよう、明るい所をなだらかに丸める。
+            var tonemapping = profile.Add<Tonemapping>();
+            tonemapping.mode.Override(TonemappingMode.Neutral);
+
+            var color = profile.Add<ColorAdjustments>();
+            color.postExposure.Override(0.3f);
+
+            foreach (var component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
+            EditorUtility.SetDirty(profile);
+            return profile;
         }
 
         private static Material Material(string name, Color color)

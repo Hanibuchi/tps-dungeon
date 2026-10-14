@@ -45,8 +45,8 @@ namespace TpsDungeon.Map.Data
         /// </summary>
         public GridRect RoomsBounds { get; }
 
-        public int StairUpRoom { get; internal set; } = -1;
-        public int StairDownRoom { get; internal set; } = -1;
+        public int EntranceRoom { get; internal set; } = -1;
+        public int ExitRoom { get; internal set; } = -1;
         public int ShopRoom { get; internal set; } = -1;
 
         public FloorLayout(
@@ -88,7 +88,7 @@ namespace TpsDungeon.Map.Data
                 sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append('@')
                   .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing).Append(';');
             }
-            sb.Append("|up=").Append(StairUpRoom).Append(",down=").Append(StairDownRoom).Append(",shop=").Append(ShopRoom);
+            sb.Append("|up=").Append(EntranceRoom).Append(",down=").Append(ExitRoom).Append(",shop=").Append(ShopRoom);
             return sb.ToString();
         }
 

@@ -53,8 +53,8 @@ namespace TpsDungeon.Map.Generation
             var assignment = SpecialRoomAssigner.Assign(rooms.Count, edges, canHostStair, canHostShop, parameters, rng);
 
             var layout = new FloorLayout(seed, parameters.Width, parameters.Height, rooms, edges);
-            layout.StairUpRoom = ResolveRole(rooms, assignment.StairUpRoom, RoomRole.StairUp);
-            layout.StairDownRoom = ResolveRole(rooms, assignment.StairDownRoom, RoomRole.StairDown);
+            layout.EntranceRoom = ResolveRole(rooms, assignment.EntranceRoom, RoomRole.Entrance);
+            layout.ExitRoom = ResolveRole(rooms, assignment.ExitRoom, RoomRole.Exit);
             layout.ShopRoom = parameters.IncludeShop
                 ? ResolveRole(rooms, assignment.ShopRoom, RoomRole.Shop)
                 : -1;
@@ -123,11 +123,11 @@ namespace TpsDungeon.Map.Generation
             return reachable;
         }
 
-        /// <summary>全部屋が上り階段の部屋から到達できるか。</summary>
+        /// <summary>全部屋が入口の部屋から到達できるか。</summary>
         public static bool IsFullyConnected(FloorLayout layout)
         {
             if (layout.Rooms.Count == 0) return true;
-            int start = layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0;
+            int start = layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0;
             foreach (bool reachable in ReachableRooms(layout, start))
             {
                 if (!reachable) return false;

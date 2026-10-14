@@ -17,8 +17,8 @@ namespace TpsDungeon.Map.Data
     public enum RoomRole
     {
         Normal = 0,
-        StairUp = 1,
-        StairDown = 2,
+        Entrance = 1,
+        Exit = 2,
         Shop = 3,
     }
 
@@ -30,8 +30,8 @@ namespace TpsDungeon.Map.Data
             switch (role)
             {
                 case RoomRole.Shop: return RoomTag.Shop;
-                case RoomRole.StairUp:
-                case RoomRole.StairDown: return RoomTag.Stair;
+                case RoomRole.Entrance:
+                case RoomRole.Exit: return RoomTag.Stair;
                 default: return RoomTag.Normal;
             }
         }

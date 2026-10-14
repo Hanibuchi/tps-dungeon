@@ -27227,6 +27227,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 512aace911c18448bbe1a2214abce5a4, type: 2}
   seed: 0
   generateOnStart: 1
+  downScene: Surface
 --- !u!114 &1918335969
 MonoBehaviour:
   m_ObjectHideFlags: 0

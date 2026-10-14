@@ -4,7 +4,9 @@
     "references": [
         "TpsDungeon.Map",
         "TpsDungeon.Interaction",
-        "Unity.ProBuilder"
+        "Unity.ProBuilder",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
         "Editor"

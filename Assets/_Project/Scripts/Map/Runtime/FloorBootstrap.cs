@@ -23,6 +23,9 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("シーン再生と同時に生成するか。外したら他のスクリプトから Generate() を呼ぶ。")]
         private bool generateOnStart = true;
 
+        [SerializeField, Tooltip("入口の下り階段の行き先（下の階のシーン名）。1 階なら地上。空なら階段は閉じたまま。")]
+        private string downScene = SceneTravel.SurfaceScene;
+
         private FloorBuilder builder;
 
         /// <summary>実際に使われたシード。seed が 0 のときはランダムに決まった値が入る。</summary>
@@ -67,7 +70,20 @@ namespace TpsDungeon.Map.Runtime
 
             CurrentSeed = useSeed;
             var layout = builder.Build(config, useSeed);
+            ConnectStair(builder.EntranceStair, downScene);
             Generated?.Invoke(layout);
+        }
+
+        /// <summary>階段の門に行き先を入れる。行き先が無ければ閉じておく（調べると「閉じている」の案内が出る）。</summary>
+        private static void ConnectStair(GameObject stair, string sceneName)
+        {
+            if (stair == null) return;
+            var gate = stair.GetComponentInChildren<SceneGate>();
+            if (gate == null) return;
+
+            // ドメインリロードで null の string は空文字になるので、どちらも「無し」とみなす。
+            gate.SceneName = sceneName;
+            gate.IsOpen = !string.IsNullOrEmpty(sceneName);
         }
 
         /// <summary>0 は「ランダム」を表す予約値なので避ける。</summary>

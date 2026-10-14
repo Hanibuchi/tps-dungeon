@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Generation;
@@ -26,9 +27,16 @@ namespace TpsDungeon.Map.Runtime
         public Transform GeneratedRoot { get; private set; }
         /// <summary>天井をまとめた子。NavMesh を焼くとき、天井の上を歩ける所にしないよう外すのに使う。</summary>
         public Transform CeilingRoot { get; private set; }
+        /// <summary>入口の部屋に置いた下り階段。行き先は FloorBootstrap が入れる。</summary>
+        public GameObject EntranceStair { get; private set; }
+        /// <summary>出口の部屋に置いた上り階段。</summary>
+        public GameObject ExitStair { get; private set; }
 
         private float cellSize = 3f;
         private float wallHeight = 5f;
+
+        // FeatureCell に置いた物のうち、床・天井・土台の組み方を頼んできたもの（FloorFeature）。
+        private readonly Dictionary<GridPos, FloorFeature> featureAt = new Dictionary<GridPos, FloorFeature>();
 
         public FloorLayout Build(FloorConfig config, int seed)
         {
@@ -50,11 +58,12 @@ namespace TpsDungeon.Map.Runtime
             var ceiling = NewGroup(root, "Ceiling");
             var foundation = NewGroup(root, "Foundation");
 
-            BuildRooms(layout, config, rooms);
+            var roomObjects = BuildRooms(layout, config, rooms);
             BuildBoundaries(occupancy, config, boundaries, new System.Random(seed));
-            BuildFeatures(layout, config, features);
+            BuildFeatures(layout, config, features, roomObjects);
             BuildCeiling(occupancy, config, ceiling);
             BuildFoundation(occupancy, config, foundation);
+            BuildVolume(config, root);
 
             GeneratedRoot = root;
             CeilingRoot = ceiling;
@@ -71,6 +80,9 @@ namespace TpsDungeon.Map.Runtime
             CurrentOccupancy = null;
             GeneratedRoot = null;
             CeilingRoot = null;
+            EntranceStair = null;
+            ExitStair = null;
+            featureAt.Clear();
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
             // エディタから作り直したときに前回分が残らないよう、子を全部見る。
@@ -90,8 +102,10 @@ namespace TpsDungeon.Map.Runtime
             return group;
         }
 
-        private void BuildRooms(FloorLayout layout, FloorConfig config, Transform parent)
+        /// <returns>部屋の番号から置いた実体へ。</returns>
+        private Dictionary<int, GameObject> BuildRooms(FloorLayout layout, FloorConfig config, Transform parent)
         {
+            var placed = new Dictionary<int, GameObject>();
             var catalog = config.roomCatalog;
             foreach (var room in layout.Rooms)
             {
@@ -106,7 +120,9 @@ namespace TpsDungeon.Map.Runtime
                 instance.name = $"Room{room.Index}_{room.Template.Id}_{room.Role}";
                 instance.transform.SetLocalPositionAndRotation(
                     RoomLocalPosition(room), Quaternion.Euler(0f, 90f * room.Rotation, 0f));
+                placed[room.Index] = instance;
             }
+            return placed;
         }
 
         /// <summary>
@@ -193,6 +209,7 @@ namespace TpsDungeon.Map.Runtime
                 {
                     var cell = new GridPos(x, y);
                     if (occupancy.KindAt(cell) == CellKind.Empty) continue;
+                    if (featureAt.TryGetValue(cell, out var feature) && feature.replacesCeiling) continue;
 
                     var piece = Instantiate(config.ceilingPrefab, parent);
                     piece.name = $"Ceiling_{x}_{y}";
@@ -218,44 +235,97 @@ namespace TpsDungeon.Map.Runtime
 
                     var piece = Instantiate(config.foundationPrefab, parent);
                     piece.name = $"Foundation_{x}_{y}";
-                    // 部屋の床の板（厚み 0.1）の下から。
-                    piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * 0.1f, Quaternion.identity);
+                    // 部屋の床の板（厚み 0.1）の下から。竪穴を掘っているセルはその底から。
+                    float depth = featureAt.TryGetValue(cell, out var feature) ? feature.depthBelowFloor : 0f;
+                    piece.transform.SetLocalPositionAndRotation(CellCenter(cell) + Vector3.down * Mathf.Max(0.1f, depth), Quaternion.identity);
                 }
             }
         }
 
-        private void BuildFeatures(FloorLayout layout, FloorConfig config, Transform parent)
+        /// <summary>
+        /// 階の Global Volume を生成ルートの下に置く。どのシーンで階を作っても（Floor_1_1 でも確認用シーンでも）同じ見た目になるよう、シーンには置かない。
+        /// カメラの post-processing は FloorPostProcessing が Play 中だけ有効にし、作り直しや片付けで消えるときに戻す。
+        /// </summary>
+        private static void BuildVolume(FloorConfig config, Transform parent)
         {
-            Spawn(layout.StairUpRoom, config.stairUpPrefab, "StairUp");
-            Spawn(layout.StairDownRoom, config.stairDownPrefab, "StairDown");
+            if (config.volumeProfile == null) return;
+
+            var holder = new GameObject("Global Volume");
+            holder.transform.SetParent(parent, false);
+            var volume = holder.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = config.volumeProfile;
+            holder.AddComponent<FloorPostProcessing>();
+        }
+
+        /// <summary>
+        /// 入口には下の階への下り階段、出口には上の階への上り階段、ショップには目印を、それぞれの部屋の FeatureCell に置く。
+        /// 置いた物が FloorFeature を持っていれば、そのセルの床・天井・土台をそれに合わせる。
+        /// </summary>
+        private void BuildFeatures(FloorLayout layout, FloorConfig config, Transform parent, Dictionary<int, GameObject> roomObjects)
+        {
+            EntranceStair = Spawn(layout.EntranceRoom, config.stairDownPrefab, "StairDown");
+            ExitStair = Spawn(layout.ExitRoom, config.stairUpPrefab, "StairUp");
             Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop");
             PlaceSpawnPoint(layout, parent);
 
-            void Spawn(int roomIndex, GameObject prefab, string label)
+            GameObject Spawn(int roomIndex, GameObject prefab, string label)
             {
-                if (roomIndex < 0 || prefab == null) return;
+                if (roomIndex < 0 || prefab == null) return null;
 
                 var room = layout.RoomAt(roomIndex);
-                if (room == null) return;
+                if (room == null) return null;
 
                 var marker = Instantiate(prefab, parent);
                 marker.name = $"{label}_Room{roomIndex}";
-                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.identity);
+                // 部屋と同じだけ回す。階段は部屋の Prefab のドアの向き（南）を前提に作ってあるので、回した部屋のドアと向きが合う。
+                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.Euler(0f, 90f * room.Rotation, 0f));
+
+                if (marker.TryGetComponent(out FloorFeature feature))
+                {
+                    featureAt[room.FeatureCell] = feature;
+                    if (feature.replacesRoomFloor) RemoveRoomFloor(room, roomObjects);
+                }
+                return marker;
             }
         }
 
         /// <summary>
-        /// 階の入口（上り階段の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。
-        /// FeatureCell の中心には階段の印（1.4 角）が立つので、セルの中で横へずらす。
+        /// 部屋の Prefab の床（子の Floor）を消す。床は部屋全体で 1 枚なので、消してよいのは 1 セルの部屋だけ。
+        /// それより大きい部屋では床を残す（穴は開かないが、階段は使える）。
+        /// </summary>
+        private void RemoveRoomFloor(RoomInstance room, Dictionary<int, GameObject> roomObjects)
+        {
+            if (!roomObjects.TryGetValue(room.Index, out var instance)) return;
+            if (room.Bounds.Width != 1 || room.Bounds.Height != 1)
+            {
+                Debug.LogWarning($"部屋 {room.Index} は 1 セルでないので、床を階段の床に置き換えなかった", this);
+                return;
+            }
+
+            var floor = instance.transform.Find("Floor");
+            if (floor == null) return;
+            // Destroy はフレームの終わりまで残るので、同じフレームの NavMesh の焼きに拾われないよう先に止める。
+            floor.gameObject.SetActive(false);
+            if (Application.isPlaying) Destroy(floor.gameObject);
+            else DestroyImmediate(floor.gameObject);
+        }
+
+        /// <summary>
+        /// 階の入口（入口の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。
+        /// 入口の階段が子に SpawnPoint を持っていれば、その位置と向き（階段を避けて、ドアの方を向く）。
+        /// 無ければ、壁の真ん中のドアに掛からないセルの隅。
         /// </summary>
         private void PlaceSpawnPoint(FloorLayout layout, Transform parent)
         {
-            var room = layout.RoomAt(layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0);
+            var room = layout.RoomAt(layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0);
             if (room == null) return;
 
             var spawn = new GameObject("PlayerSpawn");
             spawn.transform.SetParent(parent, false);
-            spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.3f, 0.05f, 0f);
+            var at = EntranceStair != null ? EntranceStair.transform.Find("SpawnPoint") : null;
+            if (at != null) spawn.transform.SetPositionAndRotation(at.position, at.rotation);
+            else spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.38f, 0.05f, cellSize * 0.38f);
             spawn.AddComponent<PlayerSpawnPoint>();
         }
 

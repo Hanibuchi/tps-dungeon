@@ -25,5 +25,19 @@ namespace TpsDungeon.Map.Data
 
             return sockets;
         }
+
+        /// <summary>
+        /// side の辺の外周セルにだけドア候補を打つ。入口・出口の部屋（階段）のように、ドアを 1 面に絞って入りやすくしたい部屋用。
+        /// 並び順は <see cref="CreateDefaultSockets"/> の該当する辺と同じ。
+        /// </summary>
+        public static List<DoorSocketData> CreateSocketsOnSide(int width, int height, Direction side)
+        {
+            var sockets = new List<DoorSocketData>();
+            foreach (var socket in CreateDefaultSockets(width, height))
+            {
+                if (socket.Facing == side) sockets.Add(socket);
+            }
+            return sockets;
+        }
     }
 }

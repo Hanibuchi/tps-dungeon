@@ -29,7 +29,9 @@ namespace TpsDungeon.Map.Tests
                 Template("Room_1x2", 1, 2, RoomTag.Normal, true, 0.8f),
                 Template("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f),
                 Template("Room_Shop", 1, 1, RoomTag.Shop, true, 0.2f),
-                Template("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f),
+                // 入口・出口の部屋はドアを南の 1 面だけにしてある。
+                new RoomTemplateData("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f,
+                    RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.South)),
             },
         };
 

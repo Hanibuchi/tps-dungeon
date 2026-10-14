@@ -42,7 +42,7 @@ namespace TpsDungeon.Map.Generation
             if (Width < 16 || Height < 16)
                 throw new ArgumentException($"フロアサイズが小さすぎる: {Width}x{Height}");
 
-            // 上り階段・下り階段・ショップは別々の部屋に置きたいので、その分だけ下限が要る。
+            // 入口・出口・ショップは別々の部屋に置きたいので、その分だけ下限が要る。
             int floor = IncludeShop ? 4 : 3;
             if (MinRoomCount < floor)
                 throw new ArgumentException($"MinRoomCount は {floor} 以上でなければならない: {MinRoomCount}");
