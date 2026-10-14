@@ -93,21 +93,21 @@ namespace TpsDungeon.Player.Editor
         }
 
         /// <summary>
-        /// 上り階段の部屋にスポーン地点を取る。
-        /// FeatureCell の中心には Stair_Up のマーカー（1.4 角のコライダー）が立つ。
-        /// マーカー半幅 0.7 + カプセル半径 0.35 より外、セル半幅より内に収まる位置へ横にずらす。
+        /// 入口の部屋にスポーン地点を取る。
+        /// FeatureCell の中心には下り階段（手すりまで半幅 1.45 ほど）がある。
+        /// FloorBuilder.PlaceSpawnPoint と同じく、階段にもドアにも掛からないセルの隅へずらす。
         /// </summary>
         private static bool TryFindSpawn(FloorConfig config, out Vector3 spawn, out string note)
         {
             spawn = Vector3.zero;
             if (!TryFindEntrance(config, out Vector3 center, out note)) return false;
 
-            spawn = center + new Vector3(config.cellSize * 0.3f, SpawnLift, 0f);
+            spawn = center + new Vector3(config.cellSize * 0.38f, SpawnLift, config.cellSize * 0.38f);
             return true;
         }
 
         /// <summary>
-        /// ランタイムと同じシードでレイアウトを先に計算し、階の入口（上り階段の部屋の FeatureCell）の中心を返す。
+        /// ランタイムと同じシードでレイアウトを先に計算し、入口の部屋の FeatureCellの中心を返す。
         /// マップの Data/Generation 層は UnityEngine に依存しないので、エディタ側でそのまま回せる。
         /// [Floor] を原点に置くので、返す座標はワールド座標と一致する。
         /// </summary>
@@ -122,8 +122,8 @@ namespace TpsDungeon.Player.Editor
                 return false;
             }
 
-            // 上り階段の部屋が階の入口。役割が割り当たらなかったときだけ先頭の部屋で妥協する。
-            int index = layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0;
+            // 入口の部屋。役割が割り当たらなかったときだけ先頭の部屋で妥協する。
+            int index = layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0;
             RoomInstance room = layout.RoomAt(index);
             if (room == null)
             {
@@ -137,9 +137,9 @@ namespace TpsDungeon.Player.Editor
             center = new Vector3(
                 (cell.X + 0.5f) * config.cellSize, 0f, (cell.Y + 0.5f) * config.cellSize);
 
-            note = layout.StairUpRoom >= 0
-                ? $"上り階段の部屋 {index} / セル ({cell.X}, {cell.Y})"
-                : $"上り階段が割り当たらなかったので部屋 {index} / セル ({cell.X}, {cell.Y})";
+            note = layout.EntranceRoom >= 0
+                ? $"入口の部屋 {index} / セル ({cell.X}, {cell.Y})"
+                : $"入口が割り当たらなかったので部屋 {index} / セル ({cell.X}, {cell.Y})";
             return true;
         }
 
@@ -154,7 +154,7 @@ namespace TpsDungeon.Player.Editor
             FloorLayout layout = FloorLayoutGenerator.Generate(config.BuildParams(), FloorSeed);
             if (layout == null || layout.Rooms.Count == 0) return false;
 
-            RoomInstance room = layout.RoomAt(layout.StairUpRoom >= 0 ? layout.StairUpRoom : 0);
+            RoomInstance room = layout.RoomAt(layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0);
             if (room == null) return false;
 
             foreach (PlacedSocket socket in room.UsedSockets())

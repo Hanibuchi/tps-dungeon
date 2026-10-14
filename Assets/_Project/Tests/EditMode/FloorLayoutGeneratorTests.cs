@@ -75,18 +75,18 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
-        public void EveryRoom_IsReachableFromTheEntranceStair()
+        public void EveryRoom_IsReachableFromTheEntrance()
         {
             var parameters = FloorGenerationFixture.Params();
 
             foreach (int seed in FloorGenerationFixture.Seeds(SeedSweepCount))
             {
                 var layout = FloorLayoutGenerator.Generate(parameters, seed);
-                var reachable = FloorLayoutAnalysis.ReachableRooms(layout, layout.StairUpRoom);
+                var reachable = FloorLayoutAnalysis.ReachableRooms(layout, layout.EntranceRoom);
 
                 for (int i = 0; i < layout.Rooms.Count; i++)
                 {
-                    Assert.IsTrue(reachable[i], $"seed {seed}: 部屋 {i} に上り階段から辿り着けない");
+                    Assert.IsTrue(reachable[i], $"seed {seed}: 部屋 {i} に入口から辿り着けない");
                 }
             }
         }
@@ -238,16 +238,16 @@ namespace TpsDungeon.Map.Tests
             {
                 var layout = FloorLayoutGenerator.Generate(parameters, seed);
 
-                Assert.GreaterOrEqual(layout.StairUpRoom, 0, $"seed {seed}: 上り階段が無い");
-                Assert.GreaterOrEqual(layout.StairDownRoom, 0, $"seed {seed}: 下り階段が無い");
+                Assert.GreaterOrEqual(layout.EntranceRoom, 0, $"seed {seed}: 入口が無い");
+                Assert.GreaterOrEqual(layout.ExitRoom, 0, $"seed {seed}: 出口が無い");
                 Assert.GreaterOrEqual(layout.ShopRoom, 0, $"seed {seed}: ショップが無い");
 
-                Assert.AreNotEqual(layout.StairUpRoom, layout.StairDownRoom, $"seed {seed}: 階段が同じ部屋にある");
-                Assert.AreNotEqual(layout.StairUpRoom, layout.ShopRoom);
-                Assert.AreNotEqual(layout.StairDownRoom, layout.ShopRoom);
+                Assert.AreNotEqual(layout.EntranceRoom, layout.ExitRoom, $"seed {seed}: 階段が同じ部屋にある");
+                Assert.AreNotEqual(layout.EntranceRoom, layout.ShopRoom);
+                Assert.AreNotEqual(layout.ExitRoom, layout.ShopRoom);
 
-                Assert.AreEqual(1, layout.Rooms.Count(r => r.Role == RoomRole.StairUp));
-                Assert.AreEqual(1, layout.Rooms.Count(r => r.Role == RoomRole.StairDown));
+                Assert.AreEqual(1, layout.Rooms.Count(r => r.Role == RoomRole.Entrance));
+                Assert.AreEqual(1, layout.Rooms.Count(r => r.Role == RoomRole.Exit));
                 Assert.AreEqual(1, layout.Rooms.Count(r => r.Role == RoomRole.Shop));
             }
         }
@@ -266,10 +266,10 @@ namespace TpsDungeon.Map.Tests
             {
                 var layout = FloorLayoutGenerator.Generate(parameters, seed);
 
-                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.StairUpRoom).Template.Tags & RoomTag.Stair,
-                    $"seed {seed}: 上り階段が Stair タグでない部屋に載っている");
-                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.StairDownRoom).Template.Tags & RoomTag.Stair,
-                    $"seed {seed}: 下り階段が Stair タグでない部屋に載っている");
+                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.EntranceRoom).Template.Tags & RoomTag.Stair,
+                    $"seed {seed}: 入口が Stair タグでない部屋に載っている");
+                Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.ExitRoom).Template.Tags & RoomTag.Stair,
+                    $"seed {seed}: 出口が Stair タグでない部屋に載っている");
                 Assert.AreNotEqual(RoomTag.None, layout.RoomAt(layout.ShopRoom).Template.Tags & RoomTag.Shop,
                     $"seed {seed}: ショップが Shop タグでない部屋に載っている");
             }
@@ -289,13 +289,13 @@ namespace TpsDungeon.Map.Tests
             {
                 var layout = FloorLayoutGenerator.Generate(parameters, seed);
 
-                Assert.GreaterOrEqual(layout.StairUpRoom, 0, $"seed {seed}: 上り階段が無い");
-                Assert.GreaterOrEqual(layout.StairDownRoom, 0, $"seed {seed}: 下り階段が無い");
+                Assert.GreaterOrEqual(layout.EntranceRoom, 0, $"seed {seed}: 入口が無い");
+                Assert.GreaterOrEqual(layout.ExitRoom, 0, $"seed {seed}: 出口が無い");
                 Assert.GreaterOrEqual(layout.ShopRoom, 0, $"seed {seed}: ショップが無い");
 
-                Assert.AreNotEqual(layout.StairUpRoom, layout.StairDownRoom, $"seed {seed}: 階段が同じ部屋にある");
-                Assert.AreNotEqual(layout.StairUpRoom, layout.ShopRoom);
-                Assert.AreNotEqual(layout.StairDownRoom, layout.ShopRoom);
+                Assert.AreNotEqual(layout.EntranceRoom, layout.ExitRoom, $"seed {seed}: 階段が同じ部屋にある");
+                Assert.AreNotEqual(layout.EntranceRoom, layout.ShopRoom);
+                Assert.AreNotEqual(layout.ExitRoom, layout.ShopRoom);
             }
         }
 

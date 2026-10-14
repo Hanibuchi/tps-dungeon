@@ -4,13 +4,13 @@ using TpsDungeon.Map.Data;
 
 namespace TpsDungeon.Map.Generation
 {
-    /// <summary>上り階段・下り階段・ショップをどの部屋に置くかを決める。</summary>
+    /// <summary>入口・出口・ショップをどの部屋に置くかを決める。</summary>
     public static class SpecialRoomAssigner
     {
         public sealed class Assignment
         {
-            public int StairUpRoom = -1;
-            public int StairDownRoom = -1;
+            public int EntranceRoom = -1;
+            public int ExitRoom = -1;
             public int ShopRoom = -1;
         }
 
@@ -61,25 +61,25 @@ namespace TpsDungeon.Map.Generation
             // どちらを上りにするかはシードで入れ替える。
             if (rng.Next(2) == 0)
             {
-                result.StairUpRoom = bestA;
-                result.StairDownRoom = bestB;
+                result.EntranceRoom = bestA;
+                result.ExitRoom = bestB;
             }
             else
             {
-                result.StairUpRoom = bestB;
-                result.StairDownRoom = bestA;
+                result.EntranceRoom = bestB;
+                result.ExitRoom = bestA;
             }
 
             if (!p.IncludeShop) return result;
 
             // ショップは入口と出口のちょうど中間あたりに置く。
-            BreadthFirst(result.StairUpRoom, adjacency, distanceBuffer);
+            BreadthFirst(result.EntranceRoom, adjacency, distanceBuffer);
             double target = bestDistance / 2.0;
             int shop = -1;
             double shopScore = double.MaxValue;
             for (int i = 0; i < roomCount; i++)
             {
-                if (i == result.StairUpRoom || i == result.StairDownRoom) continue;
+                if (i == result.EntranceRoom || i == result.ExitRoom) continue;
                 if (!canHostShop[i]) continue;
                 if (distanceBuffer[i] < 0) continue;
                 double score = Math.Abs(distanceBuffer[i] - target);
@@ -96,7 +96,7 @@ namespace TpsDungeon.Map.Generation
             {
                 for (int i = 0; i < roomCount; i++)
                 {
-                    if (i == result.StairUpRoom || i == result.StairDownRoom) continue;
+                    if (i == result.EntranceRoom || i == result.ExitRoom) continue;
                     shop = i;
                     break;
                 }

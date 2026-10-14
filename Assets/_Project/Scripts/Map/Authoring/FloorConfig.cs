@@ -55,9 +55,9 @@ namespace TpsDungeon.Map.Authoring
         public GameObject foundationPrefab;
         [Tooltip("セル 1 つ分のドア。向きは壁と同じ規約。")]
         public GameObject doorPrefab;
-        [Tooltip("上り階段。上り階段の部屋の中央に 1 つ置かれる。")]
+        [Tooltip("上の階へ続く上り階段。出口の部屋の FeatureCell の中心に 1 つ置かれる。FloorFeature を持てば、そのセルの天井などを置き換えられる。")]
         public GameObject stairUpPrefab;
-        [Tooltip("下り階段。下り階段の部屋の中央に 1 つ置かれる。")]
+        [Tooltip("下の階へ続く下り階段。入口の部屋（パーティーが着く部屋）の FeatureCell の中心に 1 つ置かれる。子の SceneGate に FloorBootstrap が行き先を入れる。")]
         public GameObject stairDownPrefab;
         [Tooltip("ショップの目印。ショップ部屋の中央に 1 つ置かれる。")]
         public GameObject shopMarkerPrefab;

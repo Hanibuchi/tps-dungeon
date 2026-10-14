@@ -157,12 +157,14 @@ namespace TpsDungeon.Hud
             painter.BeginPath();
             switch (room.Role)
             {
-                case RoomRole.StairUp:
+                case RoomRole.Exit:
+                    // 出口は上の階への上り階段。上向きの三角。
                     painter.MoveTo(p + new Vector2(0f, -s));
                     painter.LineTo(p + new Vector2(s, s));
                     painter.LineTo(p + new Vector2(-s, s));
                     break;
-                case RoomRole.StairDown:
+                case RoomRole.Entrance:
+                    // 入口は下の階への下り階段。下向きの三角。
                     painter.MoveTo(p + new Vector2(0f, s));
                     painter.LineTo(p + new Vector2(-s, -s));
                     painter.LineTo(p + new Vector2(s, -s));

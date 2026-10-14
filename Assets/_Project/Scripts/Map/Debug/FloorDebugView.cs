@@ -106,7 +106,7 @@ namespace TpsDungeon.Map.DebugTools
             {
                 GUILayout.Label($"seed: <b>{bootstrap.CurrentSeed}</b>", style);
                 GUILayout.Label($"部屋 {layout.Rooms.Count} / ドア {layout.Edges.Count} 枚", style);
-                GUILayout.Label($"上り階段 Room{layout.StairUpRoom} ・ 下り階段 Room{layout.StairDownRoom} ・ ショップ Room{layout.ShopRoom}", style);
+                GUILayout.Label($"入口 Room{layout.EntranceRoom} ・ 出口 Room{layout.ExitRoom} ・ ショップ Room{layout.ShopRoom}", style);
                 GUILayout.Label($"[{regenerateKey}] 別のシードで作り直す", style);
             }
             GUILayout.EndArea();
@@ -126,8 +126,8 @@ namespace TpsDungeon.Map.DebugTools
             {
                 Gizmos.color = room.Role switch
                 {
-                    RoomRole.StairUp => new Color(0.3f, 1f, 0.4f, 0.9f),
-                    RoomRole.StairDown => new Color(1f, 0.5f, 0.2f, 0.9f),
+                    RoomRole.Entrance => new Color(0.3f, 1f, 0.4f, 0.9f),
+                    RoomRole.Exit => new Color(1f, 0.5f, 0.2f, 0.9f),
                     RoomRole.Shop => new Color(1f, 0.9f, 0.2f, 0.9f),
                     _ => new Color(0.4f, 0.7f, 1f, 0.7f),
                 };

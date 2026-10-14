@@ -4,7 +4,8 @@
     "references": [
         "Unity.InputSystem",
         "TpsDungeon.Interaction",
-        "TpsDungeon.Audio"
+        "TpsDungeon.Audio",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -30,7 +30,12 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, TextArea, Tooltip("情報欄の本文。")]
         private string description;
 
-        public string SceneName => sceneName;
+        /// <summary>行き先。生成した階段のように、置いてから決まるものはあとから入れる。</summary>
+        public string SceneName
+        {
+            get => sceneName;
+            set => sceneName = value;
+        }
 
         public bool IsOpen
         {
