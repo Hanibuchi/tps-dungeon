@@ -59,20 +59,19 @@ namespace TpsDungeon.Map.Editor
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
         private const float DoorInteractVolumeDepth = 0.3f;
 
-        // 階段。入口の下り・出口の上りとも、ドアの向かいの壁沿いに +X へ真っ直ぐ伸びる 1 本の階段で、段は飾り（登り降りはしない）。
-        // 階段の部屋はドアを南（-Z）の 1 面にだけ開けるので、北の壁沿いに置けばドアから入ってすぐ正面に見え、通り道も塞がない。
-        // 階段の幅（Z）、下り・上りの 1 段の奥行きと高さ（メートル）。上りは天井まで届かせるため急にする。
+        // 階段。入口の下り・出口の上りとも、ドアから入って正面へ +Z に真っ直ぐ伸びる 1 本の階段で、段は飾り（登り降りはしない）。
+        // 階段の部屋はドアを南（-Z）の 1 面にだけ開けるので、ドアの真正面（x = 0）から奥の北の壁際まで伸ばす。
+        // 階段の幅（X）、下りの 1 段の奥行きと高さ、上りの 1 段の高さ（メートル）。上りの奥行きは天井まで届く段数で割り付けるので急になる（5 m の壁で 0.16 m）。
         private const float StairWidth = 1.4f;
         private const float StairDownRun = 0.3f;
         private const float StairDownRise = 0.2f;
-        private const float StairUpRun = 0.2f;
         private const float StairUpRise = 0.25f;
-        // 階段と壁の内側との隙間（壁の厚みの半分＋少し）。
+        // 階段と奥の壁の内側との隙間（壁の厚みの半分＋少し）。
         private const float StairWallClearance = 0.2f;
-        // 下り階段の穴の、ドア側（西）の端。ここから東の壁際まで開ける。
-        private const float StairDownStart = -1.6f;
-        // 上り階段の天井の穴の、西の端。
-        private const float StairUpOpeningStart = -0.3f;
+        // 階段の始まる所の、ドアの壁からの距離。扉板（1.5 m）が部屋の内へ開いても段や手すりに当たらないよう、それより少し先から。
+        private const float StairDoorClearance = 1.6f;
+        // 上り階段の天井の穴の、ドア側の端（セルの中心からの Z）。
+        private const float StairUpOpeningStart = 0.4f;
         // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ、下り階段の穴の脇の手すりの高さ。
         private const float StairwellDepth = 3f;
         private const float StairUpShaft = 2f;
@@ -80,8 +79,8 @@ namespace TpsDungeon.Map.Editor
         // 手すりの柱・横木の太さと、柱の間隔の目安。
         private const float RailingBar = 0.08f;
         private const float RailingPostSpacing = 1f;
-        // 入口に着いたパーティーの立ち位置（階段のローカル）。部屋の真ん中の少しドア寄りで、ドアの方を向く。
-        private static readonly Vector3 StairSpawnPosition = new Vector3(0f, 0.05f, -0.3f);
+        // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
+        private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
 
         private readonly struct RoomSpec
         {
@@ -324,9 +323,10 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 入口に置く、下の階へ続く下り階段。原点がセルの中心の床の高さで、ドアは -Z の側（階段の部屋の南）。
-        /// 部屋の床の代わりに、北の壁沿いに細長い穴の空いた床を持ち（FloorFeature.replacesRoomFloor）、穴の下の竪穴へ +X に真っ直ぐ下りる階段を置く。
-        /// 穴の部屋側には手すり、降り口（西の端）は開けたままにして、穴の上の見えない当たりで落ちないようにする。
-        /// 竪穴の奥（東）の壁は暗くして、階段がその先へ続いて見えるようにする。
+        /// 部屋の床の代わりに、ドアの正面から奥の壁まで細長い穴の空いた床を持ち（FloorFeature.replacesRoomFloor）、
+        /// ドアから入ってそのまま +Z へ真っ直ぐ下りる階段を穴の下の竪穴に置く。
+        /// 穴の両脇には手すり、降り口（ドア側）は開けたままにして、穴の上の見えない当たりで落ちないようにする。
+        /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする。
         /// 調べると下の階へ移る（子の Stairwell の SceneGate。行き先は FloorBootstrap が入れる）。子の SpawnPoint に入口に着いたパーティーが立つ。
         /// </summary>
         private static GameObject BuildStairDownPrefab(string name, StairMaterials m, float cellSize)
@@ -336,15 +336,13 @@ namespace TpsDungeon.Map.Editor
             feature.replacesRoomFloor = true;
             feature.depthBelowFloor = StairwellDepth + CeilingThickness;
 
-            float edge = cellSize * 0.5f - StairWallClearance;
-            var holeMin = new Vector2(StairDownStart, edge - StairWidth);
-            var holeMax = new Vector2(edge, edge);
+            StairFootprint(cellSize, out var holeMin, out var holeMax);
             var holeCenter = (holeMin + holeMax) * 0.5f;
             var holeSize = holeMax - holeMin;
 
             HoledSlab(root.transform, "Floor", m.Room, cellSize, holeMin, holeMax, -FloorThickness, FloorThickness, true);
             var shaft = Shaft(root.transform, m.Wall, holeMin, holeMax, -StairwellDepth, -FloorThickness);
-            shaft.transform.Find("East").GetComponent<MeshRenderer>().sharedMaterial = m.Void;
+            shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = m.Void;
             Box(root.transform, "Bottom", m.Void,
                 new Vector3(holeCenter.x, -StairwellDepth - CeilingThickness * 0.5f, holeCenter.y),
                 new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
@@ -353,25 +351,13 @@ namespace TpsDungeon.Map.Editor
             var well = new GameObject("Stairwell");
             well.transform.SetParent(root.transform, false);
 
-            int steps = Mathf.FloorToInt(holeSize.x / StairDownRun);
-            Flight(well.transform, m.Steps, holeMin.x, holeMin.y, holeMax.y, steps, StairDownRun, -StairDownRise, -StairwellDepth);
+            int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
+            Flight(well.transform, m.Steps, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
 
-            // 手すりは穴の部屋側（南）の長辺だけ。北と東は部屋の壁、西は降り口。
+            // 手すりは穴の両脇（東西）の長辺。北は部屋の壁、南は降り口。
             // 板にすると下りていく段が隠れるので、柱と横木だけにして透かす（落ちないのは見えない当たりで止める）。
-            var railing = new GameObject("Railing");
-            railing.transform.SetParent(well.transform, false);
-            float railZ = holeMin.y - RailingBar * 0.5f;
-            Box(railing.transform, "Bar", m.Wall,
-                new Vector3(holeCenter.x, RailingHeight - RailingBar * 0.5f, railZ),
-                new Vector3(holeSize.x, RailingBar, RailingBar), false);
-            int posts = Mathf.Max(2, Mathf.CeilToInt(holeSize.x / RailingPostSpacing) + 1);
-            for (int i = 0; i < posts; i++)
-            {
-                float x = Mathf.Lerp(holeMin.x + RailingBar * 0.5f, holeMax.x - RailingBar * 0.5f, i / (float)(posts - 1));
-                Box(railing.transform, $"Post{i}", m.Wall,
-                    new Vector3(x, (RailingHeight - RailingBar) * 0.5f, railZ),
-                    new Vector3(RailingBar, RailingHeight - RailingBar, RailingBar), false);
-            }
+            Railing(well.transform, "Railing_W", m.Wall, holeMin.x - RailingBar * 0.5f, holeMin.y, holeMax.y);
+            Railing(well.transform, "Railing_E", m.Wall, holeMax.x + RailingBar * 0.5f, holeMin.y, holeMax.y);
 
             var blocker = new GameObject("Blocker");
             blocker.transform.SetParent(well.transform, false);
@@ -395,7 +381,7 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
-        /// 北の壁沿いに、西の壁際の床から +X へ天井まで真っ直ぐ上る階段を置き、上の方の天井に穴を開けて（FloorFeature.replacesCeiling）
+        /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
         /// 蓋をした竪穴の中へ段が消えていくように見せる。段は登れないよう、まわりを 1 つの当たりで囲む。
         /// </summary>
         private static GameObject BuildStairUpPrefab(string name, StairMaterials m, float cellSize, float wallHeight)
@@ -404,9 +390,9 @@ namespace TpsDungeon.Map.Editor
             var feature = root.AddComponent<FloorFeature>();
             feature.replacesCeiling = true;
 
-            float edge = cellSize * 0.5f - StairWallClearance;
-            var holeMin = new Vector2(StairUpOpeningStart, edge - StairWidth);
-            var holeMax = new Vector2(edge, edge);
+            StairFootprint(cellSize, out var footMin, out var footMax);
+            var holeMin = new Vector2(footMin.x, StairUpOpeningStart);
+            var holeMax = footMax;
             var holeCenter = (holeMin + holeMax) * 0.5f;
             var holeSize = holeMax - holeMin;
 
@@ -419,16 +405,47 @@ namespace TpsDungeon.Map.Editor
                 new Vector3(holeCenter.x, shaftTop + CeilingThickness * 0.5f, holeCenter.y),
                 new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
 
-            // 西の壁際から東の壁際まで。天井を抜けて竪穴の中ほどまで上る。
-            int steps = Mathf.FloorToInt(edge * 2f / StairUpRun);
-            Flight(root.transform, m.Steps, -edge, holeMin.y, holeMax.y, steps, StairUpRun, StairUpRise, 0f);
+            // ドア側の端から奥の壁際まで。段数は一番上の段が天井の高さに届く数にし、奥行きはその数で割り付ける（壁の高さを変えても届く）。
+            var footSize = footMax - footMin;
+            int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
+            Flight(root.transform, m.Steps, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
 
             var blocker = new GameObject("Blocker");
             blocker.transform.SetParent(root.transform, false);
-            blocker.transform.localPosition = new Vector3(0f, wallHeight * 0.5f, holeCenter.y);
-            blocker.AddComponent<BoxCollider>().size = new Vector3(edge * 2f, wallHeight, holeSize.y);
+            blocker.transform.localPosition = new Vector3(0f, wallHeight * 0.5f, (footMin.y + footMax.y) * 0.5f);
+            blocker.AddComponent<BoxCollider>().size = new Vector3(footSize.x, wallHeight, footSize.y);
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
+        }
+
+        /// <summary>
+        /// 階段の占める XZ の矩形。ドアの正面（x = 0 を中心に幅 StairWidth）で、扉板の開く範囲の先から奥の壁際まで。
+        /// </summary>
+        private static void StairFootprint(float cellSize, out Vector2 min, out Vector2 max)
+        {
+            float half = cellSize * 0.5f;
+            min = new Vector2(-StairWidth * 0.5f, -half + StairDoorClearance);
+            max = new Vector2(StairWidth * 0.5f, half - StairWallClearance);
+        }
+
+        /// <summary>x の位置に、z = minZ〜maxZ の長さで立てる、柱と横木だけの手すり。当たりは無し（穴の見えない当たりで止める）。</summary>
+        private static void Railing(Transform parent, string name, Material material, float x, float minZ, float maxZ)
+        {
+            var railing = new GameObject(name);
+            railing.transform.SetParent(parent, false);
+
+            float length = maxZ - minZ;
+            Box(railing.transform, "Bar", material,
+                new Vector3(x, RailingHeight - RailingBar * 0.5f, (minZ + maxZ) * 0.5f),
+                new Vector3(RailingBar, RailingBar, length), false);
+            int posts = Mathf.Max(2, Mathf.CeilToInt(length / RailingPostSpacing) + 1);
+            for (int i = 0; i < posts; i++)
+            {
+                float z = Mathf.Lerp(minZ + RailingBar * 0.5f, maxZ - RailingBar * 0.5f, i / (float)(posts - 1));
+                Box(railing.transform, $"Post{i}", material,
+                    new Vector3(x, (RailingHeight - RailingBar) * 0.5f, z),
+                    new Vector3(RailingBar, RailingHeight - RailingBar, RailingBar), false);
+            }
         }
 
         /// <summary>
@@ -477,10 +494,10 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// +X へ真っ直ぐ伸びる階段。count 段を、x = startX から run ずつ、最初の段の上面を y = 0（下りなら床と同じ高さ）か rise（上り）にして
-        /// 1 段ごとに rise ずつ（負なら下へ）ずらす。Z は minZ〜maxZ。段は y = baseY まで詰まった塊にして、横から見ても浮かないようにする。当たりは無し（飾り）。
+        /// +Z へ真っ直ぐ伸びる階段。count 段を、z = startZ から run ずつ、最初の段の上面を y = 0（下りなら床と同じ高さ）か rise（上り）にして
+        /// 1 段ごとに rise ずつ（負なら下へ）ずらす。X は minX〜maxX。段は y = baseY まで詰まった塊にして、横から見ても浮かないようにする。当たりは無し（飾り）。
         /// </summary>
-        private static void Flight(Transform parent, Material material, float startX, float minZ, float maxZ,
+        private static void Flight(Transform parent, Material material, float startZ, float minX, float maxX,
             int count, float run, float rise, float baseY)
         {
             var group = new GameObject("Steps");
@@ -493,8 +510,8 @@ namespace TpsDungeon.Map.Editor
                 float low = Mathf.Min(top, baseY);
                 float high = Mathf.Max(top, baseY);
                 Box(group.transform, $"Step{i:00}", material,
-                    new Vector3(startX + run * (i + 0.5f), (low + high) * 0.5f, (minZ + maxZ) * 0.5f),
-                    new Vector3(run, high - low, maxZ - minZ), false);
+                    new Vector3((minX + maxX) * 0.5f, (low + high) * 0.5f, startZ + run * (i + 0.5f)),
+                    new Vector3(maxX - minX, high - low, run), false);
             }
         }
 

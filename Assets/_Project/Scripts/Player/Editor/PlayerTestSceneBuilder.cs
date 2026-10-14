@@ -94,15 +94,18 @@ namespace TpsDungeon.Player.Editor
 
         /// <summary>
         /// 入口の部屋にスポーン地点を取る。
-        /// 下り階段は入口の部屋のドアの向かいの壁沿いにあり、セルの真ん中は空いている。
-        /// FloorBuilder.PlaceSpawnPoint（階段の SpawnPoint）とほぼ同じ、セルの真ん中に立たせる。
+        /// 下り階段はドアの正面からセルの真ん中を通って奥へ伸びるので、FloorBuilder.PlaceSpawnPoint と同じく
+        /// 下り階段の Prefab の子 SpawnPoint（階段の脇）を、入口の部屋と同じだけ回した位置に立たせる。無ければセルの隅。
         /// </summary>
         private static bool TryFindSpawn(FloorConfig config, out Vector3 spawn, out string note)
         {
             spawn = Vector3.zero;
-            if (!TryFindEntrance(config, out Vector3 center, out note)) return false;
+            if (!TryFindEntrance(config, out Vector3 center, out int rotation, out note)) return false;
 
-            spawn = center + new Vector3(0f, SpawnLift, 0f);
+            var at = config.stairDownPrefab != null ? config.stairDownPrefab.transform.Find("SpawnPoint") : null;
+            var local = at != null ? at.localPosition : new Vector3(config.cellSize * 0.38f, 0f, config.cellSize * 0.38f);
+            local.y = SpawnLift;
+            spawn = center + Quaternion.Euler(0f, 90f * rotation, 0f) * local;
             return true;
         }
 
@@ -111,9 +114,14 @@ namespace TpsDungeon.Player.Editor
         /// マップの Data/Generation 層は UnityEngine に依存しないので、エディタ側でそのまま回せる。
         /// [Floor] を原点に置くので、返す座標はワールド座標と一致する。
         /// </summary>
-        internal static bool TryFindEntrance(FloorConfig config, out Vector3 center, out string note)
+        internal static bool TryFindEntrance(FloorConfig config, out Vector3 center, out string note) =>
+            TryFindEntrance(config, out center, out int _, out note);
+
+        /// <param name="rotation">入口の部屋の回転（時計回りの 90 度の数）。階段もこれだけ回して置かれる。</param>
+        internal static bool TryFindEntrance(FloorConfig config, out Vector3 center, out int rotation, out string note)
         {
             center = Vector3.zero;
+            rotation = 0;
 
             FloorLayout layout = FloorLayoutGenerator.Generate(config.BuildParams(), FloorSeed);
             if (layout == null || layout.Rooms.Count == 0)
@@ -132,6 +140,7 @@ namespace TpsDungeon.Player.Editor
             }
 
             GridPos cell = room.FeatureCell;
+            rotation = room.Rotation;
 
             // FloorBuilder.CellCenter と同じ式。[Floor] を原点に置くのでローカルとワールドが一致する。
             center = new Vector3(
