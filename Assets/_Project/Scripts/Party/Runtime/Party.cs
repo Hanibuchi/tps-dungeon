@@ -179,6 +179,24 @@ namespace TpsDungeon.Party
         }
 
         /// <summary>
+        /// 先頭を at の位置と向き（水平の回転だけ）へ移し、カメラも同じ向きにする。シーンに着いたときのスポーン地点に使う。
+        /// 後ろの人は、先頭が跳んだのを LateUpdate が見て並び直す。
+        /// </summary>
+        public void PlaceLeaderAt(Transform at)
+        {
+            PartyMember leader = Leader;
+            if (leader == null || at == null) return;
+
+            float yaw = at.eulerAngles.y;
+            leader.PlaceAt(at.position, Quaternion.Euler(0f, yaw, 0f));
+            if (leader.Motor != null)
+            {
+                leader.Motor.CameraYaw = yaw;
+                leader.Motor.CameraPitch = 0f;
+            }
+        }
+
+        /// <summary>
         /// 先頭の後ろに跡をまっすぐ作り直し、後ろの全員をその列の位置へ跳ばす。始まりと、先頭が跳んだときに使う。
         /// </summary>
         public void Regroup()

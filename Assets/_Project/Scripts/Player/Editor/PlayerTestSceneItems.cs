@@ -45,35 +45,36 @@ namespace TpsDungeon.Player.Editor
             new Vector3(1.8f, 0f, -1.2f),
         };
 
-        /// <summary>
-        /// 入口の部屋の FeatureCell 中心からの置き場所。中心の階段マーカー（1.4 角）と、
-        /// その +X 側 1.5m のスポーン地点を避け、セル（5m）の内側に収める。ホットバー 4 枠を越えてバッグに入るのを試せる数にする。
-        /// </summary>
+        // 以下の置き場所は、入口の部屋の FeatureCell 中心から見た「下り階段のローカル」の座標。部屋の回転に合わせて回して置く。
+        // 階段のローカルでは、ドアが -Z の壁の真ん中、下り階段の穴がドアの正面（x = ±0.7）の z = -0.9〜2.3、
+        // スポーン地点が (1.6, -0.3) にある。穴（手すり込みで |x| < 0.85）と、扉板の開く範囲（ドアの壁から 1.5 m、|x| < 1.5）を避ける。
+
+        /// <summary>仮アイテムの置き場所。穴の西側の壁際に縦に並べる。ホットバー 4 枠を越えてバッグに入るのを試せる数にする。</summary>
         private static readonly Vector3[] Offsets =
         {
-            new Vector3(-1.6f, 0f, -1.6f),
-            new Vector3(-1.6f, 0f, 0f),
-            new Vector3(-1.6f, 0f, 1.6f),
-            new Vector3(0f, 0f, 1.7f),
+            new Vector3(-1.9f, 0f, -1.9f),
+            new Vector3(-1.9f, 0f, -0.6f),
+            new Vector3(-1.9f, 0f, 0.7f),
+            new Vector3(-1.9f, 0f, 2.0f),
         };
 
-        /// <summary>仮の武器の置き場所。スポーン地点（+X 側）の近くに寄せて、すぐ拾えるようにする。</summary>
+        /// <summary>仮の武器の置き場所。西側のもう 1 列と、スポーン地点のある東側に分けて、すぐ拾えるようにする。</summary>
         private static readonly Vector3[] WeaponOffsets =
         {
-            new Vector3(0f, 0f, -1.7f),
-            new Vector3(1.6f, 0f, 1.6f),
-            new Vector3(1.6f, 0f, -1.6f),
+            new Vector3(-1.2f, 0f, -0.6f),
+            new Vector3(-1.2f, 0f, 0.7f),
+            new Vector3(-1.2f, 0f, 2.0f),
             // ダッシュ突き・両手近距離・叩きつけ。
-            new Vector3(-0.8f, 0f, -2.1f),
-            new Vector3(0.9f, 0f, 2.1f),
-            new Vector3(0.9f, 0f, -2.2f),
+            new Vector3(1.9f, 0f, -1.9f),
+            new Vector3(1.9f, 0f, 1.0f),
+            new Vector3(1.9f, 0f, 2.0f),
         };
 
-        /// <summary>お守りと盾を 1 つずつ置く場所（片手剣と一緒に試せるよう、武器の近く）。</summary>
+        /// <summary>お守りと盾を 1 つずつ置く場所（片手剣と一緒に試せるよう、東側の武器の隣）。</summary>
         private static readonly Vector3[] GearOffsets =
         {
-            new Vector3(0.8f, 0f, -0.9f),
-            new Vector3(0.8f, 0f, 0.9f),
+            new Vector3(1.2f, 0f, 1.0f),
+            new Vector3(1.2f, 0f, 2.0f),
         };
 
         [MenuItem("Tools/TPS Dungeon/Player/確認用シーンに仮アイテムを置く")]
@@ -93,7 +94,7 @@ namespace TpsDungeon.Player.Editor
 
             var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(PlayerTestSceneBuilder.ConfigPath);
             if (config == null) return "フロアの設定が無い: " + PlayerTestSceneBuilder.ConfigPath;
-            if (!PlayerTestSceneBuilder.TryFindEntrance(config, out Vector3 center, out string note))
+            if (!PlayerTestSceneBuilder.TryFindEntrance(config, out Vector3 center, out int rotation, out string note))
             {
                 return "置き場所を決められなかった。" + note;
             }
@@ -121,12 +122,15 @@ namespace TpsDungeon.Player.Editor
                 var root = new GameObject(RootName);
                 SceneManager.MoveGameObjectToScene(root, scene);
 
+                // 置き場所は階段のローカルなので、入口の部屋（＝階段）と同じだけ回す。
+                Quaternion turn = Quaternion.Euler(0f, 90f * rotation, 0f);
+
                 for (int i = 0; i < Offsets.Length; i++)
                 {
                     ItemDefinition item = items[i % items.Count];
                     var pickup = (GameObject)PrefabUtility.InstantiatePrefab(item.WorldPrefab.gameObject, scene);
                     pickup.transform.SetParent(root.transform, false);
-                    pickup.transform.SetPositionAndRotation(center + Offsets[i], Quaternion.Euler(0f, 37f * i, 0f));
+                    pickup.transform.SetPositionAndRotation(center + turn * Offsets[i], Quaternion.Euler(0f, 37f * i, 0f));
                 }
 
                 var weapons = PlaceholderWeaponAssetGenerator.LoadAll();
@@ -135,7 +139,7 @@ namespace TpsDungeon.Player.Editor
                     if (weapons[i].WorldPrefab == null) continue;
                     var pickup = (GameObject)PrefabUtility.InstantiatePrefab(weapons[i].WorldPrefab.gameObject, scene);
                     pickup.transform.SetParent(root.transform, false);
-                    pickup.transform.SetPositionAndRotation(center + WeaponOffsets[i], Quaternion.Euler(0f, 60f + 45f * i, 0f));
+                    pickup.transform.SetPositionAndRotation(center + turn * WeaponOffsets[i], Quaternion.Euler(0f, 60f + 45f * i, 0f));
                 }
 
                 // お守り・盾はいちばんランクの低いものを 1 つずつ。
@@ -149,7 +153,7 @@ namespace TpsDungeon.Player.Editor
                     if (gear[i] == null || gear[i].WorldPrefab == null) continue;
                     var pickup = (GameObject)PrefabUtility.InstantiatePrefab(gear[i].WorldPrefab.gameObject, scene);
                     pickup.transform.SetParent(root.transform, false);
-                    pickup.transform.SetPositionAndRotation(center + GearOffsets[i], Quaternion.Euler(0f, 30f + 50f * i, 0f));
+                    pickup.transform.SetPositionAndRotation(center + turn * GearOffsets[i], Quaternion.Euler(0f, 30f + 50f * i, 0f));
                 }
 
                 enemyNote = PlaceEnemies(scene, config);

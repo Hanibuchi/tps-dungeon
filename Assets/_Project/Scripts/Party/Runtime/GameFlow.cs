@@ -157,17 +157,7 @@ namespace TpsDungeon.Party
                     }
                 }
 
-                PartyMember leader = party.Leader;
-                if (leader != null && spawn != null)
-                {
-                    Transform at = spawn.transform;
-                    leader.PlaceAt(at.position, Quaternion.Euler(0f, at.eulerAngles.y, 0f));
-                    if (leader.Motor != null)
-                    {
-                        leader.Motor.CameraYaw = at.eulerAngles.y;
-                        leader.Motor.CameraPitch = 0f;
-                    }
-                }
+                if (spawn != null) party.PlaceLeaderAt(spawn.transform);
 
                 // カメラが前のシーンの位置から滑ってこないように。
                 foreach (CinemachineCamera camera in GetComponentsInChildren<CinemachineCamera>(true)) camera.PreviousStateIsValid = false;
