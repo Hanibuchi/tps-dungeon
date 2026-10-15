@@ -393,13 +393,7 @@ namespace TpsDungeon.Map.Editor
             int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
             Flight(well.transform, theme.stair, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
 
-            var gate = well.AddComponent<SceneGate>();
-            var serialized = new SerializedObject(gate);
-            serialized.FindProperty("openLabel").stringValue = "下の階へ";
-            serialized.FindProperty("closedLabel").stringValue = "下へは降りられない";
-            serialized.FindProperty("title").stringValue = "下り階段";
-            serialized.FindProperty("description").stringValue = "下の階へ続く階段。";
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            AddStairGate(well, "下の階へ", "下へは降りられない", "下り階段", "下の階へ続く階段。");
 
             // 床の高さから竪穴の底まで。暗さは床から下へ測った距離で決める。
             float darkBottom = -StairwellDepth - CeilingThickness;
@@ -416,10 +410,11 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>
-        /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
+        /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。
         /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
         /// 蓋をした竪穴の中へ段が消えていくように見せる。竪穴の壁・蓋には見た目どおりの当たりを付け、段は見えない坂（子の Ramp）で上り下りさせる。
         /// 天井の穴の下から竪穴の蓋までに暗がりの箱（子の Darkness）を置き、上るほど暗くして、穴の先を見えにくくする。
+        /// 調べると上の階へ移る（子の Stairway の SceneGate。行き先は FloorBootstrap が入れる。上の階が無い間はこの階を作り直す）。
         /// </summary>
         private static GameObject BuildStairUpPrefab(string path, FloorTheme theme, float cellSize, float wallHeight)
         {
@@ -437,19 +432,25 @@ namespace TpsDungeon.Map.Editor
             var ceiling = HoledSlab(root.transform, "Ceiling", theme.ceiling, cellSize, holeMin, holeMax, wallHeight, CeilingThickness, true);
             foreach (var renderer in ceiling.GetComponentsInChildren<MeshRenderer>()) renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
 
+            // 調べられるのは段・坂・竪穴だけ。天井を見て「上の階へ」が出ないよう、天井とは別の子にまとめる。
+            var way = new GameObject("Stairway");
+            way.transform.SetParent(root.transform, false);
+
             float shaftTop = wallHeight + CeilingThickness + StairUpShaft;
             // 竪穴の壁は天井の上の面から立てる。天井の厚みの所から立てると、壁の内側の面が天井の穴の切り口と同じ所に重なってちらつく。
-            var shaft = Shaft(root.transform, theme.stair, holeMin, holeMax, wallHeight + CeilingThickness, shaftTop);
+            var shaft = Shaft(way.transform, theme.stair, holeMin, holeMax, wallHeight + CeilingThickness, shaftTop);
             shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = theme.stairVoid;
-            Box(root.transform, "Cap", theme.stair,
+            Box(way.transform, "Cap", theme.stair,
                 new Vector3(holeCenter.x, shaftTop + CeilingThickness * 0.5f, holeCenter.y),
                 new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), true);
 
             // ドア側の端から奥の壁際まで。段数は一番上の段が天井の高さに届く数にし、奥行きはその数で割り付ける（壁の高さを変えても届く）。
             var footSize = footMax - footMin;
             int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
-            Flight(root.transform, theme.stair, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
-            AddStairRamp(root.transform, footMin, footSize, steps);
+            Flight(way.transform, theme.stair, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
+            AddStairRamp(way.transform, footMin, footSize, steps);
+
+            AddStairGate(way, "上の階へ", "上へは行けない", "上り階段", "上の階へ続く階段。");
 
             // 床の高さから竪穴の蓋まで。暗さは床から上へ測った距離で決める。
             // 穴の無い所の天井を暗くしないよう、広さは天井の穴だけにする。
@@ -460,6 +461,18 @@ namespace TpsDungeon.Map.Editor
                 upward: true, wallHeight - StairUpDarkStart, wallHeight + StairUpDarkFull);
 
             return SavePrefab(root, path);
+        }
+
+        /// <summary>階段の門（SceneGate）。行き先は置いたあとに FloorBootstrap が入れる。</summary>
+        private static void AddStairGate(GameObject target, string openLabel, string closedLabel, string title, string description)
+        {
+            var gate = target.AddComponent<SceneGate>();
+            var serialized = new SerializedObject(gate);
+            serialized.FindProperty("openLabel").stringValue = openLabel;
+            serialized.FindProperty("closedLabel").stringValue = closedLabel;
+            serialized.FindProperty("title").stringValue = title;
+            serialized.FindProperty("description").stringValue = description;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         /// <summary>

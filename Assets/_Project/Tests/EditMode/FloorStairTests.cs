@@ -45,9 +45,9 @@ namespace TpsDungeon.Map.Tests
             Assert.IsNotNull(builder.EntranceStair.GetComponentInChildren<SceneGate>(), "下り階段は調べて移れる");
             Assert.IsTrue(builder.EntranceStair.GetComponent<FloorFeature>().replacesRoomFloor);
 
-            // 出口は上の階へ続く上り階段で、まだ見た目だけ。
+            // 出口は上の階へ続く上り階段で、調べると移れる（行き先は FloorBootstrap が入れる）。
             Assert.IsNotNull(builder.ExitStair, $"seed {seed}: 出口に階段が無い");
-            Assert.IsNull(builder.ExitStair.GetComponentInChildren<SceneGate>(), "上り階段は見た目だけ");
+            Assert.IsNotNull(builder.ExitStair.GetComponentInChildren<SceneGate>(), "上り階段は調べて移れる");
 
             // 入口・出口の部屋はドアが 1 つだけで、階段はそのドアを背にせず向かいの壁沿いにある（階段のローカルでドアは -Z の側）。
             AssertSingleDoorBehindStair(builder, entrance, builder.EntranceStair, seed);
@@ -73,6 +73,54 @@ namespace TpsDungeon.Map.Tests
                 float depth = builder.EntranceStair.GetComponent<FloorFeature>().depthBelowFloor;
                 Assert.AreEqual(-depth, foundation.localPosition.y, 0.001f, "入口のセルの土台は竪穴の底から");
             }
+        }
+
+        [Test]
+        public void ExitStair_RebuildsThisFloorInANewShapeWhenNoUpperFloor()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(ConfigPath);
+            Assert.IsNotNull(config, $"{ConfigPath} が無い");
+
+            const int fixedSeed = 5;
+            host = new GameObject("FloorStairTests");
+            host.AddComponent<FloorBuilder>();
+            var bootstrap = host.AddComponent<FloorBootstrap>();
+            var serialized = new SerializedObject(bootstrap);
+            serialized.FindProperty("config").objectReferenceValue = config;
+            serialized.FindProperty("seed").intValue = fixedSeed;
+            serialized.FindProperty("upScene").stringValue = "";
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            bootstrap.Generate();
+            Assert.AreEqual(fixedSeed, bootstrap.CurrentSeed, "seed を固定していればその形");
+
+            // 上の階が無ければ、上り階段の行き先はこの階のシーン。
+            var builder = host.GetComponent<FloorBuilder>();
+            var gate = builder.ExitStair.GetComponentInChildren<SceneGate>();
+            Assert.AreEqual(host.scene.name, gate.SceneName, "上の階が無ければこの階を読み直す");
+
+            // テストのシーンは名前が空で行き先にならないので、押したときの流れは仮の名前で確かめる。
+            const string thisFloor = "ThisFloor";
+            gate.SceneName = thisFloor;
+            gate.IsOpen = true;
+            string requested = null;
+            var previous = SceneTravel.Handler;
+            SceneTravel.Handler = name => requested = name;
+            try
+            {
+                gate.Interact(null);
+            }
+            finally
+            {
+                SceneTravel.Handler = previous;
+            }
+            Assert.AreEqual(thisFloor, requested, "上り階段からこの階へ移る頼みが出る");
+
+            // 上り階段から来たときだけ、seed を固定していても新しい形で作る。次からはまた固定の形。
+            bootstrap.Generate();
+            Assert.AreNotEqual(fixedSeed, bootstrap.CurrentSeed, "上り階段から来たら新しい形");
+            bootstrap.Generate();
+            Assert.AreEqual(fixedSeed, bootstrap.CurrentSeed, "新しい形にするのは 1 回だけ");
         }
 
         private static void AssertSingleDoorBehindStair(FloorBuilder builder, RoomInstance room, GameObject stair, int seed)

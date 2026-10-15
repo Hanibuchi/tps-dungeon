@@ -98,7 +98,7 @@ namespace TpsDungeon.Party
             traveling = true;
             reviveOnArrival = revive;
             wipedAt = -1f;
-            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            SceneTravel.Load(sceneName);
         }
 
         private bool IsWiped()
