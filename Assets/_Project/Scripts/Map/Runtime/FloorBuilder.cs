@@ -31,6 +31,19 @@ namespace TpsDungeon.Map.Runtime
         public GameObject EntranceStair { get; private set; }
         /// <summary>出口の部屋に置いた上り階段。</summary>
         public GameObject ExitStair { get; private set; }
+        /// <summary>閉ざされた扉（ボスを倒すまで開かない出口の扉など）。Unlock で開けられるようになる。</summary>
+        public IReadOnlyList<Door> LockedDoors => lockedDoors;
+        private readonly List<Door> lockedDoors = new List<Door>();
+
+        /// <summary>閉ざされた扉をすべて開けられるようにする。ボスを倒したときに呼ぶ。</summary>
+        public void UnlockDoors()
+        {
+            foreach (var door in lockedDoors)
+            {
+                if (door != null) door.Unlock();
+            }
+        }
+
         /// <summary>ショートカット解放用の場所に置いた目印。その階に無ければ null。</summary>
         public GameObject ShortcutMarker { get; private set; }
 
@@ -87,6 +100,7 @@ namespace TpsDungeon.Map.Runtime
             EntranceStair = null;
             ExitStair = null;
             ShortcutMarker = null;
+            lockedDoors.Clear();
             featureAt.Clear();
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
@@ -157,6 +171,7 @@ namespace TpsDungeon.Map.Runtime
         /// グリッド外側の境界も拾えるよう、走査は -1 から始める。
         /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。左右対称の階では窓も左右で揃える。
         /// 大扉の辺（RoomEdge.IsGrandDoor）には、grandDoorPrefab があれば普通のドアの代わりにそれを置く。
+        /// 閉ざされた辺（RoomEdge.IsLocked）のドアは閉ざしておき、LockedDoors に控える。
         /// </summary>
         private void BuildBoundaries(FloorLayout layout, FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
         {
@@ -189,8 +204,8 @@ namespace TpsDungeon.Map.Runtime
 
                         bool window = kind == BoundaryKind.Wall && cellFilled != neighborFilled
                             && config.windowWallPrefab != null && RollWindow(layout, cell, dir, random) < config.windowChance;
-                        bool grand = kind == BoundaryKind.Door && config.grandDoorPrefab != null
-                            && IsGrandDoor(layout, occupancy, cell, dir, neighbor);
+                        var edge = kind == BoundaryKind.Door ? EdgeAt(layout, occupancy, cell, dir, neighbor) : null;
+                        bool grand = edge != null && edge.IsGrandDoor && config.grandDoorPrefab != null;
 
                         var prefab = grand ? config.grandDoorPrefab
                             : kind == BoundaryKind.Door && config.doorPrefab != null ? config.doorPrefab
@@ -199,6 +214,11 @@ namespace TpsDungeon.Map.Runtime
 
                         var piece = Instantiate(prefab, parent);
                         piece.name = window ? $"Window_{x}_{y}_{dir}" : grand ? $"GrandDoor_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
+                        if (edge != null && edge.IsLocked && piece.TryGetComponent(out Door door))
+                        {
+                            door.IsLocked = true;
+                            lockedDoors.Add(door);
+                        }
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
                         // 壁・窓・ドアは実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
@@ -247,12 +267,13 @@ namespace TpsDungeon.Map.Runtime
                 d == Direction.South || d == Direction.West ? (c + d.Offset(), d.Opposite()) : (c, d);
         }
 
-        /// <summary>cell の dir 側の境界のドアが、大扉の辺のものか。</summary>
-        private static bool IsGrandDoor(FloorLayout layout, FloorOccupancy occupancy, GridPos cell, Direction dir, GridPos neighbor)
+        /// <summary>cell の dir 側の境界のドアの辺。</summary>
+        private static RoomEdge EdgeAt(FloorLayout layout, FloorOccupancy occupancy, GridPos cell, Direction dir, GridPos neighbor)
         {
             var socket = occupancy.DoorAt(cell, dir) ?? occupancy.DoorAt(neighbor, dir.Opposite());
             return socket != null && socket.UsedByEdge >= 0 && socket.UsedByEdge < layout.Edges.Count
-                && layout.Edges[socket.UsedByEdge].IsGrandDoor;
+                ? layout.Edges[socket.UsedByEdge]
+                : null;
         }
 
         /// <summary>部屋のセルごとに、壁の上端の高さへ天井を 1 枚ずつ張る。</summary>

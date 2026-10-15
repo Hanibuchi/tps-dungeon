@@ -26,15 +26,16 @@ namespace TpsDungeon.Map.Tests
         };
 
         [Test]
-        public void Layout_StacksEntranceHallAndArenaAlongTheCenterColumn()
+        public void Layout_StacksEntranceHallArenaAndExitAlongTheCenterColumn()
         {
             var layout = BossFloorLayout.Generate(Templates(), GridSize, GridSize, 1);
-            Assert.AreEqual(3, layout.Rooms.Count);
+            Assert.AreEqual(4, layout.Rooms.Count);
             int center = layout.MirrorColumn.Value;
 
             var entrance = layout.RoomAt(layout.EntranceRoom);
-            var arena = layout.RoomAt(layout.ExitRoom);
+            var exit = layout.RoomAt(layout.ExitRoom);
             var hall = layout.Rooms[1];
+            var arena = layout.Rooms[2];
             Assert.AreEqual("Room_Stair", entrance.Template.Id);
             Assert.AreEqual(new GridRect(center, entrance.Bounds.Y, 1, 1), entrance.Bounds);
             Assert.AreEqual(new GridRect(center - 1, entrance.Bounds.Y + 1, 3, 1), hall.Bounds, "入口のすぐ奥（北）に横長の部屋");
@@ -45,9 +46,12 @@ namespace TpsDungeon.Map.Tests
             Assert.LessOrEqual(Mathf.Abs((center + 0.5f) - GridSize * 0.5f), 1f);
             Assert.LessOrEqual(Mathf.Abs((entrance.Bounds.Y + BossFloorLayout.TotalHeight * 0.5f) - GridSize * 0.5f), 1f);
 
-            // 出口はボス部屋の奥の列の真ん中。
-            Assert.AreEqual(new GridPos(center, arena.Bounds.MaxY), arena.FeatureCell);
-            Assert.AreEqual(RoomRole.Exit, arena.Role);
+            // 出口はボス部屋の奥の壁の真ん中に接する 1x1 の部屋で、階段の部屋をそのまま（ドアが南）置く。
+            Assert.AreEqual("Room_Stair", exit.Template.Id);
+            Assert.AreEqual(new GridRect(center, arena.Bounds.MaxY + 1, 1, 1), exit.Bounds);
+            Assert.AreEqual(0, exit.Rotation);
+            Assert.AreEqual(RoomRole.Exit, exit.Role);
+            Assert.AreEqual(RoomRole.Normal, arena.Role);
             Assert.AreEqual(RoomRole.Entrance, entrance.Role);
 
             // ショートカット解放用の場所は横長の部屋の右（東）端。
@@ -56,7 +60,7 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
-        public void Layout_IsSymmetricAndHasOneGrandDoorIntoTheArena()
+        public void Layout_IsSymmetricWithAGrandDoorInAndALockedDoorOut()
         {
             var layout = BossFloorLayout.Generate(Templates(), GridSize, GridSize, 1);
             int axis = layout.MirrorColumn.Value;
@@ -66,18 +70,31 @@ namespace TpsDungeon.Map.Tests
                 Assert.AreEqual(2 * axis, room.Bounds.X + room.Bounds.MaxX, $"{room} が軸 {axis} で左右対称でない");
             }
 
-            Assert.AreEqual(2, layout.Edges.Count);
-            int grand = 0;
+            Assert.AreEqual(3, layout.Edges.Count);
+            int grand = 0, locked = 0;
             foreach (var edge in layout.Edges)
             {
                 Assert.AreEqual(axis, edge.SocketA.Cell.X, $"{edge} のドアが真ん中の列に無い");
                 Assert.AreEqual(Direction.North, edge.SocketA.Facing, "ドアはどれも奥（北）へ抜ける");
-                if (!edge.IsGrandDoor) continue;
-                grand++;
-                Assert.AreEqual(layout.ExitRoom, edge.RoomB, "大扉の先はボス部屋");
-                Assert.AreEqual(1, edge.RoomA, "大扉の手前は横長の部屋");
+                Assert.IsFalse(edge.IsGrandDoor && edge.IsLocked);
+                if (edge.IsGrandDoor)
+                {
+                    grand++;
+                    Assert.AreEqual(1, edge.RoomA, "大扉の手前は横長の部屋");
+                    Assert.AreEqual(2, edge.RoomB, "大扉の先はボス部屋");
+                }
+                if (edge.IsLocked)
+                {
+                    locked++;
+                    Assert.AreEqual(2, edge.RoomA, "閉ざされた扉の手前はボス部屋");
+                    Assert.AreEqual(layout.ExitRoom, edge.RoomB, "閉ざされた扉の先は出口");
+                }
             }
             Assert.AreEqual(1, grand, "大扉は 1 枚だけ");
+            Assert.AreEqual(1, locked, "閉ざされた扉は 1 枚だけ");
+
+            // 出口の部屋のドアは南（ボス部屋の側）だけ。
+            foreach (var socket in layout.RoomAt(layout.ExitRoom).UsedSockets()) Assert.AreEqual(Direction.South, socket.Facing);
 
             // 入口の部屋はドアが北に向くよう半周回してある（階段は部屋と一緒に回る）。
             var entrance = layout.RoomAt(layout.EntranceRoom);
@@ -147,7 +164,20 @@ namespace TpsDungeon.Map.Tests
                 else if (piece.name.StartsWith("Window_")) windows.Add(Parse(piece.name));
             }
             Assert.AreEqual(1, grand, "大扉は 1 枚");
-            Assert.AreEqual(1, doors, "普通のドアは入口の 1 枚");
+            Assert.AreEqual(2, doors, "普通のドアは入口と出口の 2 枚");
+
+            // 出口の扉はボスを倒すまで閉ざされていて、調べても開かない。UnlockDoors で開けられるようになる。
+            Assert.AreEqual(1, builder.LockedDoors.Count);
+            var gate = builder.LockedDoors[0];
+            Assert.IsTrue(gate.IsLocked);
+            Assert.AreEqual("閉ざされている", gate.PromptLabel);
+            var exitRoom = layout.RoomAt(layout.ExitRoom);
+            Assert.AreEqual(new GridPos(exitRoom.Bounds.X, exitRoom.Bounds.Y - 1), builder.WorldToCell(gate.transform.position + Vector3.back * 0.1f),
+                "閉ざされた扉はボス部屋と出口の部屋の間");
+            gate.Interact(null);
+            Assert.IsFalse(gate.IsOpen, "閉ざされている間は開かない");
+            builder.UnlockDoors();
+            Assert.IsFalse(gate.IsLocked);
             Assert.IsNotNull(builder.GeneratedRoot.GetComponentInChildren<Door>(), "ドアがある");
 
             // 窓は左右で揃う（境界を軸で映した先も窓）。

@@ -7,18 +7,23 @@ namespace TpsDungeon.Map.Generation
     /// <summary>ボス階を組むのに使う 3 つの部屋テンプレート。</summary>
     public sealed class BossFloorTemplates
     {
-        /// <summary>入口の部屋（下り階段）。1x1 で、南の辺にドア候補を持つ（回して北へ向ける）。</summary>
+        /// <summary>
+        /// 入口（下り階段）と出口（上り階段）の部屋。1x1 で、南の辺にドア候補を持つ。
+        /// 入口は回して北へ向け、出口はそのまま（ドアが南のボス部屋の側）。
+        /// </summary>
         public RoomTemplateData Entrance;
         /// <summary>入口を出てすぐの横長の部屋。3x1。</summary>
         public RoomTemplateData Hall;
-        /// <summary>大扉の先のボス部屋。5x5。奥の列の真ん中に出口（上り階段）。</summary>
+        /// <summary>大扉の先のボス部屋。5x5。奥の壁の真ん中の閉ざされた扉の先に出口の部屋。</summary>
         public RoomTemplateData Arena;
     }
 
     /// <summary>
     /// 間取りが決まっているボス階のレイアウト。北が奥で、左右対称。
     /// <code>
-    ///   [ 5x5 ボス部屋 ]   出口は奥の列の真ん中
+    ///        [出口]        上り階段。ボスを倒すまで扉が閉ざされている
+    ///        ╫ 閉ざされた扉
+    ///   [ 5x5 ボス部屋 ]
     ///        ╫ 大扉
     ///    [ 3x1 の部屋 ★]   ★ ショートカット解放用の場所（東端）
     ///        [入口]
@@ -31,8 +36,8 @@ namespace TpsDungeon.Map.Generation
         public const int HallWidth = 3;
         public const int ArenaSize = 5;
 
-        /// <summary>入口・3x1・ボス部屋を縦に積んだ高さ（セル数）。</summary>
-        public const int TotalHeight = 1 + 1 + ArenaSize;
+        /// <summary>入口・3x1・ボス部屋・出口を縦に積んだ高さ（セル数）。</summary>
+        public const int TotalHeight = 1 + 1 + ArenaSize + 1;
 
         public static FloorLayout Generate(BossFloorTemplates templates, int width, int height, int seed)
         {
@@ -53,20 +58,22 @@ namespace TpsDungeon.Map.Generation
             var entrance = Place(rooms, templates.Entrance, 2, new GridRect(center, bottom, 1, 1));
             var hall = Place(rooms, templates.Hall, 0, new GridRect(center - HallWidth / 2, bottom + 1, HallWidth, 1));
             var arena = Place(rooms, templates.Arena, 0, new GridRect(center - ArenaSize / 2, bottom + 2, ArenaSize, ArenaSize));
+            var exit = Place(rooms, templates.Entrance, 0, new GridRect(center, arena.Bounds.MaxY + 1, 1, 1));
 
             var edges = new List<RoomEdge>();
             Connect(edges, entrance, hall, new GridPos(center, bottom), Direction.North);
             var grand = Connect(edges, hall, arena, new GridPos(center, bottom + 1), Direction.North);
             grand.IsGrandDoor = true;
+            var gate = Connect(edges, arena, exit, new GridPos(center, arena.Bounds.MaxY), Direction.North);
+            gate.IsLocked = true;
 
             entrance.Role = RoomRole.Entrance;
-            arena.Role = RoomRole.Exit;
-            arena.FeatureCell = new GridPos(center, arena.Bounds.MaxY);
+            exit.Role = RoomRole.Exit;
 
             return new FloorLayout(seed, width, height, rooms, edges)
             {
                 EntranceRoom = entrance.Index,
-                ExitRoom = arena.Index,
+                ExitRoom = exit.Index,
                 ShopRoom = -1,
                 ShortcutCell = new GridPos(hall.Bounds.MaxX, hall.Bounds.Y),
                 MirrorColumn = center,

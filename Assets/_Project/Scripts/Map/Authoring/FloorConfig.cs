@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Authoring
     {
         /// <summary>部屋を成長させて毎回違う形に作る（普通の階）。</summary>
         Random = 0,
-        /// <summary>決まった間取り（入口 → 横長の部屋 → 大扉 → ボス部屋）。BossFloorLayout を見る。</summary>
+        /// <summary>決まった間取り（入口 → 横長の部屋 → 大扉 → ボス部屋 → 閉ざされた扉 → 出口）。BossFloorLayout を見る。</summary>
         Boss = 1,
     }
 

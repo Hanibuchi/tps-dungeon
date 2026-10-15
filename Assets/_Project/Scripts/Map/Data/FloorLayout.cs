@@ -20,6 +20,9 @@ namespace TpsDungeon.Map.Data
         /// <summary>普通のドアの代わりに大扉（両開き）を置く辺か。ボス部屋の入口など。</summary>
         public bool IsGrandDoor { get; internal set; }
 
+        /// <summary>閉ざされた扉を置く辺か。ボスを倒すまで開かない出口の部屋の扉など。</summary>
+        public bool IsLocked { get; internal set; }
+
         public RoomEdge(int index, int roomA, int roomB)
         {
             Index = index;
@@ -99,7 +102,7 @@ namespace TpsDungeon.Map.Data
                 // B 側は A 側から一意に決まる（隣接セルで逆向き）ので A 側だけ出せば足りる。
                 sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append('@')
                   .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing)
-                  .Append(edge.IsGrandDoor ? "!" : "").Append(';');
+                  .Append(edge.IsGrandDoor ? "!" : "").Append(edge.IsLocked ? "#" : "").Append(';');
             }
             sb.Append("|up=").Append(EntranceRoom).Append(",down=").Append(ExitRoom).Append(",shop=").Append(ShopRoom);
             if (ShortcutCell.HasValue) sb.Append(",shortcut=").Append(ShortcutCell.Value);

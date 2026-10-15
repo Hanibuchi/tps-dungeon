@@ -58,6 +58,11 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField] private string openLabel = "開ける";
         [SerializeField] private string closeLabel = "閉める";
 
+        [SerializeField, Tooltip("閉ざされているか。閉ざされている間は調べても開かない（案内だけ出す）。Unlock で開けられるようになる。")]
+        private bool locked;
+
+        [SerializeField] private string lockedLabel = "閉ざされている";
+
         // 閉じたときに扉板の位置に誰かいないか調べる用。自分の枠や扉板も拾うので少し余裕を持たせる。
         private readonly Collider[] overlaps = new Collider[8];
 
@@ -84,7 +89,17 @@ namespace TpsDungeon.Map.Runtime
         /// <summary>開閉のアニメーションが終わっていないか。</summary>
         public bool IsSwinging => animator != null && IsAnimating(animator, isOpen ? OpenStateHash : ClosedStateHash);
 
-        public string PromptLabel => isOpen ? closeLabel : openLabel;
+        public string PromptLabel => locked ? lockedLabel : isOpen ? closeLabel : openLabel;
+
+        /// <summary>閉ざされているか。ボスを倒すまで開かない扉など。</summary>
+        public bool IsLocked
+        {
+            get => locked;
+            set => locked = value;
+        }
+
+        /// <summary>閉ざされた扉を開けられるようにする。</summary>
+        public void Unlock() => locked = false;
 
         private void Reset()
         {
@@ -130,7 +145,7 @@ namespace TpsDungeon.Map.Runtime
 
         public void Interact(GameObject interactor)
         {
-            if (!CanInteract(interactor)) return;
+            if (locked || !CanInteract(interactor)) return;
 
             isOpen = !isOpen;
             animator.SetBool(OpenParamHash, isOpen);
