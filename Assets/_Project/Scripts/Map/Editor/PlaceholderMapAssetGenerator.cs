@@ -59,7 +59,9 @@ namespace TpsDungeon.Map.Editor
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
         private const float DoorInteractVolumeDepth = 0.3f;
 
-        // 階段。入口の下り・出口の上りとも、ドアから入って正面へ +Z に真っ直ぐ伸びる 1 本の階段で、段は飾り（登り降りはしない）。
+        // 階段。入口の下り・出口の上りとも、ドアから入って正面へ +Z に真っ直ぐ伸びる 1 本の階段。
+        // 段と竪穴には見た目どおりの当たりを付ける。下りは竪穴の底まで歩いて下りられる（1 段の高さはキャラの越えられる段差 0.25 m より低く）。
+        // 上りは急すぎて（1 段の奥行きがキャラの太さより短い）上れず、1 段目の手前で止まる。
         // 階段の部屋はドアを南（-Z）の 1 面にだけ開けるので、ドアの真正面（x = 0）から奥の北の壁際まで伸ばす。
         // 階段の幅（X）、下りの 1 段の奥行きと高さ、上りの 1 段の高さ（メートル）。上りの奥行きは天井まで届く段数で割り付けるので急になる（5 m の壁で 0.16 m）。
         private const float StairWidth = 1.4f;
@@ -72,10 +74,9 @@ namespace TpsDungeon.Map.Editor
         private const float StairDoorClearance = 1.6f;
         // 上り階段の天井の穴の、ドア側の端（セルの中心からの Z）。
         private const float StairUpOpeningStart = 0.4f;
-        // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ、下り階段の穴の上に張る見えない当たりの高さ。
+        // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ。
         private const float StairwellDepth = 3f;
         private const float StairUpShaft = 2f;
-        private const float StairBlockerHeight = 1.5f;
         // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
         private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
 
@@ -322,8 +323,8 @@ namespace TpsDungeon.Map.Editor
         /// 入口に置く、下の階へ続く下り階段。原点がセルの中心の床の高さで、ドアは -Z の側（階段の部屋の南）。
         /// 部屋の床の代わりに、ドアの正面から奥の壁まで細長い穴の空いた床を持ち（FloorFeature.replacesRoomFloor）、
         /// ドアから入ってそのまま +Z へ真っ直ぐ下りる階段を穴の下の竪穴に置く。
-        /// 穴のまわりには手すりを付けず（ドアから入ってすぐ下りられるように見せる）、穴の上の見えない当たりで落ちないようにする。
-        /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする。
+        /// 穴のまわりには手すりを付けず、段と竪穴の壁に当たりを持たせて、見た目どおり穴の縁まで寄れて段を底まで歩いて下りられるようにする。
+        /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする（当たりがあるのでそこで行き止まり）。
         /// 調べると下の階へ移る（子の Stairwell の SceneGate。行き先は FloorBootstrap が入れる）。子の SpawnPoint に入口に着いたパーティーが立つ。
         /// </summary>
         private static GameObject BuildStairDownPrefab(string name, StairMaterials m, float cellSize)
@@ -338,23 +339,19 @@ namespace TpsDungeon.Map.Editor
             var holeSize = holeMax - holeMin;
 
             HoledSlab(root.transform, "Floor", m.Room, cellSize, holeMin, holeMax, -FloorThickness, FloorThickness, true);
-            var shaft = Shaft(root.transform, m.Wall, holeMin, holeMax, -StairwellDepth, -FloorThickness);
-            shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = m.Void;
             Box(root.transform, "Bottom", m.Void,
                 new Vector3(holeCenter.x, -StairwellDepth - CeilingThickness * 0.5f, holeCenter.y),
                 new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
 
-            // 調べられるのは穴まわり（段・当たり）だけ。床を見て「下の階へ」が出ないよう、床とは別の子にまとめる。
+            // 調べられるのは穴の中（段・竪穴の壁）だけ。床を見て「下の階へ」が出ないよう、床とは別の子にまとめる。
             var well = new GameObject("Stairwell");
             well.transform.SetParent(root.transform, false);
 
+            var shaft = Shaft(well.transform, m.Wall, holeMin, holeMax, -StairwellDepth, -FloorThickness);
+            shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = m.Void;
+
             int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
             Flight(well.transform, m.Steps, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
-
-            var blocker = new GameObject("Blocker");
-            blocker.transform.SetParent(well.transform, false);
-            blocker.transform.localPosition = new Vector3(holeCenter.x, StairBlockerHeight * 0.5f, holeCenter.y);
-            blocker.AddComponent<BoxCollider>().size = new Vector3(holeSize.x, StairBlockerHeight, holeSize.y);
 
             var gate = well.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -374,7 +371,7 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
         /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
-        /// 蓋をした竪穴の中へ段が消えていくように見せる。段は登れないよう、まわりを 1 つの当たりで囲む。
+        /// 蓋をした竪穴の中へ段が消えていくように見せる。段・竪穴の壁・蓋には見た目どおりの当たりを付ける（段は急で上れない）。
         /// </summary>
         private static GameObject BuildStairUpPrefab(string name, StairMaterials m, float cellSize, float wallHeight)
         {
@@ -395,17 +392,12 @@ namespace TpsDungeon.Map.Editor
             Shaft(root.transform, m.Wall, holeMin, holeMax, wallHeight, shaftTop);
             Box(root.transform, "Cap", m.Wall,
                 new Vector3(holeCenter.x, shaftTop + CeilingThickness * 0.5f, holeCenter.y),
-                new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), false);
+                new Vector3(holeSize.x + WallThickness * 2f, CeilingThickness, holeSize.y + WallThickness * 2f), true);
 
             // ドア側の端から奥の壁際まで。段数は一番上の段が天井の高さに届く数にし、奥行きはその数で割り付ける（壁の高さを変えても届く）。
             var footSize = footMax - footMin;
             int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
             Flight(root.transform, m.Steps, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
-
-            var blocker = new GameObject("Blocker");
-            blocker.transform.SetParent(root.transform, false);
-            blocker.transform.localPosition = new Vector3(0f, wallHeight * 0.5f, (footMin.y + footMax.y) * 0.5f);
-            blocker.AddComponent<BoxCollider>().size = new Vector3(footSize.x, wallHeight, footSize.y);
 
             return SavePrefab(root, $"{PartsFolder}/{name}.prefab");
         }
@@ -447,7 +439,7 @@ namespace TpsDungeon.Map.Editor
             }
         }
 
-        /// <summary>XZ の矩形 holeMin〜holeMax の穴のまわりを、y = bottom から top まで壁 4 枚で囲む竪穴。壁は穴の外側に立つ。当たりは無し（届かない所なので）。</summary>
+        /// <summary>XZ の矩形 holeMin〜holeMax の穴のまわりを、y = bottom から top まで壁 4 枚で囲む竪穴。壁は穴の外側に立ち、当たりを持つ。</summary>
         private static GameObject Shaft(Transform parent, Material material, Vector2 holeMin, Vector2 holeMax, float bottom, float top)
         {
             var group = new GameObject("Shaft");
@@ -458,16 +450,17 @@ namespace TpsDungeon.Map.Editor
             var center = (holeMin + holeMax) * 0.5f;
             var size = holeMax - holeMin;
             float t = WallThickness;
-            Box(group.transform, "North", material, new Vector3(center.x, y, holeMax.y + t * 0.5f), new Vector3(size.x + t * 2f, height, t), false);
-            Box(group.transform, "South", material, new Vector3(center.x, y, holeMin.y - t * 0.5f), new Vector3(size.x + t * 2f, height, t), false);
-            Box(group.transform, "East", material, new Vector3(holeMax.x + t * 0.5f, y, center.y), new Vector3(t, height, size.y), false);
-            Box(group.transform, "West", material, new Vector3(holeMin.x - t * 0.5f, y, center.y), new Vector3(t, height, size.y), false);
+            Box(group.transform, "North", material, new Vector3(center.x, y, holeMax.y + t * 0.5f), new Vector3(size.x + t * 2f, height, t), true);
+            Box(group.transform, "South", material, new Vector3(center.x, y, holeMin.y - t * 0.5f), new Vector3(size.x + t * 2f, height, t), true);
+            Box(group.transform, "East", material, new Vector3(holeMax.x + t * 0.5f, y, center.y), new Vector3(t, height, size.y), true);
+            Box(group.transform, "West", material, new Vector3(holeMin.x - t * 0.5f, y, center.y), new Vector3(t, height, size.y), true);
             return group;
         }
 
         /// <summary>
         /// +Z へ真っ直ぐ伸びる階段。count 段を、z = startZ から run ずつ、最初の段の上面を y = 0（下りなら床と同じ高さ）か rise（上り）にして
-        /// 1 段ごとに rise ずつ（負なら下へ）ずらす。X は minX〜maxX。段は y = baseY まで詰まった塊にして、横から見ても浮かないようにする。当たりは無し（飾り）。
+        /// 1 段ごとに rise ずつ（負なら下へ）ずらす。X は minX〜maxX。段は y = baseY まで詰まった塊にして、横から見ても浮かないようにする。
+        /// 段ごとに同じ大きさの当たりを持つ。
         /// </summary>
         private static void Flight(Transform parent, Material material, float startZ, float minX, float maxX,
             int count, float run, float rise, float baseY)
@@ -483,7 +476,7 @@ namespace TpsDungeon.Map.Editor
                 float high = Mathf.Max(top, baseY);
                 Box(group.transform, $"Step{i:00}", material,
                     new Vector3((minX + maxX) * 0.5f, (low + high) * 0.5f, startZ + run * (i + 0.5f)),
-                    new Vector3(maxX - minX, high - low, run), false);
+                    new Vector3(maxX - minX, high - low, run), true);
             }
         }
 
