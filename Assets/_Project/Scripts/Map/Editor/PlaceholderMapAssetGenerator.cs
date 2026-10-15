@@ -78,13 +78,16 @@ namespace TpsDungeon.Map.Editor
 
         // 階段。入口の下り・出口の上りとも、ドアから入って正面へ +Z に真っ直ぐ伸びる 1 本の階段。
         // 段と竪穴には見た目どおりの当たりを付ける。下りは竪穴の底まで歩いて下りられる（1 段の高さはキャラの越えられる段差 0.25 m より低く）。
-        // 上りは急すぎて（1 段の奥行きがキャラの太さより短い）上れず、1 段目の手前で止まる。
+        // 上りは 1 段の奥行きがキャラの太さより短く段では引っかかるので、段の上に見えない坂の当たりを張って滑らかに上り下りさせる
+        // （5 m の壁で約 57°。キャラの上れる傾き 60° より緩い）。
         // 階段の部屋はドアを南（-Z）の 1 面にだけ開けるので、ドアの真正面（x = 0）から奥の北の壁際まで伸ばす。
         // 階段の幅（X）、下りの 1 段の奥行きと高さ、上りの 1 段の高さ（メートル）。上りの奥行きは天井まで届く段数で割り付けるので急になる（5 m の壁で 0.16 m）。
         private const float StairWidth = 1.4f;
         private const float StairDownRun = 0.3f;
         private const float StairDownRise = 0.2f;
         private const float StairUpRise = 0.25f;
+        // 上り階段の見えない坂の当たりの厚み。
+        private const float StairRampThickness = 0.3f;
         // 階段と奥の壁の内側との隙間（壁の厚みの半分＋少し）。
         private const float StairWallClearance = 0.2f;
         // 階段の始まる所の、ドアの壁からの距離。扉板（1.5 m）が部屋の内へ開いても段や穴に掛からないよう、それより少し先から。
@@ -415,7 +418,7 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
         /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
-        /// 蓋をした竪穴の中へ段が消えていくように見せる。段・竪穴の壁・蓋には見た目どおりの当たりを付ける（段は急で上れない）。
+        /// 蓋をした竪穴の中へ段が消えていくように見せる。竪穴の壁・蓋には見た目どおりの当たりを付け、段は見えない坂（子の Ramp）で上り下りさせる。
         /// 天井の穴の下から竪穴の蓋までに暗がりの箱（子の Darkness）を置き、上るほど暗くして、穴の先を見えにくくする。
         /// </summary>
         private static GameObject BuildStairUpPrefab(string path, FloorTheme theme, float cellSize, float wallHeight)
@@ -445,6 +448,7 @@ namespace TpsDungeon.Map.Editor
             var footSize = footMax - footMin;
             int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
             Flight(root.transform, theme.stair, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
+            AddStairRamp(root.transform, footMin, footSize, steps);
 
             // 床の高さから竪穴の蓋まで。暗さは床から上へ測った距離で決める。
             // 穴の無い所の天井を暗くしないよう、広さは天井の穴だけにする。
@@ -455,6 +459,39 @@ namespace TpsDungeon.Map.Editor
                 upward: true, wallHeight - StairUpDarkStart, wallHeight + StairUpDarkFull);
 
             return SavePrefab(root, path);
+        }
+
+        /// <summary>
+        /// 上り階段の段の上に張る見えない坂。段の鼻をなぞると角が出て引っかかるので、各段の真ん中の高さを結ぶ面にする
+        /// （段の鼻より半段低く、足が少し段に埋まる）。坂の面より上に段の当たりが出ないよう、各段の当たりは手前の端での坂の高さまで縮め、
+        /// 坂の下へもぐり込めないよう床から下は埋めたままにする。
+        /// </summary>
+        private static void AddStairRamp(Transform root, Vector2 footMin, Vector2 footSize, int steps)
+        {
+            var group = root.Find("Steps");
+            for (int i = 0; i < steps; i++)
+            {
+                var box = group.GetChild(i).GetComponent<BoxCollider>();
+                float top = StairUpRise * (i + 1);
+                float solid = StairUpRise * (i + 0.5f);
+                box.size = new Vector3(box.size.x, solid, box.size.z);
+                box.center = new Vector3(0f, (solid - top) * 0.5f, 0f);
+            }
+
+            // 坂の面の両端（z, y）。手前は最初の段の真ん中の高さ、奥は最後の段の真ん中の高さを 1 段先まで伸ばした所。
+            var start = new Vector2(footMin.y, StairUpRise * 0.5f);
+            var end = new Vector2(footMin.y + footSize.y, StairUpRise * (steps + 0.5f));
+            var along = end - start;
+            float length = along.magnitude;
+            // 面の上向きの法線。箱は面の下に厚みを取る。
+            var up = new Vector2(-along.y, along.x) / length;
+            var center = (start + end) * 0.5f - up * (StairRampThickness * 0.5f);
+
+            var ramp = new GameObject("Ramp");
+            ramp.transform.SetParent(root, false);
+            ramp.transform.SetLocalPositionAndRotation(new Vector3(footMin.x + footSize.x * 0.5f, center.y, center.x),
+                Quaternion.Euler(-Mathf.Atan2(along.y, along.x) * Mathf.Rad2Deg, 0f, 0f));
+            ramp.AddComponent<BoxCollider>().size = new Vector3(footSize.x, StairRampThickness, length);
         }
 
         /// <summary>
