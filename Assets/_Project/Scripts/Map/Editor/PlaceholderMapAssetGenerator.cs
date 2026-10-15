@@ -433,7 +433,8 @@ namespace TpsDungeon.Map.Editor
             var holeCenter = (holeMin + holeMax) * 0.5f;
             var holeSize = holeMax - holeMin;
 
-            var ceiling = HoledSlab(root.transform, "Ceiling", theme.stair, cellSize, holeMin, holeMax, wallHeight, CeilingThickness, true);
+            // 部屋の天井を置き換えるので、天井と同じ素材にして継ぎ目を見せない。
+            var ceiling = HoledSlab(root.transform, "Ceiling", theme.ceiling, cellSize, holeMin, holeMax, wallHeight, CeilingThickness, true);
             foreach (var renderer in ceiling.GetComponentsInChildren<MeshRenderer>()) renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
 
             float shaftTop = wallHeight + CeilingThickness + StairUpShaft;
