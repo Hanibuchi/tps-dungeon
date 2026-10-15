@@ -17,6 +17,9 @@ namespace TpsDungeon.Map.Data
         public PlacedSocket SocketA { get; internal set; }
         public PlacedSocket SocketB { get; internal set; }
 
+        /// <summary>普通のドアの代わりに大扉（両開き）を置く辺か。ボス部屋の入口など。</summary>
+        public bool IsGrandDoor { get; internal set; }
+
         public RoomEdge(int index, int roomA, int roomB)
         {
             Index = index;
@@ -48,6 +51,15 @@ namespace TpsDungeon.Map.Data
         public int EntranceRoom { get; internal set; } = -1;
         public int ExitRoom { get; internal set; } = -1;
         public int ShopRoom { get; internal set; } = -1;
+
+        /// <summary>ショートカット解放用の場所（目印を置くセル）。無ければ null。</summary>
+        public GridPos? ShortcutCell { get; internal set; }
+
+        /// <summary>
+        /// 間取りが左右対称なら、その軸になる列（セル x が 2 * MirrorColumn - x に映る）。窓も左右で揃える。
+        /// ランダムに作る階は null。
+        /// </summary>
+        public int? MirrorColumn { get; internal set; }
 
         public FloorLayout(
             int seed,
@@ -86,9 +98,12 @@ namespace TpsDungeon.Map.Data
             {
                 // B 側は A 側から一意に決まる（隣接セルで逆向き）ので A 側だけ出せば足りる。
                 sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append('@')
-                  .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing).Append(';');
+                  .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing)
+                  .Append(edge.IsGrandDoor ? "!" : "").Append(';');
             }
             sb.Append("|up=").Append(EntranceRoom).Append(",down=").Append(ExitRoom).Append(",shop=").Append(ShopRoom);
+            if (ShortcutCell.HasValue) sb.Append(",shortcut=").Append(ShortcutCell.Value);
+            if (MirrorColumn.HasValue) sb.Append(",mirror=").Append(MirrorColumn.Value);
             return sb.ToString();
         }
 

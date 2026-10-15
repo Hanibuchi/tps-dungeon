@@ -136,6 +136,29 @@ namespace TpsDungeon.Party.Editor
                 scene = EditorSceneManager.OpenScene(FloorScenePath, OpenSceneMode.Single);
             }
 
+            BuildOutlookAndSave(scene);
+        }
+
+        /// <summary>各層のボス階のシーン（L{n}_Boss）に窓の外の景色を置いて保存する。終わったら元のシーンを開き直す。</summary>
+        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く（ボス階）")]
+        public static void BuildBossOutlooksFromMenu()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            string previous = SceneManager.GetActiveScene().path;
+
+            for (int n = 1; n <= 5; n++)
+            {
+                string path = $"Assets/_Project/Scenes/L{n}_Boss.unity";
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null) continue;
+                BuildOutlookAndSave(EditorSceneManager.OpenScene(path, OpenSceneMode.Single));
+            }
+
+            if (!string.IsNullOrEmpty(previous)) EditorSceneManager.OpenScene(previous, OpenSceneMode.Single);
+        }
+
+        /// <summary>シーンの FloorBootstrap の FloorConfig に合わせて窓の外の景色を置き、保存する。</summary>
+        private static void BuildOutlookAndSave(Scene scene)
+        {
             FloorConfig config = null;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -156,7 +179,7 @@ namespace TpsDungeon.Party.Editor
             var center = new Vector3(config.widthInCells, 0f, config.heightInCells) * (config.cellSize * 0.5f);
             // 高い建物の上の階なので、景色は階の高さの分だけ下に置く。
             center.y = -config.elevation;
-            Debug.Log(BuildOutlook(scene, center));
+            Debug.Log($"{scene.path}: {BuildOutlook(scene, center)}");
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
         }

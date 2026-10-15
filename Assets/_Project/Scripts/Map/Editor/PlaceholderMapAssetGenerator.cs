@@ -6,6 +6,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
+using TpsDungeon.Map.Generation;
 using TpsDungeon.Map.Runtime;
 
 namespace TpsDungeon.Map.Editor
@@ -43,6 +44,9 @@ namespace TpsDungeon.Map.Editor
         // 上は開口の幅を直径とする半円のアーチで、高さはアーチの頂まで。5 m のセル・5 m の壁なら幅 1.5 m、頂 2.8 m、アーチの起点 2.06 m。
         private const float DoorOpeningWidth = 0.3f;
         private const float DoorOpeningHeight = 0.5625f;
+        // 大扉（両開き。ボス部屋の入口）の開口。セル幅 5 m・壁 5 m なら幅 3 m・頂 4 m。
+        private const float GrandDoorOpeningWidth = 0.6f;
+        private const float GrandDoorOpeningHeight = 0.8f;
         // アーチの縁を 4 分の 1 円あたり何本の線分で近似するか（扉板は半円なのでその倍）。
         private const int ArchSegments = 16;
         // アーチの肩の当たりを何段の箱で近似するか。各段は開口へはみ出さない側に寄せる。
@@ -200,6 +204,7 @@ namespace TpsDungeon.Map.Editor
                 ["Wall"] = BuildWallPrefab($"{folder}/Wall.prefab", theme.wall, cellSize, wallHeight),
                 ["Window"] = BuildWindowPrefab($"{folder}/Window.prefab", theme.wall, cellSize, wallHeight),
                 ["Door"] = BuildDoorPrefab($"{folder}/Door.prefab", theme, cellSize, wallHeight, reuseAnimator),
+                ["GrandDoor"] = BuildGrandDoorPrefab($"{folder}/GrandDoor.prefab", theme, cellSize, wallHeight, reuseAnimator),
                 ["Ceiling"] = BuildCeilingPrefab($"{folder}/Ceiling.prefab", theme.ceiling, cellSize),
                 ["Foundation"] = BuildFoundationPrefab($"{folder}/Foundation.prefab", theme.foundation, cellSize, elevation),
                 ["StairUp"] = BuildStairUpPrefab($"{folder}/Stair_Up.prefab", theme, cellSize, wallHeight),
@@ -243,6 +248,7 @@ namespace TpsDungeon.Map.Editor
                 config.wallPrefab = parts["Wall"];
                 config.windowWallPrefab = parts["Window"];
                 config.doorPrefab = parts["Door"];
+                config.grandDoorPrefab = parts["GrandDoor"];
                 config.ceilingPrefab = parts["Ceiling"];
                 config.foundationPrefab = parts["Foundation"];
                 config.stairUpPrefab = parts["StairUp"];
@@ -260,6 +266,98 @@ namespace TpsDungeon.Map.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"壁・ドア・天井・土台・階段のパーツをテーマ {built.Count} 種類ぶん作り直して FloorConfig に差した（作り直した部屋の床 {floors} 個、ドア候補を揃えた部屋 {sockets} 個）");
+        }
+
+        /// <summary>ボス階を作る層の数。Floor_L{n}_Config（n = 1..この数）を元にする。</summary>
+        private const int BossFloorLayers = 5;
+        private const int BossFloorGridSize = 16;
+        private const string ShortcutMarkerPath = PartsFolder + "/Shortcut_Marker.prefab";
+
+        /// <summary>ボス階の 2 部屋。入口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
+        private static readonly RoomSpec[] BossRooms =
+        {
+            new RoomSpec(FloorConfig.BossHallId, BossFloorLayout.HallWidth, 1, RoomTag.Boss, false, 0f, "Floor"),
+            new RoomSpec(FloorConfig.BossArenaId, BossFloorLayout.ArenaSize, BossFloorLayout.ArenaSize, RoomTag.Boss, false, 0f, "Floor"),
+        };
+
+        /// <summary>
+        /// 各層のボス階の一式を作る：部屋（Room_BossHall 3x1・Room_BossArena 5x5、床はその層の Room_1x1 と同じ素材）、
+        /// カタログ（L{n}_BossCatalog）、設定（Floor_L{n}_Boss_Config。間取りは Boss、他の値はその層の Floor_L{n}_Config から写す）、
+        /// ショートカットの目印。最後に「壁・床・天井のパーツを生成」を回して大扉などを差す。
+        /// 既にある部屋・カタログ・設定は作り直さない（手で変えた値を残す）。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/ボス階の一式を作る")]
+        public static void GenerateBossFloors()
+        {
+            var shortcutMarker = AssetDatabase.LoadAssetAtPath<GameObject>(ShortcutMarkerPath);
+            if (shortcutMarker == null)
+            {
+                EnsureFolder(PartsFolder);
+                shortcutMarker = BuildMarkerPrefab(ShortcutMarkerPath, Material("Placeholder_Shortcut", new Color(0.2f, 0.75f, 0.7f)), PrimitiveType.Cylinder);
+            }
+
+            int made = 0;
+            for (int n = 1; n <= BossFloorLayers; n++)
+            {
+                var baseConfig = AssetDatabase.LoadAssetAtPath<FloorConfig>($"{SettingsFolder}/Floor_L{n}_Config.asset");
+                var stair = baseConfig != null && baseConfig.roomCatalog != null ? baseConfig.roomCatalog.PrefabFor(FloorConfig.BossEntranceId) : null;
+                if (stair == null)
+                {
+                    Debug.LogWarning($"Floor_L{n}_Config か、そのカタログの {FloorConfig.BossEntranceId} が無いので、L{n} のボス階を飛ばした。");
+                    continue;
+                }
+
+                string roomsFolder = System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(stair)).Replace('\\', '/');
+                var floorMaterial = RoomFloorMaterial(baseConfig.roomCatalog);
+                var entries = new List<RoomTemplateCatalog.Entry> { new RoomTemplateCatalog.Entry { prefab = stair } };
+                foreach (var spec in BossRooms)
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{roomsFolder}/{spec.Name}.prefab")
+                        ?? BuildRoomPrefab(spec, floorMaterial, roomsFolder, baseConfig.cellSize);
+                    entries.Add(new RoomTemplateCatalog.Entry { prefab = prefab });
+                }
+
+                string catalogPath = $"{SettingsFolder}/L{n}_BossCatalog.asset";
+                var catalog = AssetDatabase.LoadAssetAtPath<RoomTemplateCatalog>(catalogPath);
+                if (catalog == null)
+                {
+                    catalog = ScriptableObject.CreateInstance<RoomTemplateCatalog>();
+                    catalog.SetEntries(entries);
+                    AssetDatabase.CreateAsset(catalog, catalogPath);
+                }
+
+                string configPath = $"{SettingsFolder}/Floor_L{n}_Boss_Config.asset";
+                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(configPath);
+                if (config == null)
+                {
+                    config = ScriptableObject.CreateInstance<FloorConfig>();
+                    EditorUtility.CopySerialized(baseConfig, config);
+                    config.layoutShape = FloorLayoutShape.Boss;
+                    config.widthInCells = BossFloorGridSize;
+                    config.heightInCells = BossFloorGridSize;
+                    config.includeShop = false;
+                    config.roomCatalog = catalog;
+                    config.shortcutMarkerPrefab = shortcutMarker;
+                    config.name = System.IO.Path.GetFileNameWithoutExtension(configPath);
+                    AssetDatabase.CreateAsset(config, configPath);
+                    made++;
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            GenerateStructureParts();
+            Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
+        }
+
+        /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>
+        private static Material RoomFloorMaterial(RoomTemplateCatalog catalog)
+        {
+            foreach (var entry in catalog.Entries)
+            {
+                var floor = entry.prefab != null ? entry.prefab.transform.Find("Floor") : null;
+                if (floor != null && floor.TryGetComponent(out MeshRenderer renderer) && renderer.sharedMaterial != null) return renderer.sharedMaterial;
+            }
+            return ExistingMaterial("Placeholder_Floor", new Color(0.55f, 0.53f, 0.50f));
         }
 
         /// <summary>テーマを読む。無ければ作る。空いている素材は仮の素材で埋める。</summary>
@@ -680,15 +778,25 @@ namespace TpsDungeon.Map.Editor
         /// 上が半円のアーチの開口をまわりの壁（子の Frame/Wall。テーマの壁の素材）に開け、その縁に沿ってレンガ（Frame/Bricks）を並べる。
         /// 開口にはアーチ形の扉板（Hinge の子の Leaf）を吊る。開閉の動きはルートの Animator が DoorAnimatorBuilder の作るクリップで Hinge を回す。
         /// </summary>
-        private static GameObject BuildDoorPrefab(string path, FloorTheme theme, float width, float height, bool reuseAnimator)
+        private static GameObject BuildDoorPrefab(string path, FloorTheme theme, float width, float height, bool reuseAnimator) =>
+            BuildDoorPrefab(path, theme, width, height, reuseAnimator, DoorOpeningWidth, DoorOpeningHeight, doubleLeaf: false);
+
+        /// <summary>
+        /// 大扉。普通のドアと同じ作り（アーチの開口・縁のレンガ・扉板）で開口を大きくし、扉板を真ん中で分けた左右 2 枚にして両側の軸で開く。
+        /// </summary>
+        private static GameObject BuildGrandDoorPrefab(string path, FloorTheme theme, float width, float height, bool reuseAnimator) =>
+            BuildDoorPrefab(path, theme, width, height, reuseAnimator, GrandDoorOpeningWidth, GrandDoorOpeningHeight, doubleLeaf: true);
+
+        private static GameObject BuildDoorPrefab(string path, FloorTheme theme, float width, float height, bool reuseAnimator,
+            float openingWidth, float openingHeight, bool doubleLeaf)
         {
             var root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(path));
 
             var frame = new GameObject("Frame");
             frame.transform.SetParent(root.transform, false);
 
-            float openW = DoorOpeningWidth * width;
-            float crown = DoorOpeningHeight * height;
+            float openW = openingWidth * width;
+            float crown = openingHeight * height;
             float radius = openW * 0.5f;
             // アーチの起点。両脇の縁はここまで真っ直ぐ立ち、ここから上が半円になる。
             float spring = crown - radius;
@@ -710,25 +818,48 @@ namespace TpsDungeon.Map.Editor
             hinge.transform.SetParent(root.transform, false);
             hinge.transform.localPosition = new Vector3(-radius, 0f, 0f);
 
-            var leaf = BuildDoorLeaf(hinge.transform, theme.doorLeaf, openW, radius, spring);
+            GameObject leaf;
+            GameObject leafRight = null;
+            Transform hingeRight = null;
+            if (!doubleLeaf)
+            {
+                leaf = BuildDoorLeaf(hinge.transform, theme.doorLeaf, openW, radius, spring);
 
-            // ドアノブは扉板の子（一緒に回る）。蝶番の反対の端の、表と裏に 1 つずつ。
-            var knobAt = new Vector3(openW - DoorLeafGap - KnobInset, KnobHeight, 0f);
-            AddKnob(leaf.transform, "Knob_Front", theme.doorKnob, knobAt, 1f);
-            AddKnob(leaf.transform, "Knob_Back", theme.doorKnob, knobAt, -1f);
+                // ドアノブは扉板の子（一緒に回る）。蝶番の反対の端の、表と裏に 1 つずつ。
+                var knobAt = new Vector3(openW - DoorLeafGap - KnobInset, KnobHeight, 0f);
+                AddKnob(leaf.transform, "Knob_Front", theme.doorKnob, knobAt, 1f);
+                AddKnob(leaf.transform, "Knob_Back", theme.doorKnob, knobAt, -1f);
+            }
+            else
+            {
+                // 右の軸は開口の右端。扉板は真ん中の合わせ目まで。ノブはどちらも合わせ目の側に。
+                hingeRight = new GameObject(DoorAnimatorBuilder.RightHingePath).transform;
+                hingeRight.SetParent(root.transform, false);
+                hingeRight.localPosition = new Vector3(radius, 0f, 0f);
+
+                leaf = BuildDoorLeafHalf(hinge.transform, "Leaf", theme.doorLeaf, radius, spring, 1f);
+                leafRight = BuildDoorLeafHalf(hingeRight, "LeafRight", theme.doorLeaf, radius, spring, -1f);
+                float knobX = radius - DoorLeafGap * 0.5f - KnobInset;
+                AddKnob(leaf.transform, "Knob_Front", theme.doorKnob, new Vector3(knobX, KnobHeight, 0f), 1f);
+                AddKnob(leaf.transform, "Knob_Back", theme.doorKnob, new Vector3(knobX, KnobHeight, 0f), -1f);
+                AddKnob(leafRight.transform, "Knob_Front", theme.doorKnob, new Vector3(-knobX, KnobHeight, 0f), 1f);
+                AddKnob(leafRight.transform, "Knob_Back", theme.doorKnob, new Vector3(-knobX, KnobHeight, 0f), -1f);
+            }
 
             var animator = root.AddComponent<Animator>();
             // コントローラは組み直すと中の ID が全部変わるので、寸法だけ作り直すときは今のものを使う。
-            var controller = reuseAnimator
-                ? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(DoorAnimatorBuilder.ControllerPath)
-                : null;
-            animator.runtimeAnimatorController = controller != null ? controller : DoorAnimatorBuilder.Build();
+            string controllerPath = doubleLeaf ? DoorAnimatorBuilder.GrandControllerPath : DoorAnimatorBuilder.ControllerPath;
+            var controller = reuseAnimator ? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath) : null;
+            if (controller == null) controller = doubleLeaf ? DoorAnimatorBuilder.BuildGrand() : DoorAnimatorBuilder.Build();
+            animator.runtimeAnimatorController = controller;
 
             var door = root.AddComponent<Door>();
             var serialized = new SerializedObject(door);
             serialized.FindProperty("animator").objectReferenceValue = animator;
             serialized.FindProperty("hinge").objectReferenceValue = hinge.transform;
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
+            serialized.FindProperty("hingeRight").objectReferenceValue = hingeRight;
+            serialized.FindProperty("leafRight").objectReferenceValue = leafRight != null ? leafRight.transform : null;
             serialized.FindProperty("openSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorOpenSoundPath);
             serialized.FindProperty("closeSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorCloseSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -860,6 +991,43 @@ namespace TpsDungeon.Map.Editor
             var box = leaf.AddComponent<BoxCollider>();
             box.center = new Vector3(openW * 0.5f, (bottom + top) * 0.5f, 0f);
             box.size = new Vector3(openW - DoorLeafGap * 2f, top - bottom, DoorLeafThickness);
+            return leaf;
+        }
+
+        /// <summary>
+        /// 両開きの扉板の片方。開口のアーチを真ん中で分けた半分の形で、軸（hinge）の原点から合わせ目まで。
+        /// side が 1 なら左の扉板（軸から +X へ）、-1 なら右の扉板（軸から -X へ。左の扉板を映した形）。
+        /// </summary>
+        private static GameObject BuildDoorLeafHalf(Transform hinge, string name, Material material, float radius, float spring, float side)
+        {
+            float bottom = DoorLeafGap * 0.5f;
+            float r = radius - DoorLeafGap;
+            float seam = radius - DoorLeafGap * 0.5f;
+            // 合わせ目でアーチに当たる角度（真ん中の少し左）から、左の縁（π）まで。
+            float start = Mathf.Acos(Mathf.Clamp((seam - radius) / r, -1f, 1f));
+
+            var outline = new List<Vector2> { new Vector2(DoorLeafGap, bottom), new Vector2(seam, bottom) };
+            for (int i = 0; i <= ArchSegments; i++)
+            {
+                float angle = Mathf.Lerp(start, Mathf.PI, (float)i / ArchSegments);
+                outline.Add(new Vector2(radius + r * Mathf.Cos(angle), spring + r * Mathf.Sin(angle)));
+            }
+            if (side < 0f)
+            {
+                // 映すと向きが裏返るので、並びも逆にして表を保つ。
+                for (int i = 0; i < outline.Count; i++) outline[i] = new Vector2(-outline[i].x, outline[i].y);
+                outline.Reverse();
+            }
+
+            var prisms = new PrismBuilder();
+            float z = DoorLeafThickness * 0.5f;
+            prisms.Add(outline, -z, z);
+            var leaf = prisms.Build(hinge, name, material);
+
+            float top = spring + r;
+            var box = leaf.AddComponent<BoxCollider>();
+            box.center = new Vector3(side * (DoorLeafGap + seam) * 0.5f, (bottom + top) * 0.5f, 0f);
+            box.size = new Vector3(seam - DoorLeafGap, top - bottom, DoorLeafThickness);
             return leaf;
         }
 
@@ -1030,17 +1198,20 @@ namespace TpsDungeon.Map.Editor
         /// 部屋 Prefab。床とドア候補だけを持ち、外周壁は持たない（FloorBuilder が建てる）。
         /// ローカル原点はセル (0,0) の角。
         /// </summary>
-        private static GameObject BuildRoomPrefab(RoomSpec spec, Material material)
+        private static GameObject BuildRoomPrefab(RoomSpec spec, Material material) =>
+            BuildRoomPrefab(spec, material, RoomsFolder, CellSize);
+
+        private static GameObject BuildRoomPrefab(RoomSpec spec, Material material, string folder, float cellSize)
         {
             var root = new GameObject(spec.Name);
             var template = root.AddComponent<RoomTemplate>();
-            template.Configure(new Vector2Int(spec.Width, spec.Height), CellSize, spec.Tags, spec.AllowRotation, spec.Weight);
+            template.Configure(new Vector2Int(spec.Width, spec.Height), cellSize, spec.Tags, spec.AllowRotation, spec.Weight);
 
-            AddRoomFloor(root, spec.Width, spec.Height, CellSize, material);
+            AddRoomFloor(root, spec.Width, spec.Height, cellSize, material);
 
-            AddSockets(root, spec.Sockets(), CellSize);
+            AddSockets(root, spec.Sockets(), cellSize);
 
-            return SavePrefab(root, $"{RoomsFolder}/{spec.Name}.prefab");
+            return SavePrefab(root, $"{folder}/{spec.Name}.prefab");
         }
 
         /// <summary>部屋 Prefab にドア候補（子の DoorSockets の下）を打つ。</summary>

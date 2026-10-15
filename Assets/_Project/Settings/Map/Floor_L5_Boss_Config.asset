@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2183d2e507b764909920713cd8406ad0, type: 3}
+  m_Name: Floor_L5_Boss_Config
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
+  layoutShape: 1
+  widthInCells: 16
+  heightInCells: 16
+  cellSize: 5
+  roomCatalog: {fileID: 11400000, guid: 67dda24490f9a4f589e8cd2baa3e431b, type: 2}
+  minRoomCount: 10
+  maxRoomCount: 20
+  maxPackAttempts: 6
+  startJitter: 4
+  includeShop: 0
+  extraDoorCount: 2
+  wallHeight: 5
+  elevation: 40
+  wallPrefab: {fileID: 7629975379038468005, guid: af043d2f03f2c446fa6ceaad10b19fb1, type: 3}
+  windowWallPrefab: {fileID: 3037749668641861748, guid: e2f68324abd22467cabad5755892a593, type: 3}
+  windowChance: 0.35
+  ceilingPrefab: {fileID: 152920707584969315, guid: 5e1a0b0a0ad5449458273200e868a2bc, type: 3}
+  foundationPrefab: {fileID: 125577047169125990, guid: 7cfc2a32ab87947239dcc5cc5a1e3744, type: 3}
+  doorPrefab: {fileID: 3096311614548717119, guid: eee889357b5ab4cd4853e313a711ebbb, type: 3}
+  stairUpPrefab: {fileID: 6078273832972184629, guid: bf01645ca295c4415b11ba53d4b1d3a0, type: 3}
+  stairDownPrefab: {fileID: 8161876000144564198, guid: 8baf2ea84f328470a991a19b4f4cb816, type: 3}
+  shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
+  grandDoorPrefab: {fileID: 4950961846448572740, guid: ece14af2b29f8465f8538560b75f522e, type: 3}
+  shortcutMarkerPrefab: {fileID: 8426026503290470288, guid: 8176e97a16db34973b2b82d4e9071866, type: 3}
+  theme: {fileID: 11400000, guid: f032873f368ca4d78b57e776feee1f2c, type: 2}
+  volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}

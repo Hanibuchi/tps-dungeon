@@ -31,6 +31,8 @@ namespace TpsDungeon.Map.Runtime
         public GameObject EntranceStair { get; private set; }
         /// <summary>出口の部屋に置いた上り階段。</summary>
         public GameObject ExitStair { get; private set; }
+        /// <summary>ショートカット解放用の場所に置いた目印。その階に無ければ null。</summary>
+        public GameObject ShortcutMarker { get; private set; }
 
         private float cellSize = 3f;
         private float wallHeight = 5f;
@@ -46,7 +48,9 @@ namespace TpsDungeon.Map.Runtime
 
             cellSize = config.cellSize;
             wallHeight = config.wallHeight;
-            var layout = FloorLayoutGenerator.Generate(config.BuildParams(), seed);
+            var layout = config.layoutShape == FloorLayoutShape.Boss
+                ? BossFloorLayout.Generate(config.BuildBossTemplates(), config.widthInCells, config.heightInCells, seed)
+                : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
             var occupancy = new FloorOccupancy(layout);
 
             var root = new GameObject(GeneratedRootName).transform;
@@ -59,7 +63,7 @@ namespace TpsDungeon.Map.Runtime
             var foundation = NewGroup(root, "Foundation");
 
             var roomObjects = BuildRooms(layout, config, rooms);
-            BuildBoundaries(occupancy, config, boundaries, new System.Random(seed));
+            BuildBoundaries(layout, occupancy, config, boundaries, new System.Random(seed));
             BuildFeatures(layout, config, features, roomObjects);
             BuildCeiling(occupancy, config, ceiling);
             BuildFoundation(occupancy, config, foundation);
@@ -82,6 +86,7 @@ namespace TpsDungeon.Map.Runtime
             CeilingRoot = null;
             EntranceStair = null;
             ExitStair = null;
+            ShortcutMarker = null;
             featureAt.Clear();
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
@@ -150,9 +155,10 @@ namespace TpsDungeon.Map.Runtime
         /// セル境界を 1 つずつ見て壁かドアを建てる。
         /// 各境界を 1 回だけ処理するため、North と East 方向だけを見る。
         /// グリッド外側の境界も拾えるよう、走査は -1 から始める。
-        /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。
+        /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。左右対称の階では窓も左右で揃える。
+        /// 大扉の辺（RoomEdge.IsGrandDoor）には、grandDoorPrefab があれば普通のドアの代わりにそれを置く。
         /// </summary>
-        private void BuildBoundaries(FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
+        private void BuildBoundaries(FloorLayout layout, FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
         {
             if (config.wallPrefab == null)
             {
@@ -182,20 +188,71 @@ namespace TpsDungeon.Map.Runtime
                         if (kind == BoundaryKind.None) continue;
 
                         bool window = kind == BoundaryKind.Wall && cellFilled != neighborFilled
-                            && config.windowWallPrefab != null && random.NextDouble() < config.windowChance;
+                            && config.windowWallPrefab != null && RollWindow(layout, cell, dir, random) < config.windowChance;
+                        bool grand = kind == BoundaryKind.Door && config.grandDoorPrefab != null
+                            && IsGrandDoor(layout, occupancy, cell, dir, neighbor);
 
-                        var prefab = kind == BoundaryKind.Door && config.doorPrefab != null ? config.doorPrefab
+                        var prefab = grand ? config.grandDoorPrefab
+                            : kind == BoundaryKind.Door && config.doorPrefab != null ? config.doorPrefab
                             : window ? config.windowWallPrefab
                             : config.wallPrefab;
 
                         var piece = Instantiate(prefab, parent);
-                        piece.name = window ? $"Window_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
+                        piece.name = window ? $"Window_{x}_{y}_{dir}" : grand ? $"GrandDoor_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));
                         // 壁・窓・ドアは実寸で作ってあるのでスケールしない（伸ばすと素材の模様の密度が崩れる）。
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 外に面した壁を窓にするかの値（0〜1）。ランダムの階は乱数をそのまま引く。
+        /// 左右対称の階では、境界とその鏡像で同じ値になるよう、左右のうち決まった側の境界をシードと混ぜて決める。
+        /// </summary>
+        private static double RollWindow(FloorLayout layout, GridPos cell, Direction dir, System.Random random)
+        {
+            if (!layout.MirrorColumn.HasValue) return random.NextDouble();
+
+            var (keyCell, keyDir) = MirrorCanonical(cell, dir, layout.MirrorColumn.Value);
+            unchecked
+            {
+                uint h = (uint)layout.Seed * 0x9E3779B1u;
+                h ^= (uint)keyCell.X * 0x85EBCA77u;
+                h = (h << 13 | h >> 19) * 0xC2B2AE3Du;
+                h ^= (uint)keyCell.Y * 0x27D4EB2Fu;
+                h ^= (uint)keyDir * 0x165667B1u;
+                h ^= h >> 15;
+                h *= 0x2C1B3C6Du;
+                h ^= h >> 12;
+                return (h & 0xFFFFFF) / (double)0x1000000;
+            }
+        }
+
+        /// <summary>
+        /// 境界（cell の dir 側）と、それを列 axis で左右に映した境界のうち、決まった方を返す。
+        /// 東西の向きは映すと入れ替わる（cell の東の境界 = 映したセルの西の境界）。
+        /// </summary>
+        public static (GridPos cell, Direction dir) MirrorCanonical(GridPos cell, Direction dir, int axis)
+        {
+            var mirrored = new GridPos(2 * axis - cell.X, cell.Y);
+            var mirroredDir = dir == Direction.East ? Direction.West : dir == Direction.West ? Direction.East : dir;
+            // 同じ境界でも表し方が 2 通り（cell の東 = 東隣の西）あるので、北と東の側で表してから比べる。
+            var a = Normalize(cell, dir);
+            var b = Normalize(mirrored, mirroredDir);
+            return a.cell.X < b.cell.X || (a.cell.X == b.cell.X && (int)a.dir <= (int)b.dir) ? a : b;
+
+            static (GridPos cell, Direction dir) Normalize(GridPos c, Direction d) =>
+                d == Direction.South || d == Direction.West ? (c + d.Offset(), d.Opposite()) : (c, d);
+        }
+
+        /// <summary>cell の dir 側の境界のドアが、大扉の辺のものか。</summary>
+        private static bool IsGrandDoor(FloorLayout layout, FloorOccupancy occupancy, GridPos cell, Direction dir, GridPos neighbor)
+        {
+            var socket = occupancy.DoorAt(cell, dir) ?? occupancy.DoorAt(neighbor, dir.Opposite());
+            return socket != null && socket.UsedByEdge >= 0 && socket.UsedByEdge < layout.Edges.Count
+                && layout.Edges[socket.UsedByEdge].IsGrandDoor;
         }
 
         /// <summary>部屋のセルごとに、壁の上端の高さへ天井を 1 枚ずつ張る。</summary>
@@ -260,6 +317,7 @@ namespace TpsDungeon.Map.Runtime
 
         /// <summary>
         /// 入口には下の階への下り階段、出口には上の階への上り階段、ショップには目印を、それぞれの部屋の FeatureCell に置く。
+        /// ショートカット解放用の場所があれば、そのセルに目印を置く。
         /// 置いた物が FloorFeature を持っていれば、そのセルの床・天井・土台をそれに合わせる。
         /// </summary>
         private void BuildFeatures(FloorLayout layout, FloorConfig config, Transform parent, Dictionary<int, GameObject> roomObjects)
@@ -267,6 +325,13 @@ namespace TpsDungeon.Map.Runtime
             EntranceStair = Spawn(layout.EntranceRoom, config.stairDownPrefab, "StairDown");
             ExitStair = Spawn(layout.ExitRoom, config.stairUpPrefab, "StairUp");
             Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop");
+            if (layout.ShortcutCell.HasValue && config.shortcutMarkerPrefab != null)
+            {
+                var shortcut = Instantiate(config.shortcutMarkerPrefab, parent);
+                shortcut.name = "Shortcut";
+                shortcut.transform.SetLocalPositionAndRotation(CellCenter(layout.ShortcutCell.Value), Quaternion.identity);
+                ShortcutMarker = shortcut;
+            }
             PlaceSpawnPoint(layout, parent);
 
             GameObject Spawn(int roomIndex, GameObject prefab, string label)

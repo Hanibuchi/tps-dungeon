@@ -30,6 +30,37 @@ namespace TpsDungeon.Map.Editor
             CreateFloorScene(config, $"{ScenesFolder}/Floor_1_1.unity");
         }
 
+        /// <summary>
+        /// 各層のボス階のシーン（L{n}_Boss）を、その層の Floor_L{n}_Boss_Config で作る。作りは Floor_1_1 と同じ。
+        /// 設定が無ければ先に「ボス階の一式を作る」を回すこと。窓の外の景色は「階の外の景色を置く（ボス階）」で置く。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/ボス階のシーンを作る")]
+        public static void CreateBossFloors()
+        {
+            int made = 0;
+            foreach (string scenePath in BossScenePaths())
+            {
+                string layer = System.IO.Path.GetFileNameWithoutExtension(scenePath).Replace("_Boss", "");
+                string configPath = $"Assets/_Project/Settings/Map/Floor_{layer}_Boss_Config.asset";
+                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(configPath);
+                if (config == null)
+                {
+                    Debug.LogWarning($"{configPath} が無いので {scenePath} を作らなかった。先に「ボス階の一式を作る」を回すこと。");
+                    continue;
+                }
+
+                CreateFloorScene(config, scenePath);
+                made++;
+            }
+            Debug.Log($"ボス階のシーンを {made} 個作った");
+        }
+
+        /// <summary>ボス階のシーンの置き場所（L1_Boss〜L5_Boss）。</summary>
+        public static System.Collections.Generic.IEnumerable<string> BossScenePaths()
+        {
+            for (int n = 1; n <= 5; n++) yield return $"{ScenesFolder}/L{n}_Boss.unity";
+        }
+
         public static void CreateFloorScene(FloorConfig config, string scenePath)
         {
             // 追加ロードで作って保存後に閉じる。いま開いているシーンの未保存の変更を巻き込まないため。

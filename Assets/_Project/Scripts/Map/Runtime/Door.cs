@@ -34,6 +34,12 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("扉板。Hinge の子。当たり判定は BoxCollider（閉じたときに人が居ないかもこの箱で見る）。")]
         private Transform leaf;
 
+        [SerializeField, Tooltip("両開きの扉の右の軸（開口の右端）。片開きなら空。クリップはこれも動かす。")]
+        private Transform hingeRight;
+
+        [SerializeField, Tooltip("両開きの扉の右の扉板。hingeRight の子。片開きなら空。")]
+        private Transform leafRight;
+
         [SerializeField, Tooltip("開閉のアニメーションを流す Animator。未設定ならこの GameObject から探す。")]
         private Animator animator;
 
@@ -55,7 +61,7 @@ namespace TpsDungeon.Map.Runtime
         // 閉じたときに扉板の位置に誰かいないか調べる用。自分の枠や扉板も拾うので少し余裕を持たせる。
         private readonly Collider[] overlaps = new Collider[8];
 
-        private BoxCollider leafCollider;
+        private BoxCollider[] leafColliders = System.Array.Empty<BoxCollider>();
         private bool isOpen;
         private bool closeSoundPending;
 
@@ -64,6 +70,16 @@ namespace TpsDungeon.Map.Runtime
 
         /// <summary>開け閉めで回る軸（扉板はこの子）。NavMesh を焼くとき、動く部分だけを外すのに使う。</summary>
         public Transform Hinge => hinge;
+
+        /// <summary>開け閉めで回る軸を全部（両開きなら左右の 2 つ）。</summary>
+        public System.Collections.Generic.IEnumerable<Transform> Hinges
+        {
+            get
+            {
+                if (hinge != null) yield return hinge;
+                if (hingeRight != null) yield return hingeRight;
+            }
+        }
 
         /// <summary>開閉のアニメーションが終わっていないか。</summary>
         public bool IsSwinging => animator != null && IsAnimating(animator, isOpen ? OpenStateHash : ClosedStateHash);
@@ -78,7 +94,12 @@ namespace TpsDungeon.Map.Runtime
         private void Awake()
         {
             if (animator == null) animator = GetComponent<Animator>();
-            if (leaf != null) leafCollider = leaf.GetComponent<BoxCollider>();
+            var colliders = new System.Collections.Generic.List<BoxCollider>(2);
+            foreach (var t in new[] { leaf, leafRight })
+            {
+                if (t != null && t.TryGetComponent(out BoxCollider box)) colliders.Add(box);
+            }
+            leafColliders = colliders.ToArray();
         }
 
         private void Start()
@@ -129,22 +150,25 @@ namespace TpsDungeon.Map.Runtime
         /// <summary>
         /// 扉板の当たり判定を状態に合わせる。閉じきっていなければ切る。
         /// 閉じきっても、開口に誰か立っているうちは入れない（閉じ込めて押し出せなくなるので）。いなくなったら入れる。
+        /// 両開きなら扉板ごとに見る。
         /// </summary>
         private void UpdateLeafCollider()
         {
-            if (leafCollider == null) return;
-
-            if (!IsLeafSolid(isOpen, IsSwinging))
+            bool solid = IsLeafSolid(isOpen, IsSwinging);
+            foreach (var leafCollider in leafColliders)
             {
-                if (leafCollider.enabled) leafCollider.enabled = false;
-                return;
-            }
+                if (!solid)
+                {
+                    if (leafCollider.enabled) leafCollider.enabled = false;
+                    continue;
+                }
 
-            if (leafCollider.enabled || IsDoorwayOccupied()) return;
-            leafCollider.enabled = true;
+                if (leafCollider.enabled || IsDoorwayOccupied(leafCollider)) continue;
+                leafCollider.enabled = true;
+            }
         }
 
-        private bool IsDoorwayOccupied()
+        private bool IsDoorwayOccupied(BoxCollider leafCollider)
         {
             Transform t = leafCollider.transform;
             int count = Physics.OverlapBoxNonAlloc(

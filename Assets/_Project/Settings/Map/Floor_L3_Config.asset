@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2183d2e507b764909920713cd8406ad0, type: 3}
   m_Name: Floor_L3_Config
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
+  layoutShape: 0
   widthInCells: 64
   heightInCells: 64
   cellSize: 5
@@ -33,5 +34,7 @@ MonoBehaviour:
   stairUpPrefab: {fileID: 1225122626178339264, guid: bc74cca60f68741b09067094e8695949, type: 3}
   stairDownPrefab: {fileID: 7174163125371791293, guid: e7c1b1d9fbdf34ee8b1de32d6038cfaa, type: 3}
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
+  grandDoorPrefab: {fileID: 9110384594277887897, guid: 727c1734749074169bcd5abdb56d12f5, type: 3}
+  shortcutMarkerPrefab: {fileID: 0}
   theme: {fileID: 11400000, guid: 22fab9359de6f4d39a924d173f67ae17, type: 2}
   volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}
