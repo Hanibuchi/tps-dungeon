@@ -26,6 +26,12 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("入口の下り階段の行き先（下の階のシーン名）。1 階なら地上。空なら階段は閉じたまま。")]
         private string downScene = SceneTravel.SurfaceScene;
 
+        [SerializeField, Tooltip("出口の上り階段の行き先（上の階のシーン名）。空ならこの階のシーンを読み直し、シードを引き直した新しい形で作って入口から始める（上の階ができるまでの仮）。")]
+        private string upScene;
+
+        // 出口の上り階段でこの階を作り直すとき、次に作る階は seed を固定していても新しい形にする。シーンを読み直してもまたぐよう static に持つ。
+        private static bool newShapeOnNextGenerate;
+
         private FloorBuilder builder;
 
         /// <summary>実際に使われたシード。seed が 0 のときはランダムに決まった値が入る。</summary>
@@ -46,10 +52,12 @@ namespace TpsDungeon.Map.Runtime
             if (generateOnStart) Generate();
         }
 
-        /// <summary>設定どおりに生成する。seed が 0 なら毎回違う形になる。</summary>
+        /// <summary>設定どおりに生成する。seed が 0 なら毎回違う形になる（出口の上り階段で作り直すときも違う形）。</summary>
         public void Generate()
         {
-            Generate(seed != 0 ? seed : NewRandomSeed());
+            bool newShape = newShapeOnNextGenerate;
+            newShapeOnNextGenerate = false;
+            Generate(seed != 0 && !newShape ? seed : NewRandomSeed());
         }
 
         /// <summary>新しいシードを引き直して作り直す。デバッグの再生成用。</summary>
@@ -71,19 +79,32 @@ namespace TpsDungeon.Map.Runtime
             CurrentSeed = useSeed;
             var layout = builder.Build(config, useSeed);
             ConnectStair(builder.EntranceStair, downScene);
+
+            // ドメインリロードで null の string は空文字になるので、どちらも「無し」とみなす。
+            bool rebuildHere = string.IsNullOrEmpty(upScene);
+            var exit = ConnectStair(builder.ExitStair, rebuildHere ? gameObject.scene.name : upScene);
+            if (exit != null && rebuildHere) exit.Entering += () => newShapeOnNextGenerate = true;
+
             Generated?.Invoke(layout);
         }
 
         /// <summary>階段の門に行き先を入れる。行き先が無ければ閉じておく（調べると「閉じている」の案内が出る）。</summary>
-        private static void ConnectStair(GameObject stair, string sceneName)
+        private static SceneGate ConnectStair(GameObject stair, string sceneName)
         {
-            if (stair == null) return;
+            if (stair == null) return null;
             var gate = stair.GetComponentInChildren<SceneGate>();
-            if (gate == null) return;
+            if (gate == null) return null;
 
-            // ドメインリロードで null の string は空文字になるので、どちらも「無し」とみなす。
             gate.SceneName = sceneName;
             gate.IsOpen = !string.IsNullOrEmpty(sceneName);
+            return gate;
+        }
+
+        /// <summary>Enter Play Mode でドメインを読み直さない設定でも、前の再生の頼みを持ち越さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            newShapeOnNextGenerate = false;
         }
 
         /// <summary>0 は「ランダム」を表す予約値なので避ける。</summary>

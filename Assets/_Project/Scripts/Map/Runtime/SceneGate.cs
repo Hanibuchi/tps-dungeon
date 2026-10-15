@@ -1,3 +1,4 @@
+using System;
 using TpsDungeon.Interaction;
 using UnityEngine;
 
@@ -43,6 +44,9 @@ namespace TpsDungeon.Map.Runtime
             set => open = value;
         }
 
+        /// <summary>通るとき、シーンを移る頼みを出す直前に呼ばれる。</summary>
+        public event Action Entering;
+
         public string PromptLabel => open ? openLabel : closedLabel;
 
         public bool CanInteract(GameObject interactor) => true;
@@ -50,6 +54,7 @@ namespace TpsDungeon.Map.Runtime
         public void Interact(GameObject interactor)
         {
             if (!open) return;
+            Entering?.Invoke();
             SceneTravel.Go(sceneName);
         }
 

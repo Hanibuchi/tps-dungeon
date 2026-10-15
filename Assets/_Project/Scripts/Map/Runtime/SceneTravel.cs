@@ -21,7 +21,24 @@ namespace TpsDungeon.Map.Runtime
             if (string.IsNullOrEmpty(sceneName)) return;
 
             if (Handler != null) Handler(sceneName);
-            else SceneManager.LoadScene(sceneName);
+            else Load(sceneName);
+        }
+
+        /// <summary>
+        /// sceneName を読み込んで今のシーンと入れ替える。受け手もこれで読む。
+        /// エディタでは、Build Settings に入っていない確認用のシーン（Player_Debug など）でも、今のシーンを読み直すときはパスで読む。
+        /// </summary>
+        public static void Load(string sceneName)
+        {
+#if UNITY_EDITOR
+            Scene active = SceneManager.GetActiveScene();
+            if (active.name == sceneName && active.buildIndex < 0)
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(active.path, new LoadSceneParameters(LoadSceneMode.Single));
+                return;
+            }
+#endif
+            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }
     }
 }

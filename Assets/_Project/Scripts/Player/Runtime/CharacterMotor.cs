@@ -65,11 +65,11 @@ namespace TpsDungeon.Player
         [Tooltip("カメラが追う注視点。")]
         public GameObject CinemachineCameraTarget;
 
-        [Tooltip("上を向ける角度。")]
-        public float TopClamp = 70.0f;
+        [Range(0f, 89f), Tooltip("カメラを見上げられる角度（水平からの度）。")]
+        public float LookUpLimit = 89.0f;
 
-        [Tooltip("下を向ける角度。")]
-        public float BottomClamp = -30.0f;
+        [Range(0f, 89f), Tooltip("カメラを見下ろせる角度（水平からの度）。")]
+        public float LookDownLimit = 89.0f;
 
         [Tooltip("注視点の向きに足す角度。")]
         public float CameraAngleOverride = 0.0f;
@@ -185,7 +185,8 @@ namespace TpsDungeon.Player
             }
 
             cameraYaw = ClampAngle(cameraYaw, float.MinValue, float.MaxValue);
-            cameraPitch = ClampAngle(cameraPitch, BottomClamp, TopClamp);
+            // pitch は正で下、負で上を向く。
+            cameraPitch = ClampAngle(cameraPitch, -LookUpLimit, LookDownLimit);
             CinemachineCameraTarget.transform.rotation = Quaternion.Euler(cameraPitch + CameraAngleOverride, cameraYaw, 0.0f);
         }
 
