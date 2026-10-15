@@ -94,6 +94,16 @@ namespace TpsDungeon.Map.Editor
         // 下り階段の竪穴の深さ、上り階段の天井より上の竪穴の高さ。
         private const float StairwellDepth = 3f;
         private const float StairUpShaft = 2f;
+        // 階段の先を暗くして見えにくくする暗がりの箱（DarknessVolume）の、素材を新しく作るときの既定（メートル）。
+        // 下りは床からこれだけ下で暗くなり始め、ここまで下で真っ黒。上りは天井からこれだけ下で暗くなり始め、天井からこれだけ上（竪穴の中）で真っ黒。
+        // 作った後の暗さ加減は、階段の横の素材（Stair_Down_Darkness / Stair_Up_Darkness）で調節する（作り直しても上書きしない）。
+        private const float StairDownDarkStart = 0.2f;
+        private const float StairDownDarkFull = 1.6f;
+        private const float StairUpDarkStart = 1.5f;
+        private const float StairUpDarkFull = 0.3f;
+        // 暗がりの箱を穴より広げる分。竪穴の壁の内側の面を箱の中に入れる。
+        private const float StairDarkMargin = 0.02f;
+        private const string DarknessShaderName = "TpsDungeon/Darkness Volume";
         // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
         private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
 
@@ -275,7 +285,7 @@ namespace TpsDungeon.Map.Editor
             if (theme.doorLeaf == null) theme.doorLeaf = ExistingMaterial("Placeholder_DoorLeaf", new Color(0.42f, 0.24f, 0.12f));
             if (theme.doorKnob == null) theme.doorKnob = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsFolder}/Placeholder_DoorKnob.mat") ?? KnobMaterial();
             if (theme.stair == null) theme.stair = ExistingMaterial("Placeholder_Floor", new Color(0.55f, 0.53f, 0.50f));
-            if (theme.stairVoid == null) theme.stairVoid = ExistingMaterial("Placeholder_Void", new Color(0.03f, 0.03f, 0.035f));
+            if (theme.stairVoid == null) theme.stairVoid = VoidMaterial();
             EditorUtility.SetDirty(theme);
         }
 
@@ -351,6 +361,7 @@ namespace TpsDungeon.Map.Editor
         /// ドアから入ってそのまま +Z へ真っ直ぐ下りる階段を穴の下の竪穴に置く。
         /// 穴のまわりには手すりを付けず、段と竪穴の壁に当たりを持たせて、見た目どおり穴の縁まで寄れて段を底まで歩いて下りられるようにする。
         /// 竪穴の奥（北）の壁は暗くして、階段がその先へ続いて見えるようにする（当たりがあるのでそこで行き止まり）。
+        /// 竪穴には暗がりの箱（子の Darkness）を置き、下りるほど暗くして、底の方の段と奥の壁を見えにくくする。
         /// 調べると下の階へ移る（子の Stairwell の SceneGate。行き先は FloorBootstrap が入れる）。子の SpawnPoint に入口に着いたパーティーが立つ。
         /// </summary>
         private static GameObject BuildStairDownPrefab(string path, FloorTheme theme, float cellSize)
@@ -387,6 +398,13 @@ namespace TpsDungeon.Map.Editor
             serialized.FindProperty("description").stringValue = "下の階へ続く階段。";
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
+            // 床の高さから竪穴の底まで。暗さは床から下へ測った距離で決める。
+            float darkBottom = -StairwellDepth - CeilingThickness;
+            AddDarkness(root.transform, path,
+                new Vector3(holeCenter.x, darkBottom * 0.5f, holeCenter.y),
+                new Vector3(holeSize.x + StairDarkMargin * 2f, -darkBottom, holeSize.y + StairDarkMargin * 2f),
+                upward: false, StairDownDarkStart, StairDownDarkFull);
+
             var spawn = new GameObject("SpawnPoint");
             spawn.transform.SetParent(root.transform, false);
             spawn.transform.SetLocalPositionAndRotation(StairSpawnPosition, Quaternion.Euler(0f, 180f, 0f));
@@ -398,6 +416,7 @@ namespace TpsDungeon.Map.Editor
         /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。行き先がまだ無いので見た目だけ。
         /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
         /// 蓋をした竪穴の中へ段が消えていくように見せる。段・竪穴の壁・蓋には見た目どおりの当たりを付ける（段は急で上れない）。
+        /// 天井の穴の下から竪穴の蓋までに暗がりの箱（子の Darkness）を置き、上るほど暗くして、穴の先を見えにくくする。
         /// </summary>
         private static GameObject BuildStairUpPrefab(string path, FloorTheme theme, float cellSize, float wallHeight)
         {
@@ -426,7 +445,46 @@ namespace TpsDungeon.Map.Editor
             int steps = Mathf.CeilToInt(wallHeight / StairUpRise - 0.001f);
             Flight(root.transform, theme.stair, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
 
+            // 床の高さから竪穴の蓋まで。暗さは床から上へ測った距離で決める。
+            // 穴の無い所の天井を暗くしないよう、広さは天井の穴だけにする。
+            float darkTop = shaftTop + CeilingThickness;
+            AddDarkness(root.transform, path,
+                new Vector3(holeCenter.x, darkTop * 0.5f, holeCenter.y),
+                new Vector3(holeSize.x + StairDarkMargin * 2f, darkTop, holeSize.y + StairDarkMargin * 2f),
+                upward: true, wallHeight - StairUpDarkStart, wallHeight + StairUpDarkFull);
+
             return SavePrefab(root, path);
+        }
+
+        /// <summary>
+        /// 中にある物を暗くする箱（DarknessVolume のシェーダ）。中心 center・大きさ size で、upward でなければ上の面から下へ、
+        /// upward なら下の面から上へ測った距離で暗くする（シェーダは上から下へ測るので、上向きは箱を逆さにする）。
+        /// 素材は階段のプレハブの横（prefabPath の名前に _Darkness を付けた .mat）に置く。無いときだけ作って fadeStart〜fadeEnd（メートル）で
+        /// 真っ黒になるようにし、既にあれば手で調節した値を残す。当たりと影は持たない。
+        /// </summary>
+        private static void AddDarkness(Transform parent, string prefabPath, Vector3 center, Vector3 size, bool upward, float fadeStart, float fadeEnd)
+        {
+            string materialPath = $"{System.IO.Path.ChangeExtension(prefabPath, null)}_Darkness.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find(DarknessShaderName));
+                material.SetColor("_Color", Color.black);
+                material.SetFloat("_FadeStart", fadeStart);
+                material.SetFloat("_FadeEnd", fadeEnd);
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+
+            var volume = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            volume.name = "Darkness";
+            Object.DestroyImmediate(volume.GetComponent<Collider>());
+            volume.transform.SetParent(parent, false);
+            volume.transform.SetLocalPositionAndRotation(center, upward ? Quaternion.Euler(180f, 0f, 0f) : Quaternion.identity);
+            volume.transform.localScale = size;
+            var renderer = volume.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
         }
 
         /// <summary>
@@ -866,6 +924,22 @@ namespace TpsDungeon.Map.Editor
             ball.transform.localScale = Vector3.one * KnobSize;
             Object.DestroyImmediate(ball.GetComponent<Collider>());
             Paint(ball, material);
+        }
+
+        /// <summary>
+        /// 竪穴の奥と底の素材。光を受けない真っ黒の単色（URP の Unlit）。無いときだけ作る。
+        /// </summary>
+        private static Material VoidMaterial()
+        {
+            string path = $"{MaterialsFolder}/Placeholder_Void.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            material = new Material(shader != null ? shader : DefaultShader());
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.black);
+            AssetDatabase.CreateAsset(material, path);
+            return material;
         }
 
         /// <summary>ドアの縁のレンガの仮の素材。赤茶の素焼き。</summary>

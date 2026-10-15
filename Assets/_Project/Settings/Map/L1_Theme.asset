@@ -20,4 +20,4 @@ MonoBehaviour:
   doorLeaf: {fileID: 2100000, guid: d6c1a5560ac774692b5eab2c98577e54, type: 2}
   doorKnob: {fileID: 2100000, guid: eb47662280b7f4b47bc55802e4a13cb8, type: 2}
   stair: {fileID: 2100000, guid: 102f422f73f382a48989da897532a678, type: 2}
-  stairVoid: {fileID: 2100000, guid: c3effbea428b58e40bfd7ad2d4950d73, type: 2}
+  stairVoid: {fileID: 2100000, guid: b44d0103dca21430d991afd75176da08, type: 2}

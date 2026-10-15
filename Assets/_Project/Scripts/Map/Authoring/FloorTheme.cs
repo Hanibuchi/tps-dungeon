@@ -32,7 +32,7 @@ namespace TpsDungeon.Map.Authoring
         [Header("階段")]
         [Tooltip("階段の段と、階段のまわり（下りの穴の空いた床・竪穴の壁、上りの穴の空いた天井・竪穴の壁と蓋）。")]
         public Material stair;
-        [Tooltip("下り階段の竪穴の奥と底、上り階段の竪穴の奥。暗くして先へ続いて見せる。")]
+        [Tooltip("下り階段の竪穴の奥と底、上り階段の竪穴の奥。暗くして先へ続いて見せる（黒の単色にしておくと暗がりに溶ける）。")]
         public Material stairVoid;
     }
 }
