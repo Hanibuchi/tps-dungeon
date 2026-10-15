@@ -434,7 +434,8 @@ namespace TpsDungeon.Map.Editor
             foreach (var renderer in ceiling.GetComponentsInChildren<MeshRenderer>()) renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
 
             float shaftTop = wallHeight + CeilingThickness + StairUpShaft;
-            var shaft = Shaft(root.transform, theme.stair, holeMin, holeMax, wallHeight, shaftTop);
+            // 竪穴の壁は天井の上の面から立てる。天井の厚みの所から立てると、壁の内側の面が天井の穴の切り口と同じ所に重なってちらつく。
+            var shaft = Shaft(root.transform, theme.stair, holeMin, holeMax, wallHeight + CeilingThickness, shaftTop);
             shaft.transform.Find("North").GetComponent<MeshRenderer>().sharedMaterial = theme.stairVoid;
             Box(root.transform, "Cap", theme.stair,
                 new Vector3(holeCenter.x, shaftTop + CeilingThickness * 0.5f, holeCenter.y),
