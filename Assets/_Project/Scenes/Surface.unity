@@ -95648,7 +95648,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
-  sceneName: Floor_1_1
+  sceneName: L1_Random
   open: 1
   openLabel: "\u57CE\u3078\u5165\u308B"
   closedLabel: "\u307E\u3060\u958B\u3044\u3066\u3044\u306A\u3044"

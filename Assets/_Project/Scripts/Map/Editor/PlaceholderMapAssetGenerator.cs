@@ -349,6 +349,65 @@ namespace TpsDungeon.Map.Editor
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
         }
 
+        private const string RoutePath = SettingsFolder + "/DungeonRoute.asset";
+        private const int RandomFloorsPerLayer = 4;
+
+        /// <summary>層ごとの床の高さ（メートル）。上の層ほど高い建物の上にある。道順を作るとき（初回）だけ各層の設定に入れる。</summary>
+        private static readonly float[] LayerElevations = { 20f, 50f, 80f, 120f, 150f };
+
+        /// <summary>
+        /// ダンジョンの道順（DungeonRoute）を作る：L1〜L5 の各層を「ランダムな階 4 つ（L{n}_Random、Floor_L{n}_Config）→ ボス階（L{n}_Boss、Floor_L{n}_Boss_Config）」で並べる。
+        /// 初回は各層の設定の高さ（elevation）を LayerElevations にし、「壁・床・天井のパーツを生成」で土台を作り直す。
+        /// 既に道順があれば何もしない（手で変えた層の数・階の数・高さを残す）。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/ダンジョンの道順を作る")]
+        public static void GenerateDungeonRoute()
+        {
+            if (AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath) != null)
+            {
+                Debug.Log($"{RoutePath} は既にあるので触らなかった。");
+                return;
+            }
+
+            var layers = new List<DungeonRoute.Layer>();
+            for (int n = 1; n <= LayerElevations.Length; n++)
+            {
+                var random = AssetDatabase.LoadAssetAtPath<FloorConfig>($"{SettingsFolder}/Floor_L{n}_Config.asset");
+                var boss = AssetDatabase.LoadAssetAtPath<FloorConfig>($"{SettingsFolder}/Floor_L{n}_Boss_Config.asset");
+                if (random == null)
+                {
+                    Debug.LogWarning($"Floor_L{n}_Config が無いので、L{n} から上は道順に入れなかった。");
+                    break;
+                }
+
+                foreach (var config in new[] { random, boss })
+                {
+                    if (config == null) continue;
+                    config.elevation = LayerElevations[n - 1];
+                    EditorUtility.SetDirty(config);
+                }
+
+                layers.Add(new DungeonRoute.Layer
+                {
+                    name = $"第 {n} 層",
+                    randomScene = $"L{n}_Random",
+                    randomConfig = random,
+                    randomFloorCount = RandomFloorsPerLayer,
+                    bossScene = boss != null ? $"L{n}_Boss" : "",
+                    bossConfig = boss,
+                });
+            }
+
+            var route = ScriptableObject.CreateInstance<DungeonRoute>();
+            route.SetLayers(layers);
+            AssetDatabase.CreateAsset(route, RoutePath);
+            AssetDatabase.SaveAssets();
+
+            // 土台の深さは高さで決まるので作り直す。
+            GenerateStructureParts();
+            Debug.Log($"ダンジョンの道順を作った（{layers.Count} 層）: {RoutePath}");
+        }
+
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>
         private static Material RoomFloorMaterial(RoomTemplateCatalog catalog)
         {

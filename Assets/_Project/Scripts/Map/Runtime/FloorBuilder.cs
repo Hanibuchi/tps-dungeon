@@ -321,7 +321,7 @@ namespace TpsDungeon.Map.Runtime
         }
 
         /// <summary>
-        /// 階の Global Volume を生成ルートの下に置く。どのシーンで階を作っても（Floor_1_1 でも確認用シーンでも）同じ見た目になるよう、シーンには置かない。
+        /// 階の Global Volume を生成ルートの下に置く。どのシーンで階を作っても（L1_Random でも確認用シーンでも）同じ見た目になるよう、シーンには置かない。
         /// カメラの post-processing は FloorPostProcessing が Play 中だけ有効にし、作り直しや片付けで消えるときに戻す。
         /// </summary>
         private static void BuildVolume(FloorConfig config, Transform parent)

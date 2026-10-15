@@ -28,7 +28,7 @@ namespace TpsDungeon.Party.Editor
     ///   平らな [Surface]/Plaza/Ground（ProBuilder の板）は描画も当たりも止める（平らな当たりと凹凸のある見た目がずれて、物もキャラも浮いて見えたため）。
     /// - 物は置く所の真下の見た目の地面の高さに合わせる。足元（大きさに応じた円）の一番低い所に置くので、坂でも端が浮かない。城の箱も少し沈める。
     /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧だけ。
-    /// 階（Floor_1_1）の窓の外にも、同じ草地・丘・山・空と光と霧を置く（<see cref="BuildOutlook"/>）。
+    /// 階（L1_Random など）の窓の外にも、同じ草地・丘・山・空と光と霧を置く（<see cref="BuildOutlook"/>）。
     /// </summary>
     public static class SurfaceScenery
     {
@@ -52,7 +52,8 @@ namespace TpsDungeon.Party.Editor
         private const float CastleSink = -0.35f;
 
         // 階の窓の外の景色。地上の座標（歩ける範囲の真ん中）で組んでから、階のグリッドの真ん中へずらす。
-        private const string FloorScenePath = "Assets/_Project/Scenes/Floor_1_1.unity";
+        private const string ScenesFolder = "Assets/_Project/Scenes";
+        private const string RoutePath = "Assets/_Project/Settings/Map/DungeonRoute.asset";
         private static readonly Vector3 SurfaceCenter = new Vector3(0f, 0f, (MinZ + MaxZ) * 0.5f);
 
         // 階では景色ごと、階の高さ（FloorConfig.elevation）に加えてこれだけ下げる。地上と同じく草地の上面が地面の高さ（土台の底より少し上）に来るように。
@@ -126,34 +127,45 @@ namespace TpsDungeon.Party.Editor
             return $"地上の景色を置いた（村 {CountChildren(village)} 個、外の景色 {CountChildren(scenery)} 個）。";
         }
 
-        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く")]
+        /// <summary>
+        /// ダンジョンの道順（DungeonRoute）に載っている階のシーン（L{n}_Random・L{n}_Boss）全部に窓の外の景色を置いて保存する。
+        /// 景色は各シーンの階の高さ（elevation）の分だけ下に置くので、高さを変えたら回し直す。
+        /// 各シーンは追加で開いて置き、保存して閉じる（いま開いているシーンの未保存の変更を巻き込まない）。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く（全層）")]
         public static void BuildOutlookFromMenu()
         {
-            Scene scene = SceneManager.GetActiveScene();
-            if (scene.path != FloorScenePath)
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            if (route == null)
             {
-                if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-                scene = EditorSceneManager.OpenScene(FloorScenePath, OpenSceneMode.Single);
+                Debug.LogError($"{RoutePath} が無い。先に「ダンジョンの道順を作る」を実行すること。");
+                return;
             }
-
-            BuildOutlookAndSave(scene);
-        }
-
-        /// <summary>各層のボス階のシーン（L{n}_Boss）に窓の外の景色を置いて保存する。終わったら元のシーンを開き直す。</summary>
-        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く（ボス階）")]
-        public static void BuildBossOutlooksFromMenu()
-        {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            string previous = SceneManager.GetActiveScene().path;
-
-            for (int n = 1; n <= 5; n++)
+            Scene previous = SceneManager.GetActiveScene();
+            foreach (string sceneName in route.SceneNames())
             {
-                string path = $"Assets/_Project/Scenes/L{n}_Boss.unity";
-                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null) continue;
-                BuildOutlookAndSave(EditorSceneManager.OpenScene(path, OpenSceneMode.Single));
-            }
+                string path = $"{ScenesFolder}/{sceneName}.unity";
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
+                {
+                    Debug.LogWarning($"{path} が無いので景色を置かなかった。先に「階のシーンを作る（全層）」を実行すること。");
+                    continue;
+                }
 
-            if (!string.IsNullOrEmpty(previous)) EditorSceneManager.OpenScene(previous, OpenSceneMode.Single);
+                Scene opened = SceneManager.GetSceneByPath(path);
+                bool wasOpen = opened.IsValid() && opened.isLoaded;
+                if (!wasOpen) opened = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
+                // 光・環境光・霧（RenderSettings）はアクティブなシーンに入るので、置く間だけアクティブにする。
+                SceneManager.SetActiveScene(opened);
+                try
+                {
+                    BuildOutlookAndSave(opened);
+                }
+                finally
+                {
+                    if (previous.IsValid() && previous.isLoaded) SceneManager.SetActiveScene(previous);
+                    if (!wasOpen) EditorSceneManager.CloseScene(opened, true);
+                }
+            }
         }
 
         /// <summary>シーンの FloorBootstrap の FloorConfig に合わせて窓の外の景色を置き、保存する。</summary>

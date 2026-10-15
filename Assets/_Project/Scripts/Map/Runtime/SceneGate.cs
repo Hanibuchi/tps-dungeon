@@ -44,6 +44,13 @@ namespace TpsDungeon.Map.Runtime
             set => open = value;
         }
 
+        /// <summary>閉じているときの案内。生成した階段のように、置いてから決まるものはあとから入れる。</summary>
+        public string ClosedLabel
+        {
+            get => closedLabel;
+            set => closedLabel = value;
+        }
+
         /// <summary>通るとき、シーンを移る頼みを出す直前に呼ばれる。</summary>
         public event Action Entering;
 

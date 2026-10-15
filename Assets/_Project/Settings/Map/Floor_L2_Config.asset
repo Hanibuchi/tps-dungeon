@@ -24,7 +24,7 @@ MonoBehaviour:
   includeShop: 1
   extraDoorCount: 2
   wallHeight: 5
-  elevation: 40
+  elevation: 50
   wallPrefab: {fileID: 12024513618965081, guid: 88481c6381f5f4f1f963b07abd6c7792, type: 3}
   windowWallPrefab: {fileID: 6203994947043467725, guid: 7d0528eaf777443668e3edc6813d08c7, type: 3}
   windowChance: 0.35

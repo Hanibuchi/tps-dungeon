@@ -30,7 +30,7 @@ namespace TpsDungeon.Party.Editor
         private const string NavMeshPath = "Assets/_Project/Scenes/Surface/NavMesh-Surface.asset";
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
         private const string FollowCameraPrefabPath = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Prefabs/PlayerFollowCamera.prefab";
-        private const string FirstFloorScene = "Floor_1_1";
+        private const string FirstFloorScene = "L1_Random";
         private const int Followers = 4;
 
         // 地面の範囲（メートル）。+Z が城。歩けるのはこの範囲だけで、まわりを見えない壁で囲む。
