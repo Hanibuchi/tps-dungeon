@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4535680839337397346}
   m_Layer: 0
-  m_Name: Ceiling_Basic
+  m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

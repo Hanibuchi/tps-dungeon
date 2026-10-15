@@ -64,6 +64,8 @@ namespace TpsDungeon.Map.Authoring
         public GameObject shopMarkerPrefab;
 
         [Header("見た目")]
+        [Tooltip("壁・天井・ドア・階段の素材。層ごとに差し替えて見た目を変える。共通パーツはこれで作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
+        public FloorTheme theme;
         [Tooltip("階の明るさ・色味（天井で日の光が遮られる室内を持ち上げるなど）。生成のたびに Global Volume として置く。未設定なら置かない。")]
         public VolumeProfile volumeProfile;
 

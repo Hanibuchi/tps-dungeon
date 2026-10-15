@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Runtime;
 using UnityEditor;
 using UnityEngine;
@@ -19,14 +20,22 @@ namespace TpsDungeon.Map.Tests
             Assert.AreEqual(expected, Door.IsLeafSolid(isOpen, isSwinging));
         }
 
-        private const string DoorPrefabPath = "Assets/_Project/Prefabs/Parts/Door_Basic.prefab";
+        private const string ConfigPath = "Assets/_Project/Settings/Map/Floor_L1_Config.asset";
+
+        /// <summary>第1層の FloorConfig に差してあるドア（テーマごとのフォルダに作られる）。</summary>
+        private static GameObject LoadDoorPrefab()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(ConfigPath);
+            Assert.IsNotNull(config, $"{ConfigPath} が無い");
+            Assert.IsNotNull(config.doorPrefab, $"{ConfigPath} にドアが差されていない");
+            return config.doorPrefab;
+        }
 
         [Test]
         public void DoorPrefab_IsBuiltAtRealSizeWithoutScale()
         {
             // 素材の模様の密度を壁と揃えるため、ドアはどこもスケールせず実寸のメッシュで持つ。
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(DoorPrefabPath);
-            Assert.IsNotNull(prefab, $"{DoorPrefabPath} が無い");
+            var prefab = LoadDoorPrefab();
 
             // ドアノブ（Knob_*）は小さな球と円柱を縮めて作った飾りなので見ない。
             foreach (Transform t in prefab.GetComponentsInChildren<Transform>(true))
@@ -43,8 +52,7 @@ namespace TpsDungeon.Map.Tests
         {
             // 以前はルートを非一様スケールしていたため、角度 0 以外で扉板が斜めに歪んでいた。
             // 置いた向きで回しても、扉板の当たりの箱が大きさを保ち、軸が直交したままであることを確かめる。
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(DoorPrefabPath);
-            Assert.IsNotNull(prefab, $"{DoorPrefabPath} が無い");
+            var prefab = LoadDoorPrefab();
 
             var root = Object.Instantiate(prefab);
             try
