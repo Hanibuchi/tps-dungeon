@@ -314,13 +314,19 @@ namespace TpsDungeon.Party.Editor
             {
                 "MoveSpeed", "SprintSpeed", "RotationSmoothTime", "SpeedChangeRate", "LandingAudioClip", "FootstepAudioClips",
                 "FootstepAudioVolume", "JumpHeight", "Gravity", "JumpTimeout", "FallTimeout", "GroundedOffset", "GroundedRadius",
-                "GroundLayers", "CinemachineCameraTarget", "TopClamp", "BottomClamp", "CameraAngleOverride", "LockCameraPosition",
+                "GroundLayers", "CinemachineCameraTarget", "CameraAngleOverride", "LockCameraPosition",
             };
             foreach (string name in names)
             {
                 SerializedProperty p = from.FindProperty(name);
                 if (p != null) to.CopyFromSerializedProperty(p);
             }
+
+            // ThirdPersonController の縦の制限は pitch の値（正で下）で持つので、水平からの角度に直す。
+            SerializedProperty top = from.FindProperty("TopClamp");
+            SerializedProperty bottom = from.FindProperty("BottomClamp");
+            if (top != null) to.FindProperty(nameof(CharacterMotor.LookDownLimit)).floatValue = top.floatValue;
+            if (bottom != null) to.FindProperty(nameof(CharacterMotor.LookUpLimit)).floatValue = -bottom.floatValue;
 
             to.ApplyModifiedPropertiesWithoutUndo();
         }
