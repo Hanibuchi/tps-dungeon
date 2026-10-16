@@ -198,6 +198,8 @@ namespace TpsDungeon.Party
 
         /// <summary>
         /// 先頭の後ろに跡をまっすぐ作り直し、後ろの全員をその列の位置へ跳ばす。始まりと、先頭が跳んだときに使う。
+        /// 真後ろに少しでも余地があれば真後ろに並べる（階段の途中から始まるときなど、後ろが狭くても前に回り込ませない）。
+        /// 全員が入りきらなければ、間隔を詰めて真後ろに収める。歩き出せば元の間隔に戻る。
         /// </summary>
         public void Regroup()
         {
@@ -205,13 +207,62 @@ namespace TpsDungeon.Party
             if (leader == null) return;
 
             Transform t = leader.transform;
-            ResetTrailBehind(leader);
+            ResetTrailBehind(leader, preferStraightBack: true);
 
             // NavMesh がまだ無い（フロアの生成と焼き上がりを待っている）間は並べない。焼けたら Baked でもう一度呼ばれる。
             if (!NavMesh.SamplePosition(t.position, out NavMeshHit _, 2f, NavMesh.AllAreas)) return;
 
-            for (int i = 1; i < Order.Count; i++) Order[i].PlaceAt(FormationPoint(i), t.rotation);
+            float step = PackedSpacing(spacing, Trail.Length, Order.Count - 1);
+            for (int i = 1; i < Order.Count; i++)
+            {
+                Vector3 at = step >= spacing ? FormationPoint(i) : BehindOnGround(t, step * i);
+                Order[i].PlaceAt(at, t.rotation);
+            }
             Regrouped?.Invoke(this);
+        }
+
+        /// <summary>
+        /// leader の真後ろ distance（水平）の所の、足元の地面（段や坂）の上の NavMesh の点。
+        /// 階段の途中のように後ろが上り下りしていても、その段の上に乗せる（同じ高さで一番近い NavMesh を探すと、坂の下の床などに寄ってしまう）。
+        /// </summary>
+        private Vector3 BehindOnGround(Transform leader, float distance)
+        {
+            Vector3 back = -leader.forward;
+            back.y = 0f;
+            Vector3 point = leader.position + back.normalized * distance;
+            if (Physics.Raycast(point + Vector3.up * GroundProbeHeight, Vector3.down, out RaycastHit ground, GroundProbeHeight * 2f, GroundMask, QueryTriggerInteraction.Ignore)
+                && NavMesh.SamplePosition(ground.point, out NavMeshHit onGround, 0.6f, NavMesh.AllAreas))
+            {
+                return onGround.position;
+            }
+            return OnNavMesh(point);
+        }
+
+        // 真後ろの地面を探すとき、その点のどれだけ上からレイを落とすか。急な坂の段 1 つぶんより高く、天井より低く。
+        private const float GroundProbeHeight = 2.5f;
+
+        /// <summary>地面を探すレイが当たる層。パーティーの体（Ally）や壊せる草花（Breakable）は素通しする。</summary>
+        private static int GroundMask
+        {
+            get
+            {
+                int mask = ~0;
+                foreach (string layer in new[] { "Ally", "Breakable" })
+                {
+                    int index = LayerMask.NameToLayer(layer);
+                    if (index >= 0) mask &= ~(1 << index);
+                }
+                return mask;
+            }
+        }
+
+        /// <summary>
+        /// 長さ length の跡に followers 人を並べるときの間隔。普段の間隔（spacing）で入りきらなければ、入りきるまで詰める。
+        /// </summary>
+        public static float PackedSpacing(float spacing, float length, int followers)
+        {
+            if (followers <= 0) return spacing;
+            return Mathf.Min(spacing, Mathf.Max(0f, length) / followers);
         }
 
         private void OnNavMeshBaked() => Regroup();
@@ -220,13 +271,24 @@ namespace TpsDungeon.Party
         /// leader の後ろに跡を作り直す。真後ろが壁で詰まっていれば、NavMesh の上で一番開けている向きを使い、
         /// 跡は壁に当たる所までにする（後ろの人が壁の向こうの部屋へ回り込まないように）。
         /// </summary>
-        private void ResetTrailBehind(PartyMember leader)
+        private void ResetTrailBehind(PartyMember leader, bool preferStraightBack = false)
         {
             Transform t = leader.transform;
             lastLeaderPosition = t.position;
             float wanted = spacing * (Order.Count - 1) + spacing;
 
             Vector3 origin = OnNavMesh(t.position);
+
+            // 並べ直し（始まり・跳んだとき）では、真後ろに 1 人ぶんの半分でも余地があれば真後ろを使う。
+            if (preferStraightBack)
+            {
+                float back = FreeLength(origin, -t.forward, wanted);
+                if (back >= spacing * 0.5f)
+                {
+                    Trail.Reset(t.position, -t.forward, back);
+                    return;
+                }
+            }
 
             // 真後ろから左右へ 45 度ずつ向きを変えて探し、数人ぶん並べる長さがある最初の向きを使う（後ろに近い向きほど先）。
             // どの向きも短ければ、一番長い向き。
@@ -256,7 +318,11 @@ namespace TpsDungeon.Party
             if (direction.sqrMagnitude < 1e-6f) return 0f;
             Vector3 end = origin + direction.normalized * max;
             if (!NavMesh.SamplePosition(origin, out NavMeshHit start, 1f, NavMesh.AllAreas)) return max;
-            return NavMesh.Raycast(start.position, end, out NavMeshHit hit, NavMesh.AllAreas) ? Mathf.Max(0f, hit.distance - 0.4f) : max;
+            if (!NavMesh.Raycast(start.position, end, out NavMeshHit hit, NavMesh.AllAreas)) return max;
+            // 坂や段の上では高さも変わるので、水平の距離で測る（並べるのも水平に測った所）。
+            Vector3 along = hit.position - start.position;
+            along.y = 0f;
+            return Mathf.Max(0f, along.magnitude - 0.4f);
         }
 
         private void OnOrderChanged(PartyOrder<PartyMember> _)
