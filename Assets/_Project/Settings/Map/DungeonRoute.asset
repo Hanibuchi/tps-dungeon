@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ede957d7aaae46718f78d2a1a39ca34, type: 3}
+  m_Name: DungeonRoute
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.DungeonRoute
+  layers:
+  - name: "\u7B2C 1 \u5C64"
+    randomScene: L1_Random
+    randomConfig: {fileID: 11400000, guid: 512aace911c18448bbe1a2214abce5a4, type: 2}
+    randomFloorCount: 4
+    bossScene: L1_Boss
+    bossConfig: {fileID: 11400000, guid: 41b82032a7ae74faa9830ea4471bb9a0, type: 2}
+  - name: "\u7B2C 2 \u5C64"
+    randomScene: L2_Random
+    randomConfig: {fileID: 11400000, guid: 27da9327c744e4b61b426ee02eb7c6f7, type: 2}
+    randomFloorCount: 4
+    bossScene: L2_Boss
+    bossConfig: {fileID: 11400000, guid: b9ec9b56d9f194daf819c0bc2b3a6e88, type: 2}
+  - name: "\u7B2C 3 \u5C64"
+    randomScene: L3_Random
+    randomConfig: {fileID: 11400000, guid: eec456d234804416ea467e94770521b4, type: 2}
+    randomFloorCount: 4
+    bossScene: L3_Boss
+    bossConfig: {fileID: 11400000, guid: d997ea3b33aaa4c0caab65f52453738e, type: 2}
+  - name: "\u7B2C 4 \u5C64"
+    randomScene: L4_Random
+    randomConfig: {fileID: 11400000, guid: afd730609d9e6452580e703ea6d1dfed, type: 2}
+    randomFloorCount: 4
+    bossScene: L4_Boss
+    bossConfig: {fileID: 11400000, guid: e62a02170ce5c463aba0d2867b981cc6, type: 2}
+  - name: "\u7B2C 5 \u5C64"
+    randomScene: L5_Random
+    randomConfig: {fileID: 11400000, guid: aea2b2ff7516c4c369a636e6232df84a, type: 2}
+    randomFloorCount: 4
+    bossScene: L5_Boss
+    bossConfig: {fileID: 11400000, guid: ff76bf7a1fc8944059e204985c6ab646, type: 2}
+  allowGoingDown: 0

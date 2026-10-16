@@ -15,23 +15,70 @@ namespace TpsDungeon.Map.Editor
     public static class FloorSceneBuilder
     {
         private const string ScenesFolder = "Assets/_Project/Scenes";
-        private const string DefaultConfigPath = "Assets/_Project/Settings/Map/Floor_L1_Config.asset";
+        public const string RoutePath = "Assets/_Project/Settings/Map/DungeonRoute.asset";
 
-        [MenuItem("Tools/TPS Dungeon/Floor_1_1 シーンを作る")]
-        public static void CreateFloor11()
+        // L1 のランダムな階のシーンは以前 Floor_1_1 という名前だった。中身（GUID）を保ったまま名前を変える。
+        private const string LegacyFirstFloorPath = ScenesFolder + "/Floor_1_1.unity";
+
+        /// <summary>
+        /// 道順（DungeonRoute）に載っている階のシーン（L{n}_Random・L{n}_Boss）を全部作り直す。
+        /// [Floor] の FloorBootstrap に道順とその層の FloorConfig を差す。デバッグは Tools/TPS Dungeon/階のデバッグ から。
+        /// 窓の外の景色は「階の外の景色を置く（全層）」で置く。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/階のシーンを作る（全層）")]
+        public static void CreateAllFloorScenes()
         {
-            var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(DefaultConfigPath);
-            if (config == null)
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            if (route == null)
             {
-                Debug.LogError($"{DefaultConfigPath} が無い。先に「プレースホルダのマップ一式を生成」を実行すること。");
+                Debug.LogError($"{RoutePath} が無い。先に「ダンジョンの道順を作る」を実行すること。");
                 return;
             }
 
-            CreateFloorScene(config, $"{ScenesFolder}/Floor_1_1.unity");
+            RenameLegacyFirstFloor(route);
+
+            int made = 0;
+            foreach (var layer in route.Layers)
+            {
+                if (layer.randomFloorCount > 0 && !string.IsNullOrEmpty(layer.randomScene) && layer.randomConfig != null)
+                {
+                    CreateFloorScene(layer.randomConfig, $"{ScenesFolder}/{layer.randomScene}.unity", route);
+                    made++;
+                }
+                if (layer.HasBoss && layer.bossConfig != null)
+                {
+                    CreateFloorScene(layer.bossConfig, $"{ScenesFolder}/{layer.bossScene}.unity", route);
+                    made++;
+                }
+            }
+            RemoveMissingFromBuildSettings();
+            Debug.Log($"階のシーンを {made} 個作った");
         }
 
-        public static void CreateFloorScene(FloorConfig config, string scenePath)
+        /// <summary>Floor_1_1 が残っていれば、道順の最初のランダムな階のシーン名（L1_Random）に名前を変える。</summary>
+        private static void RenameLegacyFirstFloor(DungeonRoute route)
         {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(LegacyFirstFloorPath) == null || route.Layers.Count == 0) return;
+
+            string target = $"{ScenesFolder}/{route.Layers[0].randomScene}.unity";
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(target) != null) return;
+
+            string error = AssetDatabase.MoveAsset(LegacyFirstFloorPath, target);
+            if (!string.IsNullOrEmpty(error)) Debug.LogError($"{LegacyFirstFloorPath} を {target} に移せなかった: {error}");
+        }
+
+        public static void CreateFloorScene(FloorConfig config, string scenePath) => CreateFloorScene(config, scenePath, null);
+
+        public static void CreateFloorScene(FloorConfig config, string scenePath, DungeonRoute route)
+        {
+            // 開いているシーンには上書きで保存できない（黙って失敗する）。開いている人の未保存の変更を消さないためにも飛ばす。
+            var open = SceneManager.GetSceneByPath(scenePath);
+            if (open.IsValid() && open.isLoaded)
+            {
+                Debug.LogError($"{scenePath} を開いているので作り直さなかった。別のシーンを開いてからもう一度実行すること。");
+                return;
+            }
+
             // 追加ロードで作って保存後に閉じる。いま開いているシーンの未保存の変更を巻き込まないため。
             var previousActive = SceneManager.GetActiveScene();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
@@ -40,7 +87,7 @@ namespace TpsDungeon.Map.Editor
             try
             {
                 CreateLighting();
-                var bootstrap = CreateFloorRoot(config);
+                var bootstrap = CreateFloorRoot(config, route);
                 CreateDebugView(bootstrap);
 
                 EditorSceneManager.SaveScene(scene, scenePath);
@@ -69,7 +116,7 @@ namespace TpsDungeon.Map.Editor
             RenderSettings.ambientLight = new Color(0.45f, 0.45f, 0.5f);
         }
 
-        private static FloorBootstrap CreateFloorRoot(FloorConfig config)
+        private static FloorBootstrap CreateFloorRoot(FloorConfig config, DungeonRoute route)
         {
             var root = new GameObject("[Floor]");
             root.AddComponent<FloorBuilder>();
@@ -78,6 +125,7 @@ namespace TpsDungeon.Map.Editor
             // private [SerializeField] なので SerializedObject 経由で差し込む。
             var serialized = new SerializedObject(bootstrap);
             serialized.FindProperty("config").objectReferenceValue = config;
+            serialized.FindProperty("route").objectReferenceValue = route;
             serialized.FindProperty("seed").intValue = 0;
             serialized.FindProperty("generateOnStart").boolValue = true;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -101,6 +149,17 @@ namespace TpsDungeon.Map.Editor
             serialized.FindProperty("bootstrap").objectReferenceValue = bootstrap;
             serialized.FindProperty("topDownCamera").objectReferenceValue = camera;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>名前を変えたり消したりして無くなったシーンを Build Settings から外す。</summary>
+        private static void RemoveMissingFromBuildSettings()
+        {
+            var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>();
+            foreach (var existing in EditorBuildSettings.scenes)
+            {
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(existing.path) != null) scenes.Add(existing);
+            }
+            if (scenes.Count != EditorBuildSettings.scenes.Length) EditorBuildSettings.scenes = scenes.ToArray();
         }
 
         private static void AddToBuildSettings(string scenePath)

@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Tests
 {
     /// <summary>
     /// 階を組むと、FloorConfig の Volume の profile が Global Volume として一緒に置かれることを確かめる。
-    /// どのシーンで階を作っても（Floor_1_1 でも確認用シーンでも）同じ明るさになるように。
+    /// どのシーンで階を作っても（L1_Random でも確認用シーンでも）同じ明るさになるように。
     /// アセットは書き換えないよう、FloorConfig は複製して使い、profile もその場で作る。
     /// </summary>
     public sealed class FloorVolumeTests

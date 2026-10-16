@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dec74795c9d1d4f8688309f6f22c64fe, type: 3}
+  m_Name: L2_BossCatalog
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.RoomTemplateCatalog
+  entries:
+  - prefab: {fileID: 4155326717597408730, guid: d65267edab9f746b99dfd007586d50ab, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 5431786777509405628, guid: 26f057f9b94334543888cf8a1fac9d2b, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 1787704807701918744, guid: f48874a03e126433ba156767d1077f5d, type: 3}
+    weightOverride: 0

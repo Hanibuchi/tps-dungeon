@@ -4,6 +4,15 @@ using TpsDungeon.Map.Generation;
 
 namespace TpsDungeon.Map.Authoring
 {
+    /// <summary>階の間取りの作り方。</summary>
+    public enum FloorLayoutShape
+    {
+        /// <summary>部屋を成長させて毎回違う形に作る（普通の階）。</summary>
+        Random = 0,
+        /// <summary>決まった間取り（入口 → 横長の部屋 → 大扉 → ボス部屋 → 閉ざされた扉 → 出口）。BossFloorLayout を見る。</summary>
+        Boss = 1,
+    }
+
     /// <summary>
     /// 1 つの階の生成設定。階ごとに 1 つ作り、その階のシーンの FloorBootstrap から参照する。
     /// 上の層ほど広くする、といった層ごとの差はこのアセットの値で表現する。
@@ -11,6 +20,15 @@ namespace TpsDungeon.Map.Authoring
     [CreateAssetMenu(fileName = "FloorConfig", menuName = "TPS Dungeon/Floor Config")]
     public sealed class FloorConfig : ScriptableObject
     {
+        /// <summary>ボス階のカタログで、各部屋に使う Prefab の名前（テンプレート ID）。</summary>
+        public const string BossEntranceId = "Room_Stair";
+        public const string BossHallId = "Room_BossHall";
+        public const string BossArenaId = "Room_BossArena";
+
+        [Header("間取り")]
+        [Tooltip("Random は毎回違う形、Boss は決まった間取り（カタログに Room_Stair・Room_BossHall・Room_BossArena を入れる。部屋数・接続の値は使わない）。")]
+        public FloorLayoutShape layoutShape = FloorLayoutShape.Random;
+
         [Header("グリッド")]
         [Min(16), Tooltip("フロア全体の横幅（セル数）。部屋はこの範囲からはみ出さない。余裕があるほど広がった形になる。")]
         public int widthInCells = 64;
@@ -62,6 +80,10 @@ namespace TpsDungeon.Map.Authoring
         public GameObject stairDownPrefab;
         [Tooltip("ショップの目印。ショップ部屋の中央に 1 つ置かれる。")]
         public GameObject shopMarkerPrefab;
+        [Tooltip("大扉（両開き）。ボス部屋の入口など、レイアウトが大扉にした辺に普通のドアの代わりに置く。向きと大きさは壁と同じ。未設定なら普通のドア。")]
+        public GameObject grandDoorPrefab;
+        [Tooltip("ショートカット解放用の場所の目印。レイアウトが決めたセルの中央に置く。")]
+        public GameObject shortcutMarkerPrefab;
 
         [Header("見た目")]
         [Tooltip("壁・天井・ドア・階段の素材。層ごとに差し替えて見た目を変える。共通パーツはこれで作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
@@ -86,6 +108,21 @@ namespace TpsDungeon.Map.Authoring
                     : new System.Collections.Generic.List<Data.RoomTemplateData>(),
             };
             return parameters;
+        }
+
+        /// <summary>ボス階の 3 つの部屋のテンプレートをカタログから ID で引く。無いものは null のまま（BossFloorLayout が知らせる）。</summary>
+        public BossFloorTemplates BuildBossTemplates()
+        {
+            var templates = new BossFloorTemplates();
+            if (roomCatalog == null) return templates;
+
+            foreach (var data in roomCatalog.BuildTemplateData())
+            {
+                if (data.Id == BossEntranceId) templates.Entrance = data;
+                else if (data.Id == BossHallId) templates.Hall = data;
+                else if (data.Id == BossArenaId) templates.Arena = data;
+            }
+            return templates;
         }
 
 #if UNITY_EDITOR

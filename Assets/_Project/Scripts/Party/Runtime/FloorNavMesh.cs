@@ -70,7 +70,7 @@ namespace TpsDungeon.Party
 
             foreach (Door door in builder.GeneratedRoot.GetComponentsInChildren<Door>(true))
             {
-                if (door.Hinge != null) IgnoreFromBuild(door.Hinge.gameObject);
+                foreach (Transform hinge in door.Hinges) IgnoreFromBuild(hinge.gameObject);
                 foreach (Collider c in door.GetComponentsInChildren<Collider>(true))
                 {
                     if (c.isTrigger) IgnoreFromBuild(c.gameObject);

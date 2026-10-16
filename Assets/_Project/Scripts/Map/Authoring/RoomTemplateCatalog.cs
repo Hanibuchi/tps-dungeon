@@ -46,7 +46,9 @@ namespace TpsDungeon.Map.Authoring
                     Debug.LogError($"[{name}] {entry.prefab.name} に RoomTemplate が付いていないので無視した", this);
                     continue;
                 }
-                if (!template.HasSocketOnEverySide())
+                // 四辺に繋がれないと困るのは、階を広げていく普通の部屋だけ。階段の部屋（入りやすいようにドアを 1 面に絞ってある）や
+                // ショップ・ボス階の部屋は、置く所や繋ぎ方が決まっているので確かめない。
+                if ((template.Tags & RoomTag.Normal) != 0 && !template.HasSocketOnEverySide())
                 {
                     Debug.LogWarning($"[{name}] {entry.prefab.name} は四辺すべてにドア候補が無い。繋がらない方向ができる。", entry.prefab);
                 }

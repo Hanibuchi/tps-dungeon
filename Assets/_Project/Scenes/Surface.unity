@@ -18960,6 +18960,7 @@ Transform:
   - {fileID: 1093100637}
   - {fileID: 370841202}
   - {fileID: 166388098}
+  - {fileID: 2143288239}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &267379722
@@ -25298,6 +25299,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62409878b250e42b7b330317b7a84f55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.PlayerSpawnPoint
+  pointId: 
 --- !u!1001 &372098119
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34645,6 +34647,14 @@ PrefabInstance:
       propertyPath: displayName
       value: "\u30EA\u30AA"
       objectReference: {fileID: 0}
+    - target: {fileID: 1009693259644839325, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+      propertyPath: startingItems.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1009693259644839325, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
+      propertyPath: 'startingItems.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 81d11e988339f46e9bb11c85e5162fb3, type: 2}
     - target: {fileID: 3715460319869569215, guid: 76d71c093440d41a8af86afb7bd33a4b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -95648,7 +95658,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
-  sceneName: Floor_1_1
+  sceneName: L1_Random
   open: 1
   openLabel: "\u57CE\u3078\u5165\u308B"
   closedLabel: "\u307E\u3060\u958B\u3044\u3066\u3044\u306A\u3044"
@@ -112744,6 +112754,10 @@ MonoBehaviour:
   party: {fileID: 466638732}
   wipeDelay: 2.5
   spawnWaitTimeout: 5
+  travelSound: {fileID: 8300000, guid: 18f5e01aff78f4500b6038755069fe46, type: 3}
+  travelSoundVolume: 0.8
+  fadeOutSeconds: 0.75
+  fadeInSeconds: 0.75
 --- !u!4 &1609497291
 Transform:
   m_ObjectHideFlags: 0
@@ -149772,6 +149786,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4383882971595202, guid: e1154cf6ac27b2f45b4ae35582e7e363, type: 3}
   m_PrefabInstance: {fileID: 2142612483}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2143288238
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2143288239}
+  - component: {fileID: 2143288240}
+  m_Layer: 0
+  m_Name: CastleGateSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2143288239
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143288238}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
+  m_LocalPosition: {x: 0, y: -0.2696635, z: 27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 267379721}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2143288240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143288238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62409878b250e42b7b330317b7a84f55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.PlayerSpawnPoint
+  pointId: CastleGate
 --- !u!1001 &2143624954
 PrefabInstance:
   m_ObjectHideFlags: 0

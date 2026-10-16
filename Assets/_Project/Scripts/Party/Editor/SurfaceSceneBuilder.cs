@@ -30,7 +30,7 @@ namespace TpsDungeon.Party.Editor
         private const string NavMeshPath = "Assets/_Project/Scenes/Surface/NavMesh-Surface.asset";
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
         private const string FollowCameraPrefabPath = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Prefabs/PlayerFollowCamera.prefab";
-        private const string FirstFloorScene = "Floor_1_1";
+        private const string FirstFloorScene = "L1_Random";
         private const int Followers = 4;
 
         // 地面の範囲（メートル）。+Z が城。歩けるのはこの範囲だけで、まわりを見えない壁で囲む。
@@ -41,6 +41,11 @@ namespace TpsDungeon.Party.Editor
         private const float BoundsHeight = 30f;
         private const float BoundsThickness = 2f;
         private const float CastleFront = 30f;
+        public const string GateSpawnName = "CastleGateSpawn";
+        // シーンを移るとき（門・階段）に鳴らす音。
+        public const string TravelSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/アスファルトの上を走る1 (cut).mp3";
+        // 門の前のどれだけ手前に立つか（メートル）。
+        private const float GateSpawnDistance = 3f;
 
         [MenuItem("Tools/TPS Dungeon/地上シーンを作る")]
         public static void GenerateFromMenu() => Debug.Log(Generate());
@@ -70,6 +75,7 @@ namespace TpsDungeon.Party.Editor
                 BuildBounds();
                 BuildCastle(world, materials);
                 Transform spawn = CreateSpawn(world);
+                CreateGateSpawn(world);
 
                 PlaceParty(spawn, partyPrefab, characterPrefab, followCameraPrefab);
                 SurfaceScenery.Build(scene, world);
@@ -199,6 +205,16 @@ namespace TpsDungeon.Party.Editor
             return spawn.transform;
         }
 
+        /// <summary>城の大門の前。ダンジョンから地上へ降りてきたパーティーが、門を背にして立つ（PlayerSpawnPoint.CastleGate）。</summary>
+        public static Transform CreateGateSpawn(Transform world)
+        {
+            var spawn = new GameObject(GateSpawnName);
+            spawn.transform.SetParent(world, false);
+            spawn.transform.SetLocalPositionAndRotation(new Vector3(0f, 0.05f, CastleFront - GateSpawnDistance), Quaternion.Euler(0f, 180f, 0f));
+            spawn.AddComponent<PlayerSpawnPoint>().PointId = PlayerSpawnPoint.CastleGate;
+            return spawn.transform;
+        }
+
         private static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body)
         {
             var gate = target.AddComponent<SceneGate>();
@@ -245,6 +261,9 @@ namespace TpsDungeon.Party.Editor
         {
             var rig = new GameObject("[Party Rig]");
             var flow = rig.AddComponent<GameFlow>();
+            var flowSerialized = new SerializedObject(flow);
+            flowSerialized.FindProperty("travelSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(TravelSoundPath);
+            flowSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             var mainCamera = new GameObject("Main Camera") { tag = "MainCamera" };
             mainCamera.transform.SetParent(rig.transform, false);

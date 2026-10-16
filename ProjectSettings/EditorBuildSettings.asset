@@ -9,10 +9,7 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Surface.unity
     guid: e6525a19063b14d2eb0bdeea3535dc5f
   - enabled: 1
-    path: Assets/_Project/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/_Project/Scenes/Floor_1_1.unity
+    path: Assets/_Project/Scenes/L1_Random.unity
     guid: e434c6abce29145f0a44dbb9bee0d8bc
   - enabled: 0
     path: Assets/_Project/Scenes/Audio_Debug.unity
@@ -20,6 +17,33 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_Project/Scenes/Player_Debug.unity
     guid: d0bcd67fb71d240358fa1192241ea772
+  - enabled: 1
+    path: Assets/_Project/Scenes/L1_Boss.unity
+    guid: 1eb48fcdfc3404f25a0ed99a0581ed84
+  - enabled: 1
+    path: Assets/_Project/Scenes/L2_Boss.unity
+    guid: d03c92bf3598e49be82fcdcd0b12f306
+  - enabled: 1
+    path: Assets/_Project/Scenes/L3_Boss.unity
+    guid: 5640b51be7f4f413a8bef544beac28b4
+  - enabled: 1
+    path: Assets/_Project/Scenes/L4_Boss.unity
+    guid: d9e5ac97552134f16b55e298c5194edc
+  - enabled: 1
+    path: Assets/_Project/Scenes/L5_Boss.unity
+    guid: ac2c1c6ea02bf49a886da060a4580088
+  - enabled: 1
+    path: Assets/_Project/Scenes/L2_Random.unity
+    guid: 631620ad283774275877cce85a78f72a
+  - enabled: 1
+    path: Assets/_Project/Scenes/L3_Random.unity
+    guid: 3922a99d1b3d34bfc9e9b048f11a2b47
+  - enabled: 1
+    path: Assets/_Project/Scenes/L4_Random.unity
+    guid: 3c23a1c0a9f38471e81cab3a33c98701
+  - enabled: 1
+    path: Assets/_Project/Scenes/L5_Random.unity
+    guid: 5daa4af01d17741de821835dfeeacaeb
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
   m_UseUCBPForAssetBundles: 0
