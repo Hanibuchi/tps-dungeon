@@ -7,6 +7,8 @@ namespace TpsDungeon.Interaction
     /// <summary>
     /// 画面中央の照準の先にある IInteractable を探し、インタラクトキーで触る。
     /// カーソルはロックされているので「カーソルを合わせる」は画面中央からのレイで判定する。
+    /// レイはカメラからではなく、カメラのレイの上でキャラにいちばん近い点から飛ばす。カメラとキャラの間にある物
+    /// （くぐったばかりの扉の開口の判定など）を、キャラの後ろにあるのに照準の先として拾わないように。
     /// 壁越しに拾わないよう、自分以外で最初に当たったものしか見ない。
     /// トリガーは IInteractable に属するもの（開いた扉の開口に張った判定など）だけを的にし、それ以外は素通しする。
     /// キャラのルートに付ける。パーティーでは操作しているキャラ（先頭）でだけ有効にする。
@@ -140,8 +142,12 @@ namespace TpsDungeon.Interaction
             var cam = aimCamera != null ? aimCamera : Camera.main;
             if (cam == null) return null;
 
-            var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            int count = Physics.RaycastNonAlloc(ray, hits, maxAimDistance, aimMask, QueryTriggerInteraction.Collide);
+            var reachOrigin = transform.position + Vector3.up * reachOriginHeight;
+            var aim = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            float skipped = DistanceToClosestPoint(aim, reachOrigin);
+            var ray = new Ray(aim.GetPoint(skipped), aim.direction);
+            float distance = Mathf.Max(0f, maxAimDistance - skipped);
+            int count = Physics.RaycastNonAlloc(ray, hits, distance, aimMask, QueryTriggerInteraction.Collide);
             Array.Sort(hits, 0, count, HitDistanceComparer.Instance);
 
             for (int i = 0; i < count; i++)
@@ -158,7 +164,6 @@ namespace TpsDungeon.Interaction
                     return null;
                 }
 
-                var reachOrigin = transform.position + Vector3.up * reachOriginHeight;
                 if (!IsWithinReach(reachOrigin, hits[i].point, interactRange)) return null;
                 if (!interactable.CanInteract(gameObject)) return null;
 
@@ -242,6 +247,15 @@ namespace TpsDungeon.Interaction
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// レイの上で point にいちばん近い点までの、レイの起点からの距離。point がレイの後ろなら 0（起点のまま）。
+        /// 照準のレイをキャラの位置から飛ばすのに使う。
+        /// </summary>
+        public static float DistanceToClosestPoint(Ray ray, Vector3 point)
+        {
+            return Mathf.Max(0f, Vector3.Dot(point - ray.origin, ray.direction));
         }
 
         /// <summary>origin から point までが range 以内か。</summary>

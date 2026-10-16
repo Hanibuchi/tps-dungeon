@@ -43,6 +43,16 @@ namespace TpsDungeon.Map.Authoring
         [SerializeField, Tooltip("層の並び（下から順に）。")]
         private List<Layer> layers = new List<Layer>();
 
+        [SerializeField, Tooltip("下り階段で 1 つ下の階へ降りられるようにする（1 層 1 階からは地上へ）。普段は切っておく（下へは戻れない）。デバッグ用だが本編で使ってもよい。")]
+        private bool allowGoingDown;
+
+        /// <summary>下り階段で 1 つ下の階へ降りられるか。</summary>
+        public bool AllowGoingDown
+        {
+            get => allowGoingDown;
+            set => allowGoingDown = value;
+        }
+
         public IReadOnlyList<Layer> Layers => layers;
 
         public void SetLayers(IEnumerable<Layer> newLayers) => layers = new List<Layer>(newLayers);

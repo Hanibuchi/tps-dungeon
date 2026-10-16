@@ -7,6 +7,22 @@ namespace TpsDungeon.Interaction.Tests
     public sealed class InteractionTests
     {
         [Test]
+        public void AimRay_StartsAtThePointClosestToTheCharacter()
+        {
+            // カメラ（原点）から +Z へのレイで、キャラの胸は 4 m 先の少し横。レイはそこまで進めてから飛ばす。
+            var ray = new Ray(Vector3.zero, Vector3.forward);
+            Assert.AreEqual(4f, PlayerInteractor.DistanceToClosestPoint(ray, new Vector3(0.6f, 0.3f, 4f)), 0.0001f,
+                "カメラとキャラの間（くぐったばかりの扉の開口など）は照準の先として拾わない");
+        }
+
+        [Test]
+        public void AimRay_DoesNotMoveBackWhenTheCharacterIsBehindTheCamera()
+        {
+            var ray = new Ray(Vector3.zero, Vector3.forward);
+            Assert.AreEqual(0f, PlayerInteractor.DistanceToClosestPoint(ray, new Vector3(0f, 0f, -1f)));
+        }
+
+        [Test]
         public void Reach_InsideRange_IsReachable()
         {
             Assert.IsTrue(PlayerInteractor.IsWithinReach(Vector3.zero, new Vector3(1f, 1f, 1f), 2.5f));

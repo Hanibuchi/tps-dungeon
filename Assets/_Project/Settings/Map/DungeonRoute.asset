@@ -43,3 +43,4 @@ MonoBehaviour:
     randomFloorCount: 4
     bossScene: L5_Boss
     bossConfig: {fileID: 11400000, guid: ff76bf7a1fc8944059e204985c6ab646, type: 2}
+  allowGoingDown: 0

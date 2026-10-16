@@ -8,7 +8,8 @@ namespace TpsDungeon.Map.Runtime
     /// <summary>
     /// 階シーンの起点。シーンを再生するとこのコンポーネントがフロアを生成する。
     /// 道順（DungeonRoute）を差してあれば、着いた階（DungeonProgress）をその道順から読み、その階の FloorConfig で作る。
-    /// 下り階段は閉じ（下へは戻れない）、上り階段は道順の次の階へ繋ぐ（最後の階なら閉じる）。
+    /// 下り階段は閉じ（下へは戻れない。案内も出さない）、上り階段は道順の次の階へ繋ぐ（最後の階なら閉じる）。
+    /// 道順の AllowGoingDown が入っていれば、下り階段で 1 つ下の階（1 層 1 階なら地上）へ降りられる。
     /// 道順が無ければ（確認用のシーンなど）、このシーンの FloorConfig で作り、階段は downScene / upScene へ繋ぐ。
     /// </summary>
     [DisallowMultipleComponent]
@@ -142,18 +143,41 @@ namespace TpsDungeon.Map.Runtime
             Debug.Log($"[Dungeon] {route.Label(floor)}（{floor}、{gameObject.scene.name}）", this);
         }
 
-        /// <summary>道順の階段：下りは閉じ、上りは次の階へ（最後の階なら閉じる）。</summary>
+        /// <summary>今の階の道順で階段を繋ぎ直す（道順の AllowGoingDown を切り替えたときなど）。</summary>
+        public void ReconnectStairs()
+        {
+            if (builder == null || route == null || !CurrentFloor.HasValue) return;
+            ConnectRouteStairs(CurrentFloor.Value);
+        }
+
+        /// <summary>
+        /// 道順の階段：上りは次の階へ（最後の階なら閉じる）。下りは閉じて案内も出さないが、
+        /// AllowGoingDown なら 1 つ下の階（無ければ地上）へ「降りる」。
+        /// </summary>
         private void ConnectRouteStairs(DungeonFloor floor)
         {
-            var entrance = ConnectStair(builder.EntranceStair, null);
-            if (entrance != null) entrance.ClosedLabel = "戻れない";
+            var previous = route.Previous(floor);
+            string downTo = !route.AllowGoingDown ? null : previous.HasValue ? route.SceneOf(previous.Value) : SceneTravel.SurfaceScene;
+            var entrance = ConnectStair(builder.EntranceStair, downTo);
+            if (entrance != null)
+            {
+                entrance.OpenLabel = "降りる";
+                entrance.ClosedLabel = "";
+                entrance.Entering -= OnEnteringDown;
+                if (downTo != null) entrance.Entering += OnEnteringDown;
+            }
 
             var next = route.Next(floor);
             var exit = ConnectStair(builder.ExitStair, next.HasValue ? route.SceneOf(next.Value) : null);
             if (exit == null) return;
-            if (next.HasValue) exit.Entering += () => DungeonProgress.Pending = next;
+            exit.Entering -= OnEnteringUp;
+            if (next.HasValue) exit.Entering += OnEnteringUp;
             else exit.ClosedLabel = "この先はまだ無い";
         }
+
+        private void OnEnteringUp() => DungeonProgress.Pending = CurrentFloor.HasValue ? route.Next(CurrentFloor.Value) : null;
+
+        private void OnEnteringDown() => DungeonProgress.Pending = CurrentFloor.HasValue ? route.Previous(CurrentFloor.Value) : null;
 
         /// <summary>道順が無いときの階段：このシーンに書いた行き先へ。</summary>
         private void ConnectSceneStairs()

@@ -7,6 +7,7 @@ namespace TpsDungeon.Map.Runtime
     /// <summary>
     /// インタラクトで別のシーンへ移る入口（城の門・ショートカットの門・拠点の建物など）。
     /// 閉じている間も照準を合わせれば案内（closedLabel）と情報欄は出すが、押しても何も起きない。
+    /// closedLabel が空なら、閉じている間は案内も出さない（触れない物として扱う）。
     /// 当たり判定はこの GameObject か子のコライダ（トリガーでもよい）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -44,7 +45,14 @@ namespace TpsDungeon.Map.Runtime
             set => open = value;
         }
 
-        /// <summary>閉じているときの案内。生成した階段のように、置いてから決まるものはあとから入れる。</summary>
+        /// <summary>通れるときの案内。生成した階段のように、置いてから決まるものはあとから入れる。</summary>
+        public string OpenLabel
+        {
+            get => openLabel;
+            set => openLabel = value;
+        }
+
+        /// <summary>閉じているときの案内。空なら閉じている間は案内を出さない。</summary>
         public string ClosedLabel
         {
             get => closedLabel;
@@ -56,7 +64,7 @@ namespace TpsDungeon.Map.Runtime
 
         public string PromptLabel => open ? openLabel : closedLabel;
 
-        public bool CanInteract(GameObject interactor) => true;
+        public bool CanInteract(GameObject interactor) => open || !string.IsNullOrEmpty(closedLabel);
 
         public void Interact(GameObject interactor)
         {

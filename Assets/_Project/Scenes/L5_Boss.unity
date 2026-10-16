@@ -29203,7 +29203,6 @@ GameObject:
   - component: {fileID: 1967044822}
   - component: {fileID: 1967044821}
   - component: {fileID: 1967044819}
-  - component: {fileID: 1967044820}
   m_Layer: 0
   m_Name: '[Floor]'
   m_TagString: Untagged
@@ -29229,22 +29228,6 @@ MonoBehaviour:
   generateOnStart: 1
   downScene: Surface
   upScene: 
---- !u!114 &1967044820
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1967044818}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a6109169e8974156b3caab874023fd1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.DebugTools.FloorDebugInput
-  bootstrap: {fileID: 0}
-  downKey: 102
-  upKey: 103
-  unlockKey: 104
 --- !u!114 &1967044821
 MonoBehaviour:
   m_ObjectHideFlags: 0

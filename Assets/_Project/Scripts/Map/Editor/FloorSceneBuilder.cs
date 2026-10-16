@@ -22,7 +22,7 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 道順（DungeonRoute）に載っている階のシーン（L{n}_Random・L{n}_Boss）を全部作り直す。
-        /// [Floor] の FloorBootstrap に道順とその層の FloorConfig を差し、デバッグ用の入力（FloorDebugInput）を付ける。
+        /// [Floor] の FloorBootstrap に道順とその層の FloorConfig を差す。デバッグは Tools/TPS Dungeon/階のデバッグ から。
         /// 窓の外の景色は「階の外の景色を置く（全層）」で置く。
         /// </summary>
         [MenuItem("Tools/TPS Dungeon/階のシーンを作る（全層）")]
@@ -121,7 +121,6 @@ namespace TpsDungeon.Map.Editor
             var root = new GameObject("[Floor]");
             root.AddComponent<FloorBuilder>();
             var bootstrap = root.AddComponent<FloorBootstrap>();
-            root.AddComponent<FloorDebugInput>();
 
             // private [SerializeField] なので SerializedObject 経由で差し込む。
             var serialized = new SerializedObject(bootstrap);

@@ -157,7 +157,7 @@ namespace TpsDungeon.Map.Tests
             var builder = host.GetComponent<FloorBuilder>();
             var down = builder.EntranceStair.GetComponentInChildren<SceneGate>();
             Assert.IsFalse(down.IsOpen, "下へは戻れない");
-            Assert.AreEqual("戻れない", down.PromptLabel);
+            Assert.IsFalse(down.CanInteract(null), "閉じた下り階段は案内も出さない");
 
             var up = builder.ExitStair.GetComponentInChildren<SceneGate>();
             var next = route.Next(here).Value;
@@ -177,6 +177,52 @@ namespace TpsDungeon.Map.Tests
             }
             Assert.AreEqual(route.SceneOf(next), requested);
             Assert.AreEqual(next, DungeonProgress.Pending, "上ると次の階が Pending に入る");
+        }
+
+        [Test]
+        public void Bootstrap_WhenGoingDownIsAllowed_DownStairLeadsToThePreviousFloor()
+        {
+            var shipped = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            // 出荷の道順を書き換えないよう、複製に設定を入れる。
+            var route = Object.Instantiate(shipped);
+            created.Add(route);
+            route.AllowGoingDown = true;
+
+            var here = new DungeonFloor(1, 0);
+            var host = new GameObject("DungeonRouteTests");
+            created.Add(host);
+            var bootstrap = MakeBootstrap(host, route);
+            bootstrap.ArriveAt(here);
+            bootstrap.Generate(1);
+
+            var down = host.GetComponent<FloorBuilder>().EntranceStair.GetComponentInChildren<SceneGate>();
+            var previous = route.Previous(here).Value;
+            Assert.IsTrue(down.IsOpen);
+            Assert.AreEqual("降りる", down.PromptLabel);
+            Assert.AreEqual(route.SceneOf(previous), down.SceneName, "2 層 1 階の下は 1 層のボス階");
+
+            string requested = null;
+            var handler = SceneTravel.Handler;
+            SceneTravel.Handler = name => requested = name;
+            try
+            {
+                down.Interact(null);
+            }
+            finally
+            {
+                SceneTravel.Handler = handler;
+            }
+            Assert.AreEqual(route.SceneOf(previous), requested);
+            Assert.AreEqual(previous, DungeonProgress.Pending);
+
+            // 切り替えたら繋ぎ直せる（デバッグのウィンドウから）。
+            route.AllowGoingDown = false;
+            bootstrap.ReconnectStairs();
+            Assert.IsFalse(down.IsOpen);
+            Assert.IsFalse(down.CanInteract(null));
+
+            // 1 層 1 階の下は地上。
+            Assert.IsNull(route.Previous(route.First.Value));
         }
 
         [Test]
