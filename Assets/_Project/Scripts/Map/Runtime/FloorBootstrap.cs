@@ -99,10 +99,33 @@ namespace TpsDungeon.Map.Runtime
             CurrentSeed = useSeed;
             var layout = builder.Build(useConfig, useSeed);
 
+            builder.DoorsUnlocked -= ConnectStairs;
+            builder.DoorsUnlocked += ConnectStairs;
+            ConnectStairs();
+
+            Generated?.Invoke(layout);
+        }
+
+        private void OnDestroy()
+        {
+            if (builder != null) builder.DoorsUnlocked -= ConnectStairs;
+        }
+
+        /// <summary>
+        /// 階段に行き先を入れる。閉ざされた扉（ボス部屋の奥の出口の扉）がある間は、出口の階段を閉じて案内も出さない。
+        /// 扉の隙間から照準が奥の階段に届いても、ボスを倒す（UnlockDoors）までは上れないように。扉を開けられるようになったら繋ぎ直す。
+        /// </summary>
+        private void ConnectStairs()
+        {
+            if (builder == null) return;
             if (route != null && CurrentFloor.HasValue) ConnectRouteStairs(CurrentFloor.Value);
             else ConnectSceneStairs();
 
-            Generated?.Invoke(layout);
+            if (!builder.HasLockedDoors || builder.ExitStair == null) return;
+            var exit = builder.ExitStair.GetComponentInChildren<SceneGate>();
+            if (exit == null) return;
+            exit.IsOpen = false;
+            exit.ClosedLabel = "";
         }
 
         /// <summary>
@@ -149,11 +172,7 @@ namespace TpsDungeon.Map.Runtime
         }
 
         /// <summary>今の階の道順で階段を繋ぎ直す（道順の AllowGoingDown を切り替えたときなど）。</summary>
-        public void ReconnectStairs()
-        {
-            if (builder == null || route == null || !CurrentFloor.HasValue) return;
-            ConnectRouteStairs(CurrentFloor.Value);
-        }
+        public void ReconnectStairs() => ConnectStairs();
 
         /// <summary>
         /// 道順の階段：上りは次の階へ（最後の階なら閉じる）。下りは閉じて案内も出さないが、
@@ -199,8 +218,12 @@ namespace TpsDungeon.Map.Runtime
             // ドメインリロードで null の string は空文字になるので、どちらも「無し」とみなす。
             bool rebuildHere = string.IsNullOrEmpty(upScene);
             var exit = ConnectStair(builder.ExitStair, rebuildHere ? gameObject.scene.name : upScene);
-            if (exit != null && rebuildHere) exit.Entering += () => newShapeOnNextGenerate = true;
+            if (exit == null) return;
+            exit.Entering -= OnEnteringRebuildHere;
+            if (rebuildHere) exit.Entering += OnEnteringRebuildHere;
         }
+
+        private static void OnEnteringRebuildHere() => newShapeOnNextGenerate = true;
 
         /// <summary>道順の別の階へ移る（デバッグ用）。行き先の階を Pending に入れてそのシーンへ。今より下の階なら出口の脇に立つ。</summary>
         public void GoToFloor(DungeonFloor floor)

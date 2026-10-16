@@ -231,6 +231,32 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void BossFloor_ExitStairStaysClosedUntilTheDoorsAreUnlocked()
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            var boss = new DungeonFloor(0, route.Layers[0].randomFloorCount);
+            Assert.IsTrue(route.IsBoss(boss));
+
+            var host = new GameObject("DungeonRouteTests");
+            created.Add(host);
+            var bootstrap = MakeBootstrap(host, route);
+            bootstrap.ArriveAt(boss);
+            bootstrap.Generate(1);
+
+            var builder = host.GetComponent<FloorBuilder>();
+            Assert.IsTrue(builder.HasLockedDoors);
+            var up = builder.ExitStair.GetComponentInChildren<SceneGate>();
+            // 閉ざされた扉の隙間から照準が届いても、調べられず案内も出ない。
+            Assert.IsFalse(up.IsOpen, "ボスを倒すまでは上り階段を使えない");
+            Assert.IsFalse(up.CanInteract(null), "案内も出さない");
+
+            builder.UnlockDoors();
+            Assert.IsFalse(builder.HasLockedDoors);
+            Assert.IsTrue(up.IsOpen, "扉を開けられるようになったら上り階段も開く");
+            Assert.AreEqual(route.SceneOf(route.Next(boss).Value), up.SceneName);
+        }
+
+        [Test]
         public void IsBelow_ComparesLayerThenFloor()
         {
             Assert.IsTrue(DungeonProgress.IsBelow(new DungeonFloor(0, 4), new DungeonFloor(1, 0)));
@@ -285,7 +311,11 @@ namespace TpsDungeon.Map.Tests
             bootstrap.ArriveAt(last);
             bootstrap.Generate(1);
 
-            var up = host.GetComponent<FloorBuilder>().ExitStair.GetComponentInChildren<SceneGate>();
+            var builder = host.GetComponent<FloorBuilder>();
+            var up = builder.ExitStair.GetComponentInChildren<SceneGate>();
+            Assert.IsFalse(up.IsOpen);
+            // 最後の階はボス階で、ボスを倒すまでは案内も出さない。倒したら「この先はまだ無い」。
+            builder.UnlockDoors();
             Assert.IsFalse(up.IsOpen);
             Assert.AreEqual("この先はまだ無い", up.PromptLabel);
         }

@@ -45,6 +45,23 @@ namespace TpsDungeon.Map.Runtime
             {
                 if (door != null) door.Unlock();
             }
+            DoorsUnlocked?.Invoke();
+        }
+
+        /// <summary>閉ざされた扉を開けられるようにした（UnlockDoors）。出口の階段もこれで開く（FloorBootstrap）。</summary>
+        public event Action DoorsUnlocked;
+
+        /// <summary>まだ閉ざされている扉があるか。あれば出口の階段は閉じておく（扉の隙間から奥の階段を調べて抜けられないように）。</summary>
+        public bool HasLockedDoors
+        {
+            get
+            {
+                foreach (var door in lockedDoors)
+                {
+                    if (door != null && door.IsLocked) return true;
+                }
+                return false;
+            }
         }
 
         /// <summary>ショートカット解放用の場所に置いた目印。その階に無ければ null。</summary>
