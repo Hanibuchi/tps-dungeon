@@ -20,6 +20,15 @@ namespace TpsDungeon.Map.Tests
             Assert.AreEqual(expected, Door.IsLeafSolid(isOpen, isSwinging));
         }
 
+        [TestCase(false, true, true, TestName = "閉じている・閉められる → 開けられる")]
+        [TestCase(false, false, true, TestName = "閉じている・閉められない → 開けられる")]
+        [TestCase(true, true, true, TestName = "開いている・閉められる → 閉められる")]
+        [TestCase(true, false, false, TestName = "開いている・閉められない → 触れない")]
+        public void CanToggle_OnlyClosableDoorsCloseAgain(bool isOpen, bool canClose, bool expected)
+        {
+            Assert.AreEqual(expected, Door.CanToggle(isOpen, canClose));
+        }
+
         private const string ConfigPath = "Assets/_Project/Settings/Map/Floor_L1_Config.asset";
 
         /// <summary>第1層の FloorConfig に差してあるドア（テーマごとのフォルダに作られる）。</summary>
@@ -29,6 +38,14 @@ namespace TpsDungeon.Map.Tests
             Assert.IsNotNull(config, $"{ConfigPath} が無い");
             Assert.IsNotNull(config.doorPrefab, $"{ConfigPath} にドアが差されていない");
             return config.doorPrefab;
+        }
+
+        [Test]
+        public void OrdinaryDoorCloses_GrandDoorStaysOpen()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(ConfigPath);
+            Assert.IsTrue(config.doorPrefab.GetComponent<Door>().CanClose, "普通のドアは閉められる");
+            Assert.IsFalse(config.grandDoorPrefab.GetComponent<Door>().CanClose, "ボス部屋の大扉は一度開けたら閉められない");
         }
 
         [Test]

@@ -402,7 +402,7 @@ namespace TpsDungeon.Map.Runtime
 
         /// <summary>
         /// 階の入口（入口の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。SpawnAtExit なら出口の部屋に。
-        /// その部屋の階段が子に SpawnPoint を持っていれば、その位置と向き（階段を避けて、ドアの方を向く）。
+        /// その部屋の階段が子に SpawnPoint を持っていれば、その位置と向き（階段の途中で、上り下りしてきた向き）。
         /// 無ければ、壁の真ん中のドアに掛からないセルの隅。
         /// </summary>
         private void PlaceSpawnPoint(FloorLayout layout, Transform parent)

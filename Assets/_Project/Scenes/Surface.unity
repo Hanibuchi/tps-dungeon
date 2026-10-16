@@ -112746,6 +112746,10 @@ MonoBehaviour:
   party: {fileID: 466638732}
   wipeDelay: 2.5
   spawnWaitTimeout: 5
+  travelSound: {fileID: 8300000, guid: 18f5e01aff78f4500b6038755069fe46, type: 3}
+  travelSoundVolume: 0.8
+  fadeOutSeconds: 0.75
+  fadeInSeconds: 0.75
 --- !u!4 &1609497291
 Transform:
   m_ObjectHideFlags: 0

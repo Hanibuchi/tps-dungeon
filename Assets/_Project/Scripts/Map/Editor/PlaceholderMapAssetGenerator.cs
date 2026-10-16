@@ -115,8 +115,9 @@ namespace TpsDungeon.Map.Editor
         // 暗がりの箱を穴より広げる分。竪穴の壁の内側の面を箱の中に入れる。
         private const float StairDarkMargin = 0.02f;
         private const string DarknessShaderName = "TpsDungeon/Darkness Volume";
-        // 入口に着いたパーティーの立ち位置（階段のローカル）。階段の脇（東）の、少しドア寄りで、ドアの方を向く。
-        private static readonly Vector3 StairSpawnPosition = new Vector3(1.6f, 0.05f, -0.3f);
+        // 階に着いたパーティーが立つ所は階段の途中。段の並び（足場の手前の端から奥まで）のこの割合の所に、段を上り下りしてきた向きで立つ。
+        private const float StairSpawnAlong = 0.35f;
+        private const float StairSpawnLift = 0.05f;
 
         private readonly struct RoomSpec
         {
@@ -563,9 +564,13 @@ namespace TpsDungeon.Map.Editor
                 new Vector3(holeSize.x + StairDarkMargin * 2f, -darkBottom, holeSize.y + StairDarkMargin * 2f),
                 upward: false, StairDownDarkStart, StairDownDarkFull);
 
+            // 下の階から上ってきたパーティーが立つ所。段の途中で、上る向き（ドアの方）を向く。
+            int spawnStep = Mathf.Clamp(Mathf.FloorToInt(steps * StairSpawnAlong), 1, steps - 1);
             var spawn = new GameObject("SpawnPoint");
             spawn.transform.SetParent(root.transform, false);
-            spawn.transform.SetLocalPositionAndRotation(StairSpawnPosition, Quaternion.Euler(0f, 180f, 0f));
+            spawn.transform.SetLocalPositionAndRotation(
+                new Vector3(holeCenter.x, -StairDownRise * spawnStep + StairSpawnLift, holeMin.y + StairDownRun * (spawnStep + 0.5f)),
+                Quaternion.Euler(0f, 180f, 0f));
 
             return SavePrefab(root, path);
         }
@@ -614,10 +619,13 @@ namespace TpsDungeon.Map.Editor
 
             AddStairGate(way, "上の階へ", "上へは行けない", "上り階段", "上の階へ続く階段。");
 
-            // 上の階から降りてきたパーティーが立つ所。下り階段と同じく階段の脇で、ドアの方を向く（段の足場は同じ寸法）。
+            // 上の階から降りてきたパーティーが立つ所。段の途中（見えない坂の面の上）で、降りる向き（ドアの方）を向く。
+            float spawnZ = footMin.y + footSize.y * StairSpawnAlong;
+            float spawnY = Mathf.Lerp(StairUpRise * 0.5f, StairUpRise * (steps + 0.5f), StairSpawnAlong);
             var spawn = new GameObject("SpawnPoint");
             spawn.transform.SetParent(root.transform, false);
-            spawn.transform.SetLocalPositionAndRotation(StairSpawnPosition, Quaternion.Euler(0f, 180f, 0f));
+            spawn.transform.SetLocalPositionAndRotation(new Vector3(footMin.x + footSize.x * 0.5f, spawnY + StairSpawnLift, spawnZ),
+                Quaternion.Euler(0f, 180f, 0f));
 
             // 床の高さから竪穴の蓋まで。暗さは床から上へ測った距離で決める。
             // 穴の無い所の天井を暗くしないよう、広さは天井の穴だけにする。
@@ -929,6 +937,8 @@ namespace TpsDungeon.Map.Editor
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
             serialized.FindProperty("hingeRight").objectReferenceValue = hingeRight;
             serialized.FindProperty("leafRight").objectReferenceValue = leafRight != null ? leafRight.transform : null;
+            // 大扉（ボス部屋の入口）は一度開けたら閉められない。
+            serialized.FindProperty("canClose").boolValue = !doubleLeaf;
             serialized.FindProperty("openSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(doubleLeaf ? GrandDoorOpenSoundPath : DoorOpenSoundPath);
             serialized.FindProperty("closeSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorCloseSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();

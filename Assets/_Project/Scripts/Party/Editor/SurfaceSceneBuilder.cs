@@ -42,6 +42,8 @@ namespace TpsDungeon.Party.Editor
         private const float BoundsThickness = 2f;
         private const float CastleFront = 30f;
         public const string GateSpawnName = "CastleGateSpawn";
+        // シーンを移るとき（門・階段）に鳴らす音。
+        public const string TravelSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/アスファルトの上を走る1 (cut).mp3";
         // 門の前のどれだけ手前に立つか（メートル）。
         private const float GateSpawnDistance = 3f;
 
@@ -259,6 +261,9 @@ namespace TpsDungeon.Party.Editor
         {
             var rig = new GameObject("[Party Rig]");
             var flow = rig.AddComponent<GameFlow>();
+            var flowSerialized = new SerializedObject(flow);
+            flowSerialized.FindProperty("travelSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(TravelSoundPath);
+            flowSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             var mainCamera = new GameObject("Main Camera") { tag = "MainCamera" };
             mainCamera.transform.SetParent(rig.transform, false);

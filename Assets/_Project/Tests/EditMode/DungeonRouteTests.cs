@@ -255,6 +255,13 @@ namespace TpsDungeon.Map.Tests
             var spawn = builder.GeneratedRoot.Find("Features/PlayerSpawn");
             var beside = builder.ExitStair.transform.Find("SpawnPoint");
             Assert.IsNotNull(beside, "上り階段に SpawnPoint がある");
+            // 段の途中（床より上の坂の上、段の幅の真ん中）で、降りる向き（ドアのある -Z）を向く。
+            Assert.Greater(beside.localPosition.y, 0.5f, "上り階段の途中");
+            Assert.AreEqual(0f, beside.localPosition.x, 0.01f);
+            Assert.Less(Vector3.Dot(beside.forward, builder.ExitStair.transform.forward), -0.99f);
+            var below = builder.EntranceStair.transform.Find("SpawnPoint");
+            Assert.Less(below.localPosition.y, -0.3f, "下り階段の途中（床より下の段の上）");
+            Assert.AreEqual(0f, below.localPosition.x, 0.01f);
             Assert.Less(Vector3.Distance(beside.position, spawn.position), 0.001f, "上り階段の脇に立つ");
             Assert.AreEqual(builder.CurrentLayout.RoomAt(builder.CurrentLayout.ExitRoom).FeatureCell, builder.WorldToCell(spawn.position), "出口の部屋");
 

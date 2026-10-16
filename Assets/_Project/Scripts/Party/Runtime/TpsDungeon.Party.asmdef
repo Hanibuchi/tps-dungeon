@@ -11,7 +11,9 @@
         "TpsDungeon.Interaction",
         "TpsDungeon.Map",
         "Unity.AI.Navigation",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "UnityEngine.UI",
+        "TpsDungeon.Audio"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

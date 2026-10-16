@@ -58,6 +58,9 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField] private string openLabel = "開ける";
         [SerializeField] private string closeLabel = "閉める";
 
+        [SerializeField, Tooltip("開けたあと閉められるか。外すと一度開けたら開いたまま（ボス部屋の大扉など）で、開いたあとは案内も出さない。")]
+        private bool canClose = true;
+
         [SerializeField, Tooltip("閉ざされているか。閉ざされている間は調べても開かない（案内だけ出す）。Unlock で開けられるようになる。")]
         private bool locked;
 
@@ -141,7 +144,13 @@ namespace TpsDungeon.Map.Runtime
             }
         }
 
-        public bool CanInteract(GameObject interactor) => animator != null && !IsSwinging;
+        public bool CanInteract(GameObject interactor) => animator != null && !IsSwinging && CanToggle(isOpen, canClose);
+
+        /// <summary>今の開き具合から開け閉めできるか。閉められない扉は開いたあと触れない。</summary>
+        public static bool CanToggle(bool isOpen, bool canClose) => !isOpen || canClose;
+
+        /// <summary>開けたあと閉められるか。</summary>
+        public bool CanClose => canClose;
 
         public void Interact(GameObject interactor)
         {

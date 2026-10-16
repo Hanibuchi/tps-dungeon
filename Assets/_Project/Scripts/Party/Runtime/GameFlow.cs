@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Linq;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Map.Runtime;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace TpsDungeon.Party
     /// - 最初の 1 つは DontDestroyOnLoad で残り、門や階段の頼み（<see cref="SceneTravel"/>）を受けてシーンを読み込む。
     /// - 読み込んだシーンにあるカメラは止め（こちらのカメラで見る）、階なら NavMesh を焼く役（<see cref="FloorNavMesh"/>）を付け、スポーン地点（<see cref="PlayerSpawnPoint"/>）ができたら先頭をそこへ移して並び直す。
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
+    /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
     /// - 全員が倒れたら少し待って地上へ戻し、全快にする（レベルや持ち物を戻す死に戻りの処理はまだ無い）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
@@ -29,6 +31,21 @@ namespace TpsDungeon.Party
 
         [SerializeField, Min(0f), Tooltip("読み込んだシーンにスポーン地点ができるのを待つ秒数。過ぎたらその場のまま並び直す。")]
         private float spawnWaitTimeout = 5f;
+
+        [Header("移るときの演出")]
+        [SerializeField, Tooltip("シーンを移るときに鳴らす音（暗転し始めに 1 回）。")]
+        private AudioClip travelSound;
+
+        [SerializeField, Range(0f, 1f), Tooltip("移るときの音の大きさ。")]
+        private float travelSoundVolume = 0.8f;
+
+        [SerializeField, Min(0f), Tooltip("暗転にかける秒数。暗転と明転を合わせて移るときの演出の長さになる。")]
+        private float fadeOutSeconds = 0.75f;
+
+        [SerializeField, Min(0f), Tooltip("着いたシーンで先頭を並べ終えてから明転にかける秒数。")]
+        private float fadeInSeconds = 0.75f;
+
+        private ScreenFade fade;
 
         private Action<string> travelHandler;
         private bool traveling;
@@ -54,6 +71,7 @@ namespace TpsDungeon.Party
             Instance = this;
             if (party == null) party = GetComponentInChildren<Party>(true);
             travelHandler = sceneName => Travel(sceneName);
+            fade = ScreenFade.Create(transform);
             DontDestroyOnLoad(gameObject);
         }
 
@@ -98,6 +116,14 @@ namespace TpsDungeon.Party
             traveling = true;
             reviveOnArrival = revive;
             wipedAt = -1f;
+            StartCoroutine(LeaveFor(sceneName));
+        }
+
+        /// <summary>音を鳴らして暗転してから読み込む。明転は着いたシーンで並べ終えてから（<see cref="Arrive"/>）。</summary>
+        private IEnumerator LeaveFor(string sceneName)
+        {
+            if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
+            if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
             SceneTravel.Load(sceneName);
         }
 
@@ -170,6 +196,7 @@ namespace TpsDungeon.Party
 
             reviveOnArrival = false;
             traveling = false;
+            if (fade != null) yield return fade.FadeTo(0f, fadeInSeconds);
         }
     }
 }
