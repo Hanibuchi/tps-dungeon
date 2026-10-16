@@ -153,8 +153,8 @@ namespace TpsDungeon.Map.Editor
             }
             else
             {
-                Debug.Log("[Dungeon] デバッグ: 地上へ下りる");
-                SceneTravel.Go(SceneTravel.SurfaceScene);
+                Debug.Log("[Dungeon] デバッグ: 地上へ下りる（城の門の前に立つ）");
+                FloorBootstrap.GoDownToSurface();
             }
         }
 

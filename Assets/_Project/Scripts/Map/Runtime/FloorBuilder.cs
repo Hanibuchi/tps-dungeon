@@ -31,6 +31,9 @@ namespace TpsDungeon.Map.Runtime
         public GameObject EntranceStair { get; private set; }
         /// <summary>出口の部屋に置いた上り階段。</summary>
         public GameObject ExitStair { get; private set; }
+
+        /// <summary>パーティーを出口（上り階段の脇）に立たせるか。上の階から降りてきたとき。次の Build から効く。</summary>
+        public bool SpawnAtExit { get; set; }
         /// <summary>閉ざされた扉（ボスを倒すまで開かない出口の扉など）。Unlock で開けられるようになる。</summary>
         public IReadOnlyList<Door> LockedDoors => lockedDoors;
         private readonly List<Door> lockedDoors = new List<Door>();
@@ -398,18 +401,20 @@ namespace TpsDungeon.Map.Runtime
         }
 
         /// <summary>
-        /// 階の入口（入口の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。
-        /// 入口の階段が子に SpawnPoint を持っていれば、その位置と向き（階段を避けて、ドアの方を向く）。
+        /// 階の入口（入口の部屋。割り当たらなければ先頭の部屋）にパーティーのスポーン地点を置く。SpawnAtExit なら出口の部屋に。
+        /// その部屋の階段が子に SpawnPoint を持っていれば、その位置と向き（階段を避けて、ドアの方を向く）。
         /// 無ければ、壁の真ん中のドアに掛からないセルの隅。
         /// </summary>
         private void PlaceSpawnPoint(FloorLayout layout, Transform parent)
         {
-            var room = layout.RoomAt(layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0);
+            bool atExit = SpawnAtExit && layout.ExitRoom >= 0;
+            var room = layout.RoomAt(atExit ? layout.ExitRoom : layout.EntranceRoom >= 0 ? layout.EntranceRoom : 0);
             if (room == null) return;
 
             var spawn = new GameObject("PlayerSpawn");
             spawn.transform.SetParent(parent, false);
-            var at = EntranceStair != null ? EntranceStair.transform.Find("SpawnPoint") : null;
+            var stair = atExit ? ExitStair : EntranceStair;
+            var at = stair != null ? stair.transform.Find("SpawnPoint") : null;
             if (at != null) spawn.transform.SetPositionAndRotation(at.position, at.rotation);
             else spawn.transform.localPosition = CellCenter(room.FeatureCell) + new Vector3(cellSize * 0.38f, 0.05f, cellSize * 0.38f);
             spawn.AddComponent<PlayerSpawnPoint>();

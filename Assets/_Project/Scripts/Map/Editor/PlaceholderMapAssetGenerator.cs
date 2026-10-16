@@ -47,6 +47,8 @@ namespace TpsDungeon.Map.Editor
         // 大扉（両開き。ボス部屋の入口）の開口。セル幅 5 m・壁 5 m なら幅 3 m・頂 4 m。
         private const float GrandDoorOpeningWidth = 0.6f;
         private const float GrandDoorOpeningHeight = 0.8f;
+        // 大扉の 2 枚の扉板の合わせ目の隙間（メートル）。扉板の厚みの角が回るときに相手へ食い込まない程度に狭く。
+        private const float GrandDoorSeamGap = 0.004f;
         // アーチの縁を 4 分の 1 円あたり何本の線分で近似するか（扉板は半円なのでその倍）。
         private const int ArchSegments = 16;
         // アーチの肩の当たりを何段の箱で近似するか。各段は開口へはみ出さない側に寄せる。
@@ -75,6 +77,8 @@ namespace TpsDungeon.Map.Editor
 
         // 開け閉めの音（効果音ラボ）。ThirdParty は git に上げないので、無ければ空のまま（鳴らない）。
         private const string DoorOpenSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/ドアを開ける2.mp3";
+        // 大扉（ボス部屋の入口）は重い鉄の扉の音で開く。閉める音は普通のドアと同じ。
+        private const string GrandDoorOpenSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/鉄の扉を開ける.mp3";
         private const string DoorCloseSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/ドアを閉める2.mp3";
 
         // 開口に張る照準用トリガーの奥行き（メートル。ルートの z スケールは 1 のまま）。
@@ -568,6 +572,7 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 出口に置く、上の階へ続く上り階段。原点がセルの中心の床の高さで、ドアは -Z の側。
+        /// 子の SpawnPoint に、上の階から降りてきたパーティーが立つ。
         /// ドアから入ってそのまま +Z へ、奥の壁際の天井まで真っ直ぐ上る階段を置き、奥の方の天井に穴を開けて（FloorFeature.replacesCeiling）
         /// 蓋をした竪穴の中へ段が消えていくように見せる。竪穴の壁・蓋には見た目どおりの当たりを付け、段は見えない坂（子の Ramp）で上り下りさせる。
         /// 天井の穴の下から竪穴の蓋までに暗がりの箱（子の Darkness）を置き、上るほど暗くして、穴の先を見えにくくする。
@@ -608,6 +613,11 @@ namespace TpsDungeon.Map.Editor
             AddStairRamp(way.transform, footMin, footSize, steps);
 
             AddStairGate(way, "上の階へ", "上へは行けない", "上り階段", "上の階へ続く階段。");
+
+            // 上の階から降りてきたパーティーが立つ所。下り階段と同じく階段の脇で、ドアの方を向く（段の足場は同じ寸法）。
+            var spawn = new GameObject("SpawnPoint");
+            spawn.transform.SetParent(root.transform, false);
+            spawn.transform.SetLocalPositionAndRotation(StairSpawnPosition, Quaternion.Euler(0f, 180f, 0f));
 
             // 床の高さから竪穴の蓋まで。暗さは床から上へ測った距離で決める。
             // 穴の無い所の天井を暗くしないよう、広さは天井の穴だけにする。
@@ -898,7 +908,7 @@ namespace TpsDungeon.Map.Editor
 
                 leaf = BuildDoorLeafHalf(hinge.transform, "Leaf", theme.doorLeaf, radius, spring, 1f);
                 leafRight = BuildDoorLeafHalf(hingeRight, "LeafRight", theme.doorLeaf, radius, spring, -1f);
-                float knobX = radius - DoorLeafGap * 0.5f - KnobInset;
+                float knobX = radius - GrandDoorSeamGap * 0.5f - KnobInset;
                 AddKnob(leaf.transform, "Knob_Front", theme.doorKnob, new Vector3(knobX, KnobHeight, 0f), 1f);
                 AddKnob(leaf.transform, "Knob_Back", theme.doorKnob, new Vector3(knobX, KnobHeight, 0f), -1f);
                 AddKnob(leafRight.transform, "Knob_Front", theme.doorKnob, new Vector3(-knobX, KnobHeight, 0f), 1f);
@@ -919,7 +929,7 @@ namespace TpsDungeon.Map.Editor
             serialized.FindProperty("leaf").objectReferenceValue = leaf.transform;
             serialized.FindProperty("hingeRight").objectReferenceValue = hingeRight;
             serialized.FindProperty("leafRight").objectReferenceValue = leafRight != null ? leafRight.transform : null;
-            serialized.FindProperty("openSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorOpenSoundPath);
+            serialized.FindProperty("openSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(doubleLeaf ? GrandDoorOpenSoundPath : DoorOpenSoundPath);
             serialized.FindProperty("closeSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(DoorCloseSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -1061,7 +1071,7 @@ namespace TpsDungeon.Map.Editor
         {
             float bottom = DoorLeafGap * 0.5f;
             float r = radius - DoorLeafGap;
-            float seam = radius - DoorLeafGap * 0.5f;
+            float seam = radius - GrandDoorSeamGap * 0.5f;
             // 合わせ目でアーチに当たる角度（真ん中の少し左）から、左の縁（π）まで。
             float start = Mathf.Acos(Mathf.Clamp((seam - radius) / r, -1f, 1f));
 

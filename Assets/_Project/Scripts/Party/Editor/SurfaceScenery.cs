@@ -710,10 +710,13 @@ namespace TpsDungeon.Party.Editor
         /// <summary>スポーン地点を足元の地面の少し上に合わせる（地面が平らでなくなったので）。</summary>
         private static void PlaceSpawnOnGround(Transform surface, Placer p)
         {
-            Transform spawn = surface.Find("PlayerSpawn");
-            if (spawn == null) return;
-            Vector3 at = spawn.position;
-            spawn.position = new Vector3(at.x, p.GroundY(at.x, at.z) + 0.05f, at.z);
+            foreach (string name in new[] { "PlayerSpawn", SurfaceSceneBuilder.GateSpawnName })
+            {
+                Transform spawn = surface.Find(name);
+                if (spawn == null) continue;
+                Vector3 at = spawn.position;
+                spawn.position = new Vector3(at.x, p.GroundY(at.x, at.z) + 0.05f, at.z);
+            }
         }
 
         // --- 補助 ---

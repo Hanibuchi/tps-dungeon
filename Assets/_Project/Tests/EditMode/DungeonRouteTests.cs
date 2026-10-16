@@ -137,8 +137,12 @@ namespace TpsDungeon.Map.Tests
         [Test]
         public void Bootstrap_WithRoute_ClosesDownStairAndLeadsUpToTheNextFloor()
         {
-            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
-            Assert.IsNotNull(route, $"{RoutePath} が無い");
+            var shipped = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            Assert.IsNotNull(shipped, $"{RoutePath} が無い");
+            // 「下り階段で降りられる」はデバッグのウィンドウで入れたままのことがあるので、複製で切っておく。
+            var route = Object.Instantiate(shipped);
+            created.Add(route);
+            route.AllowGoingDown = false;
 
             // L2 の 4 階（ランダムな階の最後）に着いた体で作る。上り階段はボス階へ。
             var here = new DungeonFloor(1, 3);
@@ -214,6 +218,7 @@ namespace TpsDungeon.Map.Tests
             }
             Assert.AreEqual(route.SceneOf(previous), requested);
             Assert.AreEqual(previous, DungeonProgress.Pending);
+            Assert.IsTrue(DungeonProgress.PendingFromAbove, "降りた先では出口（上り階段）の脇に立つ");
 
             // 切り替えたら繋ぎ直せる（デバッグのウィンドウから）。
             route.AllowGoingDown = false;
@@ -223,6 +228,41 @@ namespace TpsDungeon.Map.Tests
 
             // 1 層 1 階の下は地上。
             Assert.IsNull(route.Previous(route.First.Value));
+        }
+
+        [Test]
+        public void IsBelow_ComparesLayerThenFloor()
+        {
+            Assert.IsTrue(DungeonProgress.IsBelow(new DungeonFloor(0, 4), new DungeonFloor(1, 0)));
+            Assert.IsTrue(DungeonProgress.IsBelow(new DungeonFloor(1, 1), new DungeonFloor(1, 2)));
+            Assert.IsFalse(DungeonProgress.IsBelow(new DungeonFloor(1, 2), new DungeonFloor(1, 2)));
+            Assert.IsFalse(DungeonProgress.IsBelow(new DungeonFloor(2, 0), new DungeonFloor(1, 4)));
+        }
+
+        [TestCase(0)]
+        [TestCase(4)]
+        public void ArrivingFromAbove_StandsBesideTheUpStair(int floorIndex)
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            var here = new DungeonFloor(0, floorIndex);
+
+            var host = new GameObject("DungeonRouteTests");
+            created.Add(host);
+            var builder = host.AddComponent<FloorBuilder>();
+            builder.SpawnAtExit = true;
+            builder.Build(route.ConfigOf(here), 3);
+
+            var spawn = builder.GeneratedRoot.Find("Features/PlayerSpawn");
+            var beside = builder.ExitStair.transform.Find("SpawnPoint");
+            Assert.IsNotNull(beside, "上り階段に SpawnPoint がある");
+            Assert.Less(Vector3.Distance(beside.position, spawn.position), 0.001f, "上り階段の脇に立つ");
+            Assert.AreEqual(builder.CurrentLayout.RoomAt(builder.CurrentLayout.ExitRoom).FeatureCell, builder.WorldToCell(spawn.position), "出口の部屋");
+
+            // 普段（下から上ってきたとき）は入口の下り階段の脇。
+            builder.SpawnAtExit = false;
+            builder.Build(route.ConfigOf(here), 3);
+            spawn = builder.GeneratedRoot.Find("Features/PlayerSpawn");
+            Assert.Less(Vector3.Distance(builder.EntranceStair.transform.Find("SpawnPoint").position, spawn.position), 0.001f);
         }
 
         [Test]

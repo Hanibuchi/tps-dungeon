@@ -41,6 +41,9 @@ namespace TpsDungeon.Party.Editor
         private const float BoundsHeight = 30f;
         private const float BoundsThickness = 2f;
         private const float CastleFront = 30f;
+        public const string GateSpawnName = "CastleGateSpawn";
+        // 門の前のどれだけ手前に立つか（メートル）。
+        private const float GateSpawnDistance = 3f;
 
         [MenuItem("Tools/TPS Dungeon/地上シーンを作る")]
         public static void GenerateFromMenu() => Debug.Log(Generate());
@@ -70,6 +73,7 @@ namespace TpsDungeon.Party.Editor
                 BuildBounds();
                 BuildCastle(world, materials);
                 Transform spawn = CreateSpawn(world);
+                CreateGateSpawn(world);
 
                 PlaceParty(spawn, partyPrefab, characterPrefab, followCameraPrefab);
                 SurfaceScenery.Build(scene, world);
@@ -196,6 +200,16 @@ namespace TpsDungeon.Party.Editor
             // 南の塀の手前で、城を向いて立つ。
             spawn.transform.SetLocalPositionAndRotation(new Vector3(0f, 0.05f, GroundMinZ + 7f), Quaternion.identity);
             spawn.AddComponent<PlayerSpawnPoint>();
+            return spawn.transform;
+        }
+
+        /// <summary>城の大門の前。ダンジョンから地上へ降りてきたパーティーが、門を背にして立つ（PlayerSpawnPoint.CastleGate）。</summary>
+        public static Transform CreateGateSpawn(Transform world)
+        {
+            var spawn = new GameObject(GateSpawnName);
+            spawn.transform.SetParent(world, false);
+            spawn.transform.SetLocalPositionAndRotation(new Vector3(0f, 0.05f, CastleFront - GateSpawnDistance), Quaternion.Euler(0f, 180f, 0f));
+            spawn.AddComponent<PlayerSpawnPoint>().PointId = PlayerSpawnPoint.CastleGate;
             return spawn.transform;
         }
 

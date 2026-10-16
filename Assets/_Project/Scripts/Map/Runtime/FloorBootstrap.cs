@@ -116,8 +116,13 @@ namespace TpsDungeon.Map.Runtime
             if (route == null) return;
 
             var pending = DungeonProgress.TakePending();
+            bool fromAbove = DungeonProgress.TakePendingFromAbove();
             string sceneName = gameObject.scene.name;
-            var floor = pending.HasValue && route.SceneOf(pending.Value) == sceneName ? pending : route.FirstFloorOfScene(sceneName);
+            bool usePending = pending.HasValue && route.SceneOf(pending.Value) == sceneName;
+            var floor = usePending ? pending : route.FirstFloorOfScene(sceneName);
+            // 上の階から降りてきたら、出口（上り階段）の脇に立つ。
+            if (builder == null) builder = GetComponent<FloorBuilder>();
+            builder.SpawnAtExit = usePending && fromAbove;
             if (!floor.HasValue)
             {
                 Debug.LogWarning($"{sceneName} は道順（{route.name}）に載っていないので、このシーンの設定で作る。", this);
@@ -177,7 +182,14 @@ namespace TpsDungeon.Map.Runtime
 
         private void OnEnteringUp() => DungeonProgress.Pending = CurrentFloor.HasValue ? route.Next(CurrentFloor.Value) : null;
 
-        private void OnEnteringDown() => DungeonProgress.Pending = CurrentFloor.HasValue ? route.Previous(CurrentFloor.Value) : null;
+        private void OnEnteringDown()
+        {
+            var previous = CurrentFloor.HasValue ? route.Previous(CurrentFloor.Value) : null;
+            DungeonProgress.Pending = previous;
+            DungeonProgress.PendingFromAbove = previous.HasValue;
+            // 下が地上なら、城の門の前に立つ。
+            if (!previous.HasValue) SceneTravel.ArrivalPoint = PlayerSpawnPoint.CastleGate;
+        }
 
         /// <summary>道順が無いときの階段：このシーンに書いた行き先へ。</summary>
         private void ConnectSceneStairs()
@@ -190,13 +202,17 @@ namespace TpsDungeon.Map.Runtime
             if (exit != null && rebuildHere) exit.Entering += () => newShapeOnNextGenerate = true;
         }
 
-        /// <summary>道順の別の階へ移る（デバッグ用）。行き先の階を Pending に入れてそのシーンへ。</summary>
+        /// <summary>道順の別の階へ移る（デバッグ用）。行き先の階を Pending に入れてそのシーンへ。今より下の階なら出口の脇に立つ。</summary>
         public void GoToFloor(DungeonFloor floor)
         {
             if (route == null || !route.Contains(floor)) return;
             DungeonProgress.Pending = floor;
+            DungeonProgress.PendingFromAbove = CurrentFloor.HasValue && DungeonProgress.IsBelow(floor, CurrentFloor.Value);
             SceneTravel.Go(route.SceneOf(floor));
         }
+
+        /// <summary>地上へ降りる（デバッグ用・1 層 1 階の下り階段）。城の門の前に立つ。</summary>
+        public static void GoDownToSurface() => SceneTravel.Go(SceneTravel.SurfaceScene, PlayerSpawnPoint.CastleGate);
 
         /// <summary>階段の門に行き先を入れる。行き先が無ければ閉じておく（調べると「閉じている」の案内が出る）。</summary>
         private static SceneGate ConnectStair(GameObject stair, string sceneName)

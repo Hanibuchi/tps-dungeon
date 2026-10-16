@@ -141,9 +141,11 @@ namespace TpsDungeon.Party
 
         private IEnumerator Arrive(Scene scene)
         {
+            // 門や階段が頼んだ立ち位置（地上の城の門の前など）。無ければ既定のスポーン地点。
+            string point = SceneTravel.TakeArrivalPoint();
             PlayerSpawnPoint spawn = null;
             float until = Time.unscaledTime + spawnWaitTimeout;
-            while ((spawn = PlayerSpawnPoint.In(scene)) == null && Time.unscaledTime < until) yield return null;
+            while ((spawn = PlayerSpawnPoint.In(scene, point)) == null && Time.unscaledTime < until) yield return null;
 
             if (spawn == null) Debug.LogWarning($"{scene.name} にスポーン地点（PlayerSpawnPoint）が無いので、パーティーはその場に居る", this);
 
