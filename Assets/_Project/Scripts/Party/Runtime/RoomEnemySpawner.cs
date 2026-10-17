@@ -17,7 +17,7 @@ namespace TpsDungeon.Party
     /// 中身は階のシードと部屋の番号から決まるので、開ける順に関係なく同じ部屋は同じになる。
     ///
     /// モンスターハウス（普通の部屋が表の確率でなる）のドアを外から開けると、パーティー全員をその部屋の中へ跳ばし、
-    /// 部屋のドアを全部閉ざして閉める（ボス部屋の奥の扉と同じく「閉ざされている」）。中の敵を全部倒すと、閉ざしたドアを開けられるようにする。
+    /// 部屋のドアを全部閉ざして閉める（ボス部屋の奥の扉と同じく「閉ざされている」）。中の敵を全部倒して releaseDelay 秒（既定 1 秒）経つと、閉ざしたドアを開けられるようにする。
     /// 閉じ込めたとき・鍵が開いたときに、層の表の音を鳴らす。モンスターハウスの予算の上限は表の倍率を掛けたもの。
     /// 残りは倒れた知らせ（EnemyHealth.Died）では数えず、閉じ込めている間に毎フレーム数え直す。自爆する敵は Died を出さずに消え、
     /// ドアが閉まりきる前に部屋の外へ出た敵は中から倒せないので、消えた・倒れた・部屋の外に居る敵は残りに入れない。
@@ -37,6 +37,9 @@ namespace TpsDungeon.Party
         [SerializeField, Min(0.5f), Tooltip("閉じ込めるとき、先頭をドアからこれだけ部屋の中に入った所に立たせる（m）。")]
         private float trapDepth = 1.8f;
 
+        [SerializeField, Min(0f), Tooltip("モンスターハウスの最後の敵が居なくなってから、ドアの鍵を開ける（音を鳴らす）までの間（秒）。倒した瞬間の音と重ねないように。")]
+        private float releaseDelay = 1f;
+
         private FloorBuilder builder;
         private FloorBootstrap bootstrap;
         private EnemySpawnTable table;
@@ -50,6 +53,8 @@ namespace TpsDungeon.Party
         private readonly Dictionary<int, List<EnemyHealth>> spawnedEnemies = new Dictionary<int, List<EnemyHealth>>();
         // 閉じ込めている部屋と、閉ざしたドア。
         private readonly Dictionary<int, List<Door>> sealedDoors = new Dictionary<int, List<Door>>();
+        // 閉じ込めている部屋の、敵が居なくなった時刻。
+        private readonly Dictionary<int, float> clearedAt = new Dictionary<int, float>();
 
         /// <summary>モンスターハウスに閉じ込めた（部屋の番号）。</summary>
         public event Action<int> Trapped;
@@ -76,16 +81,23 @@ namespace TpsDungeon.Party
             return count;
         }
 
+        /// <summary>閉じ込めている部屋の敵が居なくなったら、releaseDelay 秒待ってから鍵を開ける。</summary>
         private void Update()
         {
             if (sealedDoors.Count == 0) return;
-            List<int> cleared = null;
+            List<int> ready = null;
             foreach (int room in sealedDoors.Keys)
             {
-                if (AliveIn(room) == 0) (cleared ??= new List<int>()).Add(room);
+                if (AliveIn(room) > 0)
+                {
+                    clearedAt.Remove(room);
+                    continue;
+                }
+                if (!clearedAt.TryGetValue(room, out float at)) clearedAt[room] = at = Time.time;
+                if (Time.time - at >= releaseDelay) (ready ??= new List<int>()).Add(room);
             }
-            if (cleared == null) return;
-            foreach (int room in cleared) Release(room);
+            if (ready == null) return;
+            foreach (int room in ready) Release(room);
         }
 
         private void Awake()
@@ -117,6 +129,7 @@ namespace TpsDungeon.Party
             spawnedRooms.Clear();
             spawnedEnemies.Clear();
             sealedDoors.Clear();
+            clearedAt.Clear();
             enemyRoot = null;
             monsterHouses = RoomEnemyRoller.PickMonsterHouses(rules, layout);
             if (monsterHouses.Count > 0) Debug.Log($"[Dungeon] モンスターハウス: 部屋 {string.Join(", ", monsterHouses)}", this);
@@ -302,7 +315,6 @@ namespace TpsDungeon.Party
             sealedDoors[room] = doors;
             PlaySound(table.TrappedSound);
             Trapped?.Invoke(room);
-            if (AliveIn(room) == 0) Release(room);
         }
 
         /// <summary>閉じ込め・鍵が開く音。パーティーは部屋の中に居るので、位置を付けずに鳴らす。</summary>
@@ -315,6 +327,7 @@ namespace TpsDungeon.Party
         {
             if (!sealedDoors.TryGetValue(room, out var doors)) return;
             sealedDoors.Remove(room);
+            clearedAt.Remove(room);
             foreach (var door in doors)
             {
                 if (door != null) door.Unlock();
