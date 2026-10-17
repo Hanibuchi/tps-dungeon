@@ -224,6 +224,43 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void エンチャントのランクは種類と段が一致する行から引き_ユニークはユニーク()
+        {
+            var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var type = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var damage = ScriptableObject.CreateInstance<EnchantmentDefinition>();
+            try
+            {
+                SetEnchantment(damage, EnchantmentKind.DamageUp, 0.2f);
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(WeaponTypeDefinition).GetField("enchantmentRanks", flags).SetValue(type, new List<EnchantmentRankEntry>
+                {
+                    new EnchantmentRankEntry(damage, 1, WeaponRank.E),
+                    new EnchantmentRankEntry(damage, 2, WeaponRank.C),
+                });
+                SetWeapon(weapon, WeaponRank.B);
+                typeof(WeaponDefinition).GetField("weaponType", flags).SetValue(weapon, type);
+
+                var item = new ItemInstance(weapon, new[] { new EnchantmentStack(damage, 2) });
+                Assert.IsTrue(item.TryGetEnchantmentRank(item.Enchantments[0], out WeaponRank rank));
+                Assert.AreEqual(WeaponRank.C, rank);
+
+                var off = new ItemInstance(weapon, new[] { new EnchantmentStack(damage, 3) });
+                Assert.IsFalse(off.TryGetEnchantmentRank(off.Enchantments[0], out _));
+
+                SetWeapon(weapon, WeaponRank.Unique);
+                Assert.IsTrue(off.TryGetEnchantmentRank(off.Enchantments[0], out rank));
+                Assert.AreEqual(WeaponRank.Unique, rank);
+            }
+            finally
+            {
+                Object.DestroyImmediate(weapon);
+                Object.DestroyImmediate(type);
+                Object.DestroyImmediate(damage);
+            }
+        }
+
+        [Test]
         public void 武器でない定義からはエンチャントの無い個体ができる()
         {
             var item = ScriptableObject.CreateInstance<ItemDefinition>();

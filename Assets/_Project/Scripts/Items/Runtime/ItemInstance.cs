@@ -104,7 +104,37 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
+        /// 付いたエンチャントのランク。ユニークの固定分はユニーク、ほかは武器種のランク表で種類と段が一致する行のランク。
+        /// 武器でないか、表に一致する行が無ければ偽。
+        /// </summary>
+        public bool TryGetEnchantmentRank(EnchantmentStack stack, out WeaponRank rank)
+        {
+            rank = default;
+            WeaponDefinition weapon = Weapon;
+            if (weapon == null || stack.Definition == null) return false;
+
+            if (weapon.HasFixedEnchantments)
+            {
+                rank = WeaponRank.Unique;
+                return true;
+            }
+
+            WeaponTypeDefinition type = weapon.WeaponType;
+            if (type == null) return false;
+
+            foreach (EnchantmentRankEntry entry in type.EnchantmentRanks)
+            {
+                if (entry.Definition != stack.Definition || entry.Level != stack.Level) continue;
+                rank = entry.Rank;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
+        /// エンチャントは 1 行ずつそのランクの色で塗る（<see cref="TryGetEnchantmentRank"/>）。
         /// 盾は攻撃力の代わりに防御力を、治癒持続・治癒は回復量を、召喚はおとりの体力を、ダメージ軽減は加護の効き目を出し、お守りは強さを出さない。
         /// お守り・盾・召喚・治癒持続・ダメージ軽減・治癒は効き方を一行添える。
         /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
@@ -126,10 +156,17 @@ namespace TpsDungeon.Items
             else if (type != null && type.IsHeal) text.Append($"\n回復量 {weapon.Strength:0.#}");
             else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {weapon.Strength:0.#}");
 
+            WeaponRankTable table = WeaponRankTable.Default;
             foreach (EnchantmentStack stack in enchantments)
             {
                 EnchantmentDefinition e = stack.Definition;
-                text.Append("\n・").Append(EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Level, e.SecondaryAmount));
+                string line = "・" + EnchantmentLabel.Format(e.Kind, e.DisplayName, e.Amount * stack.Level, e.SecondaryAmount);
+                if (table != null && TryGetEnchantmentRank(stack, out WeaponRank enchantRank))
+                {
+                    line = $"<color=#{ColorUtility.ToHtmlStringRGB(table.ColorOf(enchantRank))}>{line}</color>";
+                }
+
+                text.Append('\n').Append(line);
             }
 
             string usage = type != null && type.IsBuff
