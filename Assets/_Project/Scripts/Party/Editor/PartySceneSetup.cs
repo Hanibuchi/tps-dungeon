@@ -17,7 +17,7 @@ namespace TpsDungeon.Party.Editor
     /// 確認用シーン（Player_Debug）にパーティーを仮配置する。何度実行しても同じ結果になる（仲間は置き直す）。
     /// - パーティーの操作台（Party.prefab）を置き、シーンの主人公（Character Variant）を先頭にする。
     /// - 仲間を n 人、先頭の後ろに置く。名前・見た目（角・耳・しっぽ）・最初の装備は仲間ごとに変える。
-    /// - フロアに FloorNavMesh を付け、生成の後に NavMesh を焼くようにする。
+    /// - フロアに FloorNavMesh を付け、生成の後に NavMesh を焼くようにする。部屋に敵を出す RoomEnemySpawner も付ける。
     /// 先に「Tools/TPS Dungeon/Party/パーティーを組み込む」でプレハブを分けておくこと。
     /// </summary>
     public static class PartySceneSetup
@@ -104,6 +104,7 @@ namespace TpsDungeon.Party.Editor
 
             FloorBuilder floor = Object.FindObjectsByType<FloorBuilder>(FindObjectsSortMode.None).FirstOrDefault(b => b.gameObject.scene == scene);
             if (floor != null && floor.GetComponent<FloorNavMesh>() == null) floor.gameObject.AddComponent<FloorNavMesh>();
+            if (floor != null && floor.GetComponent<RoomEnemySpawner>() == null) floor.gameObject.AddComponent<RoomEnemySpawner>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);

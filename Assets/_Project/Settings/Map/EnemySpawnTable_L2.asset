@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d4d49c5bf4324bb59d04628763c1585, type: 3}
+  m_Name: EnemySpawnTable_L2
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.EnemySpawnTable
+  budgetPerCell: 3
+  monsterHouseChance: 0.2
+  monsterHouseBudgetMultiplier: 2
+  trappedSound: {fileID: 8300000, guid: 8d0257c08dcc24aa7b43f9a2791c7496, type: 3}
+  releasedSound: {fileID: 8300000, guid: fe55cadb6d3ce4b6a9313c4b682882a6, type: 3}
+  soundVolume: 1
+  enemies:
+  - prefab: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+    cost: 1
+  - prefab: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+    cost: 1
+  - prefab: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+    cost: 2
+  - prefab: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
+    cost: 2
+  - prefab: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+    cost: 2
+  - prefab: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+    cost: 2
+  - prefab: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+    cost: 3
+  - prefab: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+    cost: 4
+  compositions:
+  - name: "\u6DF7\u6210"
+    weight: 2
+    shares:
+    - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+      share: 1
+    - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      share: 1
+    - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+      share: 1
+    - enemy: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
+      share: 1
+    - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+      share: 1
+    - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+      share: 1
+    - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+      share: 1
+    - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+      share: 1
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Big_Orc\u30FBBlob_GreenBlob\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+      share: 0.6
+    - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      share: 0.4
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Big_Frog\u30FBBlob_PinkBlob\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+      share: 0.6
+    - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+      share: 0.4
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Blob_Wizard\u30FBBlob_Mushnub\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+      share: 0.6
+    - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+      share: 0.4
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Flying_Ghost\u30FBFlying_Hywirl\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+      share: 0.6
+    - enemy: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
+      share: 0.4
+  - name: "\u5358\u7A2E\uFF08Blob_PinkBlob\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Blob_GreenBlob\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Blob_Wizard\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Flying_Hywirl\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Flying_Ghost\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Blob_Mushnub\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Big_Frog\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+      share: 1
+  - name: "\u5358\u7A2E\uFF08Big_Orc\uFF09"
+    weight: 0.5
+    shares:
+    - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+      share: 1

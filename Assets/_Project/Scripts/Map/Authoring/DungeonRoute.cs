@@ -32,6 +32,9 @@ namespace TpsDungeon.Map.Authoring
             [Tooltip("ボス階の生成設定。")]
             public FloorConfig bossConfig;
 
+            [Tooltip("この層のランダムな階の部屋に出る敵の表（予算・編成タイプ・モンスターハウスの確率）。ボス階には使わない。空なら敵を出さない。")]
+            public EnemySpawnTable enemySpawns;
+
             public bool HasBoss => !string.IsNullOrEmpty(bossScene);
 
             /// <summary>この層の階の数（ランダムな階 + ボス階）。</summary>
@@ -100,6 +103,14 @@ namespace TpsDungeon.Map.Authoring
             if (!Contains(floor)) return null;
             var layer = layers[floor.Layer];
             return layer.IsBoss(floor.Floor) ? layer.bossConfig : layer.randomConfig;
+        }
+
+        /// <summary>その階の部屋に出る敵の表。ランダムな階ならその層の表、ボス階なら null。</summary>
+        public EnemySpawnTable EnemySpawnsOf(DungeonFloor floor)
+        {
+            if (!Contains(floor)) return null;
+            var layer = layers[floor.Layer];
+            return layer.IsBoss(floor.Floor) ? null : layer.enemySpawns;
         }
 
         /// <summary>そのシーンで始まる最初の階（ランダムな階のシーンなら 1 階、ボス階のシーンならボス階）。載っていなければ null。</summary>

@@ -413,6 +413,124 @@ namespace TpsDungeon.Map.Editor
             Debug.Log($"ダンジョンの道順を作った（{layers.Count} 層）: {RoutePath}");
         }
 
+        private const string EnemyPrefabFolder = "Assets/_Project/Prefabs/Enemies";
+        // モンスターハウスに閉じ込めたとき・鍵が開いたときの音（効果音ラボ「生活」）。
+        private const string MonsterHouseTrappedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/牢屋の扉を閉める.mp3";
+        private const string MonsterHouseReleasedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/鍵を開ける1.mp3";
+
+        /// <summary>部屋に出る敵の既定のコスト。弱い・小さいものほど安い。</summary>
+        private static readonly (string prefab, float cost)[] EnemyCosts =
+        {
+            ("Blob_PinkBlob", 1f), ("Blob_GreenBlob", 1f),
+            ("Blob_Wizard", 2f), ("Flying_Hywirl", 2f), ("Flying_Ghost", 2f), ("Blob_Mushnub", 2f),
+            ("Big_Frog", 3f), ("Big_Orc", 4f),
+        };
+
+        /// <summary>主役＋脇役の組（主役に予算の 0.6、脇役に 0.4）。</summary>
+        private static readonly (string lead, string support)[] LeadAndSupport =
+        {
+            ("Big_Orc", "Blob_GreenBlob"), ("Big_Frog", "Blob_PinkBlob"),
+            ("Blob_Wizard", "Blob_Mushnub"), ("Flying_Ghost", "Flying_Hywirl"),
+        };
+
+        /// <summary>
+        /// 層ごとの部屋の敵の表（EnemySpawnTable_L{n}）を、無いものだけ作り、道順の層の enemySpawns が空なら差す。
+        /// 既にある表（手で調節したもの）と、差してある層には触らない。ただし表のモンスターハウスの音が空なら埋める（差してある音は残す）。
+        /// 予算はセル 1 つあたり L1 = 2 から層ごとに +1。編成タイプは混成（全種同じ比率）・主役＋脇役・単種（種類ごと）。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/部屋の敵の表を作る")]
+        public static void GenerateEnemySpawnTables()
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            if (route == null)
+            {
+                Debug.LogWarning($"{RoutePath} が無いので、先に「ダンジョンの道順を作る」を回すこと。");
+                return;
+            }
+
+            var prefabs = new Dictionary<string, GameObject>();
+            foreach (var (name, _) in EnemyCosts)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{EnemyPrefabFolder}/{name}.prefab");
+                if (prefab != null) prefabs[name] = prefab;
+                else Debug.LogWarning($"{EnemyPrefabFolder}/{name}.prefab が無いので表に入れなかった。");
+            }
+
+            var trappedSound = AssetDatabase.LoadAssetAtPath<AudioClip>(MonsterHouseTrappedSoundPath);
+            var releasedSound = AssetDatabase.LoadAssetAtPath<AudioClip>(MonsterHouseReleasedSoundPath);
+            if (trappedSound == null) Debug.LogWarning($"{MonsterHouseTrappedSoundPath} が無いので、閉じ込めの音を入れなかった。");
+            if (releasedSound == null) Debug.LogWarning($"{MonsterHouseReleasedSoundPath} が無いので、鍵が開く音を入れなかった。");
+
+            int created = 0, assigned = 0, sounded = 0;
+            for (int i = 0; i < route.Layers.Count; i++)
+            {
+                string path = $"{SettingsFolder}/EnemySpawnTable_L{i + 1}.asset";
+                var table = AssetDatabase.LoadAssetAtPath<EnemySpawnTable>(path);
+                if (table == null)
+                {
+                    table = ScriptableObject.CreateInstance<EnemySpawnTable>();
+                    FillEnemySpawnTable(table, 2f + i, prefabs);
+                    AssetDatabase.CreateAsset(table, path);
+                    created++;
+                }
+                if (table.FillMissingSounds(trappedSound, releasedSound))
+                {
+                    EditorUtility.SetDirty(table);
+                    sounded++;
+                }
+
+                var layer = route.Layers[i];
+                if (layer.enemySpawns != null) continue;
+                layer.enemySpawns = table;
+                assigned++;
+            }
+
+            if (assigned > 0) EditorUtility.SetDirty(route);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"部屋の敵の表を {created} 個作り、道順の {assigned} 層に差し、{sounded} 個の表にモンスターハウスの音を入れた（既にある値は触っていない）。");
+        }
+
+        private static void FillEnemySpawnTable(EnemySpawnTable table, float budgetPerCell, Dictionary<string, GameObject> prefabs)
+        {
+            var enemies = new List<EnemySpawnTable.Enemy>();
+            foreach (var (name, cost) in EnemyCosts)
+            {
+                if (prefabs.TryGetValue(name, out var prefab)) enemies.Add(new EnemySpawnTable.Enemy { prefab = prefab, cost = cost });
+            }
+
+            var compositions = new List<EnemySpawnTable.Composition>();
+            var mixed = new List<EnemySpawnTable.Share>();
+            foreach (var e in enemies) mixed.Add(new EnemySpawnTable.Share { enemy = e.prefab, share = 1f });
+            compositions.Add(new EnemySpawnTable.Composition { name = "混成", weight = 2f, shares = mixed });
+
+            foreach (var (lead, support) in LeadAndSupport)
+            {
+                if (!prefabs.TryGetValue(lead, out var leadPrefab) || !prefabs.TryGetValue(support, out var supportPrefab)) continue;
+                compositions.Add(new EnemySpawnTable.Composition
+                {
+                    name = $"主役＋脇役（{lead}・{support}）",
+                    weight = 1f,
+                    shares = new List<EnemySpawnTable.Share>
+                    {
+                        new EnemySpawnTable.Share { enemy = leadPrefab, share = 0.6f },
+                        new EnemySpawnTable.Share { enemy = supportPrefab, share = 0.4f },
+                    },
+                });
+            }
+
+            foreach (var e in enemies)
+            {
+                compositions.Add(new EnemySpawnTable.Composition
+                {
+                    name = $"単種（{e.prefab.name}）",
+                    weight = 0.5f,
+                    shares = new List<EnemySpawnTable.Share> { new EnemySpawnTable.Share { enemy = e.prefab, share = 1f } },
+                });
+            }
+
+            table.Set(budgetPerCell, 0.2f, enemies, compositions);
+        }
+
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>
         private static Material RoomFloorMaterial(RoomTemplateCatalog catalog)
         {
