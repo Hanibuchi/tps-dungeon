@@ -29,7 +29,7 @@ namespace TpsDungeon.Enemies.Editor
     /// 死んでいる間（Dead が true）は Dead を戻すまでどれも流れない。
     ///
     /// プレハブは「ルート（CapsuleCollider・EnemyHealth・EnemyDamageReaction・EnemyRagdoll・EnemyDeath・EnemyExpReward・
-    /// EnemyWeaponDrop・NavMeshAgent・EnemyMotor・敵種ごとの EnemyBrain）＋子の Model（FBX と Animator）」。
+    /// EnemyIdentity（id はモデル名の snake_case）・EnemyWeaponDrop・NavMeshAgent・EnemyMotor・敵種ごとの EnemyBrain）＋子の Model（FBX と Animator）」。
     /// 足元がルートの原点、背丈はグループの <see cref="Group.Height"/> にそろえる。動きの付け方は <see cref="EnemyBehaviourSetup"/>。
     /// ルートモーションは使わない。
     ///
@@ -526,7 +526,8 @@ namespace TpsDungeon.Enemies.Editor
                 root.AddComponent<EnemyDamageReaction>();
                 BuildRagdoll(group, root, animator);
                 EnemyDeathSetup.Assign(root.AddComponent<EnemyDeath>(), EnemyDeathSetup.EnsureFadeTemplate());
-                EnemyWeaponDropSetup.Assign(root.AddComponent<EnemyWeaponDrop>(), prefabName);
+                EnemyIdentitySetup.Assign(root.AddComponent<EnemyIdentity>(), EnemyIdentitySetup.IdFromPrefabName(prefabName));
+                root.AddComponent<EnemyWeaponDrop>();
                 WriteVoices(root, group, log);
                 EnemyBehaviourSetup.Assign(root, behaviour, group.Radius, group.Height, log);
 

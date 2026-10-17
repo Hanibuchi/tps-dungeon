@@ -30,6 +30,14 @@ namespace TpsDungeon.Items
 
         private static Dictionary<(string, string), int> counts;
 
+        /// <summary>敵の id を EnemyIdentity にする前は、プレハブのファイル名で数えていた。古い保存はこれで読み替える。</summary>
+        private static readonly Dictionary<string, string> LegacyEnemyIds = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            { "Blob_PinkBlob", "pink_blob" }, { "Blob_GreenBlob", "green_blob" }, { "Blob_Wizard", "wizard" },
+            { "Blob_Mushnub", "mushnub" }, { "Flying_Ghost", "ghost" }, { "Flying_Hywirl", "hywirl" },
+            { "Big_Frog", "frog" }, { "Big_Orc", "orc" },
+        };
+
         public static string DefaultPath => Path.Combine(Application.persistentDataPath, FileName);
 
         /// <summary>enemy が weapon を出さないまま倒された数。</summary>
@@ -107,7 +115,9 @@ namespace TpsDungeon.Items
             foreach (Entry entry in data.entries)
             {
                 if (entry == null || string.IsNullOrEmpty(entry.enemy) || string.IsNullOrEmpty(entry.weapon) || entry.misses <= 0) continue;
-                counts[(entry.enemy, entry.weapon)] = entry.misses;
+                string enemy = LegacyEnemyIds.TryGetValue(entry.enemy, out string renamed) ? renamed : entry.enemy;
+                var key = (enemy, entry.weapon);
+                counts[key] = Math.Max(entry.misses, counts.TryGetValue(key, out int already) ? already : 0);
             }
         }
     }

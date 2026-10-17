@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using TpsDungeon.Enemies;
 using UnityEngine;
 
 namespace TpsDungeon.Items.Editor
@@ -11,7 +12,7 @@ namespace TpsDungeon.Items.Editor
     ///   EnemyWeaponDrops.csv … 敵ごとのランク E〜S の確率
     ///   EnemyUniqueDrops.csv … 敵 × ユニーク武器ごとの確率と天井
     /// どちらかの CSV を保存すると自動で取り込む。メニューからも呼べる。
-    /// 敵は id（プレハブのファイル名。EnemyWeaponDrop の id）で、武器は id（"Weapon_FallenStarHammer" など）で引く。
+    /// 敵は id（EnemyIdentity の id。pink_blob など）で、武器は id（"Weapon_FallenStarHammer" など）で引く。
     /// ランクで落とす武器の候補も、このとき全部の武器（素手とユニークを除く）から作り直す。
     /// 読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>
@@ -42,8 +43,8 @@ namespace TpsDungeon.Items.Editor
             HashSet<string> knownEnemies = KnownEnemies();
             if (knownEnemies.Count == 0)
             {
-                Debug.LogWarning("EnemyWeaponDrop の付いた敵のプレハブが無いので、敵の id を確かめられない。" +
-                                 "メニュー「Tools/TPS Dungeon/Enemies/敵に武器のドロップを付ける」を先に実行すること。");
+                Debug.LogWarning("id（EnemyIdentity）の付いた敵のプレハブが無いので、敵の id を確かめられない。" +
+                                 "メニュー「Tools/TPS Dungeon/Enemies/敵に id を付ける」を先に実行すること。");
             }
 
             var entries = new List<EnemyDropTable.EnemyEntry>();
@@ -60,7 +61,7 @@ namespace TpsDungeon.Items.Editor
             bool IsKnown(string enemy, string csv, int line)
             {
                 if (knownEnemies.Count == 0 || knownEnemies.Contains(enemy)) return true;
-                errors.Add($"{csv} の {line} 行目: 敵 {enemy} のプレハブが無い（{EnemyPrefabFolder} のファイル名で書く）");
+                errors.Add($"{csv} の {line} 行目: 敵 {enemy} のプレハブが無い（{EnemyPrefabFolder} の敵の EnemyIdentity の id で書く）");
                 return false;
             }
 
@@ -143,8 +144,8 @@ namespace TpsDungeon.Items.Editor
             foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { EnemyPrefabFolder }))
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
-                var drop = prefab != null ? prefab.GetComponent<EnemyWeaponDrop>() : null;
-                if (drop != null && !string.IsNullOrEmpty(drop.EnemyId)) ids.Add(drop.EnemyId);
+                var identity = prefab != null ? prefab.GetComponent<EnemyIdentity>() : null;
+                if (identity != null && !string.IsNullOrEmpty(identity.Id)) ids.Add(identity.Id);
             }
 
             return ids;

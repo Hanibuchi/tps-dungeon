@@ -354,7 +354,7 @@ namespace TpsDungeon.Map.Editor
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
         }
 
-        private const string RoutePath = SettingsFolder + "/DungeonRoute.asset";
+        public const string RoutePath = SettingsFolder + "/DungeonRoute.asset";
         private const int RandomFloorsPerLayer = 4;
 
         /// <summary>層ごとの床の高さ（メートル）。上の層ほど高い建物の上にある。道順を作るとき（初回）だけ各層の設定に入れる。</summary>
@@ -411,6 +411,60 @@ namespace TpsDungeon.Map.Editor
             // 土台の深さは高さで決まるので作り直す。
             GenerateStructureParts();
             Debug.Log($"ダンジョンの道順を作った（{layers.Count} 層）: {RoutePath}");
+        }
+
+        // モンスターハウスに閉じ込めたとき・鍵が開いたときの音（効果音ラボ「生活」）。
+        private const string MonsterHouseTrappedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/牢屋の扉を閉める.mp3";
+        private const string MonsterHouseReleasedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/鍵を開ける1.mp3";
+
+        /// <summary>
+        /// 層ごとの部屋の敵の表（EnemySpawnTable_L{n}）を、無いものだけ作り、道順の層の enemySpawns が空なら差す。
+        /// 既にある表（手で調節したもの）と、差してある層には触らない。ただし表のモンスターハウスの音が空なら埋める（差してある音は残す）。
+        /// 作るのは空の表と音だけ。敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは
+        /// 「敵の CSV を取り込む」（EnemySpawnCsvImporter）で入る。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/部屋の敵の表を作る")]
+        public static void GenerateEnemySpawnTables()
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            if (route == null)
+            {
+                Debug.LogWarning($"{RoutePath} が無いので、先に「ダンジョンの道順を作る」を回すこと。");
+                return;
+            }
+
+            var trappedSound = AssetDatabase.LoadAssetAtPath<AudioClip>(MonsterHouseTrappedSoundPath);
+            var releasedSound = AssetDatabase.LoadAssetAtPath<AudioClip>(MonsterHouseReleasedSoundPath);
+            if (trappedSound == null) Debug.LogWarning($"{MonsterHouseTrappedSoundPath} が無いので、閉じ込めの音を入れなかった。");
+            if (releasedSound == null) Debug.LogWarning($"{MonsterHouseReleasedSoundPath} が無いので、鍵が開く音を入れなかった。");
+
+            int created = 0, assigned = 0, sounded = 0;
+            for (int i = 0; i < route.Layers.Count; i++)
+            {
+                string path = $"{SettingsFolder}/EnemySpawnTable_L{i + 1}.asset";
+                var table = AssetDatabase.LoadAssetAtPath<EnemySpawnTable>(path);
+                if (table == null)
+                {
+                    table = ScriptableObject.CreateInstance<EnemySpawnTable>();
+                    AssetDatabase.CreateAsset(table, path);
+                    created++;
+                }
+                if (table.FillMissingSounds(trappedSound, releasedSound))
+                {
+                    EditorUtility.SetDirty(table);
+                    sounded++;
+                }
+
+                var layer = route.Layers[i];
+                if (layer.enemySpawns != null) continue;
+                layer.enemySpawns = table;
+                assigned++;
+            }
+
+            if (assigned > 0) EditorUtility.SetDirty(route);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"部屋の敵の表を {created} 個作り、道順の {assigned} 層に差し、{sounded} 個の表にモンスターハウスの音を入れた（既にある値は触っていない）。" +
+                      (created > 0 ? "中身はメニュー「Tools/TPS Dungeon/Enemies/敵の CSV を取り込む」で入れる。" : ""));
         }
 
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>

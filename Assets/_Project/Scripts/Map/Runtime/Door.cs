@@ -72,6 +72,7 @@ namespace TpsDungeon.Map.Runtime
         private BoxCollider[] leafColliders = System.Array.Empty<BoxCollider>();
         private bool isOpen;
         private bool closeSoundPending;
+        private bool closePending;
 
         /// <summary>開けた（開けている途中も含む）か。</summary>
         public bool IsOpen => isOpen;
@@ -104,6 +105,31 @@ namespace TpsDungeon.Map.Runtime
         /// <summary>閉ざされた扉を開けられるようにする。</summary>
         public void Unlock() => locked = false;
 
+        /// <summary>調べて開けた（開け始めた）。</summary>
+        public event System.Action<Door> Opened;
+
+        /// <summary>
+        /// 閉ざして閉める（モンスターハウスに閉じ込めるときなど）。開いていれば閉め、開いている途中なら開ききってから閉める
+        /// （開く用と閉じる用でクリップが別なので、途中で反転すると位置が飛ぶ）。開けられるようにするのは Unlock。
+        /// </summary>
+        public void Seal()
+        {
+            locked = true;
+            closePending = isOpen;
+            TryClosePending();
+        }
+
+        private void TryClosePending()
+        {
+            if (!closePending || animator == null || IsSwinging) return;
+            closePending = false;
+            if (!isOpen) return;
+            isOpen = false;
+            animator.SetBool(OpenParamHash, false);
+            UpdateLeafCollider();
+            closeSoundPending = true;
+        }
+
         private void Reset()
         {
             animator = GetComponent<Animator>();
@@ -135,6 +161,7 @@ namespace TpsDungeon.Map.Runtime
 
         private void Update()
         {
+            TryClosePending();
             UpdateLeafCollider();
 
             if (closeSoundPending && !isOpen && !IsSwinging)
@@ -162,6 +189,8 @@ namespace TpsDungeon.Map.Runtime
 
             if (isOpen) PlaySound(openSound);
             else closeSoundPending = true;
+
+            if (isOpen) Opened?.Invoke(this);
         }
 
         private void PlaySound(AudioClip clip)

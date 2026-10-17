@@ -64,6 +64,33 @@ namespace TpsDungeon.Map.Runtime
             }
         }
 
+        // 置いたドアと、それが結ぶ辺（どの 2 部屋の間か）。
+        private readonly Dictionary<Door, RoomEdge> doorEdges = new Dictionary<Door, RoomEdge>();
+
+        /// <summary>このフロアのドアが調べて開けられた。辺から両側の部屋が分かる（部屋の敵を出す・モンスターハウスに閉じ込める）。</summary>
+        public event Action<Door, RoomEdge> DoorOpened;
+
+        /// <summary>ドアが結ぶ辺。このフロアのドアでなければ false。</summary>
+        public bool TryGetEdge(Door door, out RoomEdge edge)
+        {
+            edge = null;
+            return door != null && doorEdges.TryGetValue(door, out edge);
+        }
+
+        /// <summary>その部屋に面したドアを全部。</summary>
+        public IEnumerable<Door> DoorsOf(int room)
+        {
+            foreach (var pair in doorEdges)
+            {
+                if (pair.Key != null && (pair.Value.RoomA == room || pair.Value.RoomB == room)) yield return pair.Key;
+            }
+        }
+
+        private void OnDoorOpened(Door door)
+        {
+            if (doorEdges.TryGetValue(door, out var edge)) DoorOpened?.Invoke(door, edge);
+        }
+
         /// <summary>ショートカット解放用の場所に置いた目印。その階に無ければ null。</summary>
         public GameObject ShortcutMarker { get; private set; }
 
@@ -121,6 +148,11 @@ namespace TpsDungeon.Map.Runtime
             ExitStair = null;
             ShortcutMarker = null;
             lockedDoors.Clear();
+            foreach (var door in doorEdges.Keys)
+            {
+                if (door != null) door.Opened -= OnDoorOpened;
+            }
+            doorEdges.Clear();
             featureAt.Clear();
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
@@ -192,6 +224,7 @@ namespace TpsDungeon.Map.Runtime
         /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。左右対称の階では窓も左右で揃える。
         /// 大扉の辺（RoomEdge.IsGrandDoor）には、grandDoorPrefab があれば普通のドアの代わりにそれを置く。
         /// 閉ざされた辺（RoomEdge.IsLocked）のドアは閉ざしておき、LockedDoors に控える。
+        /// ドアはどれも辺と一緒に控え、開けられたら DoorOpened で知らせる。
         /// </summary>
         private void BuildBoundaries(FloorLayout layout, FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
         {
@@ -234,10 +267,15 @@ namespace TpsDungeon.Map.Runtime
 
                         var piece = Instantiate(prefab, parent);
                         piece.name = window ? $"Window_{x}_{y}_{dir}" : grand ? $"GrandDoor_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
-                        if (edge != null && edge.IsLocked && piece.TryGetComponent(out Door door))
+                        if (edge != null && piece.TryGetComponent(out Door door))
                         {
-                            door.IsLocked = true;
-                            lockedDoors.Add(door);
+                            doorEdges[door] = edge;
+                            door.Opened += OnDoorOpened;
+                            if (edge.IsLocked)
+                            {
+                                door.IsLocked = true;
+                                lockedDoors.Add(door);
+                            }
                         }
                         piece.transform.SetLocalPositionAndRotation(
                             BoundaryCenter(cell, dir), Quaternion.Euler(0f, 90f * (int)dir, 0f));

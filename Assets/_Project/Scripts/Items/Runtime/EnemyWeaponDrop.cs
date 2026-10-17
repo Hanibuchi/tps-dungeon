@@ -7,19 +7,16 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// 倒れた敵が武器を落とす。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
-    /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の <see cref="EnemyId"/> の行で決める（<see cref="WeaponDropRoller"/>）。
+    /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の、敵の id（<see cref="EnemyIdentity"/>）の行で決める（<see cref="WeaponDropRoller"/>）。
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）が掛かる。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(EnemyHealth))]
+    [RequireComponent(typeof(EnemyHealth), typeof(EnemyIdentity))]
     [AddComponentMenu("TPS Dungeon/Enemy Weapon Drop")]
     public sealed class EnemyWeaponDrop : MonoBehaviour
     {
-        [SerializeField, Tooltip("ドロップ表（CSV）の敵の id。プレハブのファイル名（Big_Orc など）。")]
-        private string enemyId;
-
         [SerializeField, Min(0f), Tooltip("落とす場所を敵の足元からずらす半径（m）。")]
         private float scatter = 0.3f;
 
@@ -29,12 +26,22 @@ namespace TpsDungeon.Items
         private static readonly System.Random Rng = new System.Random();
 
         private EnemyHealth health;
+        private EnemyIdentity identity;
 
-        public string EnemyId => enemyId;
+        /// <summary>ドロップ表（CSV）の敵の id（<see cref="EnemyIdentity"/>）。</summary>
+        public string EnemyId
+        {
+            get
+            {
+                if (identity == null) identity = GetComponent<EnemyIdentity>();
+                return identity != null ? identity.Id : null;
+            }
+        }
 
         private void Awake()
         {
             health = GetComponent<EnemyHealth>();
+            identity = GetComponent<EnemyIdentity>();
         }
 
         private void OnEnable()
@@ -58,6 +65,7 @@ namespace TpsDungeon.Items
         public ItemInstance RollDrop()
         {
             EnemyDropTable table = EnemyDropTable.Default;
+            string enemyId = EnemyId;
             if (table == null || string.IsNullOrEmpty(enemyId) || !table.TryGet(enemyId, out EnemyDropTable.EnemyEntry entry)) return null;
 
             var uniques = new List<WeaponDropRoller.UniqueOption>(entry.uniques.Count);

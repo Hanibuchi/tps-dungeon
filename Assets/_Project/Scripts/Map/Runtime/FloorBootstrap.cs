@@ -23,6 +23,9 @@ namespace TpsDungeon.Map.Runtime
         [SerializeField, Tooltip("ダンジョンの道順。差してあれば、着いた階をこれから読み、上り階段で次の階へ移る。")]
         private DungeonRoute route;
 
+        [SerializeField, Tooltip("道順が無い（載っていない）ときに、部屋に出す敵の表。道順の階なら道順の層の表を使う。空なら敵を出さない。")]
+        private EnemySpawnTable enemySpawns;
+
         [SerializeField, Tooltip("0 なら毎回ランダム。0 以外を入れるとその形が必ず再現される。")]
         private int seed;
 
@@ -51,6 +54,9 @@ namespace TpsDungeon.Map.Runtime
         public FloorConfig Config => activeConfig != null ? activeConfig : config;
 
         public DungeonRoute Route => route;
+
+        /// <summary>この階の部屋に出す敵の表（道順の階ならその層の表、ボス階なら無し。道順が無ければこのシーンのもの）。</summary>
+        public EnemySpawnTable EnemySpawns => route != null && CurrentFloor.HasValue ? route.EnemySpawnsOf(CurrentFloor.Value) : enemySpawns;
 
         /// <summary>道順の中で今いる階。道順が無い・載っていないシーンなら null。</summary>
         public DungeonFloor? CurrentFloor { get; private set; }
