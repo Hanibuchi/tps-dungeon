@@ -10,7 +10,7 @@ namespace TpsDungeon.Enemies
     ///
     /// 狙う相手:
     ///   ・召喚した置物（<see cref="DecoyTarget"/>）が見えていれば、メンバーより先に狙う
-    ///   ・次に、見えている一番近いメンバー（Ally レイヤーの <see cref="PlayerHealth"/>）
+    ///   ・次に、見えている一番近いメンバー（Ally レイヤーの <see cref="PlayerHealth"/>）。<see cref="retargetInterval"/> 秒ごとに選び直し、もっと近いメンバーが見えていれば乗り換える
     ///   ・見失っても <see cref="memoryTime"/> 秒は最後に見た所へ向かう。<see cref="loseRadius"/> より離れたら諦める
     ///   ・撃たれたら、見えていなくても近くのメンバーを狙う
     /// スタン・気絶の間は <see cref="Think"/> を呼ばず、代わりに <see cref="Interrupted"/> を 1 回呼ぶ（溜めていた攻撃を取り消す）。
@@ -39,6 +39,9 @@ namespace TpsDungeon.Enemies
 
         [SerializeField, Min(0.05f), Tooltip("相手を探し直す間隔（秒）。敵ごとにずらす。")]
         private float scanInterval = 0.2f;
+
+        [SerializeField, Min(0.1f), Tooltip("メンバーを狙っている間、一番近いメンバーを選び直す間隔（秒）。")]
+        private float retargetInterval = 1f;
 
         [Header("攻撃")]
         [SerializeField, Min(0), Tooltip("1 回の攻撃のダメージ。")]
@@ -78,6 +81,7 @@ namespace TpsDungeon.Enemies
 
         private GameObject activeWindupEffect;
         private float nextScan;
+        private float nextRetarget;
         private float nextNotice;
         private float lastSeenTime = float.NegativeInfinity;
         private bool wasActing = true;
@@ -144,6 +148,7 @@ namespace TpsDungeon.Enemies
         protected virtual void OnEnable()
         {
             nextScan = Time.time + UnityEngine.Random.value * scanInterval;
+            nextRetarget = Time.time + UnityEngine.Random.value * retargetInterval;
             wasActing = true;
             Health.Damaged += OnDamaged;
             Health.Died += OnDied;
@@ -224,7 +229,24 @@ namespace TpsDungeon.Enemies
                 return;
             }
 
-            if (!HasTarget && TryFindCharacter(detectRadius, true, out EnemyTarget character)) SetTarget(character);
+            if (!HasTarget)
+            {
+                if (TryFindCharacter(detectRadius, true, out EnemyTarget character)) SetTarget(character);
+                nextRetarget = Time.time + retargetInterval;
+            }
+            else if (Time.time >= nextRetarget)
+            {
+                nextRetarget = Time.time + retargetInterval;
+                Retarget();
+            }
+        }
+
+        /// <summary>見えている一番近いメンバーが今の相手でなく、今の相手より近い（または今の相手が見えていない）なら乗り換える。</summary>
+        private void Retarget()
+        {
+            if (!TryFindCharacter(detectRadius, true, out EnemyTarget nearest) || nearest.SameAs(Target)) return;
+            if (TargetVisible && Vector3.Distance(transform.position, nearest.Position) >= Vector3.Distance(transform.position, Target.Position)) return;
+            SetTarget(nearest);
         }
 
         private bool TryFindDecoy(out EnemyTarget found)
