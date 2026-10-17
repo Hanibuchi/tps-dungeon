@@ -11,7 +11,8 @@ namespace TpsDungeon.Map.Data
     ///   budget_per_cell          … 部屋のセル 1 つあたりの予算の上限（0 以上）
     ///   monster_house_chance     … 普通の部屋がモンスターハウスになる確率（0〜1）
     ///   monster_house_multiplier … モンスターハウスの予算の上限に掛ける倍率（0 以上）
-    /// 例: <c>1,2,0.2,2</c>
+    ///   single_weight            … 単種（層に出る敵ごとに 1 つ作る、1 種だけの編成）の重み（0 以上。0 なら単種を作らない）
+    /// 例: <c>1,2,0.2,2,0.5</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class EnemySpawnLayerCsv
@@ -20,9 +21,10 @@ namespace TpsDungeon.Map.Data
         public const string BudgetPerCellColumn = "budget_per_cell";
         public const string MonsterHouseChanceColumn = "monster_house_chance";
         public const string MonsterHouseMultiplierColumn = "monster_house_multiplier";
+        public const string SingleWeightColumn = "single_weight";
 
         private static readonly string[] RequiredColumns =
-            { LayerColumn, BudgetPerCellColumn, MonsterHouseChanceColumn, MonsterHouseMultiplierColumn };
+            { LayerColumn, BudgetPerCellColumn, MonsterHouseChanceColumn, MonsterHouseMultiplierColumn, SingleWeightColumn };
 
         public readonly struct Row
         {
@@ -31,14 +33,16 @@ namespace TpsDungeon.Map.Data
             public readonly float BudgetPerCell;
             public readonly float MonsterHouseChance;
             public readonly float MonsterHouseMultiplier;
+            public readonly float SingleWeight;
 
-            public Row(int line, int layer, float budgetPerCell, float monsterHouseChance, float monsterHouseMultiplier)
+            public Row(int line, int layer, float budgetPerCell, float monsterHouseChance, float monsterHouseMultiplier, float singleWeight)
             {
                 Line = line;
                 Layer = layer;
                 BudgetPerCell = budgetPerCell;
                 MonsterHouseChance = monsterHouseChance;
                 MonsterHouseMultiplier = monsterHouseMultiplier;
+                SingleWeight = singleWeight;
             }
         }
 
@@ -93,13 +97,19 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
+                if (!TryParse(Cell(SingleWeightColumn), float.PositiveInfinity, out float singleWeight))
+                {
+                    errors?.Add($"{line} 行目: 層 {layer} の {SingleWeightColumn} は 0 以上の数「{Cell(SingleWeightColumn)}」");
+                    continue;
+                }
+
                 if (!seen.Add(layer))
                 {
                     errors?.Add($"{line} 行目: 層 {layer} の行が重複している");
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, budget, chance, multiplier));
+                rows.Add(new Row(line, layer, budget, chance, multiplier, singleWeight));
             }
 
             return rows;

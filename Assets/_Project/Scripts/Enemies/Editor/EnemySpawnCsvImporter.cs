@@ -10,12 +10,13 @@ using UnityEngine;
 namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
-    /// 部屋の敵の CSV 2 つを、道順（DungeonRoute）の層ごとの表（EnemySpawnTable）に書き込む。
-    ///   Enemies.csv          … 敵の台帳。id・コスト・出る層（今後 hp などの列を足す）
-    ///   EnemySpawnLayers.csv … 層ごとのセル 1 つあたりの予算・モンスターハウスの確率と倍率
-    /// 表の敵の一覧・予算・確率・倍率を差し替える。編成タイプと音は表のまま（Inspector で直す）。
+    /// 部屋の敵の CSV 3 つを、道順（DungeonRoute）の層ごとの表（EnemySpawnTable）に書き込む。
+    ///   Enemies.csv             … 敵の台帳。id・コスト・出る層（今後 hp などの列を足す）
+    ///   EnemySpawnLayers.csv    … 層ごとのセル 1 つあたりの予算・モンスターハウスの確率と倍率・単種の重み
+    ///   EnemyCompositions.csv   … 編成タイプ（混成・主役＋脇役など）。単種は書かず、層に出る敵ごとにここで作る
+    /// 表の敵の一覧・予算・確率・倍率・編成タイプを差し替える。音は表のまま（Inspector で直す）。
     /// 道順の層に表が無ければ「部屋の敵の表を作る」で作ってから書く。
-    /// どちらかの CSV を保存すると自動で取り込む。メニューからも呼べる。
+    /// どれかの CSV を保存すると自動で取り込む。メニューからも呼べる。
     /// 敵は id（EnemyIdentity の id）で引く。読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>
     public sealed class EnemySpawnCsvImporter : AssetPostprocessor
@@ -23,6 +24,9 @@ namespace TpsDungeon.Enemies.Editor
         public const string Folder = "Assets/_Project/Enemies";
         public const string EnemiesCsvPath = Folder + "/Enemies.csv";
         public const string LayersCsvPath = Folder + "/EnemySpawnLayers.csv";
+        public const string CompositionsCsvPath = Folder + "/EnemyCompositions.csv";
+
+        private static readonly string[] CsvPaths = { EnemiesCsvPath, LayersCsvPath, CompositionsCsvPath };
 
         [MenuItem("Tools/TPS Dungeon/Enemies/敵の CSV を取り込む")]
         public static void Import()
@@ -31,6 +35,7 @@ namespace TpsDungeon.Enemies.Editor
             var warnings = new List<string>();
             List<EnemyCsv.Row> enemyRows = Read(EnemiesCsvPath, EnemyCsv.Parse, errors);
             List<EnemySpawnLayerCsv.Row> layerRows = Read(LayersCsvPath, EnemySpawnLayerCsv.Parse, errors);
+            List<EnemyCompositionCsv.Row> compositionRows = Read(CompositionsCsvPath, EnemyCompositionCsv.Parse, errors);
 
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(PlaceholderMapAssetGenerator.RoutePath);
             if (route == null)
@@ -45,8 +50,10 @@ namespace TpsDungeon.Enemies.Editor
 
             Dictionary<string, GameObject> prefabs = EnemyPrefabs(warnings);
             var usable = new List<EnemyCsv.Row>();
+            var listed = new HashSet<string>(StringComparer.Ordinal);
             foreach (EnemyCsv.Row row in enemyRows)
             {
+                listed.Add(row.Id);
                 if (row.Layers.Length == 0) continue;
                 if (!prefabs.ContainsKey(row.Id))
                 {
@@ -54,14 +61,17 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
 
-                foreach (int layer in row.Layers)
-                {
-                    if (layer > route.Layers.Count)
-                    {
-                        warnings.Add($"{EnemiesCsvPath} の {row.Line} 行目: {row.Id} の層 {layer} は道順に無い（{route.Layers.Count} 層まで）");
-                    }
-                }
+                WarnLayersOutsideRoute(row.Layers, route, $"{EnemiesCsvPath} の {row.Line} 行目: {row.Id}", warnings);
                 usable.Add(row);
+            }
+
+            foreach (EnemyCompositionCsv.Row row in compositionRows)
+            {
+                WarnLayersOutsideRoute(row.Layers, route, $"{CompositionsCsvPath} の {row.Line} 行目: {row.Name}", warnings);
+                foreach (EnemyCompositionCsv.Share share in row.Shares)
+                {
+                    if (!listed.Contains(share.EnemyId)) errors.Add($"{CompositionsCsvPath} の {row.Line} 行目: {row.Name} の敵 {share.EnemyId} が {EnemiesCsvPath} に無い");
+                }
             }
 
             var layerValues = new Dictionary<int, EnemySpawnLayerCsv.Row>();
@@ -83,41 +93,108 @@ namespace TpsDungeon.Enemies.Editor
                 }
 
                 var enemies = new List<EnemySpawnTable.Enemy>();
-                var onLayer = new HashSet<GameObject>();
                 foreach (EnemyCsv.Row row in usable)
                 {
-                    if (Array.IndexOf(row.Layers, layer) < 0) continue;
-                    enemies.Add(new EnemySpawnTable.Enemy { id = row.Id, prefab = prefabs[row.Id], cost = row.Cost });
-                    onLayer.Add(prefabs[row.Id]);
+                    if (Array.IndexOf(row.Layers, layer) >= 0) enemies.Add(new EnemySpawnTable.Enemy { id = row.Id, prefab = prefabs[row.Id], cost = row.Cost });
                 }
 
-                float perCell = table.BudgetPerCell, chance = table.MonsterHouseChance, multiplier = table.MonsterHouseBudgetMultiplier;
+                float perCell = table.BudgetPerCell, chance = table.MonsterHouseChance, multiplier = table.MonsterHouseBudgetMultiplier, singleWeight = 0f;
                 if (layerValues.TryGetValue(layer, out EnemySpawnLayerCsv.Row values))
                 {
                     perCell = values.BudgetPerCell;
                     chance = values.MonsterHouseChance;
                     multiplier = values.MonsterHouseMultiplier;
+                    singleWeight = values.SingleWeight;
                 }
                 else
                 {
-                    warnings.Add($"{LayersCsvPath} に層 {layer} の行が無いので、{table.name} の予算・モンスターハウスの値はそのまま");
+                    warnings.Add($"{LayersCsvPath} に層 {layer} の行が無いので、{table.name} の予算・モンスターハウスの値はそのままにし、単種は作らない");
                 }
 
                 if (enemies.Count == 0) warnings.Add($"層 {layer} に出る敵が {EnemiesCsvPath} に 1 体も無い（部屋に敵が出ない）");
-                WarnUnusedShares(table, onLayer, layer, warnings);
+                List<EnemySpawnTable.Composition> compositions = Compositions(compositionRows, enemies, layer, singleWeight, warnings);
 
-                if (Write(table, perCell, chance, multiplier, enemies)) changed++;
+                if (Write(table, perCell, chance, multiplier, enemies, compositions)) changed++;
             }
 
             foreach (string warning in warnings) Debug.LogWarning($"部屋の敵の CSV: {warning}");
             foreach (string error in errors) Debug.LogError($"部屋の敵の CSV の {error}");
-            Debug.Log($"部屋の敵の CSV を取り込んだ: 敵 {usable.Count} 種、層 {route.Layers.Count} つのうち {changed} つの表を書き換えた");
+            Debug.Log($"部屋の敵の CSV を取り込んだ: 敵 {usable.Count} 種、編成 {compositionRows.Count} 行、" +
+                      $"層 {route.Layers.Count} つのうち {changed} つの表を書き換えた");
+        }
+
+        /// <summary>
+        /// その層の編成タイプ。CSV の編成のうちこの層を使うもの（* はその層の敵全部を比率 1 で）と、その層の敵ごとの単種。
+        /// その層に出ない敵の比率は入れず知らせる。1 体も使えない編成は入れない。
+        /// </summary>
+        private static List<EnemySpawnTable.Composition> Compositions(List<EnemyCompositionCsv.Row> rows, List<EnemySpawnTable.Enemy> enemies,
+            int layer, float singleWeight, List<string> warnings)
+        {
+            var byId = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+            foreach (EnemySpawnTable.Enemy e in enemies) byId[e.id] = e.prefab;
+
+            var compositions = new List<EnemySpawnTable.Composition>();
+            foreach (EnemyCompositionCsv.Row row in rows)
+            {
+                if (Array.IndexOf(row.Layers, layer) < 0) continue;
+
+                var shares = new List<EnemySpawnTable.Share>();
+                if (row.AllEnemies)
+                {
+                    foreach (EnemySpawnTable.Enemy e in enemies) shares.Add(new EnemySpawnTable.Share { enemy = e.prefab, share = 1f });
+                }
+                else
+                {
+                    var absent = new List<string>();
+                    foreach (EnemyCompositionCsv.Share share in row.Shares)
+                    {
+                        if (byId.TryGetValue(share.EnemyId, out GameObject prefab)) shares.Add(new EnemySpawnTable.Share { enemy = prefab, share = share.Value });
+                        else absent.Add(share.EnemyId);
+                    }
+
+                    if (absent.Count > 0 && shares.Count > 0)
+                    {
+                        warnings.Add($"{CompositionsCsvPath} の {row.Line} 行目: {row.Name} の {string.Join("・", absent)} は層 {layer} に出ないので、層 {layer} ではほかの敵だけにする");
+                    }
+                }
+
+                if (shares.Count == 0)
+                {
+                    if (enemies.Count > 0) warnings.Add($"{CompositionsCsvPath} の {row.Line} 行目: {row.Name} の敵が層 {layer} に 1 体も出ないので、層 {layer} には入れない");
+                    continue;
+                }
+
+                compositions.Add(new EnemySpawnTable.Composition { name = row.Name, weight = row.Weight, shares = shares });
+            }
+
+            if (singleWeight > 0f)
+            {
+                foreach (EnemySpawnTable.Enemy e in enemies)
+                {
+                    compositions.Add(new EnemySpawnTable.Composition
+                    {
+                        name = $"単種（{e.id}）",
+                        weight = singleWeight,
+                        shares = new List<EnemySpawnTable.Share> { new EnemySpawnTable.Share { enemy = e.prefab, share = 1f } },
+                    });
+                }
+            }
+
+            return compositions;
+        }
+
+        private static void WarnLayersOutsideRoute(int[] layers, DungeonRoute route, string where, List<string> warnings)
+        {
+            foreach (int layer in layers)
+            {
+                if (layer > route.Layers.Count) warnings.Add($"{where} の層 {layer} は道順に無い（{route.Layers.Count} 層まで）");
+            }
         }
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
-            if (Array.IndexOf(importedAssets, EnemiesCsvPath) < 0 && Array.IndexOf(importedAssets, LayersCsvPath) < 0) return;
+            if (!Array.Exists(CsvPaths, path => Array.IndexOf(importedAssets, path) >= 0)) return;
 
             // 取り込み中はほかのアセット（敵のプレハブ・表）がまだ読めないことがあるので、落ち着いてから。
             EditorApplication.delayCall -= Import;
@@ -156,30 +233,12 @@ namespace TpsDungeon.Enemies.Editor
             return prefabs;
         }
 
-        /// <summary>編成タイプがその層に出ない敵を指していたら知らせる（その比率は使われない）。</summary>
-        private static void WarnUnusedShares(EnemySpawnTable table, HashSet<GameObject> onLayer, int layer, List<string> warnings)
-        {
-            var missing = new SortedSet<string>(StringComparer.Ordinal);
-            foreach (EnemySpawnTable.Composition composition in table.Compositions)
-            {
-                if (composition.shares == null) continue;
-                foreach (EnemySpawnTable.Share share in composition.shares)
-                {
-                    if (share.enemy != null && !onLayer.Contains(share.enemy)) missing.Add(share.enemy.name);
-                }
-            }
-
-            if (missing.Count > 0)
-            {
-                warnings.Add($"{table.name} の編成タイプに、層 {layer} に出ない敵（{string.Join("・", missing)}）が入っている。その比率は使われない");
-            }
-        }
-
         /// <summary>表が今と違えば書き換える。書き換えたら真。</summary>
-        private static bool Write(EnemySpawnTable table, float perCell, float chance, float multiplier, List<EnemySpawnTable.Enemy> enemies)
+        private static bool Write(EnemySpawnTable table, float perCell, float chance, float multiplier, List<EnemySpawnTable.Enemy> enemies,
+            List<EnemySpawnTable.Composition> compositions)
         {
             string before = EditorJsonUtility.ToJson(table);
-            table.Assign(perCell, chance, multiplier, enemies);
+            table.Assign(perCell, chance, multiplier, enemies, compositions);
             if (EditorJsonUtility.ToJson(table) == before) return false;
 
             EditorUtility.SetDirty(table);

@@ -63,70 +63,70 @@ MonoBehaviour:
       share: 1
     - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
       share: 1
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Big_Orc\u30FBBlob_GreenBlob\uFF09"
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30AA\u30FC\u30AF\u30FB\u7DD1\u30B9\u30E9\u30A4\u30E0\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
       share: 0.6
     - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Big_Frog\u30FBBlob_PinkBlob\uFF09"
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30AB\u30A8\u30EB\u30FB\u30D4\u30F3\u30AF\u30B9\u30E9\u30A4\u30E0\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
       share: 0.6
     - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Blob_Wizard\u30FBBlob_Mushnub\uFF09"
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30A6\u30A3\u30B6\u30FC\u30C9\u30FB\u30DE\u30C3\u30B7\u30E5\u30CA\u30D6\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
       share: 0.6
     - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08Flying_Ghost\u30FBFlying_Hywirl\uFF09"
+  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30B4\u30FC\u30B9\u30C8\u30FB\u30CF\u30A4\u30EF\u30FC\u30EB\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
       share: 0.6
     - enemy: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
       share: 0.4
-  - name: "\u5358\u7A2E\uFF08Blob_PinkBlob\uFF09"
+  - name: "\u5358\u7A2E\uFF08pink_blob\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Blob_GreenBlob\uFF09"
+  - name: "\u5358\u7A2E\uFF08green_blob\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Blob_Wizard\uFF09"
+  - name: "\u5358\u7A2E\uFF08wizard\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Flying_Hywirl\uFF09"
+  - name: "\u5358\u7A2E\uFF08hywirl\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Flying_Ghost\uFF09"
+  - name: "\u5358\u7A2E\uFF08ghost\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Blob_Mushnub\uFF09"
+  - name: "\u5358\u7A2E\uFF08mushnub\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Big_Frog\uFF09"
+  - name: "\u5358\u7A2E\uFF08frog\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
       share: 1
-  - name: "\u5358\u7A2E\uFF08Big_Orc\uFF09"
+  - name: "\u5358\u7A2E\uFF08orc\uFF09"
     weight: 0.5
     shares:
     - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}

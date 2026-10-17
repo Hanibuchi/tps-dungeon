@@ -9,8 +9,8 @@ namespace TpsDungeon.Map.Authoring
     /// 1 つの層の、部屋に出る敵の表。道順（DungeonRoute）の層ごとに 1 つ差し、その層のランダムな階はどれもこれを使う。
     /// 部屋の予算は 0 〜 budgetPerCell × 部屋のセル数 から一様に引き、編成タイプを重みで引いて、
     /// 種類ごとの体数とグループを決める（RoomEnemyRoller）。普通の部屋だけに出し、monsterHouseChance でモンスターハウスにする。
-    /// 敵・コスト・予算・モンスターハウスの確率と倍率は CSV（Enemies/Enemies.csv・EnemySpawnLayers.csv）から取り込む
-    /// （EnemySpawnCsvImporter）。ここで直しても次の取り込みで上書きされる。編成タイプと音はここで直す。
+    /// 敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは CSV（Enemies/Enemies.csv・EnemySpawnLayers.csv・
+    /// EnemyCompositions.csv）から取り込む（EnemySpawnCsvImporter）。ここで直しても次の取り込みで上書きされる。音だけはここで直す。
     /// </summary>
     [CreateAssetMenu(menuName = "TPS Dungeon/Enemy Spawn Table", fileName = "EnemySpawnTable")]
     public sealed class EnemySpawnTable : ScriptableObject
@@ -74,8 +74,8 @@ namespace TpsDungeon.Map.Authoring
         [SerializeField, Range(0f, 1f), Tooltip("閉じ込め・鍵が開く音の大きさ。")]
         private float soundVolume = 1f;
 
-        [Header("編成タイプ（ここで直す）")]
-        [SerializeField, Tooltip("編成タイプ。部屋ごとに 1 つを重みで選ぶ。")]
+        [Header("編成タイプ（CSV から取り込む。ここを直しても上書きされる）")]
+        [SerializeField, Tooltip("編成タイプ。部屋ごとに 1 つを重みで選ぶ。EnemyCompositions.csv の、この層を使う編成と、この層に出る敵ごとの単種。")]
         private List<Composition> compositions = new List<Composition>();
 
         public float BudgetPerCell => budgetPerCell;
@@ -138,18 +138,14 @@ namespace TpsDungeon.Map.Authoring
             return changed;
         }
 
-        /// <summary>CSV から取り込んだ値に差し替える。編成タイプと音は触らない。</summary>
-        public void Assign(float perCell, float houseChance, float houseMultiplier, IEnumerable<Enemy> newEnemies)
+        /// <summary>CSV から取り込んだ値に差し替える。音は触らない。</summary>
+        public void Assign(float perCell, float houseChance, float houseMultiplier, IEnumerable<Enemy> newEnemies,
+            IEnumerable<Composition> newCompositions)
         {
             budgetPerCell = perCell;
             monsterHouseChance = houseChance;
             monsterHouseBudgetMultiplier = houseMultiplier;
             enemies = new List<Enemy>(newEnemies);
-        }
-
-        /// <summary>編成タイプを差し替える（既定の表を作るとき用）。</summary>
-        public void SetCompositions(IEnumerable<Composition> newCompositions)
-        {
             compositions = new List<Composition>(newCompositions);
         }
     }
