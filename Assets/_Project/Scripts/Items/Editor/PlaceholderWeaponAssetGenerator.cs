@@ -759,7 +759,7 @@ namespace TpsDungeon.Items.Editor
         {
             var settings = Gen.LoadOrCreate<EnchantmentRollSettings>(RollSettingsPath);
             var serialized = new SerializedObject(settings);
-            serialized.FindProperty("continueChance").floatValue = 0.35f;
+            serialized.FindProperty("continueChance").floatValue = 0.5f;
             serialized.FindProperty("maxEnchantments").intValue = 5;
             float[] weights = { 0.30f, 0.25f, 0.20f, 0.12f, 0.08f, 0.05f }; // E〜S。値は仮。
             SerializedProperty list = serialized.FindProperty("rankWeights");

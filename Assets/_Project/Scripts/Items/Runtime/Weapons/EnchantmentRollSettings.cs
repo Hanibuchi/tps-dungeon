@@ -15,7 +15,7 @@ namespace TpsDungeon.Items
         public const int RankCount = (int)WeaponRank.S + 1;
 
         [SerializeField, Range(0f, 0.95f), Tooltip("エンチャントが付く確率。外れるまで振り続け、当たった回数だけ付く（最大数まで）。値は仮。")]
-        private float continueChance = 0.35f;
+        private float continueChance = 0.5f;
 
         [SerializeField, Min(0), Tooltip("1 本に付くエンチャントの最大数。振って超えたら、ランクの高いものから残す。")]
         private int maxEnchantments = 5;
