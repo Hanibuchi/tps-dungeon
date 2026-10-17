@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EnemyDropTable
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyDropTable
   enemies:
-  - enemyId: Blob_PinkBlob
+  - enemyId: pink_blob
     rankChances:
     - 0.06
     - 0.02
@@ -25,7 +25,7 @@ MonoBehaviour:
     - weapon: {fileID: 11400000, guid: 2fe0862d885e449d98ee7e06ebc2ea32, type: 2}
       chance: 0.01
       pity: 600
-  - enemyId: Blob_GreenBlob
+  - enemyId: green_blob
     rankChances:
     - 0.08
     - 0.03
@@ -34,7 +34,7 @@ MonoBehaviour:
     - 0
     - 0
     uniques: []
-  - enemyId: Flying_Hywirl
+  - enemyId: hywirl
     rankChances:
     - 0.08
     - 0.04
@@ -43,7 +43,7 @@ MonoBehaviour:
     - 0
     - 0
     uniques: []
-  - enemyId: Blob_Wizard
+  - enemyId: wizard
     rankChances:
     - 0.08
     - 0.04
@@ -52,7 +52,7 @@ MonoBehaviour:
     - 0
     - 0
     uniques: []
-  - enemyId: Flying_Ghost
+  - enemyId: ghost
     rankChances:
     - 0.08
     - 0.04
@@ -61,7 +61,7 @@ MonoBehaviour:
     - 0
     - 0
     uniques: []
-  - enemyId: Blob_Mushnub
+  - enemyId: mushnub
     rankChances:
     - 0.09
     - 0.05
@@ -70,7 +70,7 @@ MonoBehaviour:
     - 0
     - 0
     uniques: []
-  - enemyId: Big_Frog
+  - enemyId: frog
     rankChances:
     - 0.1
     - 0.06
@@ -79,7 +79,7 @@ MonoBehaviour:
     - 0.003
     - 0
     uniques: []
-  - enemyId: Big_Orc
+  - enemyId: orc
     rankChances:
     - 0.1
     - 0.06

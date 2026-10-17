@@ -15,26 +15,34 @@ MonoBehaviour:
   budgetPerCell: 6
   monsterHouseChance: 0.2
   monsterHouseBudgetMultiplier: 2
+  enemies:
+  - id: pink_blob
+    prefab: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+    cost: 1
+  - id: green_blob
+    prefab: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
+    cost: 1
+  - id: wizard
+    prefab: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+    cost: 2
+  - id: hywirl
+    prefab: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
+    cost: 2
+  - id: ghost
+    prefab: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+    cost: 2
+  - id: mushnub
+    prefab: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
+    cost: 2
+  - id: frog
+    prefab: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
+    cost: 3
+  - id: orc
+    prefab: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+    cost: 4
   trappedSound: {fileID: 8300000, guid: 8d0257c08dcc24aa7b43f9a2791c7496, type: 3}
   releasedSound: {fileID: 8300000, guid: fe55cadb6d3ce4b6a9313c4b682882a6, type: 3}
   soundVolume: 1
-  enemies:
-  - prefab: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
-    cost: 1
-  - prefab: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
-    cost: 1
-  - prefab: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
-    cost: 2
-  - prefab: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
-    cost: 2
-  - prefab: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
-    cost: 2
-  - prefab: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
-    cost: 2
-  - prefab: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
-    cost: 3
-  - prefab: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
-    cost: 4
   compositions:
   - name: "\u6DF7\u6210"
     weight: 2

@@ -3,6 +3,7 @@
     "rootNamespace": "TpsDungeon.Items.Editor",
     "references": [
         "TpsDungeon.Items",
+        "TpsDungeon.Enemies",
         "TpsDungeon.Player"
     ],
     "includePlatforms": [

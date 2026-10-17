@@ -9,6 +9,8 @@ namespace TpsDungeon.Map.Authoring
     /// 1 つの層の、部屋に出る敵の表。道順（DungeonRoute）の層ごとに 1 つ差し、その層のランダムな階はどれもこれを使う。
     /// 部屋の予算は 0 〜 budgetPerCell × 部屋のセル数 から一様に引き、編成タイプを重みで引いて、
     /// 種類ごとの体数とグループを決める（RoomEnemyRoller）。普通の部屋だけに出し、monsterHouseChance でモンスターハウスにする。
+    /// 敵・コスト・予算・モンスターハウスの確率と倍率は CSV（Enemies/Enemies.csv・EnemySpawnLayers.csv）から取り込む
+    /// （EnemySpawnCsvImporter）。ここで直しても次の取り込みで上書きされる。編成タイプと音はここで直す。
     /// </summary>
     [CreateAssetMenu(menuName = "TPS Dungeon/Enemy Spawn Table", fileName = "EnemySpawnTable")]
     public sealed class EnemySpawnTable : ScriptableObject
@@ -16,6 +18,9 @@ namespace TpsDungeon.Map.Authoring
         [Serializable]
         public struct Enemy
         {
+            [Tooltip("敵の id（Enemies.csv の id）。")]
+            public string id;
+
             [Tooltip("出てくる敵のプレハブ。")]
             public GameObject prefab;
 
@@ -46,16 +51,20 @@ namespace TpsDungeon.Map.Authoring
             public List<Share> shares;
         }
 
-        [SerializeField, Min(0f), Tooltip("部屋のセル 1 つあたりの予算の上限。部屋の予算は 0 〜 これ × セル数（1x1 なら 1、2x2 なら 4）から一様に決まる。")]
+        [Header("CSV から取り込む（ここを直しても上書きされる）")]
+        [SerializeField, Min(0f), Tooltip("部屋のセル 1 つあたりの予算の上限。部屋の予算は 0 〜 これ × セル数（1x1 なら 1、2x2 なら 4）から一様に決まる。EnemySpawnLayers.csv の budget_per_cell。")]
         private float budgetPerCell = 2f;
 
-        [SerializeField, Range(0f, 1f), Tooltip("普通の部屋がモンスターハウスになる確率。ドアを開けると全員が中に入れられ、中の敵を全部倒すまで出られない。")]
+        [SerializeField, Range(0f, 1f), Tooltip("普通の部屋がモンスターハウスになる確率。ドアを開けると全員が中に入れられ、中の敵を全部倒すまで出られない。EnemySpawnLayers.csv の monster_house_chance。")]
         private float monsterHouseChance = 0.2f;
 
-        [SerializeField, Min(0f), Tooltip("モンスターハウスの予算の上限に掛ける倍率。2 なら普通の部屋の 2 倍まで出る。")]
+        [SerializeField, Min(0f), Tooltip("モンスターハウスの予算の上限に掛ける倍率。2 なら普通の部屋の 2 倍まで出る。EnemySpawnLayers.csv の monster_house_multiplier。")]
         private float monsterHouseBudgetMultiplier = 2f;
 
-        [Header("モンスターハウスの音（未設定なら鳴らさない）")]
+        [SerializeField, Tooltip("この層に出る敵とコスト。Enemies.csv の layers にこの層が入っている敵。")]
+        private List<Enemy> enemies = new List<Enemy>();
+
+        [Header("モンスターハウスの音（ここで直す。未設定なら鳴らさない）")]
         [SerializeField, Tooltip("ドアを開けて閉じ込められたときの音。")]
         private AudioClip trappedSound;
 
@@ -65,9 +74,7 @@ namespace TpsDungeon.Map.Authoring
         [SerializeField, Range(0f, 1f), Tooltip("閉じ込め・鍵が開く音の大きさ。")]
         private float soundVolume = 1f;
 
-        [SerializeField, Tooltip("この層に出る敵とコスト。")]
-        private List<Enemy> enemies = new List<Enemy>();
-
+        [Header("編成タイプ（ここで直す）")]
         [SerializeField, Tooltip("編成タイプ。部屋ごとに 1 つを重みで選ぶ。")]
         private List<Composition> compositions = new List<Composition>();
 
@@ -131,11 +138,18 @@ namespace TpsDungeon.Map.Authoring
             return changed;
         }
 
-        public void Set(float perCell, float houseChance, IEnumerable<Enemy> newEnemies, IEnumerable<Composition> newCompositions)
+        /// <summary>CSV から取り込んだ値に差し替える。編成タイプと音は触らない。</summary>
+        public void Assign(float perCell, float houseChance, float houseMultiplier, IEnumerable<Enemy> newEnemies)
         {
             budgetPerCell = perCell;
             monsterHouseChance = houseChance;
+            monsterHouseBudgetMultiplier = houseMultiplier;
             enemies = new List<Enemy>(newEnemies);
+        }
+
+        /// <summary>編成タイプを差し替える（既定の表を作るとき用）。</summary>
+        public void SetCompositions(IEnumerable<Composition> newCompositions)
+        {
             compositions = new List<Composition>(newCompositions);
         }
     }

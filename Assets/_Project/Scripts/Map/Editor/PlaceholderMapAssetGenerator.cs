@@ -354,7 +354,7 @@ namespace TpsDungeon.Map.Editor
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
         }
 
-        private const string RoutePath = SettingsFolder + "/DungeonRoute.asset";
+        public const string RoutePath = SettingsFolder + "/DungeonRoute.asset";
         private const int RandomFloorsPerLayer = 4;
 
         /// <summary>層ごとの床の高さ（メートル）。上の層ほど高い建物の上にある。道順を作るとき（初回）だけ各層の設定に入れる。</summary>
@@ -418,12 +418,10 @@ namespace TpsDungeon.Map.Editor
         private const string MonsterHouseTrappedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/牢屋の扉を閉める.mp3";
         private const string MonsterHouseReleasedSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/鍵を開ける1.mp3";
 
-        /// <summary>部屋に出る敵の既定のコスト。弱い・小さいものほど安い。</summary>
-        private static readonly (string prefab, float cost)[] EnemyCosts =
+        /// <summary>既定の編成タイプに入れる敵のプレハブ。敵とコストは CSV（Enemies.csv）から取り込む。</summary>
+        private static readonly string[] EnemyPrefabs =
         {
-            ("Blob_PinkBlob", 1f), ("Blob_GreenBlob", 1f),
-            ("Blob_Wizard", 2f), ("Flying_Hywirl", 2f), ("Flying_Ghost", 2f), ("Blob_Mushnub", 2f),
-            ("Big_Frog", 3f), ("Big_Orc", 4f),
+            "Blob_PinkBlob", "Blob_GreenBlob", "Blob_Wizard", "Flying_Hywirl", "Flying_Ghost", "Blob_Mushnub", "Big_Frog", "Big_Orc",
         };
 
         /// <summary>主役＋脇役の組（主役に予算の 0.6、脇役に 0.4）。</summary>
@@ -436,7 +434,8 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// 層ごとの部屋の敵の表（EnemySpawnTable_L{n}）を、無いものだけ作り、道順の層の enemySpawns が空なら差す。
         /// 既にある表（手で調節したもの）と、差してある層には触らない。ただし表のモンスターハウスの音が空なら埋める（差してある音は残す）。
-        /// 予算はセル 1 つあたり L1 = 2 から層ごとに +1。編成タイプは混成（全種同じ比率）・主役＋脇役・単種（種類ごと）。
+        /// 作るのは編成タイプ（混成（全種同じ比率）・主役＋脇役・単種（種類ごと））と音だけ。
+        /// 敵・コスト・予算・モンスターハウスの確率と倍率は「敵の CSV を取り込む」（EnemySpawnCsvImporter）で入る。
         /// </summary>
         [MenuItem("Tools/TPS Dungeon/部屋の敵の表を作る")]
         public static void GenerateEnemySpawnTables()
@@ -449,7 +448,7 @@ namespace TpsDungeon.Map.Editor
             }
 
             var prefabs = new Dictionary<string, GameObject>();
-            foreach (var (name, _) in EnemyCosts)
+            foreach (string name in EnemyPrefabs)
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{EnemyPrefabFolder}/{name}.prefab");
                 if (prefab != null) prefabs[name] = prefab;
@@ -469,7 +468,7 @@ namespace TpsDungeon.Map.Editor
                 if (table == null)
                 {
                     table = ScriptableObject.CreateInstance<EnemySpawnTable>();
-                    FillEnemySpawnTable(table, 2f + i, prefabs);
+                    FillEnemySpawnTable(table, prefabs);
                     AssetDatabase.CreateAsset(table, path);
                     created++;
                 }
@@ -487,20 +486,21 @@ namespace TpsDungeon.Map.Editor
 
             if (assigned > 0) EditorUtility.SetDirty(route);
             AssetDatabase.SaveAssets();
-            Debug.Log($"部屋の敵の表を {created} 個作り、道順の {assigned} 層に差し、{sounded} 個の表にモンスターハウスの音を入れた（既にある値は触っていない）。");
+            Debug.Log($"部屋の敵の表を {created} 個作り、道順の {assigned} 層に差し、{sounded} 個の表にモンスターハウスの音を入れた（既にある値は触っていない）。" +
+                      (created > 0 ? "敵とコストはメニュー「Tools/TPS Dungeon/Enemies/敵の CSV を取り込む」で入れる。" : ""));
         }
 
-        private static void FillEnemySpawnTable(EnemySpawnTable table, float budgetPerCell, Dictionary<string, GameObject> prefabs)
+        private static void FillEnemySpawnTable(EnemySpawnTable table, Dictionary<string, GameObject> prefabs)
         {
-            var enemies = new List<EnemySpawnTable.Enemy>();
-            foreach (var (name, cost) in EnemyCosts)
+            var enemies = new List<GameObject>();
+            foreach (string name in EnemyPrefabs)
             {
-                if (prefabs.TryGetValue(name, out var prefab)) enemies.Add(new EnemySpawnTable.Enemy { prefab = prefab, cost = cost });
+                if (prefabs.TryGetValue(name, out var prefab)) enemies.Add(prefab);
             }
 
             var compositions = new List<EnemySpawnTable.Composition>();
             var mixed = new List<EnemySpawnTable.Share>();
-            foreach (var e in enemies) mixed.Add(new EnemySpawnTable.Share { enemy = e.prefab, share = 1f });
+            foreach (var e in enemies) mixed.Add(new EnemySpawnTable.Share { enemy = e, share = 1f });
             compositions.Add(new EnemySpawnTable.Composition { name = "混成", weight = 2f, shares = mixed });
 
             foreach (var (lead, support) in LeadAndSupport)
@@ -522,13 +522,13 @@ namespace TpsDungeon.Map.Editor
             {
                 compositions.Add(new EnemySpawnTable.Composition
                 {
-                    name = $"単種（{e.prefab.name}）",
+                    name = $"単種（{e.name}）",
                     weight = 0.5f,
-                    shares = new List<EnemySpawnTable.Share> { new EnemySpawnTable.Share { enemy = e.prefab, share = 1f } },
+                    shares = new List<EnemySpawnTable.Share> { new EnemySpawnTable.Share { enemy = e, share = 1f } },
                 });
             }
 
-            table.Set(budgetPerCell, 0.2f, enemies, compositions);
+            table.SetCompositions(compositions);
         }
 
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>

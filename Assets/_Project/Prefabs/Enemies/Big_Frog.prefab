@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 3570283723940086528}
   - component: {fileID: 8519871171864436212}
   - component: {fileID: 8937380465853707207}
+  - component: {fileID: 5146988586025336730}
   m_Layer: 0
   m_Name: Big_Frog
   m_TagString: Untagged
@@ -92,6 +93,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
   maxHp: 45
   immortal: 0
+  prop: 0
 --- !u!114 &2772452794682970886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,11 +265,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
-  enemyId: Big_Frog
   scatter: 0.3
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &5146988586025336730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7061645022734581897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
+  id: frog
 --- !u!1001 &8204301414139919424
 PrefabInstance:
   m_ObjectHideFlags: 0

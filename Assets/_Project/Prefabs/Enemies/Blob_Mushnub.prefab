@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 5307164374499030991}
   - component: {fileID: 7307917473437299842}
   - component: {fileID: 6947457580582081433}
+  - component: {fileID: 277912218161724104}
   m_Layer: 0
   m_Name: Blob_Mushnub
   m_TagString: Untagged
@@ -92,6 +93,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
   maxHp: 35
   immortal: 0
+  prop: 0
 --- !u!114 &7557528038855932747
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -247,11 +249,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
-  enemyId: Blob_Mushnub
   scatter: 0.3
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &277912218161724104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5095790672517539498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
+  id: mushnub
 --- !u!1001 &3535772247090510164
 PrefabInstance:
   m_ObjectHideFlags: 0
