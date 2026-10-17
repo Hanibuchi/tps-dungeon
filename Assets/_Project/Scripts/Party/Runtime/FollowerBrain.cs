@@ -20,7 +20,6 @@ namespace TpsDungeon.Party
     [AddComponentMenu("TPS Dungeon/Follower Brain")]
     public sealed class FollowerBrain : MonoBehaviour
     {
-        private const int OverlapBufferSize = 64;
         private const int RayBufferSize = 16;
 
         [SerializeField, Min(1f), Tooltip("敵を見つける距離（m）。")]
@@ -47,7 +46,6 @@ namespace TpsDungeon.Party
         [SerializeField, Tooltip("狙いの線を出す目の高さ（m）。")]
         private float eyeHeight = 1.5f;
 
-        private readonly Collider[] overlap = new Collider[OverlapBufferSize];
         private readonly RaycastHit[] rayHits = new RaycastHit[RayBufferSize];
         private readonly List<FollowerWeaponOption> options = new List<FollowerWeaponOption>(PlayerHotbar.SlotCount);
 
@@ -292,16 +290,15 @@ namespace TpsDungeon.Party
                 return target;
             }
 
+            // 当たり判定を集めて探すと、階では壁や床だけで入れ物が埋まって敵を取りこぼすので、居る敵の一覧から引く。
             EnemyHealth best = null;
-            float bestDistance = float.MaxValue;
-            int count = Physics.OverlapSphereNonAlloc(transform.position, detectRadius, overlap, sightMask, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
+            float bestDistance = detectRadius;
+            foreach (EnemyHealth enemy in EnemyHealth.All)
             {
-                EnemyHealth enemy = overlap[i].GetComponentInParent<EnemyHealth>();
-                if (enemy == null || enemy.IsDead || enemy.IsProp) continue;
+                if (enemy.IsDead || enemy.IsProp) continue;
 
                 float distance = Vector3.Distance(transform.position, enemy.transform.position);
-                if (distance >= bestDistance || !CanSee(enemy)) continue;
+                if (distance > bestDistance || !CanSee(enemy)) continue;
 
                 best = enemy;
                 bestDistance = distance;

@@ -6,11 +6,11 @@ namespace TpsDungeon.Enemies
     /// <summary>
     /// 近づいて殴る敵（01 単純近距離、03 浮遊近距離）。浮くかどうかは <see cref="EnemyMotor"/> の高さで決まり、動きは同じ。
     ///
-    ///   追う → 間合い（<see cref="attackRange"/>）に入ったら止まって Attack を流す
+    ///   追う → 間合い（<see cref="attackRange"/>）に入ったら止まって Attack を流す（浮く敵は先に降りる）
     ///   → <see cref="windup"/> 秒後に体の前の球（<see cref="hitRadius"/>）の中の相手に当てる → <see cref="recovery"/> 秒の隙 → 間を置いて次
     /// 溜めの間は相手の方へ回るが、当たりの瞬間の向きで当てるので、横へ逃げれば避けられる。
-    /// 浮く敵（03）はふだん高く飛んでいて、殴れそうになったら降りてきて（<see cref="EnemyMotor.Descend"/>）、降りきってから溜める。
-    /// 殴り終えて次の攻撃を待つ間はまた上がる。降りている間が反撃の機会。
+    /// 浮く敵（03）は追う間ずっと高く飛んでいて、間合いに入って殴れるときだけ降りてきて（<see cref="EnemyMotor.Descend"/>）、降りきってから溜める。
+    /// 降りる間に相手が間合いから離れたら、殴るのをやめてまた上がる。殴り終えて隙が明けたら上がる。降りている間が反撃の機会。
     /// スタン・気絶で溜めは取り消す。
     /// MonsterBuilder がプレハブのルートに付ける。
     /// </summary>
@@ -18,7 +18,16 @@ namespace TpsDungeon.Enemies
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Melee)")]
     public sealed class MeleeEnemyBrain : EnemyBrain
     {
-        private enum Phase { Chase, Windup, Recover }
+        private enum Phase { Chase, Dive, Windup, Recover }
+
+        /// <summary>降りる間に相手がこれだけ間合いの外へ出たら、殴るのをやめて上がる（m）。</summary>
+        private const float DiveSlack = 1f;
+
+        /// <summary>これだけ降りても降りきれなければ、殴るのをやめて上がる（秒）。</summary>
+        private const float DiveTimeout = 1f;
+
+        /// <summary>降りるのをやめてから、また降りられるまで（秒）。</summary>
+        private const float DiveRetry = 0.5f;
 
         [Header("近接")]
         [SerializeField, Min(0.3f), Tooltip("相手の足元までこの距離に入ったら殴り始める（m）。")]
@@ -45,14 +54,17 @@ namespace TpsDungeon.Enemies
 
         protected override void Think(float dt)
         {
-            // 浮く敵は、殴っている間と、もうすぐ殴れそうな間だけ降りる。
-            Motor.Descend = phase != Phase.Chase
-                || (HasTarget && TargetVisible && CooldownRemaining <= 0.3f && TargetDistance <= attackRange + 2f);
+            // 浮く敵は、殴るために降りる間と殴っている間だけ降りる。追う間は飛んだまま。
+            Motor.Descend = phase != Phase.Chase;
 
             switch (phase)
             {
                 case Phase.Chase:
                     Chase();
+                    break;
+
+                case Phase.Dive:
+                    Dive(dt);
                     break;
 
                 case Phase.Windup:
@@ -78,8 +90,38 @@ namespace TpsDungeon.Enemies
             Motor.Destination = ChasePoint();
             Motor.StopDistance = attackRange * 0.75f;
 
-            if (!HasTarget || !TargetVisible || CooldownRemaining > 0f || TargetDistance > attackRange || !Motor.IsDown) return;
+            if (!HasTarget || !TargetVisible || CooldownRemaining > 0f || TargetDistance > attackRange) return;
 
+            if (Motor.IsDown) StartWindup();
+            else
+            {
+                phase = Phase.Dive;
+                timer = DiveTimeout;
+                Motor.Descend = true;
+            }
+        }
+
+        /// <summary>浮く敵が殴りに降りる間。相手の方へ寄りながら降り、降りきったら溜める。</summary>
+        private void Dive(float dt)
+        {
+            timer -= dt;
+            if (!HasTarget || !TargetVisible || TargetDistance > attackRange + DiveSlack || timer <= 0f)
+            {
+                // すぐまた降りて上下を繰り返さないよう、少し間を置く。
+                phase = Phase.Chase;
+                Motor.LookAt = null;
+                CooldownRemaining = Mathf.Max(CooldownRemaining, DiveRetry);
+                return;
+            }
+
+            Motor.Destination = ChasePoint();
+            Motor.StopDistance = attackRange * 0.75f;
+            Motor.LookAt = Target.Position;
+            if (Motor.IsDown && TargetDistance <= attackRange) StartWindup();
+        }
+
+        private void StartWindup()
+        {
             phase = Phase.Windup;
             timer = windup;
             Motor.Destination = null;
@@ -112,6 +154,7 @@ namespace TpsDungeon.Enemies
 
         public override string StateLabel => phase switch
         {
+            Phase.Dive => "降りる",
             Phase.Windup => $"溜め {timer:0.0}s",
             Phase.Recover => $"隙 {timer:0.0}s",
             _ => HasTarget ? "追う" : "待つ",
@@ -125,8 +168,10 @@ namespace TpsDungeon.Enemies
         protected override void Interrupted()
         {
             if (phase == Phase.Chase) return;
+            bool attacking = phase != Phase.Dive;
             phase = Phase.Chase;
             Motor.LookAt = null;
+            if (!attacking) return;
             CooldownRemaining = Mathf.Max(CooldownRemaining, cooldown * 0.5f);
         }
     }

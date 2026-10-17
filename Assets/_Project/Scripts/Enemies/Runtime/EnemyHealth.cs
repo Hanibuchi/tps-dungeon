@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TpsDungeon.Enemies
@@ -6,12 +7,15 @@ namespace TpsDungeon.Enemies
     /// <summary>
     /// 敵の体力。ダメージを受けて減らし、受けたことと倒れたことを知らせるだけ。
     /// ひるみ・気絶は EnemyDamageReaction、倒れたあとの始末は EnemyDeath が受け持つ。
+    /// 有効な間だけ <see cref="All"/> に載る（狙う相手を探すときに、当たり判定を集めずに引けるように）。
     /// 敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Health")]
     public sealed class EnemyHealth : MonoBehaviour
     {
+        private static readonly List<EnemyHealth> all = new List<EnemyHealth>();
+
         [SerializeField, Min(1), Tooltip("最大 HP。値は仮。")]
         private int maxHp = 30;
 
@@ -22,6 +26,9 @@ namespace TpsDungeon.Enemies
         private bool prop;
 
         private int currentHp = -1;
+
+        /// <summary>今居る敵（壊せる置物も含む。倒れていても有効な間は載っている）。</summary>
+        public static IReadOnlyList<EnemyHealth> All => all;
 
         public int MaxHp => Mathf.Max(1, maxHp);
 
@@ -55,6 +62,10 @@ namespace TpsDungeon.Enemies
         {
             currentHp = MaxHp;
         }
+
+        private void OnEnable() => all.Add(this);
+
+        private void OnDisable() => all.Remove(this);
 
         /// <summary>ダメージを与える。実際に減った量を返す。倒れたあとや 0 以下の量では何もしない。</summary>
         public int TakeDamage(DamageInfo damage)
