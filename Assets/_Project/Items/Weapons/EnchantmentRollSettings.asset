@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49829c12392bb46b48813775cf005183, type: 3}
   m_Name: EnchantmentRollSettings
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnchantmentRollSettings
-  continueChance: 0.35
+  continueChance: 0.5
   maxEnchantments: 5
   rankWeights:
   - 0.3
