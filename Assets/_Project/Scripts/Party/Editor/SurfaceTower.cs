@@ -29,7 +29,7 @@ namespace TpsDungeon.Party.Editor
         private const string MeshFolder = "Assets/_Project/Scenes/Surface";
         private const string RoutePath = "Assets/_Project/Settings/Map/DungeonRoute.asset";
         private const string RoofMaterialPath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_OrientalFan.mat";
-        private const string StoneMaterialPath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_Blocs.mat";
+        private const string StoneMaterialPath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_JaggedSquare.mat";
         private const string LitWindowPath = MaterialsFolder + "/Placeholder_TowerWindow.mat";
         private const string BannerPath = "Assets/ThirdParty/3D Model/RPGPP_LT/Prefabs/Props/Banners/rpgpp_lt_banner_01";
         private const string FirstFloorScene = "L1_Random";
