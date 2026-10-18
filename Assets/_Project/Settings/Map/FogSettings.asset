@@ -16,8 +16,8 @@ MonoBehaviour:
   mistOpacity: 0.7
   mistAmount: 1
   mistSize: 1
-  mistStartHeight: 45
-  mistRadius: 95
+  mistStartHeight: 100
+  mistRadius: 80
   distanceFog: 0
   color: {r: 0.75, g: 0.88, b: 0.94, a: 1}
   mode: 1

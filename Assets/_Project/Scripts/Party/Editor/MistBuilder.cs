@@ -11,7 +11,7 @@ namespace TpsDungeon.Party.Editor
     /// <summary>
     /// 塔のまわりのもや。大きな柔らかい板（パーティクル）をゆっくり漂わせて、景色全体ではなく塔のまわりにだけ霧がかかって見せる。地上では塔の上の方を雲で隠すのが役目。
     /// - 地上: 塔の上の方を隠す雲。塔の中心から半径 <see cref="FogSettings.mistRadius"/> の円柱の中に、地上 <see cref="FogSettings.mistStartHeight"/> m から屋上の少し上まで。地上の近くには出さない。
-    /// - 階: 窓の外の、床より下（地面より上）に一面に流す。部屋の中に入り込まないよう、板の上の端が床より下に来るようにする。
+    /// - 階: 窓の外の、床より下に一面に流す。地上と同じく始まる高さより上だけで、低い階には無い。部屋の中に入り込まないよう、板の上の端が床より下に来るようにする。
     /// シーンのルートの [Mist] にまとめて置き直す。色と濃さは素材（<see cref="MaterialPath"/>）に持つので、変えると全部のシーンにすぐ効く。
     /// 量・大きさ・半径・始まる高さは置き直さないと変わらない（霧の調節の窓が開いているシーンを置き直す）。
     /// </summary>
@@ -43,16 +43,18 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>
-        /// 階のシーンに、窓の外の床より下のもやを置き直す。center は階の真ん中の床の高さ（ワールド座標）、elevation は床から地面までの高さ、extent は階の枠の一辺（メートル）。
+        /// 階のシーンに、窓の外の床より下のもやを置き直す。地面から始まる高さ（<see cref="FogSettings.mistStartHeight"/>）より下には置かないので、低い階には無い。center は階の真ん中の床の高さ（ワールド座標）、elevation は床から地面までの高さ、extent は階の枠の一辺（メートル）。
         /// </summary>
         public static string BuildFloor(Scene scene, Vector3 center, float elevation, float extent, FogSettings settings)
         {
             Transform root = NewRoot(scene);
             Material material = LoadOrCreateMaterial(settings);
 
-            // 板の上の端が床の 4 m 下、下の端が地面の 3 m 上（高い階は床の 50 m 下まで）に収まるようにする。
+            // 地上と同じく、もやは地面から始まる高さ（mistStartHeight）より上にだけ置く（塔の上の方を隠す雲の続き。地面の近くには出さない）。
+            // 板の上の端が床の 4 m 下、下の端が始まる高さ（高い階は床の 50 m 下まで）に収まるようにする。間が狭すぎる低い階には置かない。
             float high = center.y - 4f;
-            float low = center.y - Mathf.Min(Mathf.Max(elevation - 3f, 6f), 50f);
+            float low = Mathf.Max(center.y - elevation + settings.mistStartHeight, center.y - 50f);
+            if (high - low < 6f) return $"床が地面から {elevation:0} m で、もやの始まる高さ {settings.mistStartHeight:0} m より下なので、窓の外のもやは置かなかった。";
             float maxSize = Mathf.Min(36f * settings.mistSize, high - low);
             float thickness = Mathf.Max(0f, high - low - maxSize);
 

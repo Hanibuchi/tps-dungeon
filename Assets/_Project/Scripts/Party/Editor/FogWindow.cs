@@ -89,7 +89,7 @@ namespace TpsDungeon.Party.Editor
             EditorGUI.BeginChangeCheck();
             float amount = EditorGUILayout.Slider(new GUIContent("量", "もやの枚数の倍率。0 で無し。"), settings.mistAmount, 0f, 3f);
             float size = EditorGUILayout.Slider(new GUIContent("大きさ", "もや 1 枚の大きさの倍率。"), settings.mistSize, 0.3f, 3f);
-            float start = EditorGUILayout.Slider(new GUIContent("地上で始まる高さ (m)", "塔の上の方を隠す雲が始まる高さ。ここから屋上の少し上までを覆う。"), settings.mistStartHeight, 0f, 200f);
+            float start = EditorGUILayout.Slider(new GUIContent("始まる高さ (m)", "塔の上の方を隠す雲が始まる、地面からの高さ。ここから屋上の少し上までを覆う。階の窓の外のもやもこの高さより上だけに出す。"), settings.mistStartHeight, 0f, 200f);
             float radius = EditorGUILayout.Slider(new GUIContent("地上での半径 (m)", "塔の中心から雲を置く半径。塔の一番太い所（半分の幅 70 m ほど）より大きくすると塔を包む。"), settings.mistRadius, 10f, 250f);
             bool shapeChanged = EditorGUI.EndChangeCheck();
 
