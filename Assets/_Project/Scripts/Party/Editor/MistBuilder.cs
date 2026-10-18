@@ -148,7 +148,12 @@ namespace TpsDungeon.Party.Editor
 
             // 長さ（duration）を変えるために止めてあるので、Play 中（霧の調節の窓で置き直したとき）は再生し直す。
             // 止めたままだと付け足したときの再生（playOnAwake）が済んでいて、もやが消えたままになる。
-            if (Application.isPlaying) system.Play(true);
+            // 途中から再生すると prewarm が効かず一から出始めるので、出きった状態（一番長い寿命の分）まで進めてから続ける。
+            if (Application.isPlaying)
+            {
+                system.Simulate(maxLife, true, true);
+                system.Play(true);
+            }
             return system;
         }
 
