@@ -13,11 +13,15 @@ MonoBehaviour:
   m_Name: L4_RoomCatalog
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.RoomTemplateCatalog
   entries:
-  - prefab: {fileID: 4155326717597408730, guid: bddfddd700687455aa0430573c1b0172, type: 3}
+  - prefab: {fileID: 1981864403219514067, guid: 8caf26f122b9a4f3bb070215cd056c25, type: 3}
     weightOverride: 0
-  - prefab: {fileID: 8632591487409175818, guid: 0e946bb7c1f4c46aaa46611204b752f6, type: 3}
+  - prefab: {fileID: 8077312621903528195, guid: a79d6d57f3fcb43e1b40db62098fb3e1, type: 3}
     weightOverride: 0
-  - prefab: {fileID: 2577176910344405510, guid: c4f3050dd004343b0b40da0a6efcd5c9, type: 3}
+  - prefab: {fileID: 2741130658435901749, guid: 0f860612a0fde40bf9f9433d6b337820, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 3006640270871016592, guid: 5b232ade7f1794a28aaccb69e6a91410, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 1168020021756550192, guid: ed06cc14b3be94e579042c8df54fa75f, type: 3}
     weightOverride: 0
   - prefab: {fileID: 4155326717597408730, guid: 97d1b13835a664968a423e3ad0dba655, type: 3}
     weightOverride: 0

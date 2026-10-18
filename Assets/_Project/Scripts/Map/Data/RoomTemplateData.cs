@@ -35,6 +35,9 @@ namespace TpsDungeon.Map.Data
         public float Weight { get; }
         public IReadOnlyList<DoorSocketData> Sockets { get; }
 
+        /// <summary>ドアの最大数。0 なら無制限。</summary>
+        public int MaxDoors { get; }
+
         public RoomTemplateData(
             string id,
             int width,
@@ -42,7 +45,8 @@ namespace TpsDungeon.Map.Data
             RoomTag tags,
             bool allowRotation,
             float weight,
-            IReadOnlyList<DoorSocketData> sockets)
+            IReadOnlyList<DoorSocketData> sockets,
+            int maxDoors = 0)
         {
             if (width <= 0 || height <= 0) throw new ArgumentException($"テンプレート '{id}' のサイズが不正: {width}x{height}");
             Id = id ?? throw new ArgumentNullException(nameof(id));
@@ -52,7 +56,11 @@ namespace TpsDungeon.Map.Data
             AllowRotation = allowRotation;
             Weight = weight > 0f ? weight : 0f;
             Sockets = sockets ?? Array.Empty<DoorSocketData>();
+            MaxDoors = maxDoors > 0 ? maxDoors : 0;
         }
+
+        /// <summary>ドアを used 枚開けた部屋に、もう 1 枚開けられるか。</summary>
+        public bool AllowsMoreDoors(int used) => MaxDoors <= 0 || used < MaxDoors;
 
         /// <summary>時計回り rotation ステップ（0-3）回した後のサイズ。</summary>
         public (int width, int height) SizeAfterRotation(int rotation) =>

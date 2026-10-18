@@ -33,7 +33,7 @@ namespace TpsDungeon.Items
         private PassiveGear passiveGear;
 
         [Header("エンチャント")]
-        [SerializeField, Tooltip("この武器種に付けられるエンチャントの種類・段とそのランク。正は CSV（Items/Weapons/EnchantmentRanks.csv）で、保存すると取り込まれてここが書き換わる。")]
+        [SerializeField, Tooltip("この武器種に付けられるエンチャントの種類・段とそのランク。正は CSV（Settings/Tables/EnchantmentRanks.csv）で、保存すると取り込まれてここが書き換わる。")]
         private List<EnchantmentRankEntry> enchantmentRanks = new List<EnchantmentRankEntry>();
 
         [SerializeField, Tooltip("エンチャントの付き方（全武器種で共通のアセット）。")]

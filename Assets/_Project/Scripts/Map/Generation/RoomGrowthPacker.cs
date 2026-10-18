@@ -72,6 +72,9 @@ namespace TpsDungeon.Map.Generation
         private readonly List<RoomEdge> edges = new List<RoomEdge>();
         private readonly List<FrontierEntry> frontier = new List<FrontierEntry>();
 
+        /// <summary>部屋ごとの開けたドアの数。ドアの最大数を守るのに使う。</summary>
+        private readonly List<int> doorCounts = new List<int>();
+
         /// <summary>まだ置けていない必須タグ。残り枠が少なくなったらこれを優先して置く。</summary>
         private readonly List<RoomTag> quota = new List<RoomTag>();
 
@@ -109,6 +112,8 @@ namespace TpsDungeon.Map.Generation
                 var entry = PopRandom();
                 var socket = rooms[entry.RoomIndex].Sockets[entry.SocketIndex];
                 if (socket.IsUsed) continue;
+                // 積んだ後でドアの最大数に届いた部屋からは、もう伸ばさない。
+                if (IsFull(entry.RoomIndex)) continue;
 
                 // 置けなかったソケットはフロンティアから落とすだけ。壁のまま残り、後で追加ドアの候補になる。
                 TryGrow(entry.RoomIndex, socket, target);
@@ -128,6 +133,7 @@ namespace TpsDungeon.Map.Generation
             rooms.Clear();
             edges.Clear();
             frontier.Clear();
+            doorCounts.Clear();
 
             // 積むのは「実際に置けるタグ」だけ。持っているテンプレートが無いタグを積むと、
             // ForcedTag が先頭のそれを返し続けて、後ろに並んだタグが一度も強制されなくなる。
@@ -270,6 +276,7 @@ namespace TpsDungeon.Map.Generation
 
             var room = new RoomInstance(rooms.Count, template, rotation, bounds, sockets);
             rooms.Add(room);
+            doorCounts.Add(0);
             Stamp(bounds, room.Index);
             ConsumeQuota(template.Tags);
             return room;
@@ -286,7 +293,12 @@ namespace TpsDungeon.Map.Generation
             edges.Add(edge);
             socketA.UsedByEdge = edge.Index;
             socketB.UsedByEdge = edge.Index;
+            doorCounts[roomA]++;
+            doorCounts[roomB.Index]++;
         }
+
+        /// <summary>ドアの最大数に届いていて、もうドアを開けられない部屋か。</summary>
+        private bool IsFull(int roomIndex) => !rooms[roomIndex].Template.AllowsMoreDoors(doorCounts[roomIndex]);
 
         /// <summary>
         /// 使ったソケット以外をフロンティアに積む。
@@ -294,6 +306,8 @@ namespace TpsDungeon.Map.Generation
         /// </summary>
         private void PushFrontier(RoomInstance room, int skipSocketIndex)
         {
+            if (IsFull(room.Index)) return;
+
             for (int i = 0; i < room.Sockets.Count; i++)
             {
                 if (i == skipSocketIndex) continue;
@@ -364,6 +378,7 @@ namespace TpsDungeon.Map.Generation
                 var socketA = rooms[pair.roomA].Sockets[pair.socketA];
                 var socketB = rooms[pair.roomB].Sockets[pair.socketB];
                 if (socketA.IsUsed || socketB.IsUsed) continue;
+                if (IsFull(pair.roomA) || IsFull(pair.roomB)) continue;
                 if (!connected.Add(PairKey(pair.roomA, pair.roomB))) continue;
 
                 Connect(pair.roomA, socketA, rooms[pair.roomB], pair.socketB);

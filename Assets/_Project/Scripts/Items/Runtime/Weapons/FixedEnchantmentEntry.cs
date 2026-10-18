@@ -5,7 +5,7 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// ユニークに必ず付くエンチャント 1 つ。種類と段を持つ。
-    /// 正は CSV（Items/Weapons/UniqueEnchantments.csv）で、エディタが取り込んで武器に書き込む。
+    /// 正は CSV（Settings/Tables/UniqueEnchantments.csv）で、エディタが取り込んで武器に書き込む。
     /// </summary>
     [Serializable]
     public struct FixedEnchantmentEntry

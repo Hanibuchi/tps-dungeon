@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Authoring
     /// 1 つの層の、部屋に出る敵の表。道順（DungeonRoute）の層ごとに 1 つ差し、その層のランダムな階はどれもこれを使う。
     /// 部屋の予算は 0 〜 budgetPerCell × 部屋のセル数 から一様に引き、編成タイプを重みで引いて、
     /// 種類ごとの体数とグループを決める（RoomEnemyRoller）。普通の部屋だけに出し、monsterHouseChance でモンスターハウスにする。
-    /// 敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは CSV（Enemies/Enemies.csv・EnemySpawnLayers.csv・
+    /// 敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは CSV（Settings/Tables/Enemies.csv・EnemySpawnLayers.csv・
     /// EnemyCompositions.csv）から取り込む（EnemySpawnCsvImporter）。ここで直しても次の取り込みで上書きされる。音だけはここで直す。
     /// </summary>
     [CreateAssetMenu(menuName = "TPS Dungeon/Enemy Spawn Table", fileName = "EnemySpawnTable")]

@@ -36,7 +36,7 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("ダメージ軽減の武器種で張る加護の種類（膜の色もこれで決まる）。ダメージ軽減でなければ使わない。")]
         private BlessingKind blessingKind;
 
-        [SerializeField, Tooltip("ユニークに必ず付くエンチャントの種類と段（ユニークは振らない）。正は CSV（Items/Weapons/UniqueEnchantments.csv）で、保存すると取り込まれてここが書き換わる。ユニーク以外では使わない。")]
+        [SerializeField, Tooltip("ユニークに必ず付くエンチャントの種類と段（ユニークは振らない）。正は CSV（Settings/Tables/UniqueEnchantments.csv）で、保存すると取り込まれてここが書き換わる。ユニーク以外では使わない。")]
         private List<FixedEnchantmentEntry> fixedEnchantments = new List<FixedEnchantmentEntry>();
 
         public WeaponRank Rank => rank;
