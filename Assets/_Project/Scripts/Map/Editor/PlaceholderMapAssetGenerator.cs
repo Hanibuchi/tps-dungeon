@@ -192,6 +192,9 @@ namespace TpsDungeon.Map.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"プレースホルダのマップ一式を生成した: 部屋 {roomPrefabs.Count} 種類 + 共通パーツ {parts.Count} 種類");
+
+            // 普通の部屋の大きさと重みは Rooms.csv が正。道順があれば取り込み直して揃える。
+            if (AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath) != null) RoomCsvImporter.Import();
         }
 
         /// <summary>
@@ -468,7 +471,7 @@ namespace TpsDungeon.Map.Editor
         }
 
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>
-        private static Material RoomFloorMaterial(RoomTemplateCatalog catalog)
+        internal static Material RoomFloorMaterial(RoomTemplateCatalog catalog)
         {
             foreach (var entry in catalog.Entries)
             {
@@ -1333,6 +1336,10 @@ namespace TpsDungeon.Map.Editor
         /// </summary>
         private static GameObject BuildRoomPrefab(RoomSpec spec, Material material) =>
             BuildRoomPrefab(spec, material, RoomsFolder, CellSize);
+
+        /// <summary>普通の部屋の Prefab（回転してよい、ドア候補は外周全部）を folder/name.prefab に作る。Rooms.csv の取り込みで使う。</summary>
+        internal static GameObject BuildNormalRoomPrefab(string name, int width, int height, float weight, Material material, string folder, float cellSize) =>
+            BuildRoomPrefab(new RoomSpec(name, width, height, RoomTag.Normal, true, weight, "Floor"), material, folder, cellSize);
 
         private static GameObject BuildRoomPrefab(RoomSpec spec, Material material, string folder, float cellSize)
         {
