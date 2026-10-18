@@ -376,14 +376,16 @@ namespace TpsDungeon.Party.Editor
             // 穴は面のすぐ前の薄い板。枠のほうが出ているので奥まって見える。
             b.Box(glass, at + normal * 0.025f, x * w + Vector3.up * h + z * 0.05f);
 
-            // 枠は穴のまわりに、面から FrameDepth だけ出す。
+            // 枠は穴のまわりに、面から FrameDepth だけ出す。穴の板の縁と面が重なってチラつかないよう、少し内側へ寄せて縁を枠の中に隠す。
             const float f = FrameWidth;
+            const float inset = 0.02f;
             Vector3 face = at + normal * (FrameDepth * 0.5f);
             Vector3 jamb = x * f + Vector3.up * (h + f * 2f) + z * FrameDepth;
-            b.Box(m.DoorLeaf, face + along * ((w + f) * 0.5f), jamb);
-            b.Box(m.DoorLeaf, face - along * ((w + f) * 0.5f), jamb);
-            b.Box(m.DoorLeaf, face + Vector3.up * ((h + f) * 0.5f), x * (w + f * 2f) + Vector3.up * f + z * FrameDepth);
-            b.Box(m.DoorLeaf, at + normal * FrameDepth + Vector3.down * ((h + f) * 0.5f), x * (w + f * 2f + 0.2f) + Vector3.up * f + z * (FrameDepth * 2f));
+            b.Box(m.DoorLeaf, face + along * ((w + f) * 0.5f - inset), jamb);
+            b.Box(m.DoorLeaf, face - along * ((w + f) * 0.5f - inset), jamb);
+            // 上の横木は左右と前の面が重ならないよう少し薄く。
+            b.Box(m.DoorLeaf, face + Vector3.up * ((h + f) * 0.5f - inset) - normal * 0.005f, x * (w + f * 2f) + Vector3.up * f + z * (FrameDepth - 0.01f));
+            b.Box(m.DoorLeaf, at + normal * FrameDepth + Vector3.down * ((h + f) * 0.5f - inset), x * (w + f * 2f + 0.2f) + Vector3.up * f + z * (FrameDepth * 2f));
         }
 
         /// <summary>屋上の縁に胸壁（間をあけた小さな箱）を並べる。</summary>

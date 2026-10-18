@@ -40,6 +40,8 @@ namespace TpsDungeon.Map.Editor
         // 窓の枠の太さと、壁の面からの出っ張り（窓台はこの倍出す）。地上の塔の窓（SurfaceTower）も同じ寸法。
         private const float WindowFrameWidth = 0.14f;
         private const float WindowFrameDepth = 0.1f;
+        // 枠を開口の内側へ寄せる量。枠の内側の面が開口の面（柱・腰壁・上の壁）と重なるとチラつくので、開口の面を枠の中に隠す。
+        private const float WindowFrameInset = 0.02f;
         private const float Elevation = 40f;
         private const float FloorThickness = 0.1f;
 
@@ -561,12 +563,14 @@ namespace TpsDungeon.Map.Editor
             var frame = new GameObject("Frame").transform;
             frame.SetParent(root.transform, false);
             const float f = WindowFrameWidth;
+            const float inset = WindowFrameInset;
             float depth = WallThickness + WindowFrameDepth * 2f;
             float openH = top - sill;
-            Box(frame, "Left", theme.doorLeaf, new Vector3(-(openW + f) * 0.5f, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
-            Box(frame, "Right", theme.doorLeaf, new Vector3((openW + f) * 0.5f, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
-            Box(frame, "Top", theme.doorLeaf, new Vector3(0f, top + f * 0.5f, 0f), new Vector3(openW + f * 2f, f, depth), false);
-            Box(frame, "Sill", theme.doorLeaf, new Vector3(0f, sill - f * 0.5f, 0f), new Vector3(openW + f * 2f + 0.2f, f, WallThickness + WindowFrameDepth * 4f), false);
+            float sideX = (openW + f) * 0.5f - inset;
+            Box(frame, "Left", theme.doorLeaf, new Vector3(-sideX, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
+            Box(frame, "Right", theme.doorLeaf, new Vector3(sideX, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
+            Box(frame, "Top", theme.doorLeaf, new Vector3(0f, top + f * 0.5f - inset, 0f), new Vector3(openW + f * 2f, f, depth - 0.01f), false); // 左右と前後の面が重ならないよう少し薄く
+            Box(frame, "Sill", theme.doorLeaf, new Vector3(0f, sill - f * 0.5f + inset, 0f), new Vector3(openW + f * 2f + 0.2f, f, WallThickness + WindowFrameDepth * 4f), false);
 
             return SavePrefab(root, path);
         }
