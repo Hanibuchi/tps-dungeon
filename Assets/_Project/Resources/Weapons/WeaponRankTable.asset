@@ -18,6 +18,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0.9254902, g: 0.6004902, b: 0.1754902, a: 1}
     auraAmount: 1
+    auraWhenHeld: 1
     auraLightIntensity: 2
     dropSound: {fileID: 8300000, guid: d462363b2df47455d9dcb59a7868ba94, type: 3}
     dropSoundVolume: 0.9
@@ -26,6 +27,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.6
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0
@@ -34,6 +36,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.55
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0
@@ -42,6 +45,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.5
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0
@@ -50,6 +54,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.45
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0
@@ -58,6 +63,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.4
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0
@@ -66,6 +72,7 @@ MonoBehaviour:
     auraParticles: {fileID: 2100000, guid: b4b3b3b6b74cc4786925dc5bdaba7c3a, type: 2}
     auraColor: {r: 0, g: 0, b: 0, a: 0}
     auraAmount: 0.35
+    auraWhenHeld: 0
     auraLightIntensity: 0
     dropSound: {fileID: 0}
     dropSoundVolume: 0

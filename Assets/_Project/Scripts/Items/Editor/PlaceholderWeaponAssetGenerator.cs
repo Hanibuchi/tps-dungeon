@@ -750,16 +750,17 @@ namespace TpsDungeon.Items.Editor
                 entry.FindPropertyRelative("rank").enumValueIndex = RankEnumIndex(entries[i].rank);
                 entry.FindPropertyRelative("color").colorValue = color;
 
-                // 光は全ランク。ユニークは派手に（色は金色寄り・明かり付き）、ほかは粒だけで、ランクが上がるほど少しずつ多く地味に光らせる
+                // 床に落ちている間の光は全ランク。ユニークは派手に（色は金色寄り・明かり付き）、ほかは粒だけで、ランクが上がるほど少しずつ多く地味に光らせる
                 // （E: 粒 0.35 〜 S: 粒 0.6）。明かりは床に白っぽい照り返しが出て落ち着いた色のランクだと目立つので付けない。
                 // ユニーク以外の色は透明にしておき、ランクの色から作らせる（色を直すと光も付いてくる）。
-                // 落ちた音はユニークだけ。
+                // 手に持っている間も光るのと、落ちた音はユニークだけ。
                 bool unique = entries[i].rank == WeaponRank.Unique;
                 int step = (int)entries[i].rank; // E = 0 … S = 5
                 entry.FindPropertyRelative("auraParticles").objectReferenceValue = aura;
                 entry.FindPropertyRelative("auraColor").colorValue = unique ? Color.Lerp(color, new Color(1f, 0.75f, 0.3f), 0.5f) : Color.clear;
                 entry.FindPropertyRelative("auraAmount").floatValue = unique ? 1f : 0.35f + 0.05f * step;
                 entry.FindPropertyRelative("auraLightIntensity").floatValue = unique ? 2f : 0f;
+                entry.FindPropertyRelative("auraWhenHeld").boolValue = unique;
                 entry.FindPropertyRelative("dropSound").objectReferenceValue = unique ? LoadSound(UniqueDropSoundPath) : null;
                 entry.FindPropertyRelative("dropSoundVolume").floatValue = unique ? 0.9f : 0f;
             }

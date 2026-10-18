@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// 武器がランクに応じてまとう光（ユニークは派手に、ほかのランクは控えめに）。武器の見た目（手に持つモデルや、床に落ちている物）の子に作る。
+    /// 武器がランクに応じてまとう光（ユニークは派手に、ほかのランクは控えめに）。床に落ちている間に付け、手に持っている間はランク表で許したランク（ユニーク）だけ。武器の見た目（手に持つモデルや、床に落ちている物）の子に作る。
     /// 形は武器の見た目の箱に合わせ、そこから火の粉のような光の粒が立ちのぼり、表面には小さな光がまたたき、明かりが周りを照らす。
     /// 色・量・材質はランク表（<see cref="WeaponRankTable"/>）の設定で、材質の無いランクには付けない。色を決めていなければランクの色から作る。
     /// </summary>
@@ -28,14 +28,16 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// model の見た目に rank の光をまとわせる。そのランクに光の設定が無ければ何もしない（null を返す）。
+        /// held は手に持つ見た目か（そのランクの auraWhenHeld が入っていなければ付けない）。
         /// 見た目の大きさは、この時点の model 以下の描画物から測る。
         /// </summary>
-        public static WeaponAura Attach(GameObject model, WeaponRank rank)
+        public static WeaponAura Attach(GameObject model, WeaponRank rank, bool held)
         {
             if (model == null) return null;
 
             WeaponRankTable table = WeaponRankTable.Default;
             if (table == null || !table.TryGet(rank, out WeaponRankTable.Entry style) || style.auraParticles == null) return null;
+            if (held && !style.auraWhenHeld) return null;
 
             var root = new GameObject(ObjectName);
             root.transform.SetParent(model.transform, false);

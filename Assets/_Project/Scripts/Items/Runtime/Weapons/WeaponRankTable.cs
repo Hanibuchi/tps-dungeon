@@ -5,7 +5,8 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// ランクごとの見た目と音。UI ではランクを背景色で示す。色は Notion の設定を仮採用している。
-    /// 光（オーラ）は材質を入れたランクに付く（今は全ランク。ユニーク以外は粒を減らして明かりも弱い）。落ちたときの音は設定したランク（今はユニークだけ）にしか付かない。
+    /// 光（オーラ）は材質を入れたランクに、床に落ちている間だけ付く（今は全ランク。ユニーク以外は粒を減らし、明かりは無し）。
+    /// 手に持っている間も光らせるのは auraWhenHeld を入れたランクだけ（今はユニーク）。落ちたときの音は設定したランク（今はユニークだけ）にしか付かない。
     /// ゲーム全体で 1 つだけ使い、Resources/<see cref="ResourcePath"/> に置く（<see cref="Default"/> で引く）。
     /// </summary>
     [CreateAssetMenu(fileName = "WeaponRankTable", menuName = "TPS Dungeon/Weapons/Rank Table")]
@@ -25,6 +26,9 @@ namespace TpsDungeon.Items
 
             [Range(0f, 1f), Tooltip("光の粒の量（ユニーク = 1）。粒の数と大きさがこれで減る。")]
             public float auraAmount;
+
+            [Tooltip("手に持っている間も光らせるか。外すと床に落ちている間だけ光る。")]
+            public bool auraWhenHeld;
 
             [Min(0f), Tooltip("武器を照らす明かりの強さ。0 なら明かりは置かない。")]
             public float auraLightIntensity;
