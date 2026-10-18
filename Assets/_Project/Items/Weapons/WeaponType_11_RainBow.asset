@@ -166,6 +166,7 @@ MonoBehaviour:
     level: 5
     rank: 5
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  minEnchantments: 0
   characterAttackWeight: 1
   baseCritChance: 0.05
   baseCritMultiplier: 1.5
@@ -278,6 +279,7 @@ MonoBehaviour:
   supportHitEffect: {fileID: 0}
   supportHitEffectScale: 1
   drawSound: {fileID: 8300000, guid: 9fae71eb8ca8147d4955767b4d1c3872, type: 3}
+  drawSoundVolume: 0.5
   stickSound: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stickSoundVolume: 0.6
   rainSound: {fileID: 8300000, guid: ca272340699484764b94f64887cbee73, type: 3}

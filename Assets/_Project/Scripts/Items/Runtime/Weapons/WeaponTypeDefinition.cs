@@ -39,6 +39,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("エンチャントの付き方（全武器種で共通のアセット）。")]
         private EnchantmentRollSettings enchantmentRoll;
 
+        [SerializeField, Min(0), Tooltip("必ず付くエンチャントの数。振って足りなければランクの重みで足す（お守りは 1）。ユニークの固定のエンチャントには効かない。")]
+        private int minEnchantments;
+
         [Header("ダメージ")]
         [SerializeField, Min(0f), Tooltip("持ち主の基礎攻撃力を武器の強さ（DPS）に足すときの係数。値は仮。")]
         private float characterAttackWeight = 1f;
@@ -394,6 +397,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("弓を引き絞る音。弓のモーションが引き絞り（Bow Draw）に入るたびに鳴らす（持ち替えたときと、撃って引き直すとき）。")]
         private AudioClip drawSound;
 
+        [SerializeField, Range(0f, 1f), Tooltip("弓を引き絞る音の大きさ（武器種の音量に対して）。")]
+        private float drawSoundVolume = 0.5f;
+
         [SerializeField, Tooltip("矢が壁や床に刺さった音。")]
         private AudioClip stickSound;
 
@@ -481,6 +487,7 @@ namespace TpsDungeon.Items
             }
         }
         public EnchantmentRollSettings EnchantmentRoll => enchantmentRoll;
+        public int MinEnchantments => minEnchantments;
         public float CharacterAttackWeight => characterAttackWeight;
         public float BaseCritChance => baseCritChance;
         public float BaseCritMultiplier => baseCritMultiplier;
@@ -659,6 +666,7 @@ namespace TpsDungeon.Items
         /// <summary>連置の 1 列に出す数。durationScale は持続時間の倍率（RangedWeaponStats.DurationScale）。</summary>
         public int LinePillarsFor(float durationScale) => Mathf.Max(1, Mathf.RoundToInt(linePillarCount * Mathf.Max(0.1f, durationScale)));
         public AudioClip DrawSound => drawSound;
+        public float DrawSoundVolume => drawSoundVolume;
         public AudioClip StickSound => stickSound;
         public float StickSoundVolume => stickSoundVolume;
         public AudioClip RainSound => rainSound;

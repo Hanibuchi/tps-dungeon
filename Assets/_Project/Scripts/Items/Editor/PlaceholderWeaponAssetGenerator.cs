@@ -1015,6 +1015,8 @@ namespace TpsDungeon.Items.Editor
                 EnchantmentKind.Multishot, EnchantmentKind.Exp, EnchantmentKind.MaxHp, EnchantmentKind.Regen,
             }, enchantments, roll); // 0 = CharacterAnimatorBuilder.Weapon.Unarmed
             WritePassiveGear(serialized, PassiveGear.Charm, false);
+            // お守りは持っているだけの物なので、何も付かないと持つ意味が無い。必ず 1 つは付ける。
+            serialized.FindProperty("minEnchantments").intValue = 1;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -2325,6 +2327,8 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("hitSound").objectReferenceValue = LoadSound(ArrowHitSoundPath);
             serialized.FindProperty("soundVolume").floatValue = 0.8f;
             serialized.FindProperty("drawSound").objectReferenceValue = LoadSound(BowDrawSoundPath);
+            // 引き絞る音は撃つたびに鳴るので、ほかの音の半分に抑える。
+            serialized.FindProperty("drawSoundVolume").floatValue = 0.5f;
             // 壁や床に刺さった音は敵に当たった音と同じ素材を、少し小さく鳴らす。
             serialized.FindProperty("stickSound").objectReferenceValue = LoadSound(ArrowHitSoundPath);
             serialized.FindProperty("stickSoundVolume").floatValue = 0.6f;

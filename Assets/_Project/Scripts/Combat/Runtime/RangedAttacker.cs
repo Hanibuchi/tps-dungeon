@@ -1698,7 +1698,7 @@ namespace TpsDungeon.Combat
                               && animator.GetNextAnimatorStateInfo(upperBodyLayer).shortNameHash == BowDrawState);
             }
 
-            if (drawing && !wasDrawing) PlaySound(type.DrawSound, Muzzle(type), type.SoundVolume);
+            if (drawing && !wasDrawing) PlaySound(type.DrawSound, Muzzle(type), type.SoundVolume * type.DrawSoundVolume);
             wasDrawing = drawing;
         }
 
