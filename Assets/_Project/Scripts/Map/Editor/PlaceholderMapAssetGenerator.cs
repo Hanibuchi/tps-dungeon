@@ -193,8 +193,12 @@ namespace TpsDungeon.Map.Editor
             AssetDatabase.Refresh();
             Debug.Log($"プレースホルダのマップ一式を生成した: 部屋 {roomPrefabs.Count} 種類 + 共通パーツ {parts.Count} 種類");
 
-            // 普通の部屋の大きさと重みは Rooms.csv が正。道順があれば取り込み直して揃える。
-            if (AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath) != null) RoomCsvImporter.Import();
+            // 普通の部屋の大きさと重みは Rooms.csv、階の部屋数は Floors.csv が正。道順があれば取り込み直して揃える。
+            if (AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath) != null)
+            {
+                RoomCsvImporter.Import();
+                FloorCsvImporter.Import();
+            }
         }
 
         /// <summary>
