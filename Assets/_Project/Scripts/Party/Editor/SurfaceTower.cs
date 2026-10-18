@@ -20,7 +20,7 @@ namespace TpsDungeon.Party.Editor
     ///   各階は中と同じ生成器（FloorLayoutGenerator・BossFloorLayout）で部屋の並びを作り、部屋の四角をその階の足元へ縮めて押し出す。中の部屋の並びがそのまま外から見える。
     ///   段の高さは各層の FloorConfig.elevation から決め、素材はその層のテーマの壁。
     /// - 足元は上の階ほど広げる（横と奥へ大きく、広場の側へは少しだけ）。層の境目には段々の持ち送りを付けて張り出しを支える。
-    /// - 部屋の外向きの面に窓（暗い窓と、ときどき灯りのともった窓）、てっぺんに小塔と尖り屋根。
+    /// - 部屋の外向きの面に窓（中の階の窓と同じ形。暗い窓と、ときどき灯りのともった窓）、てっぺんに小塔と尖り屋根。
     /// - 部屋・窓などは数が多いので、層ごとに 1 つのメッシュにまとめて <see cref="MeshFolder"/> に書き出す（UV は中の壁と同じく 1 m = 1）。上の段には当たりを付けない。
     /// </summary>
     public static class SurfaceTower
@@ -47,6 +47,12 @@ namespace TpsDungeon.Party.Editor
         private const float TopOverhang = 14f; // 広場の側へのせり出し
         // 広がり方。1 より大きいと上の方で急に広がる（ラッパの形）。
         private const float Flare = 1.35f;
+        // 窓。中の階の窓付きの壁（幅 5 m・高さ 5 m に、幅 25 %・高さ 60〜80 % の穴）と同じ寸法で、壁 1 枚分（5 m）ごとに 1 つ。
+        private const float WindowCell = 5f;
+        private const float WindowWidth = 1.25f;
+        private const float WindowSill = 3f;
+        private const float WindowTop = 4f;
+
         // 一番上の層の上にどれだけ積むか（elevation の差が取れないので）。
         private const float TopLayerHeight = 30f;
 
@@ -149,8 +155,8 @@ namespace TpsDungeon.Party.Editor
             var random = new Random(Seed - 1);
             for (int row = 0; row < 2; row++)
             {
-                float y = 3.4f + row * 4f; // 上の方は持ち送りの段に隠れるので低めに
-                for (float x = -BaseWidth * 0.5f + 3f; x <= BaseWidth * 0.5f - 3f; x += 4f)
+                float y = row * WindowCell + (WindowSill + WindowTop) * 0.5f - 0.5f; // 上の段は持ち送りに隠れないよう少し下げる
+                for (float x = -BaseWidth * 0.5f + WindowCell * 0.5f; x <= BaseWidth * 0.5f - WindowCell * 0.5f; x += WindowCell)
                 {
                     if (Mathf.Abs(x) < 10f) continue; // 大門と旗のまわり
                     Window(detail, m, new Vector3(x, y, Front), Vector3.back, Vector3.right, random);
@@ -334,15 +340,14 @@ namespace TpsDungeon.Party.Editor
             foreach (var face in faces)
             {
                 if (!face.outside) continue;
-                int rows = Mathf.Max(1, Mathf.FloorToInt((height - 1.5f) / 4.5f));
                 float span = face.to - face.from;
-                int columns = Mathf.FloorToInt((span - 1.5f) / 3.6f);
+                int columns = Mathf.FloorToInt(span / WindowCell);
                 if (columns <= 0) continue;
                 float step = span / columns;
-                for (int row = 0; row < rows; row++)
+                for (int row = 0; ; row++)
                 {
-                    float y = bottom + 2.6f + row * 4.5f;
-                    if (y + 1.6f > bottom + height) break;
+                    float y = bottom + row * WindowCell + (WindowSill + WindowTop) * 0.5f;
+                    if (y + (WindowTop - WindowSill) * 0.5f + 0.4f > bottom + height) break;
                     for (int c = 0; c < columns; c++)
                     {
                         if (random.NextDouble() > 0.6) continue;
@@ -354,22 +359,15 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        /// <summary>面の上の点 at に、外向き normal の窓（窓の板と下の窓台）を付ける。ときどき灯りのともった窓にする。</summary>
+        /// <summary>
+        /// 面の上の点 at（窓の真ん中）に、外向き normal の窓を付ける。ときどき灯りのともった窓にする。
+        /// 形は中の階の窓（PlaceholderMapAssetGenerator の窓付きの壁）に揃え、幅 5 m・高さ 5 m の壁の真ん中の上寄りに開いた枠の無い横長の穴にする。
+        /// </summary>
         private static void Window(MeshBuilder b, Materials m, Vector3 at, Vector3 normal, Vector3 along, Random random)
         {
-            bool slit = random.NextDouble() < 0.3;
-            float w = slit ? 0.5f : 1.2f;
-            float h = slit ? 2.2f : 2.4f;
             Material glass = random.NextDouble() < 0.14 ? m.LitWindow : m.Dark;
-            Vector3 size = Abs(along) * w + Vector3.up * h + Abs(normal) * 0.24f;
+            Vector3 size = Abs(along) * WindowWidth + Vector3.up * (WindowTop - WindowSill) + Abs(normal) * 0.24f;
             b.Box(glass, at + normal * 0.06f, size);
-            if (!slit)
-            {
-                Vector3 sill = Abs(along) * (w + 0.5f) + Vector3.up * 0.22f + Abs(normal) * 0.5f;
-                b.Box(m.Trim, at + normal * 0.2f + Vector3.down * (h * 0.5f + 0.11f), sill);
-                Vector3 lintel = Abs(along) * (w + 0.3f) + Vector3.up * 0.25f + Abs(normal) * 0.36f;
-                b.Box(m.Trim, at + normal * 0.14f + Vector3.up * (h * 0.5f + 0.12f), lintel);
-            }
         }
 
         /// <summary>屋上の縁に胸壁（間をあけた小さな箱）を並べる。</summary>
