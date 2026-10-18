@@ -99,9 +99,11 @@ namespace TpsDungeon.Enemies.Editor
                 }
 
                 float perCell = table.BudgetPerCell, chance = table.MonsterHouseChance, multiplier = table.MonsterHouseBudgetMultiplier, singleWeight = 0f;
+                RoomBudgetBasis basis = table.BudgetBasis;
                 if (layerValues.TryGetValue(layer, out EnemySpawnLayerCsv.Row values))
                 {
                     perCell = values.BudgetPerCell;
+                    basis = values.BudgetBasis;
                     chance = values.MonsterHouseChance;
                     multiplier = values.MonsterHouseMultiplier;
                     singleWeight = values.SingleWeight;
@@ -114,7 +116,7 @@ namespace TpsDungeon.Enemies.Editor
                 if (enemies.Count == 0) warnings.Add($"層 {layer} に出る敵が {EnemiesCsvPath} に 1 体も無い（部屋に敵が出ない）");
                 List<EnemySpawnTable.Composition> compositions = Compositions(compositionRows, enemies, layer, singleWeight, warnings);
 
-                if (Write(table, perCell, chance, multiplier, enemies, compositions)) changed++;
+                if (Write(table, perCell, basis, chance, multiplier, enemies, compositions)) changed++;
             }
 
             foreach (string warning in warnings) Debug.LogWarning($"部屋の敵の CSV: {warning}");
@@ -234,11 +236,11 @@ namespace TpsDungeon.Enemies.Editor
         }
 
         /// <summary>表が今と違えば書き換える。書き換えたら真。</summary>
-        private static bool Write(EnemySpawnTable table, float perCell, float chance, float multiplier, List<EnemySpawnTable.Enemy> enemies,
+        private static bool Write(EnemySpawnTable table, float perCell, RoomBudgetBasis basis, float chance, float multiplier, List<EnemySpawnTable.Enemy> enemies,
             List<EnemySpawnTable.Composition> compositions)
         {
             string before = EditorJsonUtility.ToJson(table);
-            table.Assign(perCell, chance, multiplier, enemies, compositions);
+            table.Assign(perCell, basis, chance, multiplier, enemies, compositions);
             if (EditorJsonUtility.ToJson(table) == before) return false;
 
             EditorUtility.SetDirty(table);

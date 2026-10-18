@@ -73,6 +73,9 @@ namespace TpsDungeon.Interaction
             // 攻撃で壊せる草花（Breakable レイヤー）も素通しする。足元の草で落ちている物を拾えなくならないように。
             int breakable = LayerMask.NameToLayer("Breakable");
             if (breakable >= 0) aimMask &= ~(1 << breakable);
+            // 敵の死体や落とし物の物理の箱（Debris レイヤー）も素通しする。死体の下に落ちた物を拾えるように（拾う当たりは別のレイヤーのトリガー）。
+            int debris = LayerMask.NameToLayer("Debris");
+            if (debris >= 0) aimMask &= ~(1 << debris);
         }
 
         private void OnEnable()

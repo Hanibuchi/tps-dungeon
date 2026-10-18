@@ -42,8 +42,10 @@ namespace TpsDungeon.Map.Generation
     {
         public List<EnemyKind> Enemies = new List<EnemyKind>();
         public List<EnemyComposition> Compositions = new List<EnemyComposition>();
-        /// <summary>部屋のセル 1 つあたりの予算の上限。部屋の予算の上限はこれ × セル数。</summary>
+        /// <summary>部屋の予算の上限の係数。部屋の予算の上限はこれ × 部屋の大きさ（<see cref="BudgetBasis"/>）。</summary>
         public double BudgetPerCell;
+        /// <summary>予算の上限を部屋の何に比例させるか（セル数か辺の平均か）。</summary>
+        public RoomBudgetBasis BudgetBasis = RoomBudgetBasis.Area;
         /// <summary>普通の部屋がモンスターハウスになる確率。</summary>
         public double MonsterHouseChance;
         /// <summary>モンスターハウスの予算の上限に掛ける倍率。</summary>
@@ -73,13 +75,20 @@ namespace TpsDungeon.Map.Generation
     /// </summary>
     public static class RoomEnemyRoller
     {
-        /// <summary>部屋の予算の上限。セル数（1x1 なら 1、2x2 なら 4）に比例する。モンスターハウスなら倍率を掛ける。</summary>
+        /// <summary>
+        /// 部屋の予算の上限。セル数（1x1 なら 1、2x2 なら 4）か、辺の平均（2x2 なら 2）に比例する（<see cref="EnemySpawnRules.BudgetBasis"/>）。
+        /// モンスターハウスなら倍率を掛ける。
+        /// </summary>
         public static double MaxBudget(EnemySpawnRules rules, RoomInstance room, bool monsterHouse = false)
         {
             if (rules == null || room == null) return 0d;
-            double max = Math.Max(0d, rules.BudgetPerCell) * room.Bounds.Area;
+            double max = Math.Max(0d, rules.BudgetPerCell) * BudgetSize(rules.BudgetBasis, room.Bounds);
             return monsterHouse ? max * Math.Max(0d, rules.MonsterHouseBudgetMultiplier) : max;
         }
+
+        /// <summary>予算の上限に掛ける部屋の大きさ。</summary>
+        public static double BudgetSize(RoomBudgetBasis basis, GridRect bounds) =>
+            basis == RoomBudgetBasis.MeanSide ? (bounds.Width + bounds.Height) * 0.5d : bounds.Area;
 
         /// <summary>敵を出す部屋か。普通の部屋だけ（入口・出口・ショップには出さない）。</summary>
         public static bool CanHostEnemies(RoomInstance room) => room != null && room.Role == RoomRole.Normal;

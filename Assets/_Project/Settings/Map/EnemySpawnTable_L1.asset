@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: EnemySpawnTable_L1
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.EnemySpawnTable
   budgetPerCell: 6
+  budgetBasis: 1
   monsterHouseChance: 0.2
   monsterHouseBudgetMultiplier: 2
   enemies:

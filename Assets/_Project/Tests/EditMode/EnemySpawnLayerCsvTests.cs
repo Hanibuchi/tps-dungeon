@@ -55,6 +55,30 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void budget_basis_は層ごとに読み_無い列や空は_area()
+        {
+            const string text =
+                "layer,budget_per_cell,budget_basis,monster_house_chance,monster_house_multiplier,single_weight\n" +
+                "1,6,side,0.2,2,0.5\n" +
+                "2,6,AREA,0.2,2,0.5\n" +
+                "3,6,,0.2,2,0.5\n" +
+                "4,6,edge,0.2,2,0.5\n";   // 知らない値
+            var errors = new List<string>();
+            List<EnemySpawnLayerCsv.Row> rows = EnemySpawnLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(3, rows.Count);
+            Assert.AreEqual(RoomBudgetBasis.MeanSide, rows[0].BudgetBasis);
+            Assert.AreEqual(RoomBudgetBasis.Area, rows[1].BudgetBasis);
+            Assert.AreEqual(RoomBudgetBasis.Area, rows[2].BudgetBasis);
+            Assert.AreEqual(1, errors.Count, string.Join("\n", errors));
+            StringAssert.StartsWith("5 行目", errors[0]);
+
+            // 列そのものが無い古い CSV も読める。
+            rows = EnemySpawnLayerCsv.Parse("layer,budget_per_cell,monster_house_chance,monster_house_multiplier,single_weight\n1,2,0.2,2,0.5\n", errors);
+            Assert.AreEqual(RoomBudgetBasis.Area, rows[0].BudgetBasis);
+        }
+
+        [Test]
         public void 見出しに要る列が無ければ何も読まない()
         {
             var errors = new List<string>();

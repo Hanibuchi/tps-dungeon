@@ -91,7 +91,9 @@ namespace TpsDungeon.Party
 
         private void OnDestroy()
         {
-            if (Instance == this) Instance = null;
+            if (Instance != this) return;
+            Instance = null;
+            SceneTravel.Traveling = false;
         }
 
         private void Update()
@@ -114,6 +116,7 @@ namespace TpsDungeon.Party
             if (traveling || string.IsNullOrEmpty(sceneName)) return;
 
             traveling = true;
+            SceneTravel.Traveling = true;
             reviveOnArrival = revive;
             wipedAt = -1f;
             StartCoroutine(LeaveFor(sceneName));
@@ -197,6 +200,7 @@ namespace TpsDungeon.Party
 
             reviveOnArrival = false;
             traveling = false;
+            SceneTravel.Traveling = false;
             if (fade != null) yield return fade.FadeTo(0f, fadeInSeconds);
         }
     }

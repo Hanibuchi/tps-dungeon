@@ -8,17 +8,22 @@ namespace TpsDungeon.Map.Data
     /// 層ごとの部屋の敵の値（EnemySpawnLayers.csv）を読む。UnityEngine に依存しない。
     /// 1 行 = 層 1 つ。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
     ///   layer                    … 層（1 始まり）
-    ///   budget_per_cell          … 部屋のセル 1 つあたりの予算の上限（0 以上）
+    ///   budget_per_cell          … 部屋の予算の上限の係数（0 以上）。上限はこれ × budget_basis で決めた部屋の大きさ
+    ///   budget_basis             … 予算の上限を何に比例させるか。area = セル数（1x1 なら 1、2x2 なら 4）、side = 辺の平均（2x2 なら 2）。
+    ///                              省ける（列が無い・空なら area）
     ///   monster_house_chance     … 普通の部屋がモンスターハウスになる確率（0〜1）
     ///   monster_house_multiplier … モンスターハウスの予算の上限に掛ける倍率（0 以上）
     ///   single_weight            … 単種（層に出る敵ごとに 1 つ作る、1 種だけの編成）の重み（0 以上。0 なら単種を作らない）
-    /// 例: <c>1,2,0.2,2,0.5</c>
+    /// 例: <c>1,2,side,0.2,2,0.5</c>（見出しが layer,budget_per_cell,budget_basis,… のとき）
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class EnemySpawnLayerCsv
     {
         public const string LayerColumn = "layer";
         public const string BudgetPerCellColumn = "budget_per_cell";
+        public const string BudgetBasisColumn = "budget_basis";
+        public const string AreaBasis = "area";
+        public const string SideBasis = "side";
         public const string MonsterHouseChanceColumn = "monster_house_chance";
         public const string MonsterHouseMultiplierColumn = "monster_house_multiplier";
         public const string SingleWeightColumn = "single_weight";
@@ -31,15 +36,18 @@ namespace TpsDungeon.Map.Data
             public readonly int Line;
             public readonly int Layer;
             public readonly float BudgetPerCell;
+            public readonly RoomBudgetBasis BudgetBasis;
             public readonly float MonsterHouseChance;
             public readonly float MonsterHouseMultiplier;
             public readonly float SingleWeight;
 
-            public Row(int line, int layer, float budgetPerCell, float monsterHouseChance, float monsterHouseMultiplier, float singleWeight)
+            public Row(int line, int layer, float budgetPerCell, RoomBudgetBasis budgetBasis, float monsterHouseChance,
+                float monsterHouseMultiplier, float singleWeight)
             {
                 Line = line;
                 Layer = layer;
                 BudgetPerCell = budgetPerCell;
+                BudgetBasis = budgetBasis;
                 MonsterHouseChance = monsterHouseChance;
                 MonsterHouseMultiplier = monsterHouseMultiplier;
                 SingleWeight = singleWeight;
@@ -85,6 +93,12 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
+                if (!TryParseBasis(Cell(BudgetBasisColumn), out RoomBudgetBasis basis))
+                {
+                    errors?.Add($"{line} 行目: 層 {layer} の {BudgetBasisColumn} は {AreaBasis} か {SideBasis}「{Cell(BudgetBasisColumn)}」");
+                    continue;
+                }
+
                 if (!TryParse(Cell(MonsterHouseChanceColumn), 1f, out float chance))
                 {
                     errors?.Add($"{line} 行目: 層 {layer} の {MonsterHouseChanceColumn} は 0〜1 の小数「{Cell(MonsterHouseChanceColumn)}」");
@@ -109,7 +123,7 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, budget, chance, multiplier, singleWeight));
+                rows.Add(new Row(line, layer, budget, basis, chance, multiplier, singleWeight));
             }
 
             return rows;
@@ -132,6 +146,16 @@ namespace TpsDungeon.Map.Data
 
             errors?.Add($"{line} 行目: 先頭の見出し行に {string.Join("・", missing)} の列が無い（見出しは {string.Join(",", RequiredColumns)}）");
             return null;
+        }
+
+        /// <summary>area か side（大文字小文字は問わない）。空なら area。</summary>
+        private static bool TryParseBasis(string text, out RoomBudgetBasis basis)
+        {
+            basis = RoomBudgetBasis.Area;
+            if (text.Length == 0 || string.Equals(text, AreaBasis, StringComparison.OrdinalIgnoreCase)) return true;
+            if (!string.Equals(text, SideBasis, StringComparison.OrdinalIgnoreCase)) return false;
+            basis = RoomBudgetBasis.MeanSide;
+            return true;
         }
 
         /// <summary>0 以上 max 以下の数。空は読めない扱い。</summary>

@@ -11,17 +11,20 @@ namespace TpsDungeon.Items
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）が掛かる。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
+    /// 落とした物は敵の居た所（浮く敵なら宙）に出し、Rigidbody で床まで落とす（<see cref="DroppedItemSettle"/> が止まったら固める）。
+    /// 拾う物のプレハブは照準用のトリガーしか持たないので、同じ大きさの物理の箱を死体・落とし物のレイヤー（<see cref="DebrisLayer"/>）で足す。
+    /// このレイヤーは床や壁とだけ当たるので、パーティーの邪魔にならない。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyHealth), typeof(EnemyIdentity))]
     [AddComponentMenu("TPS Dungeon/Enemy Weapon Drop")]
     public sealed class EnemyWeaponDrop : MonoBehaviour
     {
-        [SerializeField, Min(0f), Tooltip("落とす場所を敵の足元からずらす半径（m）。")]
+        [SerializeField, Min(0f), Tooltip("落とす場所を敵の居た所からずらす半径（m）。")]
         private float scatter = 0.3f;
 
-        [SerializeField, Tooltip("落とした物を置く床。")]
-        private LayerMask groundMask = ~0;
+        [SerializeField, Min(0f), Tooltip("落とす物を出す高さ（敵のルートから上へ、m）。地面に居る敵で床に埋まらないように少し浮かせる。")]
+        private float spawnLift = 0.3f;
 
         private static readonly System.Random Rng = new System.Random();
 
@@ -139,25 +142,48 @@ namespace TpsDungeon.Items
             ItemPickup pickup = Instantiate(prefab, DropPosition(), rotation);
             pickup.name = prefab.name;
             pickup.Instance = item;
+            MakeFall(pickup);
             pickup.PlayDropSound();
         }
 
-        /// <summary>敵の足元（少しずらす）の床の上。自分の体（ラグドールの骨）は床とみなさない。</summary>
+        /// <summary>敵の居た所（少しずらし、少し浮かせる）。浮く敵ならその高さから落ちる。</summary>
         private Vector3 DropPosition()
         {
             Vector2 offset = Random.insideUnitCircle * scatter;
-            Vector3 above = transform.position + new Vector3(offset.x, 1f, offset.y);
+            return transform.position + new Vector3(offset.x, spawnLift, offset.y);
+        }
 
-            float nearest = float.PositiveInfinity;
-            Vector3 point = new Vector3(above.x, transform.position.y, above.z);
-            foreach (RaycastHit hit in Physics.RaycastAll(above, Vector3.down, 3f, groundMask, QueryTriggerInteraction.Ignore))
+        /// <summary>
+        /// 照準用のトリガーと同じ大きさの物理の箱を足し、Rigidbody で床へ落とす。向きはプレハブのまま（回転は止める）。
+        /// </summary>
+        private static void MakeFall(ItemPickup pickup)
+        {
+            BoxCollider trigger = null;
+            foreach (BoxCollider box in pickup.GetComponentsInChildren<BoxCollider>())
             {
-                if (hit.transform.IsChildOf(transform) || hit.distance >= nearest) continue;
-                nearest = hit.distance;
-                point = hit.point;
+                if (!box.isTrigger) continue;
+                trigger = box;
+                break;
+            }
+            if (trigger == null)
+            {
+                Debug.LogWarning($"{pickup.name} にトリガーの BoxCollider が無いので、床へ落とせない", pickup);
+                return;
             }
 
-            return point;
+            var physics = new GameObject("Physics");
+            int debris = DebrisLayer.Index;
+            if (debris >= 0) physics.layer = debris;
+            physics.transform.SetParent(trigger.transform, false);
+            var solid = physics.AddComponent<BoxCollider>();
+            solid.center = trigger.center;
+            solid.size = trigger.size;
+
+            var body = pickup.gameObject.AddComponent<Rigidbody>();
+            body.constraints = RigidbodyConstraints.FreezeRotation;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            pickup.gameObject.AddComponent<DroppedItemSettle>();
         }
     }
 }
