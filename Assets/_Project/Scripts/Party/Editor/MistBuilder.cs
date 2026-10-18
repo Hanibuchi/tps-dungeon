@@ -65,6 +65,7 @@ namespace TpsDungeon.Party.Editor
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(extent * 1.15f, thickness, extent * 1.15f);
             shape.rotation = Vector3.zero;
+            StartIfPlaying(system);
             return $"窓の外のもやを置いた（床の下 {center.y - high:0}〜{center.y - low:0} m）。";
         }
 
@@ -91,10 +92,23 @@ namespace TpsDungeon.Party.Editor
             shape.radiusThickness = (outer - inner) / outer;
             shape.rotation = new Vector3(-90f, 0f, 0f);
             shape.randomPositionAmount = spread;
+            StartIfPlaying(system);
             return system.main.maxParticles;
         }
 
-        /// <summary>もやの板を出すパーティクルを 1 つ作る（形は呼ぶ側が決める）。量が 0 なら作らない。</summary>
+        /// <summary>
+        /// Play 中（霧の調節の窓で置き直したとき）は、出きった状態から再生する。作るときに長さ（duration）を変えるため止めてあり、
+        /// 付け足したときの再生（playOnAwake）は済んでいるので、そのままだと止まったまま。途中から再生すると prewarm も効かないので、
+        /// 一番長い寿命の分まで進めてから続ける。形（shape）を決めてから呼ぶこと（先に進めると、決める前の形と大きさで出た板が残る）。
+        /// </summary>
+        private static void StartIfPlaying(ParticleSystem system)
+        {
+            if (!Application.isPlaying) return;
+            system.Simulate(system.main.startLifetime.constantMax, true, true);
+            system.Play(true);
+        }
+
+        /// <summary>もやの板を出すパーティクルを 1 つ作る（形は呼ぶ側が決めて、そのあと <see cref="StartIfPlaying"/> を呼ぶ）。量が 0 なら作らない。</summary>
         private static ParticleSystem NewSystem(Transform root, string name, Material material, FogSettings settings, Vector3 position, int count,
             float minSize, float maxSize)
         {
@@ -146,14 +160,6 @@ namespace TpsDungeon.Party.Editor
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
 
-            // 長さ（duration）を変えるために止めてあるので、Play 中（霧の調節の窓で置き直したとき）は再生し直す。
-            // 止めたままだと付け足したときの再生（playOnAwake）が済んでいて、もやが消えたままになる。
-            // 途中から再生すると prewarm が効かず一から出始めるので、出きった状態（一番長い寿命の分）まで進めてから続ける。
-            if (Application.isPlaying)
-            {
-                system.Simulate(maxLife, true, true);
-                system.Play(true);
-            }
             return system;
         }
 
