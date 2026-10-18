@@ -20,7 +20,7 @@ namespace TpsDungeon.Party.Editor
     ///   各階は中と同じ生成器（FloorLayoutGenerator・BossFloorLayout）で部屋の並びを作り、部屋の四角をその階の足元へ縮めて押し出す。中の部屋の並びがそのまま外から見える。
     ///   段の高さは各層の FloorConfig.elevation から決め、素材はその層のテーマの壁。
     /// - 足元は上の階ほど広げる（横と奥へ大きく、広場の側へは少しだけ）。層の境目には段々の持ち送りを付けて張り出しを支える。
-    /// - 部屋の外向きの面に窓（中の階の窓と同じ形。暗い窓と、ときどき灯りのともった窓）、てっぺんに小塔と尖り屋根。
+    /// - 部屋の外向きの面に窓（中の階の窓と同じ形の暗い窓）、てっぺんに小塔と尖り屋根。
     /// - 部屋・窓などは数が多いので、層ごとに 1 つのメッシュにまとめて <see cref="MeshFolder"/> に書き出す（UV は中の壁と同じく 1 m = 1）。上の段には当たりを付けない。
     /// </summary>
     public static class SurfaceTower
@@ -30,7 +30,6 @@ namespace TpsDungeon.Party.Editor
         private const string RoutePath = "Assets/_Project/Settings/Map/DungeonRoute.asset";
         private const string RoofMaterialPath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_OrientalFan.mat";
         private const string StoneMaterialPath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_JaggedSquare.mat";
-        private const string LitWindowPath = MaterialsFolder + "/Placeholder_TowerWindow.mat";
         private const string BannerPath = "Assets/ThirdParty/3D Model/RPGPP_LT/Prefabs/Props/Banners/rpgpp_lt_banner_01";
         private const string FirstFloorScene = "L1_Random";
         private const int Seed = 20261018;
@@ -155,14 +154,13 @@ namespace TpsDungeon.Party.Editor
 
             // 土台の飾り（当たり無し）。正面の窓 2 列と、上の縁の帯。
             var detail = new MeshBuilder();
-            var random = new Random(Seed - 1);
             for (int row = 0; row < 2; row++)
             {
                 float y = row * WindowCell + (WindowSill + WindowTop) * 0.5f - 0.5f; // 上の段は持ち送りに隠れないよう少し下げる
                 for (float x = -BaseWidth * 0.5f + WindowCell * 0.5f; x <= BaseWidth * 0.5f - WindowCell * 0.5f; x += WindowCell)
                 {
                     if (Mathf.Abs(x) < 10f) continue; // 大門と旗のまわり
-                    Window(detail, m, new Vector3(x, y, Front), Vector3.back, Vector3.right, random);
+                    Window(detail, m, new Vector3(x, y, Front), Vector3.back, Vector3.right);
                 }
             }
             detail.Box(m.Trim, new Vector3(0f, BaseHeight - 0.4f, Front + BaseDepth * 0.5f), new Vector3(BaseWidth + 1f, 0.8f, BaseDepth + 1f));
@@ -356,25 +354,24 @@ namespace TpsDungeon.Party.Editor
                         if (random.NextDouble() > 0.6) continue;
                         float along = face.from + step * (c + 0.5f);
                         Vector3 at = face.normal.x != 0f ? new Vector3(face.plane, y, along) : new Vector3(along, y, face.plane);
-                        Window(b, m, at, face.normal, face.along, random);
+                        Window(b, m, at, face.normal, face.along);
                     }
                 }
             }
         }
 
         /// <summary>
-        /// 面の上の点 at（窓の真ん中）に、外向き normal の窓を付ける。ときどき灯りのともった窓にする。
+        /// 面の上の点 at（窓の真ん中）に、外向き normal の窓を付ける。
         /// 形は中の階の窓（PlaceholderMapAssetGenerator の窓付きの壁）に揃え、幅 5 m・高さ 5 m の壁の真ん中の上寄りに開いた横長の穴に、扉と同じ木の枠と窓台を付ける。
         /// </summary>
-        private static void Window(MeshBuilder b, Materials m, Vector3 at, Vector3 normal, Vector3 along, Random random)
+        private static void Window(MeshBuilder b, Materials m, Vector3 at, Vector3 normal, Vector3 along)
         {
-            Material glass = random.NextDouble() < 0.14 ? m.LitWindow : m.Dark;
             Vector3 x = Abs(along);
             Vector3 z = Abs(normal);
             float w = WindowWidth;
             float h = WindowTop - WindowSill;
             // 穴は面のすぐ前の薄い板。枠のほうが出ているので奥まって見える。
-            b.Box(glass, at + normal * 0.025f, x * w + Vector3.up * h + z * 0.05f);
+            b.Box(m.Dark, at + normal * 0.025f, x * w + Vector3.up * h + z * 0.05f);
 
             // 枠は穴のまわりに、面から FrameDepth だけ出す。穴の板の縁と面が重なってチラつかないよう、少し内側へ寄せて縁を枠の中に隠す。
             const float f = FrameWidth;
@@ -487,7 +484,7 @@ namespace TpsDungeon.Party.Editor
 
         private static float Range(Random random, float min, float max) => min + (float)random.NextDouble() * (max - min);
 
-        /// <summary>塔に使う素材。灯りのともった窓の素材は無ければ作る。</summary>
+        /// <summary>塔に使う素材。</summary>
         private sealed class Materials
         {
             public readonly Material Foundation = Load(StoneMaterialPath) ?? Load($"{MaterialsFolder}/Placeholder_Wall.mat");
@@ -496,25 +493,8 @@ namespace TpsDungeon.Party.Editor
             public readonly Material DoorLeaf = Load($"{MaterialsFolder}/Placeholder_DoorLeaf.mat");
             public readonly Material Dark = Load($"{MaterialsFolder}/Placeholder_Void.mat") ?? Load($"{MaterialsFolder}/Placeholder_Ceiling.mat");
             public readonly Material Roof = Load(RoofMaterialPath) ?? Load($"{MaterialsFolder}/Placeholder_Door.mat");
-            public readonly Material LitWindow = LitWindowMaterial();
 
             private static Material Load(string path) => AssetDatabase.LoadAssetAtPath<Material>(path);
-
-            private static Material LitWindowMaterial()
-            {
-                Material existing = Load(LitWindowPath);
-                if (existing != null) return existing;
-
-                var material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "Placeholder_TowerWindow" };
-                material.SetColor("_BaseColor", new Color(0.35f, 0.22f, 0.1f));
-                material.SetFloat("_Smoothness", 0.2f);
-                material.SetColor("_EmissionColor", new Color(1f, 0.5f, 0.18f) * 1.5f);
-                material.EnableKeyword("_EMISSION");
-                // None だと URP が検証し直したときに _EMISSION を外してしまう。
-                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
-                AssetDatabase.CreateAsset(material, LitWindowPath);
-                return material;
-            }
         }
 
         /// <summary>箱と四角錐を素材ごとのサブメッシュへ溜めて、1 つのメッシュにする。UV は面ごとの平面投影で 1 m = 1（中の壁と同じ）。</summary>
