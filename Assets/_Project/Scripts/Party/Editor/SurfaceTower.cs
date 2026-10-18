@@ -52,6 +52,9 @@ namespace TpsDungeon.Party.Editor
         private const float WindowWidth = 1.25f;
         private const float WindowSill = 3f;
         private const float WindowTop = 4f;
+        // 窓の枠の太さと、面からの出っ張り（窓台はこの倍出す）。中の階の窓の枠と同じ。
+        private const float FrameWidth = 0.14f;
+        private const float FrameDepth = 0.1f;
 
         // 一番上の層の上にどれだけ積むか（elevation の差が取れないので）。
         private const float TopLayerHeight = 30f;
@@ -361,13 +364,26 @@ namespace TpsDungeon.Party.Editor
 
         /// <summary>
         /// 面の上の点 at（窓の真ん中）に、外向き normal の窓を付ける。ときどき灯りのともった窓にする。
-        /// 形は中の階の窓（PlaceholderMapAssetGenerator の窓付きの壁）に揃え、幅 5 m・高さ 5 m の壁の真ん中の上寄りに開いた枠の無い横長の穴にする。
+        /// 形は中の階の窓（PlaceholderMapAssetGenerator の窓付きの壁）に揃え、幅 5 m・高さ 5 m の壁の真ん中の上寄りに開いた横長の穴に、扉と同じ木の枠と窓台を付ける。
         /// </summary>
         private static void Window(MeshBuilder b, Materials m, Vector3 at, Vector3 normal, Vector3 along, Random random)
         {
             Material glass = random.NextDouble() < 0.14 ? m.LitWindow : m.Dark;
-            Vector3 size = Abs(along) * WindowWidth + Vector3.up * (WindowTop - WindowSill) + Abs(normal) * 0.24f;
-            b.Box(glass, at + normal * 0.06f, size);
+            Vector3 x = Abs(along);
+            Vector3 z = Abs(normal);
+            float w = WindowWidth;
+            float h = WindowTop - WindowSill;
+            // 穴は面のすぐ前の薄い板。枠のほうが出ているので奥まって見える。
+            b.Box(glass, at + normal * 0.025f, x * w + Vector3.up * h + z * 0.05f);
+
+            // 枠は穴のまわりに、面から FrameDepth だけ出す。
+            const float f = FrameWidth;
+            Vector3 face = at + normal * (FrameDepth * 0.5f);
+            Vector3 jamb = x * f + Vector3.up * (h + f * 2f) + z * FrameDepth;
+            b.Box(m.DoorLeaf, face + along * ((w + f) * 0.5f), jamb);
+            b.Box(m.DoorLeaf, face - along * ((w + f) * 0.5f), jamb);
+            b.Box(m.DoorLeaf, face + Vector3.up * ((h + f) * 0.5f), x * (w + f * 2f) + Vector3.up * f + z * FrameDepth);
+            b.Box(m.DoorLeaf, at + normal * FrameDepth + Vector3.down * ((h + f) * 0.5f), x * (w + f * 2f + 0.2f) + Vector3.up * f + z * (FrameDepth * 2f));
         }
 
         /// <summary>屋上の縁に胸壁（間をあけた小さな箱）を並べる。</summary>
