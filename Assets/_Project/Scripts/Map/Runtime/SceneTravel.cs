@@ -22,6 +22,12 @@ namespace TpsDungeon.Map.Runtime
         /// </summary>
         public static string ArrivalPoint { get; set; }
 
+        /// <summary>
+        /// 受け手がシーンを移っている途中か（暗転し始めてから、着いたシーンで先頭をスポーン地点へ並べ終えるまで）。
+        /// この間、パーティーはまだ前のシーンの位置に居るので、位置を見る処理（地図の探索の記録など）は止めておく。
+        /// </summary>
+        public static bool Traveling { get; set; }
+
         public static string TakeArrivalPoint()
         {
             string point = ArrivalPoint;
@@ -60,6 +66,7 @@ namespace TpsDungeon.Map.Runtime
         private static void ResetStatics()
         {
             ArrivalPoint = null;
+            Traveling = false;
         }
     }
 }

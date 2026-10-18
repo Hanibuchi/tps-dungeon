@@ -12,6 +12,7 @@ namespace TpsDungeon.Enemies
     /// HP が 0 になった敵の始末。
     ///
     ///   1. 気絶と同じラグドールで、最後の一撃の向きへ倒れ込む（気絶で倒れていたらそのまま）
+    ///      倒れた骨は死体・落とし物のレイヤー（<see cref="DebrisLayer"/>）に移し、床とだけ当たるようにする（歩いて抜けられ、照準や弾も素通し）
     ///   2. 死亡音を鳴らす（未設定なら気絶の音）。当たり判定を切り、経験値を配る（<see cref="EnemyExpReward"/> があれば）
     ///   3. <see cref="corpseDelay"/> 秒横たわったあと、<see cref="fadeDuration"/> 秒かけて透明になって消える
     ///
@@ -107,6 +108,7 @@ namespace TpsDungeon.Enemies
             if (ragdoll != null)
             {
                 if (!ragdoll.IsRagdoll) ragdoll.Fall(PushFor(lastDamage));
+                MoveBonesToDebris(ragdoll);
             }
             else
             {
@@ -125,6 +127,16 @@ namespace TpsDungeon.Enemies
             Finished?.Invoke(this);
 
             if (isActiveAndEnabled) StartCoroutine(FadeOutAndDestroy());
+        }
+
+        private static void MoveBonesToDebris(EnemyRagdoll ragdoll)
+        {
+            int layer = DebrisLayer.Index;
+            if (layer < 0) return;
+            foreach (Rigidbody body in ragdoll.Bodies)
+            {
+                if (body != null) body.gameObject.layer = layer;
+            }
         }
 
         private Vector3 PushFor(DamageInfo damage)

@@ -101,6 +101,46 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void 最低数は外れても必ず付き_当たればそれ以上も付く()
+        {
+            EnchantmentRoller.Option[] options = Options((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5));
+            var random = new System.Random(11);
+
+            for (int trial = 0; trial < 500; trial++)
+            {
+                Assert.AreEqual(1, EnchantmentRoller.Roll(options, 0f, EvenWeights, 5, random, minCount: 1).Count);
+            }
+
+            int more = 0;
+            for (int trial = 0; trial < 500; trial++)
+            {
+                int count = EnchantmentRoller.Roll(options, 0.5f, EvenWeights, 5, random, minCount: 1).Count;
+                Assert.GreaterOrEqual(count, 1);
+                if (count > 1) more++;
+            }
+            Assert.Greater(more, 0);
+
+            // 最大数より多くは付かない。
+            Assert.AreEqual(2, EnchantmentRoller.Roll(options, 0f, EvenWeights, 2, random, minCount: 4).Count);
+        }
+
+        [Test]
+        public void 最低数は下のランクに行が無くても残りの行から埋める()
+        {
+            // B だけの表で E しか出ない重み。普通なら付かないが、最低 1 つなら B が付く。
+            EnchantmentRoller.Option[] options = Options((0, 3));
+            var onlyE = new[] { 1f, 0f, 0f, 0f, 0f, 0f };
+            var random = new System.Random(5);
+            for (int trial = 0; trial < 200; trial++)
+            {
+                CollectionAssert.AreEqual(new[] { 0 }, EnchantmentRoller.Roll(options, 0.5f, onlyE, 5, random, minCount: 1));
+            }
+
+            // 種類が足りなければそこまで。
+            Assert.AreEqual(1, EnchantmentRoller.Roll(options, 0f, onlyE, 5, random, minCount: 3).Count);
+        }
+
+        [Test]
         public void そのランクに無ければ下で最も高いランクから選び_無ければ付かない()
         {
             // B と D だけの表。A を引けば B に、C を引けば D に落ち、E を引けば何も付かない。

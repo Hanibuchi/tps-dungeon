@@ -496,8 +496,9 @@ namespace TpsDungeon.Hud
                 return;
             }
 
+            // 階に着いてからスポーン地点へ移されるまでは、前の階の位置のままなので記録しない（行っていない部屋が地図に出てしまう）。
             int previousRoom = exploration.CurrentRoom;
-            bool firstVisit = exploration.Visit(floorBuilder.WorldToCell(player.position));
+            bool firstVisit = !SceneTravel.Traveling && exploration.Visit(floorBuilder.WorldToCell(player.position));
             if (firstVisit || exploration.CurrentRoom != previousRoom)
             {
                 foreach (var m in maps) m.MarkDirtyRepaint();

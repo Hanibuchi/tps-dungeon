@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Generation;
 
 namespace TpsDungeon.Map.Authoring
 {
     /// <summary>
     /// 1 つの層の、部屋に出る敵の表。道順（DungeonRoute）の層ごとに 1 つ差し、その層のランダムな階はどれもこれを使う。
-    /// 部屋の予算は 0 〜 budgetPerCell × 部屋のセル数 から一様に引き、編成タイプを重みで引いて、
+    /// 部屋の予算は 0 〜 budgetPerCell × 部屋の大きさ（budgetBasis でセル数か辺の平均）から一様に引き、編成タイプを重みで引いて、
     /// 種類ごとの体数とグループを決める（RoomEnemyRoller）。普通の部屋だけに出し、monsterHouseChance でモンスターハウスにする。
     /// 敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは CSV（Settings/Tables/Enemies.csv・EnemySpawnLayers.csv・
     /// EnemyCompositions.csv）から取り込む（EnemySpawnCsvImporter）。ここで直しても次の取り込みで上書きされる。音だけはここで直す。
@@ -52,8 +53,11 @@ namespace TpsDungeon.Map.Authoring
         }
 
         [Header("CSV から取り込む（ここを直しても上書きされる）")]
-        [SerializeField, Min(0f), Tooltip("部屋のセル 1 つあたりの予算の上限。部屋の予算は 0 〜 これ × セル数（1x1 なら 1、2x2 なら 4）から一様に決まる。EnemySpawnLayers.csv の budget_per_cell。")]
+        [SerializeField, Min(0f), Tooltip("部屋の予算の上限の係数。部屋の予算は 0 〜 これ × 部屋の大きさ（budgetBasis）から一様に決まる。EnemySpawnLayers.csv の budget_per_cell。")]
         private float budgetPerCell = 2f;
+
+        [SerializeField, Tooltip("予算の上限を部屋の何に比例させるか。Area はセル数（2x2 なら 4）、MeanSide は辺の平均（2x2 なら 2）。EnemySpawnLayers.csv の budget_basis。")]
+        private RoomBudgetBasis budgetBasis = RoomBudgetBasis.Area;
 
         [SerializeField, Range(0f, 1f), Tooltip("普通の部屋がモンスターハウスになる確率。ドアを開けると全員が中に入れられ、中の敵を全部倒すまで出られない。EnemySpawnLayers.csv の monster_house_chance。")]
         private float monsterHouseChance = 0.2f;
@@ -79,6 +83,7 @@ namespace TpsDungeon.Map.Authoring
         private List<Composition> compositions = new List<Composition>();
 
         public float BudgetPerCell => budgetPerCell;
+        public RoomBudgetBasis BudgetBasis => budgetBasis;
         public float MonsterHouseChance => monsterHouseChance;
         public float MonsterHouseBudgetMultiplier => monsterHouseBudgetMultiplier;
         public AudioClip TrappedSound => trappedSound;
@@ -93,6 +98,7 @@ namespace TpsDungeon.Map.Authoring
             var rules = new EnemySpawnRules
             {
                 BudgetPerCell = budgetPerCell,
+                BudgetBasis = budgetBasis,
                 MonsterHouseChance = monsterHouseChance,
                 MonsterHouseBudgetMultiplier = monsterHouseBudgetMultiplier,
             };
@@ -139,10 +145,11 @@ namespace TpsDungeon.Map.Authoring
         }
 
         /// <summary>CSV から取り込んだ値に差し替える。音は触らない。</summary>
-        public void Assign(float perCell, float houseChance, float houseMultiplier, IEnumerable<Enemy> newEnemies,
+        public void Assign(float perCell, RoomBudgetBasis basis, float houseChance, float houseMultiplier, IEnumerable<Enemy> newEnemies,
             IEnumerable<Composition> newCompositions)
         {
             budgetPerCell = perCell;
+            budgetBasis = basis;
             monsterHouseChance = houseChance;
             monsterHouseBudgetMultiplier = houseMultiplier;
             enemies = new List<Enemy>(newEnemies);

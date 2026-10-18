@@ -9,6 +9,8 @@ namespace TpsDungeon.Map.Runtime
     /// 各ステートのクリップが Hinge を回して扉板を振る）。開き方や速さはクリップ（Animation/Door/）を直せばよい。
     /// 開いている途中・閉じている途中は触れない（開く用と閉じる用でクリップが別なので、途中で反転すると位置が飛ぶ）。
     /// 扉板の当たり判定は閉じきっているときだけ効かせる。動いている扉板に押されたり引っかかったりしないように。
+    /// 閉ざす（<see cref="Seal"/>）と、閉まりきるまでの間は閉じた扉板の位置に見えない壁を立てる。開いている途中から閉め終えるまで開口が素通しになり、
+    /// モンスターハウスに閉じ込めた直後に外へ戻れてしまうため。
     /// 音は開け始めに開ける音、閉まりきったときに閉める音（「バタン」が頭にあるので、閉め始めではなく当たったときに鳴らす）。
     ///
     /// 枠も扉板も実寸（メートル）で作ってあり、どこもスケールしない。素材の模様の密度を壁と揃えるためと、
@@ -70,6 +72,8 @@ namespace TpsDungeon.Map.Runtime
         private readonly Collider[] overlaps = new Collider[8];
 
         private BoxCollider[] leafColliders = System.Array.Empty<BoxCollider>();
+        // 閉ざしてから閉まりきるまで、閉じた扉板の位置を塞ぐ見えない壁（扉板ごと）。Hinge の外に置くので回らない。
+        private BoxCollider[] sealColliders = System.Array.Empty<BoxCollider>();
         private bool isOpen;
         private bool closeSoundPending;
         private bool closePending;
@@ -103,7 +107,11 @@ namespace TpsDungeon.Map.Runtime
         }
 
         /// <summary>閉ざされた扉を開けられるようにする。</summary>
-        public void Unlock() => locked = false;
+        public void Unlock()
+        {
+            locked = false;
+            SetSealCollidersEnabled(false);
+        }
 
         /// <summary>調べて開けた（開け始めた）。</summary>
         public event System.Action<Door> Opened;
@@ -116,6 +124,7 @@ namespace TpsDungeon.Map.Runtime
         {
             locked = true;
             closePending = isOpen;
+            if (isOpen) SetSealCollidersEnabled(true);
             TryClosePending();
         }
 
@@ -139,11 +148,43 @@ namespace TpsDungeon.Map.Runtime
         {
             if (animator == null) animator = GetComponent<Animator>();
             var colliders = new System.Collections.Generic.List<BoxCollider>(2);
-            foreach (var t in new[] { leaf, leafRight })
+            var seals = new System.Collections.Generic.List<BoxCollider>(2);
+            foreach (var (t, axis) in new[] { (leaf, hinge), (leafRight, hingeRight) })
             {
-                if (t != null && t.TryGetComponent(out BoxCollider box)) colliders.Add(box);
+                if (t == null || !t.TryGetComponent(out BoxCollider box)) continue;
+                colliders.Add(box);
+                if (axis != null) seals.Add(CreateSealCollider(box, axis));
             }
             leafColliders = colliders.ToArray();
+            sealColliders = seals.ToArray();
+        }
+
+        /// <summary>
+        /// 扉板の当たり判定と同じ箱を、閉じた姿勢（Closed のクリップは軸の回転が 0）の位置に、この GameObject の直下へ作る。最初は切っておく。
+        /// 扉はどこもスケールしない前提なので、箱の大きさはそのまま写す。
+        /// </summary>
+        private BoxCollider CreateSealCollider(BoxCollider box, Transform axis)
+        {
+            Matrix4x4 closedAxis = axis.parent.localToWorldMatrix * Matrix4x4.TRS(axis.localPosition, Quaternion.identity, Vector3.one);
+            Matrix4x4 closedLeaf = closedAxis * (axis.worldToLocalMatrix * box.transform.localToWorldMatrix);
+
+            var go = new GameObject(box.name + " (Seal)") { layer = box.gameObject.layer };
+            go.transform.SetParent(transform, false);
+            go.transform.SetPositionAndRotation(closedLeaf.GetColumn(3), closedLeaf.rotation);
+
+            var seal = go.AddComponent<BoxCollider>();
+            seal.center = box.center;
+            seal.size = box.size;
+            seal.enabled = false;
+            return seal;
+        }
+
+        private void SetSealCollidersEnabled(bool value)
+        {
+            foreach (var seal in sealColliders)
+            {
+                if (seal != null) seal.enabled = value;
+            }
         }
 
         private void Start()
@@ -219,6 +260,9 @@ namespace TpsDungeon.Map.Runtime
                 if (leafCollider.enabled || IsDoorwayOccupied(leafCollider)) continue;
                 leafCollider.enabled = true;
             }
+
+            // 閉まりきって扉板が塞いだら、見えない壁はもう要らない。
+            if (solid) SetSealCollidersEnabled(false);
         }
 
         private bool IsDoorwayOccupied(BoxCollider leafCollider)

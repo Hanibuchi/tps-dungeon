@@ -166,6 +166,20 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void MaxBudget_WithMeanSide_IsProportionalToAverageSide()
+        {
+            var rules = Rules();
+            rules.BudgetBasis = RoomBudgetBasis.MeanSide;
+            var layout = FloorLayoutGenerator.Generate(FloorGenerationFixture.Params(), 3);
+            foreach (var room in layout.Rooms)
+            {
+                Assert.AreEqual(3d * (room.Bounds.Width + room.Bounds.Height) / 2d, RoomEnemyRoller.MaxBudget(rules, room), 1e-9);
+            }
+            Assert.AreEqual(2d, RoomEnemyRoller.BudgetSize(RoomBudgetBasis.MeanSide, new GridRect(0, 0, 2, 2)));
+            Assert.AreEqual(4d, RoomEnemyRoller.BudgetSize(RoomBudgetBasis.Area, new GridRect(0, 0, 2, 2)));
+        }
+
+        [Test]
         public void MonsterHouse_MultipliesTheBudgetCap()
         {
             var rules = Rules(Composition(1d, (Small, 1d)));

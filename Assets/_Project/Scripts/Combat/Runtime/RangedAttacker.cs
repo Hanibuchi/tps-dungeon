@@ -327,8 +327,8 @@ namespace TpsDungeon.Combat
             if (initialized) return;
 
             initialized = true;
-            // パーティーの味方（自分も含む）には矢を刺さず、照準も味方で止めない。
-            hitMask = AllyLayer.Exclude(hitMask);
+            // パーティーの味方（自分も含む）には矢を刺さず、照準も味方で止めない。死体も素通し。
+            hitMask = DebrisLayer.Exclude(AllyLayer.Exclude(hitMask));
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
             gear = GetComponent<PlayerGear>();
@@ -1698,7 +1698,7 @@ namespace TpsDungeon.Combat
                               && animator.GetNextAnimatorStateInfo(upperBodyLayer).shortNameHash == BowDrawState);
             }
 
-            if (drawing && !wasDrawing) PlaySound(type.DrawSound, Muzzle(type), type.SoundVolume);
+            if (drawing && !wasDrawing) PlaySound(type.DrawSound, Muzzle(type), type.SoundVolume * type.DrawSoundVolume);
             wasDrawing = drawing;
         }
 

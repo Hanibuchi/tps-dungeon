@@ -42,6 +42,7 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// 定義から新しい個体を作る。武器なら武器種のランク表から、決まった確率でエンチャントを振る（<see cref="EnchantmentRoller"/>）。
+        /// 武器種の最低数（お守りは 1）には必ず届かせる。
         /// ユニークは振らず、定義に書いた固定のエンチャントを付ける（何本拾っても同じ）。
         /// </summary>
         public static ItemInstance Create(ItemDefinition definition, System.Random random)
@@ -71,7 +72,7 @@ namespace TpsDungeon.Items
 
             var rolled = new List<EnchantmentStack>();
             foreach (int index in EnchantmentRoller.Roll(options, settings.ContinueChance, settings.RankWeights,
-                         settings.MaxEnchantments, random))
+                         settings.MaxEnchantments, random, type.MinEnchantments))
             {
                 rolled.Add(new EnchantmentStack(entries[index].Definition, entries[index].Level));
             }

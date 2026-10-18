@@ -59,7 +59,7 @@ namespace TpsDungeon.Combat
             model.name = weapon.HeldModel.name;
             model.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Destroy(c);
-            WeaponAura.Attach(model, weapon.Rank);
+            WeaponAura.Attach(model, weapon.Rank, held: true);
         }
     }
 }

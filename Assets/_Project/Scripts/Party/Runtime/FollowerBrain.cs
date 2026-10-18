@@ -70,7 +70,7 @@ namespace TpsDungeon.Party
             melee = GetComponent<MeleeAttacker>();
             ranged = GetComponent<RangedAttacker>();
             locomotion = GetComponent<FollowerLocomotion>();
-            sightMask = AllyLayer.Exclude(sightMask);
+            sightMask = DebrisLayer.Exclude(AllyLayer.Exclude(sightMask));
         }
 
         private void OnEnable()

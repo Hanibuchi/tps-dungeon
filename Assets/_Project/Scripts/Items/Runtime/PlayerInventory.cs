@@ -1,4 +1,5 @@
 using System;
+using TpsDungeon.Enemies;
 using TpsDungeon.Player;
 using UnityEngine;
 
@@ -71,6 +72,8 @@ namespace TpsDungeon.Items
 
         private void Awake()
         {
+            // 捨てた物を死体の上に置かないよう、死体（Debris レイヤー）は床とみなさない。
+            groundMask = DebrisLayer.Exclude(groundMask);
             EnsureInventory();
             EnsureBag();
             hotbar = GetComponent<PlayerHotbar>();

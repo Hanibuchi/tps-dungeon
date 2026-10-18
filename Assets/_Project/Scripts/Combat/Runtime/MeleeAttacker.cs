@@ -250,8 +250,8 @@ namespace TpsDungeon.Combat
             if (initialized) return;
 
             initialized = true;
-            // パーティーの味方（自分も含む）には当てず、突きも味方で止めない。
-            hitMask = AllyLayer.Exclude(hitMask);
+            // パーティーの味方（自分も含む）には当てず、突きも味方で止めない。死体も素通し。
+            hitMask = DebrisLayer.Exclude(AllyLayer.Exclude(hitMask));
             if (animator == null) animator = GetComponentInChildren<Animator>();
             progression = GetComponent<CharacterProgression>();
             gear = GetComponent<PlayerGear>();
@@ -410,7 +410,7 @@ namespace TpsDungeon.Combat
             heldModel.name = weapon.HeldModel.name;
             heldModel.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
             foreach (Collider c in heldModel.GetComponentsInChildren<Collider>()) Destroy(c);
-            WeaponAura.Attach(heldModel, weapon.Rank);
+            WeaponAura.Attach(heldModel, weapon.Rank, held: true);
         }
 
         // ---- 振る ----

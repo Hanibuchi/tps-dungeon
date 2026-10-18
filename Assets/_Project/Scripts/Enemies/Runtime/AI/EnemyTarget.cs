@@ -158,7 +158,7 @@ namespace TpsDungeon.Enemies
             float distance = delta.magnitude;
             if (distance < 1e-3f) return true;
 
-            int count = Physics.RaycastNonAlloc(from, delta / distance, rayHits, distance, AllyLayer.Exclude(~0), QueryTriggerInteraction.Ignore);
+            int count = Physics.RaycastNonAlloc(from, delta / distance, rayHits, distance, DebrisLayer.Exclude(AllyLayer.Exclude(~0)), QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 if (IsSeeThrough(rayHits[i].collider, ignore)) continue;
