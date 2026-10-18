@@ -16,7 +16,7 @@ namespace TpsDungeon.Party.Editor
 {
     /// <summary>
     /// 地上（城の前の広場）のシーンを作る。何度実行しても同じ形に作り直す。
-    /// - 地形は ProBuilder の箱で組む（あとからシーンで ProBuilder の道具で手直しできる）。広場の北が城で、上へ行くほど太い。
+    /// - 地形は ProBuilder の箱で組む（あとからシーンで ProBuilder の道具で手直しできる）。広場の北が城（ダンジョンの塔。<see cref="SurfaceTower"/>）で、上へ行くほど太い。
     /// - 歩けるのは地面の範囲だけ。塀は置かず、地面のまわりを見えない壁（[Bounds]）で囲む。
     /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）を 1 つだけ付ける。ダンジョンの入口はここだけ（ショートカットはあとで別の場所に作る）。
     /// - 村（武器屋・銀行・民家・小物・木）とまわりの景色は <see cref="SurfaceScenery"/> が RPG Poly Pack Lite で置く。強化は死んだときに行く別の場所でするので、ここには置かない。
@@ -73,7 +73,7 @@ namespace TpsDungeon.Party.Editor
                 Transform world = new GameObject("[Surface]").transform;
                 BuildPlaza(world, materials);
                 BuildBounds();
-                BuildCastle(world, materials);
+                BuildCastle(world);
                 Transform spawn = CreateSpawn(world);
                 CreateGateSpawn(world);
 
@@ -165,35 +165,8 @@ namespace TpsDungeon.Party.Editor
             GameObjectUtility.SetStaticEditorFlags(wall, StaticEditorFlags.BatchingStatic);
         }
 
-        /// <summary>
-        /// 城。正面の壁（広場の北の端）に大門を付け、上の段ほど幅も奥行きも広げて「上に行くほど太い」塔にする。
-        /// </summary>
-        private static void BuildCastle(Transform world, Dictionary<string, Material> m)
-        {
-            Transform group = Group(world, "Castle");
-
-            // 段ごとに (幅, 高さ, 前へのせり出し)。1 段目の前面が広場の北の端に来る。
-            var tiers = new[] { (width: 62f, height: 14f, overhang: 0f), (width: 72f, height: 12f, overhang: 2f), (width: 84f, height: 16f, overhang: 4f) };
-            const float depth = 30f;
-            float bottom = 0f;
-            for (int i = 0; i < tiers.Length; i++)
-            {
-                var t = tiers[i];
-                float front = CastleFront - t.overhang;
-                float d = depth + t.overhang * 2f;
-                Box(group, $"Tier{i + 1}", m["Wall"], new Vector3(0f, bottom + t.height * 0.5f, front + d * 0.5f), new Vector3(t.width, t.height, d));
-                bottom += t.height;
-            }
-
-            // 1F の大門。壁の前に柱と扉を立てる（扉の板そのものが門で、照準を合わせて入る）。
-            const float gateWidth = 5f;
-            const float gateHeight = 6f;
-            Box(group, "Gate_Pillar_L", m["Door"], new Vector3(-(gateWidth * 0.5f + 0.6f), gateHeight * 0.5f + 0.5f, CastleFront - 0.6f), new Vector3(1.2f, gateHeight + 1f, 1.2f));
-            Box(group, "Gate_Pillar_R", m["Door"], new Vector3(gateWidth * 0.5f + 0.6f, gateHeight * 0.5f + 0.5f, CastleFront - 0.6f), new Vector3(1.2f, gateHeight + 1f, 1.2f));
-            Box(group, "Gate_Lintel", m["Door"], new Vector3(0f, gateHeight + 0.5f, CastleFront - 0.6f), new Vector3(gateWidth + 2.4f, 1f, 1.2f));
-            GameObject gate = Box(group, "Gate_1F", m["DoorLeaf"], new Vector3(0f, gateHeight * 0.5f, CastleFront - 0.2f), new Vector3(gateWidth, gateHeight, 0.4f));
-            AddGate(gate, FirstFloorScene, true, "城へ入る", "まだ開いていない", "城の大門", "第 1 層「玄関」へ入る。");
-        }
+        /// <summary>城（ダンジョンの塔）。土台・大門・上ほど太い塔は <see cref="SurfaceTower"/> が建てる。</summary>
+        private static void BuildCastle(Transform world) => SurfaceTower.Build(world, out _);
 
         private static Transform CreateSpawn(Transform world)
         {
@@ -215,7 +188,7 @@ namespace TpsDungeon.Party.Editor
             return spawn.transform;
         }
 
-        private static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body)
+        internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -236,7 +209,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>中心 center・大きさ size の ProBuilder の箱。当たりは MeshCollider。</summary>
-        private static GameObject Box(Transform parent, string name, Material material, Vector3 center, Vector3 size)
+        internal static GameObject Box(Transform parent, string name, Material material, Vector3 center, Vector3 size)
         {
             ProBuilderMesh mesh = ShapeGenerator.GenerateCube(PivotLocation.Center, size);
             mesh.gameObject.name = name;

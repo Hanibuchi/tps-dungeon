@@ -49,7 +49,7 @@ namespace TpsDungeon.Party.Editor
         private const float Embed = 0.04f;
 
         // 城の箱を沈める量（地面の凹みの深い所に合わせる）。
-        private const float CastleSink = -0.35f;
+        internal const float CastleSink = -0.35f;
 
         // 階の窓の外の景色。地上の座標（歩ける範囲の真ん中）で組んでから、階のグリッドの真ん中へずらす。
         private const string ScenesFolder = "Assets/_Project/Scenes";
@@ -1011,7 +1011,7 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        private static void BakeNavMesh(GameObject surfaceRoot)
+        internal static void BakeNavMesh(GameObject surfaceRoot)
         {
             var surface = surfaceRoot.GetComponent<NavMeshSurface>();
             if (surface == null) return;
