@@ -55,6 +55,11 @@ namespace TpsDungeon.Party.Editor
         private const float FrameWidth = 0.14f;
         private const float FrameDepth = 0.1f;
 
+        // 大門の開口（扉の板）と、門構えの半分の幅（小塔の外の端）。小塔は広場の板敷きの道の外に置く。
+        private const float GateWidth = 5f;
+        private const float GateHeight = 6f;
+        private const float GatehouseHalfWidth = 12f;
+
         // 一番上の層の上にどれだけ積むか（elevation の差が取れないので）。
         private const float TopLayerHeight = 30f;
 
@@ -143,13 +148,8 @@ namespace TpsDungeon.Party.Editor
         {
             SurfaceSceneBuilder.Box(castle, "Base", m.Foundation, new Vector3(0f, BaseHeight * 0.5f, Front + BaseDepth * 0.5f), new Vector3(BaseWidth, BaseHeight, BaseDepth));
 
-            // 1F の大門。壁の前に柱と扉を立てる（扉の板そのものが門で、照準を合わせて入る）。
-            const float gateWidth = 5f;
-            const float gateHeight = 6f;
-            SurfaceSceneBuilder.Box(castle, "Gate_Pillar_L", m.Door, new Vector3(-(gateWidth * 0.5f + 0.6f), gateHeight * 0.5f + 0.5f, Front - 0.6f), new Vector3(1.2f, gateHeight + 1f, 1.2f));
-            SurfaceSceneBuilder.Box(castle, "Gate_Pillar_R", m.Door, new Vector3(gateWidth * 0.5f + 0.6f, gateHeight * 0.5f + 0.5f, Front - 0.6f), new Vector3(1.2f, gateHeight + 1f, 1.2f));
-            SurfaceSceneBuilder.Box(castle, "Gate_Lintel", m.Door, new Vector3(0f, gateHeight + 0.5f, Front - 0.6f), new Vector3(gateWidth + 2.4f, 1f, 1.2f));
-            GameObject gate = SurfaceSceneBuilder.Box(castle, "Gate_1F", m.DoorLeaf, new Vector3(0f, gateHeight * 0.5f, Front - 0.2f), new Vector3(gateWidth, gateHeight, 0.4f));
+            // 1F の大門。扉の板そのものが門で、照準を合わせて入る。まわりの門構えは BuildGatehouse。
+            GameObject gate = SurfaceSceneBuilder.Box(castle, "Gate_1F", m.DoorLeaf, new Vector3(0f, GateHeight * 0.5f, Front - 0.2f), new Vector3(GateWidth, GateHeight, 0.4f));
             SurfaceSceneBuilder.AddGate(gate, FirstFloorScene, true, "城へ入る", "まだ開いていない", "城の大門", "第 1 層「玄関」へ入る。");
 
             // 土台の飾り（当たり無し）。正面の窓 2 列と、上の縁の帯。
@@ -159,17 +159,98 @@ namespace TpsDungeon.Party.Editor
                 float y = row * WindowCell + (WindowSill + WindowTop) * 0.5f - 0.5f; // 上の段は持ち送りに隠れないよう少し下げる
                 for (float x = -BaseWidth * 0.5f + WindowCell * 0.5f; x <= BaseWidth * 0.5f - WindowCell * 0.5f; x += WindowCell)
                 {
-                    if (Mathf.Abs(x) < 10f) continue; // 大門と旗のまわり
+                    if (Mathf.Abs(x) < GatehouseHalfWidth + 1f) continue; // 門構えのまわり
                     Window(detail, m, new Vector3(x, y, Front), Vector3.back, Vector3.right);
                 }
             }
             detail.Box(m.Trim, new Vector3(0f, BaseHeight - 0.4f, Front + BaseDepth * 0.5f), new Vector3(BaseWidth + 1f, 0.8f, BaseDepth + 1f));
+            BuildGatehouse(castle, detail, m);
             detail.Save(castle, "Base_Detail", $"{MeshFolder}/Tower_Base.asset");
-
-            // 大門の両脇の旗。
-            Banner(castle, "a", new Vector3(-7f, 9.2f, Front - 0.1f));
-            Banner(castle, "b", new Vector3(7f, 9.2f, Front - 0.1f));
         }
+
+        /// <summary>
+        /// 大門のまわりの門構え。土台の正面から広場へ張り出し、左右に胸壁の小塔、真ん中に石のアーチ（扉の上は半円）と胸壁。上の階の張り出しが入口のすぐ上まで来るので、屋根は載せない。
+        /// 人の届く高さの柱と小塔は ProBuilder の箱で当たりを付け、アーチから上と飾りは detail のメッシュ（当たり無し）。
+        /// 扉はアーチの奥（Gate_1F）で、上の半円の板と鉄の帯で両開きのアーチ形の扉に見せる。
+        /// 張り出しは板敷きの道（x が ±5 m ほどまで）に掛からないよう、小塔を道の外に置く。
+        /// </summary>
+        private static void BuildGatehouse(Transform castle, MeshBuilder b, Materials m)
+        {
+            const float porchFront = Front - 5f;       // アーチの前の面
+            const float porchTop = 12f;
+            const float archRadius = GateWidth * 0.5f;  // 扉の幅いっぱいの半円
+            const float archRing = 0.8f;                // アーチの石の厚み
+            float half = GatehouseHalfWidth;
+            float pier = half - 5.5f;                   // 柱の外の端（その外が小塔）
+
+            // アーチの両脇の柱（当たりあり）。
+            float pierWidth = pier - archRadius;
+            foreach (float side in new[] { -1f, 1f })
+            {
+                SurfaceSceneBuilder.Box(castle, side < 0f ? "Gate_Pier_L" : "Gate_Pier_R", m.Foundation,
+                    new Vector3(side * (archRadius + pierWidth * 0.5f), porchTop * 0.5f, (porchFront + Front) * 0.5f), new Vector3(pierWidth, porchTop, Front - porchFront));
+            }
+
+            // アーチの石（半円に 9 個、真ん中は要石で大きく）と、その上を柱の高さまで埋める壁。
+            const int stones = 9;
+            Vector2 center = new Vector2(0f, GateHeight);
+            for (int i = 0; i < stones; i++)
+            {
+                float a0 = Mathf.PI * i / stones;
+                float a1 = Mathf.PI * (i + 1) / stones;
+                bool key = i == stones / 2;
+                float outer = archRadius + (key ? archRing + 0.5f : archRing);
+                b.Extrude(m.Trim, ArcSegment(center, archRadius, outer, a0, a1), porchFront - (key ? 0.35f : 0.2f), Front);
+
+                // 石の外側から上の壁（柱と柱のあいだ）。
+                Vector2 p0 = center + Polar(archRadius + archRing, a0);
+                Vector2 p1 = center + Polar(archRadius + archRing, a1);
+                b.Extrude(m.Foundation, new[] { p0, p1, new Vector2(p1.x, porchTop), new Vector2(p0.x, porchTop) }, porchFront, Front);
+            }
+
+            // 門構えの上の縁と胸壁。
+            var porch = Rect.MinMaxRect(-pier, porchFront, pier, Front);
+            b.Box(m.Trim, Center(porch, porchTop + 0.3f), new Vector3(porch.width + 0.6f, 0.6f, porch.height + 0.6f));
+            Battlements(b, m, porch, porchTop + 0.6f);
+
+            // 扉の上の半円の板と、扉の鉄の帯・合わせ目（両開きに見せる）。
+            var tympanum = new List<Vector2>();
+            for (int i = 0; i <= 12; i++) tympanum.Add(center + Polar(archRadius, Mathf.PI * i / 12));
+            b.Extrude(m.DoorLeaf, tympanum, Front - 0.35f, Front - 0.05f);
+            foreach (float y in new[] { 1.1f, 3.2f, 5.3f })
+                b.Box(m.Dark, new Vector3(0f, y, Front - 0.44f), new Vector3(GateWidth, 0.22f, 0.08f));
+            b.Box(m.Dark, new Vector3(0f, GateHeight * 0.5f + 0.6f, Front - 0.44f), new Vector3(0.08f, GateHeight + 1.2f, 0.09f));
+
+            // 左右の小塔（当たりあり）。根元の台座・上の縁・胸壁・窓。
+            const float towerHeight = 13f;
+            float towerDepth = Front - (porchFront - 1.5f);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                var foot = Rect.MinMaxRect(Mathf.Min(side * pier, side * half), porchFront - 1.5f, Mathf.Max(side * pier, side * half), Front);
+                SurfaceSceneBuilder.Box(castle, side < 0f ? "Gate_Tower_L" : "Gate_Tower_R", m.Foundation,
+                    Center(foot, towerHeight * 0.5f), new Vector3(foot.width, towerHeight, towerDepth));
+                b.Box(m.Trim, Center(foot, 0.5f), new Vector3(foot.width + 0.5f, 1f, towerDepth + 0.5f));
+                b.Box(m.Trim, Center(foot, towerHeight + 0.3f), new Vector3(foot.width + 0.8f, 0.6f, towerDepth + 0.8f));
+                var top = Rect.MinMaxRect(foot.xMin - 0.4f, foot.yMin - 0.4f, foot.xMax + 0.4f, foot.yMax + 0.4f);
+                Battlements(b, m, top, towerHeight + 0.6f);
+
+                // 正面は旗の上に 1 つ、外側の面に 2 つ。
+                Window(b, m, new Vector3(foot.center.x, 9.5f, foot.yMin), Vector3.back, Vector3.right);
+                foreach (float y in new[] { 4.5f, 9.5f })
+                    Window(b, m, new Vector3(side < 0f ? foot.xMin : foot.xMax, y, foot.center.y), side < 0f ? Vector3.left : Vector3.right, side < 0f ? Vector3.forward : Vector3.back);
+
+                // 小塔の正面に旗。
+                Banner(castle, side < 0f ? "a" : "b", new Vector3(foot.center.x, 6.6f, foot.yMin - 0.1f));
+            }
+        }
+
+        private static Vector2 Polar(float radius, float angle) => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+
+        /// <summary>中心 center・半径 inner〜outer・角度 a0〜a1 の扇形の帯（反時計回り）。</summary>
+        private static Vector2[] ArcSegment(Vector2 center, float inner, float outer, float a0, float a1) => new[]
+        {
+            center + Polar(inner, a0), center + Polar(outer, a0), center + Polar(outer, a1), center + Polar(inner, a1),
+        };
 
         /// <summary>旗を掛ける。素材の旗は原点が上の端なので、at は吊るす所。</summary>
         private static void Banner(Transform castle, string variant, Vector3 at)
@@ -259,9 +340,27 @@ namespace TpsDungeon.Party.Editor
         private static Rect BaseFoot() => Rect.MinMaxRect(-BaseWidth * 0.5f, Front, BaseWidth * 0.5f, Front + BaseDepth);
 
         /// <summary>index 階目（全 total 階のうち）の足元の四角。土台から一番上へ、上ほど急に広げる。</summary>
-        private static Rect Foot(int index, int total)
+        private static Rect Foot(int index, int total) => FootAt((index + 1f) / total);
+
+        /// <summary>高さ height（メートル）の塔の足元のだいたいの四角。塔のまわりのもや（MistBuilder）が塔の面に沿わせるのに使う。</summary>
+        internal static Rect FootAtHeight(float height)
         {
-            float t = Mathf.Pow((index + 1f) / total, Flare);
+            float top = TopHeight();
+            return height <= BaseHeight ? BaseFoot() : FootAt(Mathf.Clamp01((height - BaseHeight) / (top - BaseHeight)));
+        }
+
+        /// <summary>塔の屋上のだいたいの高さ（一番上の層の段の上端）。道順が無ければ今の高さ。</summary>
+        internal static float TopHeight()
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            FloorConfig last = route != null && route.Layers.Count > 0 ? route.Layers[route.Layers.Count - 1].randomConfig : null;
+            return last != null ? last.elevation - 6f + TopLayerHeight : 174f;
+        }
+
+        /// <summary>土台の上から屋上まで 0〜1 の fraction の所の足元の四角。上ほど急に広げる。</summary>
+        private static Rect FootAt(float fraction)
+        {
+            float t = Mathf.Pow(fraction, Flare);
             float width = Mathf.Lerp(BaseWidth + 4f, TopWidth, t);
             float depth = Mathf.Lerp(BaseDepth + 4f, TopDepth, t);
             float front = Front - Mathf.Lerp(1.5f, TopOverhang, t);
@@ -552,6 +651,68 @@ namespace TpsDungeon.Party.Editor
                     list.Add(s);
                     list.Add(s + 1);
                     list.Add(s + 2);
+                }
+                Boxes++;
+            }
+
+            /// <summary>
+            /// xy の面の凸な多角形 outline を、z = front から back（front &lt; back）まで押し出す。前の面は -Z、後ろの面は +Z を向く。
+            /// UV は前後の面が (x, y)、側面が (辺に沿った長さ, z)。
+            /// </summary>
+            public void Extrude(Material material, IList<Vector2> outline, float front, float back)
+            {
+                if (material == null || outline.Count < 3) return;
+                List<int> list = Triangles(material);
+                var points = new List<Vector2>(outline);
+                float area = 0f;
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Vector2 a = points[i], c = points[(i + 1) % points.Count];
+                    area += a.x * c.y - c.x * a.y;
+                }
+                if (area < 0f) points.Reverse();
+
+                // 前後の面（扇に割る）。反時計回りの (0, i, i+1) は +Z を向く。
+                foreach (bool isFront in new[] { true, false })
+                {
+                    float z = isFront ? front : back;
+                    Vector3 normal = isFront ? Vector3.back : Vector3.forward;
+                    int s = vertices.Count;
+                    foreach (Vector2 p in points)
+                    {
+                        vertices.Add(new Vector3(p.x, p.y, z));
+                        normals.Add(normal);
+                        uvs.Add(new Vector2(p.x, p.y));
+                    }
+                    for (int i = 1; i + 1 < points.Count; i++)
+                    {
+                        list.Add(s);
+                        list.Add(s + (isFront ? i + 1 : i));
+                        list.Add(s + (isFront ? i : i + 1));
+                    }
+                }
+
+                // 側面。反時計回りの辺 a → b の外向きは (dy, -dx)。
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Vector2 a = points[i], c = points[(i + 1) % points.Count];
+                    Vector2 edge = c - a;
+                    if (edge.sqrMagnitude < 1e-8f) continue;
+                    Vector3 normal = new Vector3(edge.y, -edge.x, 0f).normalized;
+                    Vector2 dir = edge.normalized;
+                    int s = vertices.Count;
+                    foreach (Vector3 p in new[] { new Vector3(a.x, a.y, front), new Vector3(c.x, c.y, front), new Vector3(c.x, c.y, back), new Vector3(a.x, a.y, back) })
+                    {
+                        vertices.Add(p);
+                        normals.Add(normal);
+                        uvs.Add(new Vector2(p.x * dir.x + p.y * dir.y, p.z));
+                    }
+                    list.Add(s);
+                    list.Add(s + 1);
+                    list.Add(s + 2);
+                    list.Add(s);
+                    list.Add(s + 2);
+                    list.Add(s + 3);
                 }
                 Boxes++;
             }

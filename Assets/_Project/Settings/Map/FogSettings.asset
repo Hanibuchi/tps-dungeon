@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Party.Editor::TpsDungeon.Party.Editor.FogSettings
   color: {r: 0.75, g: 0.88, b: 0.94, a: 1}
   mode: 1
-  startDistance: 70
-  endDistance: 650
+  startDistance: 50
+  endDistance: 200
   density: 0.01

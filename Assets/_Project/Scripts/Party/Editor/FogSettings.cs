@@ -4,7 +4,9 @@ using UnityEngine;
 namespace TpsDungeon.Party.Editor
 {
     /// <summary>
-    /// 地上と階の窓の外の霧（RenderSettings の霧）。霧はシーンごとに持つので、ここで値を持って各シーンへ書き込む。
+    /// 地上と階の窓の外の霧。2 つある。
+    /// - もや（<see cref="MistBuilder"/>）… 塔のまわりにだけまとわりつく霧。地上は塔の根元と側面、階は窓の外の床より下に流す。
+    /// - 遠くの霧（RenderSettings の霧）… 景色全体を遠いほど霞ませる。今は切ってある。霧はシーンごとに持つので、ここで値を持って各シーンへ書き込む。
     /// 景色の生成器（<see cref="SurfaceScenery"/>）もこの値を使うので、生成器を回し直しても調節した値は消えない。
     /// 調節は <see cref="FogWindow"/>（Tools/TPS Dungeon/霧の調節）で。
     /// </summary>
@@ -12,6 +14,21 @@ namespace TpsDungeon.Party.Editor
     {
         public const string AssetPath = "Assets/_Project/Settings/Map/FogSettings.asset";
 
+        [Header("塔のまわりのもや")]
+        [Tooltip("もやの色。")]
+        public Color mistColor = new Color(0.88f, 0.92f, 0.96f);
+        [Range(0f, 1f), Tooltip("もや 1 枚の濃さ（不透明さ）。")]
+        public float mistOpacity = 0.35f;
+        [Min(0f), Tooltip("もやの量（枚数の倍率）。0 で無し。")]
+        public float mistAmount = 1f;
+        [Min(0.1f), Tooltip("もや 1 枚の大きさの倍率。")]
+        public float mistSize = 1f;
+        [Min(0f), Tooltip("地上で、塔のどの高さ（メートル）までもやをまとわせるか。根元のもやは高さに関係なく出す。")]
+        public float mistHeight = 100f;
+
+        [Header("遠くの霧（景色全体）")]
+        [Tooltip("景色全体を遠いほど霞ませるか。")]
+        public bool distanceFog;
         [Tooltip("霧の色。空の色に寄せると遠くが空に溶ける。")]
         public Color color = new Color(0.75f, 0.88f, 0.94f);
         [Tooltip("Linear は「始まる距離」から「真っ白になる距離」までだんだん濃くなる。Exponential・ExponentialSquared は「濃さ」で決まる。")]
@@ -23,7 +40,7 @@ namespace TpsDungeon.Party.Editor
         [Min(0f), Tooltip("Exponential・ExponentialSquared のときの濃さ。")]
         public float density = 0.01f;
 
-        /// <summary>アセットを読む。無ければ今の値（生成器が使っていた値）で作る。</summary>
+        /// <summary>アセットを読む。無ければ既定の値で作る。</summary>
         public static FogSettings LoadOrCreate()
         {
             var settings = AssetDatabase.LoadAssetAtPath<FogSettings>(AssetPath);
@@ -35,10 +52,10 @@ namespace TpsDungeon.Party.Editor
             return settings;
         }
 
-        /// <summary>アクティブなシーンの霧（RenderSettings）にこの値を入れる。</summary>
+        /// <summary>アクティブなシーンの遠くの霧（RenderSettings）にこの値を入れる。</summary>
         public void Apply()
         {
-            RenderSettings.fog = true;
+            RenderSettings.fog = distanceFog;
             RenderSettings.fogMode = mode;
             RenderSettings.fogColor = color;
             RenderSettings.fogStartDistance = startDistance;
@@ -46,9 +63,10 @@ namespace TpsDungeon.Party.Editor
             RenderSettings.fogDensity = density;
         }
 
-        /// <summary>アクティブなシーンの霧（RenderSettings）の値を読み込む。</summary>
+        /// <summary>アクティブなシーンの遠くの霧（RenderSettings）の値を読み込む。</summary>
         public void ReadFromScene()
         {
+            distanceFog = RenderSettings.fog;
             mode = RenderSettings.fogMode;
             color = RenderSettings.fogColor;
             startDistance = RenderSettings.fogStartDistance;

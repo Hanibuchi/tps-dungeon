@@ -27,8 +27,8 @@ namespace TpsDungeon.Party.Editor
     /// - 地面は素材の草地のタイル（凹凸が 0.3 m ほどある）で、歩ける範囲のタイルにはそのまま MeshCollider を付けて床にする。
     ///   平らな [Surface]/Plaza/Ground（ProBuilder の板）は描画も当たりも止める（平らな当たりと凹凸のある見た目がずれて、物もキャラも浮いて見えたため）。
     /// - 物は置く所の真下の見た目の地面の高さに合わせる。足元（大きさに応じた円）の一番低い所に置くので、坂でも端が浮かない。城の箱も少し沈める。
-    /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧だけ。
-    /// 階（L1_Random など）の窓の外にも、同じ草地・丘・山・空と光と霧を置く（<see cref="BuildOutlook"/>）。
+    /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧と塔のまわりのもや（[Mist]、<see cref="MistBuilder"/>）だけ。
+    /// 階（L1_Random など）の窓の外にも、同じ草地・丘・山・空と光と霧、床より下のもやを置く（<see cref="BuildOutlook"/>）。
     /// </summary>
     public static class SurfaceScenery
     {
@@ -123,6 +123,7 @@ namespace TpsDungeon.Party.Editor
             MakePlantsBreakable(village);
             PlaceSpawnOnGround(surface, placer);
             ApplyLighting(scene);
+            MistBuilder.BuildSurface(scene, FogSettings.LoadOrCreate());
 
             return $"地上の景色を置いた（村 {CountChildren(village)} 個、外の景色 {CountChildren(scenery)} 個）。";
         }
@@ -171,29 +172,37 @@ namespace TpsDungeon.Party.Editor
         /// <summary>シーンの FloorBootstrap の FloorConfig に合わせて窓の外の景色を置き、保存する。</summary>
         private static void BuildOutlookAndSave(Scene scene)
         {
-            FloorConfig config = null;
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                foreach (FloorBootstrap bootstrap in root.GetComponentsInChildren<FloorBootstrap>(true))
-                {
-                    config = new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue as FloorConfig;
-                    if (config != null) break;
-                }
-                if (config != null) break;
-            }
+            FloorConfig config = FindFloorConfig(scene);
             if (config == null)
             {
                 Debug.LogError($"{scene.path} に FloorConfig の付いた FloorBootstrap が無い。");
                 return;
             }
 
-            // 部屋は (0, 0) の角から並ぶグリッドの真ん中あたりに生える。
-            var center = new Vector3(config.widthInCells, 0f, config.heightInCells) * (config.cellSize * 0.5f);
-            // 高い建物の上の階なので、景色は階の高さの分だけ下に置く。
-            center.y = -config.elevation;
-            Debug.Log($"{scene.path}: {BuildOutlook(scene, center)}");
+            Debug.Log($"{scene.path}: {BuildOutlook(scene, OutlookCenter(config))}");
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>階のシーンの FloorBootstrap に差してある FloorConfig。無ければ null（地上など）。</summary>
+        internal static FloorConfig FindFloorConfig(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (FloorBootstrap bootstrap in root.GetComponentsInChildren<FloorBootstrap>(true))
+                {
+                    if (new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue is FloorConfig config) return config;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>景色を置く真ん中。部屋は (0, 0) の角から並ぶグリッドの真ん中あたりに生え、高い建物の上の階なので高さの分だけ下（地面）にする。</summary>
+        internal static Vector3 OutlookCenter(FloorConfig config)
+        {
+            var center = new Vector3(config.widthInCells, 0f, config.heightInCells) * (config.cellSize * 0.5f);
+            center.y = -config.elevation;
+            return center;
         }
 
         /// <summary>
@@ -217,6 +226,8 @@ namespace TpsDungeon.Party.Editor
 
             scenery.position = center - SurfaceCenter + Vector3.up * OutlookSink;
             ApplySunAndFog(scene);
+            // 窓の外の床より下にもや（床は y = 0、地面は center.y = -elevation）。
+            MistBuilder.BuildFloor(scene, new Vector3(center.x, 0f, center.z), -center.y, center.x * 2f, FogSettings.LoadOrCreate());
 
             return $"階の外の景色を置いた（{CountChildren(scenery)} 個、真ん中 {center}）。";
         }
@@ -656,7 +667,7 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        /// <summary>光は素材のデモに合わせて斜め後ろからの暖色、霧で遠くを空の色に溶かす。カメラは遠くの山まで写るよう遠景を延ばす。</summary>
+        /// <summary>光は素材のデモに合わせて斜め後ろからの暖色。カメラは遠くの山まで写るよう遠景を延ばす。</summary>
         private static void ApplyLighting(Scene scene)
         {
             ApplySunAndFog(scene);
@@ -700,7 +711,7 @@ namespace TpsDungeon.Party.Editor
             RenderSettings.ambientEquatorColor = new Color(0.52f, 0.58f, 0.52f);
             RenderSettings.ambientGroundColor = new Color(0.3f, 0.3f, 0.24f);
 
-            // 霧は霧の調節（FogWindow）で調節した値を使う。
+            // 遠くの霧は霧の調節（FogWindow）で調節した値を使う（今は切ってあり、塔のまわりのもやだけ）。
             FogSettings.LoadOrCreate().Apply();
         }
 
