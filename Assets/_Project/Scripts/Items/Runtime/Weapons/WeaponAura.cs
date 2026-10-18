@@ -3,9 +3,9 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// ユニークなど特別なランクの武器がまとう光。武器の見た目（手に持つモデルや、床に落ちている物）の子に作る。
+    /// 武器がランクに応じてまとう光（ユニークは派手に、ほかのランクは控えめに）。武器の見た目（手に持つモデルや、床に落ちている物）の子に作る。
     /// 形は武器の見た目の箱に合わせ、そこから火の粉のような光の粒が立ちのぼり、表面には小さな光がまたたき、明かりが周りを照らす。
-    /// 色や材質はランク表（<see cref="WeaponRankTable"/>）の設定で、材質の無いランクには付けない。
+    /// 色・量・材質はランク表（<see cref="WeaponRankTable"/>）の設定で、材質の無いランクには付けない。色を決めていなければランクの色から作る。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class WeaponAura : MonoBehaviour
@@ -53,19 +53,22 @@ namespace TpsDungeon.Items
         private void Build(Bounds bounds, WeaponRankTable.Entry style)
         {
             float length = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
-            Color color = style.auraColor;
+            float amount = Mathf.Clamp01(style.auraAmount);
+            // 量が少ないと粒も小さくする（数だけ減らすとまばらに大きな粒が見えて目立つ）。
+            float sizeScale = Mathf.Lerp(0.6f, 1f, amount);
+            Color color = style.auraColor.a > 0f ? style.auraColor : Brighten(style.color);
             Color hot = Color.Lerp(color, Color.white, 0.3f);
 
             ParticleSystem embers = CreateParticles("Embers", style.auraParticles, bounds, ParticleSystemSimulationSpace.World);
             ParticleSystem.MainModule main = embers.main;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.1f);
             main.startSpeed = 0f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.13f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.06f * sizeScale, 0.13f * sizeScale);
             main.startColor = new ParticleSystem.MinMaxGradient(color, hot);
             main.gravityModifier = -0.05f;
             main.maxParticles = 200;
             ParticleSystem.EmissionModule emission = embers.emission;
-            emission.rateOverTime = EmbersPerMeter * length;
+            emission.rateOverTime = EmbersPerMeter * length * amount;
             ParticleSystem.VelocityOverLifetimeModule velocity = embers.velocityOverLifetime;
             velocity.enabled = true;
             velocity.space = ParticleSystemSimulationSpace.World;
@@ -83,11 +86,11 @@ namespace TpsDungeon.Items
             main = glints.main;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.5f);
             main.startSpeed = 0f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.24f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.12f * sizeScale, 0.24f * sizeScale);
             main.startColor = new ParticleSystem.MinMaxGradient(color, hot);
             main.maxParticles = 60;
             emission = glints.emission;
-            emission.rateOverTime = GlintsPerMeter * length;
+            emission.rateOverTime = GlintsPerMeter * length * amount;
             FadeInOut(glints, 0.4f);
 
             if (style.auraLightIntensity > 0f)
@@ -144,6 +147,13 @@ namespace TpsDungeon.Items
 
             particles.Play();
             return particles;
+        }
+
+        /// <summary>ランクの色を、色味は保ったまま明るくする（白に寄せると落ち着いた色のランクが白っぽい光になるため）。</summary>
+        private static Color Brighten(Color color)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            return Color.HSVToRGB(h, Mathf.Max(s, 0.35f), Mathf.Max(v, 0.95f));
         }
 
         /// <summary>寿命の初めの fade の割合で現れ、終わりへ向けて消える。</summary>

@@ -9,7 +9,7 @@ namespace TpsDungeon.Items
     /// コライダを持つ GameObject（か、その親）に付ける。拾われたら自分ごと消える。
     /// シーンに置いたものは定義だけを持ち、初めて見られたときに個体を作る（武器ならこのときエンチャントが決まる）。
     /// 捨てたものは個体ごと渡されるので、エンチャントは捨てる前のまま。
-    /// ユニークなど光の設定があるランクの武器は、床にあるあいだ光をまとう（<see cref="WeaponAura"/>）。
+    /// 武器は床にあるあいだランクの色の光をまとう（<see cref="WeaponAura"/>。ユニークは派手に、ほかは控えめに）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Item Pickup")]
