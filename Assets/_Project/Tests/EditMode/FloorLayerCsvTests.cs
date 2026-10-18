@@ -61,6 +61,30 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void 高さの列は無くても空でも読めて書いてあれば読む()
+        {
+            const string text =
+                "layer,area,elevation\n" +
+                "1,27,20\n" +
+                "2,30,\n" +       // 空なら設定を変えない
+                "3,30,-1\n" +     // 負の高さ
+                "4,30,abc\n" +    // 数でない
+                "5,30,0\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(3, rows.Count);
+            Assert.AreEqual(2, errors.Count, string.Join("\n", errors));
+            Assert.IsTrue(rows[0].HasElevation);
+            Assert.AreEqual(20f, rows[0].Elevation);
+            Assert.IsFalse(rows[1].HasElevation);
+            Assert.AreEqual(0f, rows[2].Elevation);
+
+            List<FloorLayerCsv.Row> old = FloorLayerCsv.Parse("layer,area\n1,27\n", errors);
+            Assert.IsFalse(old[0].HasElevation);
+        }
+
+        [Test]
         public void 部屋の平均面積は重みで平均し重み0の部屋は数えない()
         {
             var rooms = new List<RoomLayerCsv.Row>

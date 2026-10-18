@@ -9,9 +9,11 @@ using UnityEngine;
 namespace TpsDungeon.Map.Editor
 {
     /// <summary>
-    /// 層ごとの階の広さ（Floors.csv。平均面積）を、道順（DungeonRoute）の層のランダムな階の部屋数（minRoomCount・maxRoomCount）に直して書き込む。
-    /// 部屋 1 つあたりの平均面積は Rooms.csv の部屋の大きさと重みから出す。階段・ショップの部屋は必ず出るので、カタログの大きさで別に数える。
-    /// 上限は下限の 2 倍。ボス階には触らない。
+    /// 層ごとの階の広さと高さ（Floors.csv）を、道順（DungeonRoute）の層の設定に書き込む。
+    /// - 広さ（area。平均面積）は、ランダムな階の部屋数（minRoomCount・maxRoomCount）に直す。部屋 1 つあたりの平均面積は Rooms.csv の部屋の大きさと重みから出す。
+    ///   階段・ショップの部屋は必ず出るので、カタログの大きさで別に数える。上限は下限の 2 倍。ボス階には触らない。
+    /// - 高さ（elevation）は、その層のランダムな階とボス階の両方の FloorConfig.elevation に入れ、変わった層は土台のプレハブを作り直す。
+    ///   窓の外の景色と地上の塔は高さで置き方が変わるので、変わったら「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すよう知らせる。
     /// Floors.csv か Rooms.csv を保存すると自動で取り込む（部屋の大きさや重みを変えても平均面積が変わるので）。メニューからも呼べる。
     /// </summary>
     public sealed class FloorCsvImporter : AssetPostprocessor
@@ -61,6 +63,7 @@ namespace TpsDungeon.Map.Editor
             }
 
             var summary = new List<string>();
+            var elevationChanged = new List<int>();
             int changed = 0;
             for (int i = 0; i < route.Layers.Count; i++)
             {
@@ -104,7 +107,8 @@ namespace TpsDungeon.Map.Editor
                 if (row.Area > gridArea / 2f)
                     warnings.Add($"{row.Line} 行目: 層 {layer} の面積 {row.Area} が {config.name} の枠 {config.widthInCells}x{config.heightInCells} の半分を超えている（伸びきれずに作り直しが増える）");
 
-                summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}");
+                summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}" + (row.HasElevation ? $"、高さ {row.Elevation} m" : ""));
+                if (ApplyElevation(route.Layers[i], row)) elevationChanged.Add(layer);
 
                 if (config.minRoomCount == min && config.maxRoomCount == max) continue;
                 config.minRoomCount = min;
@@ -114,6 +118,8 @@ namespace TpsDungeon.Map.Editor
             }
 
             AssetDatabase.SaveAssets();
+            if (elevationChanged.Count > 0)
+                warnings.Add($"層 {string.Join("・", elevationChanged)} の高さを変えて土台を作り直した。窓の外の景色と地上の塔に入れるには「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すこと");
             foreach (string warning in warnings) Debug.LogWarning($"階の広さの CSV: {warning}");
             foreach (string error in errors) Debug.LogError($"階の広さの CSV の {error}");
             Debug.Log($"階の広さの CSV を取り込んだ: {rows.Count} 行、層 {route.Layers.Count} つのうち {changed} つの設定を書き換えた\n{string.Join("\n", summary)}");
@@ -127,6 +133,21 @@ namespace TpsDungeon.Map.Editor
             // 取り込み中はほかのアセット（道順・設定）がまだ読めないことがあるので、落ち着いてから。
             EditorApplication.delayCall -= Import;
             EditorApplication.delayCall += Import;
+        }
+
+        /// <summary>row に高さがあれば、層のランダムな階とボス階の高さに入れて土台を作り直す。どれかが変わったら真。</summary>
+        private static bool ApplyElevation(DungeonRoute.Layer layer, FloorLayerCsv.Row row)
+        {
+            if (!row.HasElevation) return false;
+            bool changed = false;
+            foreach (FloorConfig config in new[] { layer.randomConfig, layer.bossConfig })
+            {
+                if (config == null || Mathf.Approximately(config.elevation, row.Elevation)) continue;
+                config.elevation = row.Elevation;
+                PlaceholderMapAssetGenerator.RebuildFoundation(config);
+                changed = true;
+            }
+            return changed;
         }
 
         /// <summary>そのタグの部屋の面積の、抽選の重みでの平均。無ければ 1x1 とみなす。</summary>

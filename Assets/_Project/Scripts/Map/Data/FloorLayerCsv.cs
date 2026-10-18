@@ -5,17 +5,19 @@ using System.Globalization;
 namespace TpsDungeon.Map.Data
 {
     /// <summary>
-    /// 層ごとの階の広さ（Floors.csv）を読み、部屋数の範囲に直す。UnityEngine に依存しない。
+    /// 層ごとの階の広さと高さ（Floors.csv）を読み、部屋数の範囲に直す。UnityEngine に依存しない。
     /// 1 行 = 層 1 つ。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
-    ///   layer … 層（1 始まり）
-    ///   area  … 階の平均面積（セル数、0 より大きい）。部屋の面積の合計の平均がこの値になるよう部屋数を決める
-    /// 例: <c>1,27</c>
+    ///   layer     … 層（1 始まり）
+    ///   area      … 階の平均面積（セル数、0 より大きい）。部屋の面積の合計の平均がこの値になるよう部屋数を決める
+    ///   elevation … 階の床の地面からの高さ（メートル、0 以上。FloorConfig.elevation）。列が無いか空なら設定を変えない
+    /// 例: <c>1,27,20</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class FloorLayerCsv
     {
         public const string LayerColumn = "layer";
         public const string AreaColumn = "area";
+        public const string ElevationColumn = "elevation";
 
         private static readonly string[] RequiredColumns = { LayerColumn, AreaColumn };
 
@@ -24,13 +26,18 @@ namespace TpsDungeon.Map.Data
             public readonly int Line;
             public readonly int Layer;
             public readonly float Area;
+            /// <summary>階の高さ（メートル）。書いていなければ NaN。</summary>
+            public readonly float Elevation;
 
-            public Row(int line, int layer, float area)
+            public Row(int line, int layer, float area, float elevation = float.NaN)
             {
                 Line = line;
                 Layer = layer;
                 Area = area;
+                Elevation = elevation;
             }
+
+            public bool HasElevation => !float.IsNaN(Elevation);
         }
 
         public static List<Row> Parse(string text, List<string> errors)
@@ -73,13 +80,23 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
+                float elevation = float.NaN;
+                string elevationCell = Cell(ElevationColumn);
+                if (elevationCell.Length > 0
+                    && (!float.TryParse(elevationCell, NumberStyles.Float, CultureInfo.InvariantCulture, out elevation)
+                        || float.IsNaN(elevation) || float.IsInfinity(elevation) || elevation < 0f))
+                {
+                    errors?.Add($"{line} 行目: 層 {layer} の {ElevationColumn} は 0 以上の数「{elevationCell}」");
+                    continue;
+                }
+
                 if (!seen.Add(layer))
                 {
                     errors?.Add($"{line} 行目: 層 {layer} の行が重複している");
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, area));
+                rows.Add(new Row(line, layer, area, elevation));
             }
 
             return rows;

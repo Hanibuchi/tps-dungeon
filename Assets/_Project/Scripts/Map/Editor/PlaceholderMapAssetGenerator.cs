@@ -575,6 +575,15 @@ namespace TpsDungeon.Map.Editor
             return SavePrefab(root, path);
         }
 
+        /// <summary>config の高さ（elevation）で土台のプレハブを作り直して差す。高さを変えたあと（Floors.csv の取り込み）に呼ぶ。</summary>
+        internal static void RebuildFoundation(FloorConfig config)
+        {
+            if (config.theme == null || string.IsNullOrEmpty(config.theme.partsFolder)) return;
+            Material material = config.theme.foundation != null ? config.theme.foundation : config.theme.wall;
+            config.foundationPrefab = BuildFoundationPrefab($"{config.theme.partsFolder}/Foundation.prefab", material, config.cellSize, config.elevation);
+            EditorUtility.SetDirty(config);
+        }
+
         /// <summary>
         /// 土台 1 セル分。原点が上面の中心で、下へ depth + 1 m（地面の凹凸に隠れるよう少し深め）。
         /// 窓の外に見せるだけなので当たりは持たせない。
