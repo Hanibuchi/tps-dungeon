@@ -148,6 +148,34 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void Rooms_NeverExceedTheirMaxDoors()
+        {
+            var parameters = FloorGenerationFixture.Params();
+            parameters.ExtraDoorCount = 10;
+            var templates = new List<RoomTemplateData>(parameters.Templates);
+            templates[0] = FloorGenerationFixture.Template("Room_1x1", 1, 1, RoomTag.Normal, true, 1.0f, maxDoors: 1);
+            templates[1] = FloorGenerationFixture.Template("Room_1x2", 1, 2, RoomTag.Normal, true, 0.8f, maxDoors: 2);
+            templates[2] = FloorGenerationFixture.Template("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f, maxDoors: 3);
+            parameters.Templates = templates;
+
+            int deadEnds = 0;
+            foreach (int seed in FloorGenerationFixture.Seeds(SeedSweepCount))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+
+                foreach (var room in layout.Rooms)
+                {
+                    if (room.Template.MaxDoors == 0) continue;
+                    int doors = room.UsedSockets().Count();
+                    Assert.LessOrEqual(doors, room.Template.MaxDoors, $"seed {seed}: {room} のドアが最大数を超えている");
+                    if (room.Template.Id == "Room_1x1") deadEnds++;
+                }
+            }
+
+            Assert.Greater(deadEnds, 0, "ドア 1 枚の部屋が 1 つも出ていない");
+        }
+
+        [Test]
         public void DoorCount_MatchesEdgeCountTimesTwo()
         {
             var parameters = FloorGenerationFixture.Params();

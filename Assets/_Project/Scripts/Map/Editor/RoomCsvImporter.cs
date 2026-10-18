@@ -9,8 +9,8 @@ using UnityEngine;
 namespace TpsDungeon.Map.Editor
 {
     /// <summary>
-    /// 層ごとの普通の部屋（Rooms.csv。大きさと重み）を、道順（DungeonRoute）の層のランダムな階のカタログに書き込む。
-    /// 部屋は層の部屋のフォルダ（階段の部屋と同じ所）の Room_{x}x{y}.prefab。無ければ作り（床はその層の床の素材）、あれば重みだけ揃える。
+    /// 層ごとの普通の部屋（Rooms.csv。大きさと重みとドアの最大数）を、道順（DungeonRoute）の層のランダムな階のカタログに書き込む。
+    /// 部屋は層の部屋のフォルダ（階段の部屋と同じ所）の Room_{x}x{y}.prefab。無ければ作り（床はその層の床の素材）、あれば重みとドアの最大数だけ揃える。
     /// カタログの普通の部屋（Normal タグ）を CSV の部屋に差し替える。階段・ショップの部屋とボス階のカタログには触らない。
     /// CSV から消した部屋はカタログから外すだけで、プレハブは消さない。
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。読めない行は飛ばし、行番号付きでコンソールに出す。
@@ -105,7 +105,7 @@ namespace TpsDungeon.Map.Editor
                     if (prefab == null)
                     {
                         floorMaterial ??= PlaceholderMapAssetGenerator.RoomFloorMaterial(catalog);
-                        prefab = PlaceholderMapAssetGenerator.BuildNormalRoomPrefab(name, row.Width, row.Height, row.Weight, floorMaterial, folder, config.cellSize);
+                        prefab = PlaceholderMapAssetGenerator.BuildNormalRoomPrefab(name, row.Width, row.Height, row.Weight, row.MaxDoors, floorMaterial, folder, config.cellSize);
                         createdRooms++;
                     }
                     else
@@ -116,7 +116,7 @@ namespace TpsDungeon.Map.Editor
                             errors.Add($"{row.Line} 行目: {path} が {row.Width}x{row.Height} の普通の部屋になっていないので使わなかった");
                             continue;
                         }
-                        if (SetWeight(prefab, template, row.Weight)) reweighted++;
+                        if (SyncTemplate(prefab, template, row.Weight, row.MaxDoors)) reweighted++;
                     }
 
                     entries.Add(new RoomTemplateCatalog.Entry { prefab = prefab });
@@ -135,7 +135,7 @@ namespace TpsDungeon.Map.Editor
             AssetDatabase.SaveAssets();
             foreach (string warning in warnings) Debug.LogWarning($"部屋の CSV: {warning}");
             foreach (string error in errors) Debug.LogError($"部屋の CSV の {error}");
-            Debug.Log($"部屋の CSV を取り込んだ: {rows.Count} 行、部屋を {createdRooms} 個作り、{reweighted} 個の重みを揃え、" +
+            Debug.Log($"部屋の CSV を取り込んだ: {rows.Count} 行、部屋を {createdRooms} 個作り、{reweighted} 個の重み・ドアの最大数を揃え、" +
                       $"層 {route.Layers.Count} つのうち {changedCatalogs} つのカタログを書き換えた");
         }
 
@@ -165,10 +165,10 @@ namespace TpsDungeon.Map.Editor
             return anchor != null ? Path.GetDirectoryName(AssetDatabase.GetAssetPath(anchor)).Replace('\\', '/') : null;
         }
 
-        /// <summary>部屋の Prefab の重みを weight にする。違っていて書き換えたら真。</summary>
-        private static bool SetWeight(GameObject prefab, RoomTemplate template, float weight)
+        /// <summary>部屋の Prefab の重みとドアの最大数を CSV の値にする。違っていて書き換えたら真。</summary>
+        private static bool SyncTemplate(GameObject prefab, RoomTemplate template, float weight, int maxDoors)
         {
-            if (Mathf.Approximately(template.Weight, weight)) return false;
+            if (Mathf.Approximately(template.Weight, weight) && template.MaxDoors == maxDoors) return false;
 
             string path = AssetDatabase.GetAssetPath(prefab);
             var root = PrefabUtility.LoadPrefabContents(path);
@@ -176,6 +176,7 @@ namespace TpsDungeon.Map.Editor
             {
                 var contents = root.GetComponent<RoomTemplate>();
                 contents.Configure(contents.SizeInCells, contents.CellSize, contents.Tags, contents.AllowRotation, weight);
+                contents.SetMaxDoors(maxDoors);
                 PrefabUtility.SaveAsPrefabAsset(root, path);
                 return true;
             }

@@ -11,7 +11,8 @@ namespace TpsDungeon.Map.Data
     ///   size_x … 部屋の幅（セル数、1 以上）
     ///   size_y … 部屋の奥行き（セル数、1 以上）
     ///   weight … 抽選の重み（0 以上。0 なら出ない）
-    /// 例: <c>1,1,2,0.8</c>
+    ///   max_doors … ドアの最大数（0 以上の整数。空か 0 なら無制限。列ごと無くてもよい）
+    /// 例: <c>1,1,2,0.8,2</c>
     /// 階段・ショップの部屋は書かない（カタログのものをそのまま使う）。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
@@ -21,6 +22,7 @@ namespace TpsDungeon.Map.Data
         public const string SizeXColumn = "size_x";
         public const string SizeYColumn = "size_y";
         public const string WeightColumn = "weight";
+        public const string MaxDoorsColumn = "max_doors";
 
         private static readonly string[] RequiredColumns = { LayerColumn, SizeXColumn, SizeYColumn, WeightColumn };
 
@@ -32,13 +34,17 @@ namespace TpsDungeon.Map.Data
             public readonly int Height;
             public readonly float Weight;
 
-            public Row(int line, int layer, int width, int height, float weight)
+            /// <summary>ドアの最大数。0 なら無制限。</summary>
+            public readonly int MaxDoors;
+
+            public Row(int line, int layer, int width, int height, float weight, int maxDoors)
             {
                 Line = line;
                 Layer = layer;
                 Width = width;
                 Height = height;
                 Weight = weight;
+                MaxDoors = maxDoors;
             }
         }
 
@@ -94,13 +100,21 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
+                string maxDoorsCell = Cell(MaxDoorsColumn);
+                int maxDoors = 0;
+                if (maxDoorsCell.Length > 0 && !int.TryParse(maxDoorsCell, NumberStyles.None, CultureInfo.InvariantCulture, out maxDoors))
+                {
+                    errors?.Add($"{line} 行目: 層 {layer} の {width}x{height} の {MaxDoorsColumn} は 0 以上の整数か空「{maxDoorsCell}」");
+                    continue;
+                }
+
                 if (!seen.Add((layer, width, height)))
                 {
                     errors?.Add($"{line} 行目: 層 {layer} の {width}x{height} の行が重複している");
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, width, height, weight));
+                rows.Add(new Row(line, layer, width, height, weight, maxDoors));
             }
 
             return rows;

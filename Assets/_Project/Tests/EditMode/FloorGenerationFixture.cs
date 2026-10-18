@@ -8,9 +8,9 @@ namespace TpsDungeon.Map.Tests
     internal static class FloorGenerationFixture
     {
         public static RoomTemplateData Template(
-            string id, int width, int height, RoomTag tags, bool allowRotation, float weight = 1f) =>
+            string id, int width, int height, RoomTag tags, bool allowRotation, float weight = 1f, int maxDoors = 0) =>
             new RoomTemplateData(id, width, height, tags, allowRotation, weight,
-                RoomTemplateFactory.CreateDefaultSockets(width, height));
+                RoomTemplateFactory.CreateDefaultSockets(width, height), maxDoors);
 
         public static FloorGenerationParams Params() => new FloorGenerationParams
         {

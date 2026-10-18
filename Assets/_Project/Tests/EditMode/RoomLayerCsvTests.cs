@@ -66,5 +66,29 @@ namespace TpsDungeon.Map.Tests
             StringAssert.Contains("size_y", errors[0]);
             StringAssert.Contains("weight", errors[0]);
         }
+
+        [Test]
+        public void ドアの最大数は空か列が無ければ無制限で読めなければ飛ばす()
+        {
+            const string text =
+                "layer,size_x,size_y,weight,max_doors\n" +
+                "1,1,1,1,2\n" +
+                "1,1,2,1,\n" +      // 空なら無制限
+                "1,2,2,1,0\n" +     // 0 も無制限
+                "1,2,3,1,-1\n" +    // 負
+                "1,3,3,1,1.5\n";    // 整数でない
+            var errors = new List<string>();
+            List<RoomLayerCsv.Row> rows = RoomLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(3, rows.Count);
+            Assert.AreEqual(2, rows[0].MaxDoors);
+            Assert.AreEqual(0, rows[1].MaxDoors);
+            Assert.AreEqual(0, rows[2].MaxDoors);
+            Assert.AreEqual(2, errors.Count, string.Join("\n", errors));
+            StringAssert.Contains("max_doors", errors[0]);
+
+            List<RoomLayerCsv.Row> withoutColumn = RoomLayerCsv.Parse("layer,size_x,size_y,weight\n1,1,1,1\n", errors);
+            Assert.AreEqual(0, withoutColumn[0].MaxDoors);
+        }
     }
 }

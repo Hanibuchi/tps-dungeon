@@ -1338,14 +1338,15 @@ namespace TpsDungeon.Map.Editor
             BuildRoomPrefab(spec, material, RoomsFolder, CellSize);
 
         /// <summary>普通の部屋の Prefab（回転してよい、ドア候補は外周全部）を folder/name.prefab に作る。Rooms.csv の取り込みで使う。</summary>
-        internal static GameObject BuildNormalRoomPrefab(string name, int width, int height, float weight, Material material, string folder, float cellSize) =>
-            BuildRoomPrefab(new RoomSpec(name, width, height, RoomTag.Normal, true, weight, "Floor"), material, folder, cellSize);
+        internal static GameObject BuildNormalRoomPrefab(string name, int width, int height, float weight, int maxDoors, Material material, string folder, float cellSize) =>
+            BuildRoomPrefab(new RoomSpec(name, width, height, RoomTag.Normal, true, weight, "Floor"), material, folder, cellSize, maxDoors);
 
-        private static GameObject BuildRoomPrefab(RoomSpec spec, Material material, string folder, float cellSize)
+        private static GameObject BuildRoomPrefab(RoomSpec spec, Material material, string folder, float cellSize, int maxDoors = 0)
         {
             var root = new GameObject(spec.Name);
             var template = root.AddComponent<RoomTemplate>();
             template.Configure(new Vector2Int(spec.Width, spec.Height), cellSize, spec.Tags, spec.AllowRotation, spec.Weight);
+            template.SetMaxDoors(maxDoors);
 
             AddRoomFloor(root, spec.Width, spec.Height, cellSize, material);
 

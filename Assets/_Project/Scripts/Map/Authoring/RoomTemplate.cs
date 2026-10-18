@@ -28,11 +28,17 @@ namespace TpsDungeon.Map.Authoring
         [SerializeField, Min(0f), Tooltip("抽選の重み。0 だと選ばれない。")]
         private float weight = 1f;
 
+        [SerializeField, Min(0), Tooltip("ドアの最大数。0 なら無制限。1 なら行き止まりの部屋になる。")]
+        private int maxDoors;
+
         public Vector2Int SizeInCells => sizeInCells;
         public float CellSize => cellSize;
         public RoomTag Tags => tags;
         public bool AllowRotation => allowRotation;
         public float Weight => weight;
+        public int MaxDoors => maxDoors;
+
+        public void SetMaxDoors(int count) => maxDoors = Mathf.Max(0, count);
 
         public void Configure(Vector2Int size, float cell, RoomTag roomTags, bool rotation, float pickWeight)
         {
@@ -71,7 +77,8 @@ namespace TpsDungeon.Map.Authoring
                 tags,
                 allowRotation,
                 weightOverride > 0f ? weightOverride : weight,
-                sockets);
+                sockets,
+                maxDoors);
         }
 
         /// <summary>四辺すべてにドア候補があるか。1 辺でも欠けると、その方向の隣室と繋げられない。</summary>
