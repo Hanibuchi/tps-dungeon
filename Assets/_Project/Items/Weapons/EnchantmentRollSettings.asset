@@ -15,9 +15,9 @@ MonoBehaviour:
   continueChance: 0.5
   maxEnchantments: 5
   rankWeights:
-  - 0.3
-  - 0.25
-  - 0.2
-  - 0.12
-  - 0.08
-  - 0.05
+  - 10
+  - 8
+  - 6
+  - 4
+  - 2
+  - 1
