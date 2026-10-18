@@ -145,6 +145,10 @@ namespace TpsDungeon.Party.Editor
             renderer.maxParticleSize = 5f;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+
+            // 長さ（duration）を変えるために止めてあるので、Play 中（霧の調節の窓で置き直したとき）は再生し直す。
+            // 止めたままだと付け足したときの再生（playOnAwake）が済んでいて、もやが消えたままになる。
+            if (Application.isPlaying) system.Play(true);
             return system;
         }
 
