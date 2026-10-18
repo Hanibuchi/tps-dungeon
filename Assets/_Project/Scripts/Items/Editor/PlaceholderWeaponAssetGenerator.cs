@@ -18,6 +18,7 @@ namespace TpsDungeon.Items.Editor
     /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
     ///   15（ダメージ軽減）・16（治癒）・17（治癒持続）・19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）・30（召喚）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
+    ///   エンチャントのランクの重み・付く確率・最大数（EnchantmentRollSettings）とランクの色は、インスペクタで調整する値なので、無いときだけ仮の値を書く（作り直しても残る）
     /// - 武器 54 本（Notion の武器一覧 DB で武器種＝01 の 3 本、02 の 4 本、04 の 3 本、05 の 4 本、09 の 3 本、11・15・19・20・21 の 4 本ずつ、16 の 1 本、26 の 3 本、
     ///   27 の 4 本、28 の 3 本と、一覧に無い 28 の石ころ、17 の 1 本、30 の 4 本）と、拾える物・手に持つ見た目のプレハブ
     /// - 召喚で呼び出す置物（Prefabs/Items/Summons/。木の人形はプリミティブ、石像・古代兵・英霊は Blink の人型を Kevin の構えの姿勢で焼いたメッシュ）と、
@@ -730,12 +731,21 @@ namespace TpsDungeon.Items.Editor
                 (WeaponRank.E, "#787774"),
             };
 
+            // 色はインスペクタで調整するので、既にある行の色は引き継ぐ。行が無いランクだけ仮の色にする。
             var serialized = new SerializedObject(table);
             SerializedProperty list = serialized.FindProperty("entries");
+            var tunedColors = new Dictionary<WeaponRank, Color>();
+            for (int i = 0; i < list.arraySize; i++)
+            {
+                SerializedProperty old = list.GetArrayElementAtIndex(i);
+                var oldRank = (WeaponRank)Enum.GetValues(typeof(WeaponRank)).GetValue(old.FindPropertyRelative("rank").enumValueIndex);
+                tunedColors[oldRank] = old.FindPropertyRelative("color").colorValue;
+            }
+
             list.arraySize = entries.Length;
             for (int i = 0; i < entries.Length; i++)
             {
-                ColorUtility.TryParseHtmlString(entries[i].hex, out Color color);
+                if (!tunedColors.TryGetValue(entries[i].rank, out Color color)) ColorUtility.TryParseHtmlString(entries[i].hex, out color);
                 SerializedProperty entry = list.GetArrayElementAtIndex(i);
                 entry.FindPropertyRelative("rank").enumValueIndex = RankEnumIndex(entries[i].rank);
                 entry.FindPropertyRelative("color").colorValue = color;
@@ -755,8 +765,12 @@ namespace TpsDungeon.Items.Editor
 
         private static int RankEnumIndex(WeaponRank rank) => Array.IndexOf(Enum.GetValues(typeof(WeaponRank)), rank);
 
+        /// <summary>エンチャントの付き方。インスペクタで調整する値なので、アセットが無くて作ったときだけ仮の値を書く。</summary>
         private static EnchantmentRollSettings WriteRollSettings()
         {
+            var existing = AssetDatabase.LoadAssetAtPath<EnchantmentRollSettings>(RollSettingsPath);
+            if (existing != null) return existing;
+
             var settings = Gen.LoadOrCreate<EnchantmentRollSettings>(RollSettingsPath);
             var serialized = new SerializedObject(settings);
             serialized.FindProperty("continueChance").floatValue = 0.5f;
