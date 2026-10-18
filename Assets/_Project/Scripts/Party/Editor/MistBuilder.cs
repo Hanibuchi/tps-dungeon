@@ -9,20 +9,17 @@ using Object = UnityEngine.Object;
 namespace TpsDungeon.Party.Editor
 {
     /// <summary>
-    /// 塔のまわりのもや。大きな柔らかい板（パーティクル）をゆっくり漂わせて、景色全体ではなく塔のまわりにだけ霧がかかって見せる。
-    /// - 地上: 塔の根元を囲む輪と、塔の 4 つの面に沿った高さごとの帯（<see cref="FogSettings.mistHeight"/> まで）。帯は塔の足元の四角（上ほど太い）に合わせる。
+    /// 塔のまわりのもや。大きな柔らかい板（パーティクル）をゆっくり漂わせて、景色全体ではなく塔のまわりにだけ霧がかかって見せる。地上では塔の上の方を雲で隠すのが役目。
+    /// - 地上: 塔の上の方を隠す雲。塔の中心から半径 <see cref="FogSettings.mistRadius"/> の円柱の中に、地上 <see cref="FogSettings.mistStartHeight"/> m から屋上の少し上まで。地上の近くには出さない。
     /// - 階: 窓の外の、床より下（地面より上）に一面に流す。部屋の中に入り込まないよう、板の上の端が床より下に来るようにする。
     /// シーンのルートの [Mist] にまとめて置き直す。色と濃さは素材（<see cref="MaterialPath"/>）に持つので、変えると全部のシーンにすぐ効く。
-    /// 量・大きさ・高さは置き直さないと変わらない（霧の調節の窓が開いているシーンを置き直す）。
+    /// 量・大きさ・半径・始まる高さは置き直さないと変わらない（霧の調節の窓が開いているシーンを置き直す）。
     /// </summary>
     public static class MistBuilder
     {
         public const string RootName = "[Mist]";
         private const string MaterialPath = "Assets/_Project/Materials/Effects/Mat_Mist.mat";
         private const string TexturePath = "Assets/_Project/Materials/Effects/Tex_Mist.png";
-
-        // 塔の足元の真ん中（地上の座標）。根元の輪の真ん中。
-        private static readonly Vector3 TowerCenter = new Vector3(0f, 0f, 48f);
 
         /// <summary>地上のシーンに、塔のまわりのもやを置き直す。</summary>
         public static string BuildSurface(Scene scene, FogSettings settings)
@@ -31,34 +28,16 @@ namespace TpsDungeon.Party.Editor
             Material material = LoadOrCreateMaterial(settings);
             int count = 0;
 
-            // 根元を囲む輪。広場の門の前にも少しかかる。
-            count += Ring(root, material, settings, "Mist_Ground", TowerCenter + Vector3.up * 4f, 28f, 75f, 6f, 70, 24f, 40f);
-
-            // 塔の側面。高さごとに、その高さの足元の四角の 4 つの面に沿って帯を置く（面の少し内側から外へ 16 m）。
-            float top = SurfaceTower.TopHeight();
-            for (float h = 25f; h <= Mathf.Min(settings.mistHeight, top) + 0.01f; h += 25f)
+            // 塔の上の方を隠す雲。始まる高さから屋上の少し上まで、塔の中心から半径 mistRadius の円柱の中に、高さ 12 m ごとに輪を重ねる。
+            // 外から見て塔を覆うのは外側の板なので、輪は外寄り（半径の 45 % より外）に置く。枚数は輪の周りの長さに比例させる。
+            float top = SurfaceTower.TopHeight() + 25f;
+            float radius = settings.mistRadius;
+            for (float h = settings.mistStartHeight; h <= top + 0.01f; h += 12f)
             {
                 Rect foot = SurfaceTower.FootAtHeight(h);
-                const float inside = 3f, outside = 16f, reach = inside + outside;
-                float perimeter = 2f * (foot.width + foot.height);
-                var sides = new (string name, Vector3 center, Vector3 scale, float length)[]
-                {
-                    ("S", new Vector3(foot.center.x, h, foot.yMin - outside + reach * 0.5f), new Vector3(foot.width + outside * 2f, 10f, reach), foot.width),
-                    ("N", new Vector3(foot.center.x, h, foot.yMax + outside - reach * 0.5f), new Vector3(foot.width + outside * 2f, 10f, reach), foot.width),
-                    ("W", new Vector3(foot.xMin - outside + reach * 0.5f, h, foot.center.y), new Vector3(reach, 10f, foot.height), foot.height),
-                    ("E", new Vector3(foot.xMax + outside - reach * 0.5f, h, foot.center.y), new Vector3(reach, 10f, foot.height), foot.height),
-                };
-                foreach (var side in sides)
-                {
-                    // 1 段あたり 40 枚を、面の長さで 4 つの面に分ける。
-                    var system = NewSystem(root, $"Mist_{h:0}m_{side.name}", material, settings, side.center,
-                        Mathf.RoundToInt(40f * side.length / perimeter), 24f * settings.mistSize, 42f * settings.mistSize);
-                    if (system == null) continue;
-                    var shape = system.shape;
-                    shape.shapeType = ParticleSystemShapeType.Box;
-                    shape.scale = side.scale;
-                    count += system.main.maxParticles;
-                }
+                var center = new Vector3(foot.center.x, h, foot.center.y);
+                int perRing = Mathf.RoundToInt(2f * Mathf.PI * radius / 5f);
+                count += Ring(root, material, settings, $"Mist_{h:0}m", center, radius * 0.45f, radius, 7f, perRing, 30f, 50f);
             }
             return $"塔のまわりのもやを置いた（{root.childCount} か所、多くて {count} 枚）。";
         }

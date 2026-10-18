@@ -9,7 +9,7 @@ namespace TpsDungeon.Party.Editor
 {
     /// <summary>
     /// 霧を調節する窓（Tools/TPS Dungeon/霧の調節）。値は <see cref="FogSettings"/> のアセットに持つ。
-    /// - 塔のまわりのもや … 色と濃さは素材なので全部のシーンにすぐ効く。量・大きさ・高さは、開いているシーン（地上か階）のもやを置き直して見せる。
+    /// - 塔のまわりのもや … 色と濃さは素材なので全部のシーンにすぐ効く。量・大きさ・始まる高さ・半径は、開いているシーン（地上か階）のもやを置き直して見せる。
     /// - 遠くの霧 … 開いているシーンの霧にすぐ入れて見せる。
     /// どちらも開いているシーンは保存しない。Play 中でも見ながら調節でき、値はアセットに残る。
     /// 「地上と全部の階に書き込む」で、地上と道順（DungeonRoute）に載っている階のシーン全部のもやと霧を置き直して保存する（Play 中は押せない）。
@@ -89,7 +89,8 @@ namespace TpsDungeon.Party.Editor
             EditorGUI.BeginChangeCheck();
             float amount = EditorGUILayout.Slider(new GUIContent("量", "もやの枚数の倍率。0 で無し。"), settings.mistAmount, 0f, 3f);
             float size = EditorGUILayout.Slider(new GUIContent("大きさ", "もや 1 枚の大きさの倍率。"), settings.mistSize, 0.3f, 3f);
-            float height = EditorGUILayout.Slider(new GUIContent("地上で塔のどこまで (m)", "塔の側面のもやをどの高さまでまとわせるか。根元のもやは高さに関係なく出す。"), settings.mistHeight, 0f, 200f);
+            float start = EditorGUILayout.Slider(new GUIContent("地上で始まる高さ (m)", "塔の上の方を隠す雲が始まる高さ。ここから屋上の少し上までを覆う。"), settings.mistStartHeight, 0f, 200f);
+            float radius = EditorGUILayout.Slider(new GUIContent("地上での半径 (m)", "塔の中心から雲を置く半径。塔の一番太い所（半分の幅 70 m ほど）より大きくすると塔を包む。"), settings.mistRadius, 10f, 250f);
             bool shapeChanged = EditorGUI.EndChangeCheck();
 
             if (!colorChanged && !shapeChanged) return;
@@ -98,7 +99,8 @@ namespace TpsDungeon.Party.Editor
             settings.mistOpacity = opacity;
             settings.mistAmount = amount;
             settings.mistSize = size;
-            settings.mistHeight = height;
+            settings.mistStartHeight = start;
+            settings.mistRadius = radius;
             EditorUtility.SetDirty(settings);
             if (colorChanged) MistBuilder.ApplyColor(settings);
             if (shapeChanged) QueueMistRebuild();

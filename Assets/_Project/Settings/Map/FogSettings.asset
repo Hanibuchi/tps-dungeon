@@ -12,6 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d2e66286b5148a7ac2dade40e8afc3, type: 3}
   m_Name: FogSettings
   m_EditorClassIdentifier: TpsDungeon.Party.Editor::TpsDungeon.Party.Editor.FogSettings
+  mistColor: {r: 0.88, g: 0.92, b: 0.96, a: 1}
+  mistOpacity: 0.7
+  mistAmount: 1
+  mistSize: 1
+  mistStartHeight: 45
+  mistRadius: 95
+  distanceFog: 0
   color: {r: 0.75, g: 0.88, b: 0.94, a: 1}
   mode: 1
   startDistance: 50

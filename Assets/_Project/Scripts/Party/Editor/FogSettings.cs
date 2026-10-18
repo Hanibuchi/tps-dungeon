@@ -5,7 +5,7 @@ namespace TpsDungeon.Party.Editor
 {
     /// <summary>
     /// 地上と階の窓の外の霧。2 つある。
-    /// - もや（<see cref="MistBuilder"/>）… 塔のまわりにだけまとわりつく霧。地上は塔の根元と側面、階は窓の外の床より下に流す。
+    /// - もや（<see cref="MistBuilder"/>）… 塔のまわりにだけかかる霧。地上は塔の上の方を隠す雲（地上の近くには出さない）、階は窓の外の床より下に流す。
     /// - 遠くの霧（RenderSettings の霧）… 景色全体を遠いほど霞ませる。今は切ってある。霧はシーンごとに持つので、ここで値を持って各シーンへ書き込む。
     /// 景色の生成器（<see cref="SurfaceScenery"/>）もこの値を使うので、生成器を回し直しても調節した値は消えない。
     /// 調節は <see cref="FogWindow"/>（Tools/TPS Dungeon/霧の調節）で。
@@ -18,13 +18,15 @@ namespace TpsDungeon.Party.Editor
         [Tooltip("もやの色。")]
         public Color mistColor = new Color(0.88f, 0.92f, 0.96f);
         [Range(0f, 1f), Tooltip("もや 1 枚の濃さ（不透明さ）。")]
-        public float mistOpacity = 0.35f;
+        public float mistOpacity = 0.7f;
         [Min(0f), Tooltip("もやの量（枚数の倍率）。0 で無し。")]
         public float mistAmount = 1f;
         [Min(0.1f), Tooltip("もや 1 枚の大きさの倍率。")]
         public float mistSize = 1f;
-        [Min(0f), Tooltip("地上で、塔のどの高さ（メートル）までもやをまとわせるか。根元のもやは高さに関係なく出す。")]
-        public float mistHeight = 100f;
+        [Min(0f), Tooltip("地上で、塔の上の方を隠す雲が始まる高さ（メートル）。ここから屋上の少し上までを雲で覆う。")]
+        public float mistStartHeight = 45f;
+        [Min(1f), Tooltip("地上で、塔の中心から雲を置く半径（メートル）。塔の一番太い所（半分の幅 70 m ほど）より大きくすると塔を包む。")]
+        public float mistRadius = 95f;
 
         [Header("遠くの霧（景色全体）")]
         [Tooltip("景色全体を遠いほど霞ませるか。")]
