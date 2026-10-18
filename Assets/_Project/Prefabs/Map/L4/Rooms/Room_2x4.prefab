@@ -280,7 +280,8 @@ MonoBehaviour:
   cellSize: 5
   tags: 1
   allowRotation: 1
-  weight: 0.5
+  weight: 3
+  maxDoors: 6
 --- !u!1 &3140903139254253791
 GameObject:
   m_ObjectHideFlags: 0

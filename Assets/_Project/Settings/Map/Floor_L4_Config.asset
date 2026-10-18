@@ -17,8 +17,8 @@ MonoBehaviour:
   heightInCells: 64
   cellSize: 5
   roomCatalog: {fileID: 11400000, guid: 43557815df63443cc867ea28666bc7c0, type: 2}
-  minRoomCount: 10
-  maxRoomCount: 20
+  minRoomCount: 8
+  maxRoomCount: 16
   maxPackAttempts: 6
   startJitter: 4
   includeShop: 1

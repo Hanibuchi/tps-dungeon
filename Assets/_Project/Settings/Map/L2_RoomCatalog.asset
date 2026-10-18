@@ -13,13 +13,11 @@ MonoBehaviour:
   m_Name: L2_RoomCatalog
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.RoomTemplateCatalog
   entries:
-  - prefab: {fileID: 4155326717597408730, guid: fb03a35ad14c3475aaad46985729fc0b, type: 3}
-    weightOverride: 0
   - prefab: {fileID: 8632591487409175818, guid: e5a8d5dbb91a54d4a96cedb63fbc9985, type: 3}
     weightOverride: 0
-  - prefab: {fileID: 2577176910344405510, guid: 3270ddda0dccf47308f2670ac5612957, type: 3}
+  - prefab: {fileID: 8724842174468604769, guid: f32eb5b124b294714997465ef3b22d6c, type: 3}
     weightOverride: 0
-  - prefab: {fileID: 3923919675771668702, guid: 61cf8d3f3b1e44372bef94ba62989620, type: 3}
+  - prefab: {fileID: 5618220227864811382, guid: e277c612d4fd24245be963ecfb02909e, type: 3}
     weightOverride: 0
   - prefab: {fileID: 4155326717597408730, guid: 09813f56debd44385bf3b6ba4bb23e36, type: 3}
     weightOverride: 0

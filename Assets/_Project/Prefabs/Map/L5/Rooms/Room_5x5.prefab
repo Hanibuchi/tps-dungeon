@@ -327,6 +327,7 @@ MonoBehaviour:
   tags: 1
   allowRotation: 1
   weight: 0.5
+  maxDoors: 6
 --- !u!1 &2544396858055578455
 GameObject:
   m_ObjectHideFlags: 0
