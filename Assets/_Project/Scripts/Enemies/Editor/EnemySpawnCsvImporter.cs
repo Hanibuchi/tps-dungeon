@@ -21,10 +21,10 @@ namespace TpsDungeon.Enemies.Editor
     /// </summary>
     public sealed class EnemySpawnCsvImporter : AssetPostprocessor
     {
-        public const string Folder = "Assets/_Project/Enemies";
-        public const string EnemiesCsvPath = Folder + "/Enemies.csv";
-        public const string LayersCsvPath = Folder + "/EnemySpawnLayers.csv";
-        public const string CompositionsCsvPath = Folder + "/EnemyCompositions.csv";
+        public const string TablesFolder = "Assets/_Project/Settings/Tables";
+        public const string EnemiesCsvPath = TablesFolder + "/Enemies.csv";
+        public const string LayersCsvPath = TablesFolder + "/EnemySpawnLayers.csv";
+        public const string CompositionsCsvPath = TablesFolder + "/EnemyCompositions.csv";
 
         private static readonly string[] CsvPaths = { EnemiesCsvPath, LayersCsvPath, CompositionsCsvPath };
 

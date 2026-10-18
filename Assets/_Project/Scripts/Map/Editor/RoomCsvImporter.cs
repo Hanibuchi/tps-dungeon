@@ -17,7 +17,7 @@ namespace TpsDungeon.Map.Editor
     /// </summary>
     public sealed class RoomCsvImporter : AssetPostprocessor
     {
-        public const string CsvPath = "Assets/_Project/Settings/Map/Rooms.csv";
+        public const string CsvPath = "Assets/_Project/Settings/Tables/Rooms.csv";
 
         [MenuItem("Tools/TPS Dungeon/部屋の CSV を取り込む")]
         public static void Import()

@@ -14,7 +14,7 @@ namespace TpsDungeon.Items.Editor
     /// </summary>
     public sealed class EnchantmentRankCsvImporter : AssetPostprocessor
     {
-        public const string CsvPath = PlaceholderWeaponAssetGenerator.WeaponsFolder + "/EnchantmentRanks.csv";
+        public const string CsvPath = "Assets/_Project/Settings/Tables/EnchantmentRanks.csv";
 
         [MenuItem("Tools/TPS Dungeon/Items/エンチャントのランク表を取り込む")]
         public static void Import()

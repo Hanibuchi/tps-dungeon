@@ -5,7 +5,7 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// 武器種のエンチャントのランク表の 1 行。「この種類のこの段は、このランク」。
-    /// 正は CSV（Items/Weapons/EnchantmentRanks.csv）で、エディタが取り込んで武器種に書き込む。
+    /// 正は CSV（Settings/Tables/EnchantmentRanks.csv）で、エディタが取り込んで武器種に書き込む。
     /// </summary>
     [Serializable]
     public struct EnchantmentRankEntry

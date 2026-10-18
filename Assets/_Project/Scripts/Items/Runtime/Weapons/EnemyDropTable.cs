@@ -6,7 +6,7 @@ namespace TpsDungeon.Items
 {
     /// <summary>
     /// 敵ごとに落とす武器の表。ランク E〜S の確率と、ユニーク武器の確率・天井を持つ。
-    /// 正は CSV（Items/Weapons/EnemyWeaponDrops.csv・EnemyUniqueDrops.csv）で、エディタが取り込んでここに書き込む。
+    /// 正は CSV（Settings/Tables/EnemyWeaponDrops.csv・EnemyUniqueDrops.csv）で、エディタが取り込んでここに書き込む。
     /// ランクが決まったら、そのランクの武器（<see cref="droppableWeapons"/>。素手とユニークは入れない）から等確率に 1 本。
     /// ゲーム全体で 1 つだけ使い、Resources/<see cref="ResourcePath"/> に置く（<see cref="Default"/> で引く）。
     /// </summary>

@@ -18,8 +18,8 @@ namespace TpsDungeon.Items.Editor
     /// </summary>
     public sealed class EnemyDropCsvImporter : AssetPostprocessor
     {
-        public const string RankCsvPath = PlaceholderWeaponAssetGenerator.WeaponsFolder + "/EnemyWeaponDrops.csv";
-        public const string UniqueCsvPath = PlaceholderWeaponAssetGenerator.WeaponsFolder + "/EnemyUniqueDrops.csv";
+        public const string RankCsvPath = "Assets/_Project/Settings/Tables/EnemyWeaponDrops.csv";
+        public const string UniqueCsvPath = "Assets/_Project/Settings/Tables/EnemyUniqueDrops.csv";
         public const string TablePath = "Assets/_Project/Resources/" + EnemyDropTable.ResourcePath + ".asset";
 
         private const string EnemyPrefabFolder = "Assets/_Project/Prefabs/Enemies";

@@ -15,7 +15,7 @@ namespace TpsDungeon.Items.Editor
     /// </summary>
     public sealed class UniqueEnchantmentCsvImporter : AssetPostprocessor
     {
-        public const string CsvPath = PlaceholderWeaponAssetGenerator.WeaponsFolder + "/UniqueEnchantments.csv";
+        public const string CsvPath = "Assets/_Project/Settings/Tables/UniqueEnchantments.csv";
 
         [MenuItem("Tools/TPS Dungeon/Items/ユニークのエンチャント表を取り込む")]
         public static void Import()
