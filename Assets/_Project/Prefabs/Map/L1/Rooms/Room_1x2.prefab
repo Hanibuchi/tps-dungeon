@@ -694,3 +694,4 @@ MonoBehaviour:
   tags: 1
   allowRotation: 1
   weight: 0.8
+  maxDoors: 0
