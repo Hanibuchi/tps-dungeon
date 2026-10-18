@@ -14,12 +14,12 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.75, g: 0.88, b: 0.94, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 70
-  m_LinearFogEnd: 650
+  m_LinearFogStart: 50
+  m_LinearFogEnd: 200
   m_AmbientSkyColor: {r: 0.62, g: 0.72, b: 0.82, a: 1}
   m_AmbientEquatorColor: {r: 0.52, g: 0.58, b: 0.52, a: 1}
   m_AmbientGroundColor: {r: 0.3, g: 0.3, b: 0.24, a: 1}
@@ -13208,6 +13208,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4202130902894980, guid: 6910e2407cd484a42a0c2598114751a0, type: 3}
   m_PrefabInstance: {fileID: 859520044}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &862613861
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 862613862}
+  m_Layer: 0
+  m_Name: '[Mist]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &862613862
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 862613861}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &863842395
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23693,6 +23724,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.FloorBootstrap
   config: {fileID: 11400000, guid: 512aace911c18448bbe1a2214abce5a4, type: 2}
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}
+  enemySpawns: {fileID: 0}
   seed: 0
   generateOnStart: 1
   downScene: Surface
@@ -32215,3 +32247,4 @@ SceneRoots:
   - {fileID: 1600073529}
   - {fileID: 934609039}
   - {fileID: 691982485}
+  - {fileID: 862613862}

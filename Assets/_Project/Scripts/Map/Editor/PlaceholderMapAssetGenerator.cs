@@ -37,6 +37,11 @@ namespace TpsDungeon.Map.Editor
         private const float WindowOpeningWidth = 0.25f;
         private const float WindowSill = 0.6f;
         private const float WindowTop = 0.8f;
+        // 窓の枠の太さと、壁の面からの出っ張り（窓台はこの倍出す）。地上の塔の窓（SurfaceTower）も同じ寸法。
+        private const float WindowFrameWidth = 0.14f;
+        private const float WindowFrameDepth = 0.1f;
+        // 枠を開口の内側へ寄せる量。枠の内側の面が開口の面（柱・腰壁・上の壁）と重なるとチラつくので、開口の面を枠の中に隠す。
+        private const float WindowFrameInset = 0.02f;
         private const float Elevation = 40f;
         private const float FloorThickness = 0.1f;
 
@@ -214,7 +219,7 @@ namespace TpsDungeon.Map.Editor
             return new Dictionary<string, GameObject>
             {
                 ["Wall"] = BuildWallPrefab($"{folder}/Wall.prefab", theme.wall, cellSize, wallHeight),
-                ["Window"] = BuildWindowPrefab($"{folder}/Window.prefab", theme.wall, cellSize, wallHeight),
+                ["Window"] = BuildWindowPrefab($"{folder}/Window.prefab", theme, cellSize, wallHeight),
                 ["Door"] = BuildDoorPrefab($"{folder}/Door.prefab", theme, cellSize, wallHeight, reuseAnimator),
                 ["GrandDoor"] = BuildGrandDoorPrefab($"{folder}/GrandDoor.prefab", theme, cellSize, wallHeight, reuseAnimator),
                 ["Ceiling"] = BuildCeilingPrefab($"{folder}/Ceiling.prefab", theme.ceiling, cellSize),
@@ -528,11 +533,13 @@ namespace TpsDungeon.Map.Editor
 
         /// <summary>
         /// 窓付きの壁。壁と同じ実寸で、左右の柱・腰壁・上の壁を組んで真ん中を開ける。
+        /// 開口のまわりには扉板と同じ木の枠（子の Frame。両面へ少し出す、下は窓台）を付ける。枠に当たりは付けない。
         /// 開口には見えない当たりを張り、外へ出られないようにする。
         /// </summary>
-        private static GameObject BuildWindowPrefab(string path, Material material, float width, float height)
+        private static GameObject BuildWindowPrefab(string path, FloorTheme theme, float width, float height)
         {
             var root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(path));
+            Material material = theme.wall;
 
             float openW = WindowOpeningWidth * width;
             float sill = WindowSill * height;
@@ -553,7 +560,28 @@ namespace TpsDungeon.Map.Editor
             blocker.transform.localPosition = new Vector3(0f, (sill + top) * 0.5f, 0f);
             blocker.AddComponent<BoxCollider>().size = new Vector3(openW, top - sill, WallThickness);
 
+            var frame = new GameObject("Frame").transform;
+            frame.SetParent(root.transform, false);
+            const float f = WindowFrameWidth;
+            const float inset = WindowFrameInset;
+            float depth = WallThickness + WindowFrameDepth * 2f;
+            float openH = top - sill;
+            float sideX = (openW + f) * 0.5f - inset;
+            Box(frame, "Left", theme.doorLeaf, new Vector3(-sideX, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
+            Box(frame, "Right", theme.doorLeaf, new Vector3(sideX, (sill + top) * 0.5f, 0f), new Vector3(f, openH + f * 2f, depth), false);
+            Box(frame, "Top", theme.doorLeaf, new Vector3(0f, top + f * 0.5f - inset, 0f), new Vector3(openW + f * 2f, f, depth - 0.01f), false); // 左右と前後の面が重ならないよう少し薄く
+            Box(frame, "Sill", theme.doorLeaf, new Vector3(0f, sill - f * 0.5f + inset, 0f), new Vector3(openW + f * 2f + 0.2f, f, WallThickness + WindowFrameDepth * 4f), false);
+
             return SavePrefab(root, path);
+        }
+
+        /// <summary>config の高さ（elevation）で土台のプレハブを作り直して差す。高さを変えたあと（Floors.csv の取り込み）に呼ぶ。</summary>
+        internal static void RebuildFoundation(FloorConfig config)
+        {
+            if (config.theme == null || string.IsNullOrEmpty(config.theme.partsFolder)) return;
+            Material material = config.theme.foundation != null ? config.theme.foundation : config.theme.wall;
+            config.foundationPrefab = BuildFoundationPrefab($"{config.theme.partsFolder}/Foundation.prefab", material, config.cellSize, config.elevation);
+            EditorUtility.SetDirty(config);
         }
 
         /// <summary>
