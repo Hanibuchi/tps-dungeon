@@ -700,11 +700,8 @@ namespace TpsDungeon.Party.Editor
             RenderSettings.ambientEquatorColor = new Color(0.52f, 0.58f, 0.52f);
             RenderSettings.ambientGroundColor = new Color(0.3f, 0.3f, 0.24f);
 
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.75f, 0.88f, 0.94f);
-            RenderSettings.fogStartDistance = 70f;
-            RenderSettings.fogEndDistance = 650f;
+            // 霧は霧の調節（FogWindow）で調節した値を使う。
+            FogSettings.LoadOrCreate().Apply();
         }
 
         /// <summary>スポーン地点を足元の地面の少し上に合わせる（地面が平らでなくなったので）。</summary>
