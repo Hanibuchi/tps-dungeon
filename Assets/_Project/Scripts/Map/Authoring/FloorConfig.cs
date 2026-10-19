@@ -95,6 +95,10 @@ namespace TpsDungeon.Map.Authoring
         [Tooltip("木箱・宝箱から武器が出たときのランク（E・D・C・B・A・S の順）の重み。Settings/Tables/BreakableWeaponRanks.csv で層ごとに設定する。")]
         public float[] boxWeaponRanks = { 1f, 0f, 0f, 0f, 0f, 0f };
 
+        [Header("光と色")]
+        [Tooltip("この階の光と色（重ねる Volume の色・彩度・周りの暗さ、Play 中の環境光、松明の光）。Settings/Tables/FloorMoods.csv で層ごとに設定する（取り込むとランダムな階とボス階の両方に入る）。")]
+        public FloorMood mood = FloorMood.Default;
+
         [Header("見た目")]
         [Tooltip("壁・天井・ドア・階段の素材。層ごとに差し替えて見た目を変える。共通パーツはこれで作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
         public FloorTheme theme;

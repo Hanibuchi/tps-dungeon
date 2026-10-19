@@ -133,6 +133,7 @@ namespace TpsDungeon.Map.Runtime
             BuildCeiling(occupancy, config, ceiling);
             BuildFoundation(occupancy, config, foundation);
             BuildVolume(config, root);
+            ApplyAmbient(config);
 
             GeneratedRoot = root;
             CeilingRoot = ceiling;
@@ -160,6 +161,12 @@ namespace TpsDungeon.Map.Runtime
             doorEdges.Clear();
             featureAt.Clear();
             windowEdges.Clear();
+            if (moodProfile != null)
+            {
+                if (Application.isPlaying) Destroy(moodProfile);
+                else DestroyImmediate(moodProfile);
+                moodProfile = null;
+            }
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
             // エディタから作り直したときに前回分が残らないよう、子を全部見る。
@@ -394,7 +401,7 @@ namespace TpsDungeon.Map.Runtime
         /// 階の Global Volume を生成ルートの下に置く。どのシーンで階を作っても（L1_Random でも確認用シーンでも）同じ見た目になるよう、シーンには置かない。
         /// カメラの post-processing は FloorPostProcessing が Play 中だけ有効にし、作り直しや片付けで消えるときに戻す。
         /// </summary>
-        private static void BuildVolume(FloorConfig config, Transform parent)
+        private void BuildVolume(FloorConfig config, Transform parent)
         {
             if (config.volumeProfile == null) return;
 
@@ -404,6 +411,59 @@ namespace TpsDungeon.Map.Runtime
             volume.isGlobal = true;
             volume.sharedProfile = config.volumeProfile;
             holder.AddComponent<FloorPostProcessing>();
+
+            BuildMoodVolume(config.mood.IsUnset ? FloorMood.Default : config.mood, parent);
+        }
+
+        /// <summary>
+        /// 層の色味（FloorMood）を、共通の Global Volume の上に重ねる（priority 1）。共通の Volume のアセットは手で調節してあるので触らず、
+        /// 上書きするのは色（colorFilter）・彩度・周りの暗さ（Vignette）だけ。露出などは共通の Volume の値がそのまま効く。
+        /// プロファイルは実行のたびに作る（アセットにしない）。
+        /// </summary>
+        private void BuildMoodVolume(FloorMood mood, Transform parent)
+        {
+            var holder = new GameObject("Mood Volume");
+            holder.transform.SetParent(parent, false);
+            var volume = holder.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            profile.name = "Mood (generated)";
+            profile.hideFlags = HideFlags.DontSave;
+            var color = profile.Add<UnityEngine.Rendering.Universal.ColorAdjustments>();
+            color.colorFilter.Override(mood.filter);
+            color.saturation.Override(mood.saturation);
+            var vignette = profile.Add<UnityEngine.Rendering.Universal.Vignette>();
+            vignette.intensity.Override(mood.vignette);
+            vignette.smoothness.Override(0.45f);
+            volume.sharedProfile = profile;
+            moodProfile = profile;
+        }
+
+        // 重ねる Volume のために作ったプロファイル。アセットではないので、作り直すとき（Clear）と消えるときに捨てる。
+        private VolumeProfile moodProfile;
+
+        private void OnDestroy()
+        {
+            if (moodProfile == null) return;
+            if (Application.isPlaying) Destroy(moodProfile);
+            else DestroyImmediate(moodProfile);
+            moodProfile = null;
+        }
+
+        /// <summary>
+        /// Play 中だけ、層の環境光（FloorMood.ambient）を入れる。天井で日の光が届かない室内の明るさの元になる。
+        /// 環境光はシーンの設定なので、エディタで階を組んだときに変えるとシーンが変わってしまう。だから Play 中に限る（地上へ戻れば地上のシーンの値になる）。
+        /// </summary>
+        private static void ApplyAmbient(FloorConfig config)
+        {
+            if (!Application.isPlaying) return;
+            var mood = config.mood.IsUnset ? FloorMood.Default : config.mood;
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = mood.ambient;
+            RenderSettings.ambientEquatorColor = mood.ambient * 0.85f;
+            RenderSettings.ambientGroundColor = mood.ambient * 0.55f;
         }
 
         /// <summary>
@@ -456,6 +516,7 @@ namespace TpsDungeon.Map.Runtime
             var set = config.propSet;
             if (set == null) return;
 
+            var mood = config.mood.IsUnset ? FloorMood.Default : config.mood;
             var settings = new RoomPropSettings
             {
                 CellSize = cellSize,
@@ -485,6 +546,9 @@ namespace TpsDungeon.Map.Runtime
                     prop.name = $"{prefab.name}_Room{room.Index}";
                     prop.transform.SetLocalPositionAndRotation(
                         new Vector3(placement.X, placement.Y, placement.Z), Quaternion.Euler(0f, placement.Yaw, 0f));
+                    // 松明・ろうそくの光に、層の光の色・強さ・揺れを入れる。
+                    foreach (var flame in prop.GetComponentsInChildren<FlickerLight>(true))
+                        flame.Apply(mood.torchColor, mood.torchIntensity, mood.torchRange, mood.flicker);
                     // 柱は天井まで届くよう、階の壁の高さに合わせて縦に伸ばす。
                     if (placement.Kind == RoomPropKind.Pillar && set.pillarHeight > 0f)
                         prop.transform.localScale = Vector3.Scale(prop.transform.localScale, new Vector3(1f, wallHeight / set.pillarHeight, 1f));

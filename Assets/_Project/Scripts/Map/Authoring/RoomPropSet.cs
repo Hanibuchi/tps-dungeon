@@ -22,12 +22,19 @@ namespace TpsDungeon.Map.Authoring
         public List<GameObject> chairs = new List<GameObject>();
         [Tooltip("机の上に載せる小物（ろうそく・本など）。")]
         public List<GameObject> tableTops = new List<GameObject>();
+        [Tooltip("机の上の小物の重み（上の一覧と同じ並び）。空なら同じ重み。")]
+        public List<float> tableTopWeights = new List<float>();
         [Tooltip("壁ぎわの床の小物（骨・本・薬瓶・ろうそくなど）。")]
         public List<GameObject> wallClutter = new List<GameObject>();
+        [Tooltip("壁ぎわの小物の重み（上の一覧と同じ並び）。空なら同じ重み。")]
+        public List<float> wallClutterWeights = new List<float>();
         [Tooltip("壊せる木箱。")]
         public List<GameObject> crates = new List<GameObject>();
         [Tooltip("壊せる宝箱。正面（錠の側）が +Z。")]
         public List<GameObject> chests = new List<GameObject>();
+
+        [Range(0f, 1f), Tooltip("普通の部屋に机と椅子を置く確率。Settings/Tables/RoomProps.csv の table_chance。")]
+        public float tableChance = 0.4f;
 
         [Header("大きさ（置き方を決めるときの床の上の四角、m）")]
         [Min(0.5f)] public float torchHeight = 2.6f;
@@ -42,12 +49,40 @@ namespace TpsDungeon.Map.Authoring
         [Min(0.1f)] public float chestDepth = 0.7f;
         [Min(0.1f)] public float clutterSize = 0.6f;
 
-        /// <summary>種類の一覧から variant で 1 つ。無ければ null。</summary>
+        /// <summary>種類の一覧から variant（0 以上 65536 未満の乱数）で 1 つ。重みの一覧があれば重みで選ぶ。無ければ null。</summary>
         public GameObject Pick(RoomPropKind kind, int variant)
         {
             List<GameObject> list = ListOf(kind);
             if (list == null || list.Count == 0) return null;
-            return list[(variant & int.MaxValue) % list.Count];
+            List<float> weights = WeightsOf(kind);
+            if (weights == null || weights.Count != list.Count) return list[(variant & int.MaxValue) % list.Count];
+
+            float total = 0f;
+            foreach (float w in weights) total += Mathf.Max(0f, w);
+            if (total <= 0f) return null;
+            float target = (variant & 0xFFFF) / 65536f * total;
+            for (int i = 0; i < list.Count; i++)
+            {
+                float w = Mathf.Max(0f, weights[i]);
+                if (w <= 0f) continue;
+                target -= w;
+                if (target < 0f) return list[i];
+            }
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                if (weights[i] > 0f) return list[i];
+            }
+            return null;
+        }
+
+        private List<float> WeightsOf(RoomPropKind kind)
+        {
+            switch (kind)
+            {
+                case RoomPropKind.TableTop: return tableTopWeights;
+                case RoomPropKind.WallClutter: return wallClutterWeights;
+                default: return null;
+            }
         }
 
         public List<GameObject> ListOf(RoomPropKind kind)
@@ -79,6 +114,7 @@ namespace TpsDungeon.Map.Authoring
             settings.ChestWidth = chestWidth;
             settings.ChestDepth = chestDepth;
             settings.ClutterSize = clutterSize;
+            settings.TableChance = tableChance;
         }
     }
 }

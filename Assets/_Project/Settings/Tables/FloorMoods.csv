@@ -1,0 +1,6 @@
+layer,ambient,filter,saturation,vignette,torch_color,torch_intensity,torch_range,flicker
+1,#B8AE9C,#FFFFFF,0,0.15,#FF9A4D,3,9,0.12
+2,#A6A49A,#F0EEE6,-5,0.2,#FF9045,3.2,9,0.15
+3,#8E96A0,#DEE0E8,-10,0.25,#FF8A40,3.5,9,0.18
+4,#7A88A2,#C8D0E2,-18,0.3,#FF8038,5,9,0.22
+5,#6C6A94,#C4BEDE,-22,0.34,#FF7030,6,9,0.25

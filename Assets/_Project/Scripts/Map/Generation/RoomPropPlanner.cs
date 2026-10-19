@@ -68,6 +68,8 @@ namespace TpsDungeon.Map.Generation
         public float CratesPerCell = 0.5f;
         /// <summary>普通の部屋 1 つに宝箱を 1 つ置く確率。</summary>
         public float ChestChance = 0.2f;
+        /// <summary>普通の部屋に机と椅子を置く確率。</summary>
+        public float TableChance = 0.4f;
         /// <summary>ボス階か（松明と柱だけにする）。</summary>
         public bool BossFloor;
         /// <summary>闘技場の部屋のテンプレート ID（ボス階で真ん中を空け、柱を立てる）。</summary>
@@ -96,7 +98,7 @@ namespace TpsDungeon.Map.Generation
     /// - 空けておく所：ドアの内側（DoorClearWidth × DoorClearDepth）、入口・出口・ショップの FeatureCell（階段・目印）、ボス階の闘技場の真ん中 3 × 3 セル。
     /// - 松明：窓でもドアでもない壁に、1 辺おきに付ける。階段のセルの、上り下りする向きの両端の壁には付けない。
     /// - 柱：3 × 3 セル以上の普通の部屋で半分の確率、内側の格子の 4 つの角に。闘技場は真ん中 3 × 3 セルの 4 つの角に。
-    /// - 机と椅子：2 × 2 セル以上の普通の部屋で 40%。真ん中寄りに、机の上の小物と一緒に。
+    /// - 机と椅子：2 × 2 セル以上の普通の部屋で TableChance の確率。真ん中寄りに、机の上の小物と一緒に。
     /// - 壁ぎわの小物：ボス階以外の部屋に、広さに合わせて 1〜8 つ。
     /// - 木箱：普通の部屋に、セル数 × CratesPerCell 個くらいを、壁ぎわに 1〜3 個のまとまりで。
     /// - 宝箱：普通の部屋に ChestChance の確率で 1 つ。壁ぎわに、正面を部屋の内側へ向けて。
@@ -182,7 +184,7 @@ namespace TpsDungeon.Map.Generation
             else if (normal && bounds.Width >= 3 && bounds.Height >= 3 && random.NextDouble() < 0.5d) PlacePillars(plan, bounds, settings, random);
             if (settings.BossFloor) return plan.Placements;
 
-            if (normal && bounds.Width >= 2 && bounds.Height >= 2 && random.NextDouble() < 0.4d) PlaceTableSet(plan, bounds, settings, random);
+            if (normal && bounds.Width >= 2 && bounds.Height >= 2 && random.NextDouble() < settings.TableChance) PlaceTableSet(plan, bounds, settings, random);
             if (normal)
             {
                 if (random.NextDouble() < settings.ChestChance) PlaceChest(plan, sides, settings, random);

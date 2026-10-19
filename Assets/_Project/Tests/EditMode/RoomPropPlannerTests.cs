@@ -161,6 +161,24 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void 机の確率が0なら机を置かず_1なら広い部屋に置く()
+        {
+            var template = FloorGenerationFixture.Template("Room_3x3", 3, 3, RoomTag.Normal, true);
+            var room = new RoomInstance(0, template, 0, new GridRect(0, 0, 3, 3), new List<PlacedSocket>());
+            var never = Settings();
+            never.TableChance = 0f;
+            var always = Settings();
+            always.TableChance = 1f;
+            int placed = 0;
+            for (int seed = 0; seed < 20; seed++)
+            {
+                Assert.IsFalse(RoomPropPlanner.PlanRoom(room, (c, d) => RoomEdgeKind.Wall, never, new Random(seed)).Any(p => p.Kind == RoomPropKind.Table));
+                if (RoomPropPlanner.PlanRoom(room, (c, d) => RoomEdgeKind.Wall, always, new Random(seed)).Any(p => p.Kind == RoomPropKind.Table)) placed++;
+            }
+            Assert.Greater(placed, 15, "確率 1 なら（柱と重ならない限り）ほとんどの部屋に置く");
+        }
+
+        [Test]
         public void 松明は窓とドアの辺には付けない()
         {
             var template = FloorGenerationFixture.Template("Room_3x3", 3, 3, RoomTag.Normal, true);

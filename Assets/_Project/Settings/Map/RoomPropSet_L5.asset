@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b67ba24665944e0c998e89ae8d5b047, type: 3}
+  m_Name: RoomPropSet_L5
+  m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.RoomPropSet
+  torches:
+  - {fileID: 4558651732963638336, guid: f206933c56b314f6e808c2d9146ac892, type: 3}
+  pillars:
+  - {fileID: 8747091670323869147, guid: 76ed85a51dee64c1888a26d8a4b4cedd, type: 3}
+  tables:
+  - {fileID: 3329803117734987185, guid: 96a3c25e079704e97afe476730783e8b, type: 3}
+  chairs:
+  - {fileID: 3745847755910517415, guid: 834909b70db9b400b9c11292421b72bd, type: 3}
+  tableTops:
+  - {fileID: 7173497972853413141, guid: ce209de6d436c4dfa8e213f87eb00e12, type: 3}
+  - {fileID: 3713824796866733229, guid: c0f0e3c3e53a14ce199345940b96e05f, type: 3}
+  - {fileID: 1980303155842727888, guid: b6e4d7f1fe7874745be8409c45bb7464, type: 3}
+  tableTopWeights:
+  - 0.5
+  - 2
+  - 1
+  wallClutter:
+  - {fileID: 2887158562236027529, guid: 516fb03d7f6cd4c38a688ebc6a743c68, type: 3}
+  - {fileID: 6800743013263017482, guid: c9bcad990d8cf4b7585d2aacd83482ba, type: 3}
+  - {fileID: 1980303155842727888, guid: b6e4d7f1fe7874745be8409c45bb7464, type: 3}
+  - {fileID: 6686322352907002819, guid: 513c061382b104a879e6aa758e965f1c, type: 3}
+  - {fileID: 7173497972853413141, guid: ce209de6d436c4dfa8e213f87eb00e12, type: 3}
+  - {fileID: 3713824796866733229, guid: c0f0e3c3e53a14ce199345940b96e05f, type: 3}
+  wallClutterWeights:
+  - 2.5
+  - 2.5
+  - 1
+  - 0.5
+  - 0.5
+  - 2
+  crates:
+  - {fileID: 5978928136968113211, guid: 5af34e3b505884709b4d92658e13f7b8, type: 3}
+  chests:
+  - {fileID: 5853672648361260081, guid: 76eb768f458a44f82b40899d8f3f1ccb, type: 3}
+  tableChance: 0.15
+  torchHeight: 2.6
+  pillarSize: 1.1
+  pillarHeight: 5
+  tableWidth: 1.5
+  tableLength: 2.3
+  tableTopHeight: 1
+  chairSize: 0.65
+  crateSize: 0.85
+  chestWidth: 1.2
+  chestDepth: 0.7
+  clutterSize: 0.6
