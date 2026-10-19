@@ -85,6 +85,16 @@ namespace TpsDungeon.Map.Authoring
         [Tooltip("ショートカット解放用の場所の目印。レイアウトが決めたセルの中央に置く。")]
         public GameObject shortcutMarkerPrefab;
 
+        [Header("置き物")]
+        [Tooltip("部屋に置く物（松明・柱・机・小物・木箱・宝箱）のプレハブの一覧。未設定なら何も置かない。")]
+        public RoomPropSet propSet;
+        [Min(0f), Tooltip("普通の部屋のセル 1 つあたりの木箱の数の平均。Settings/Tables/Floors.csv の crates_per_cell 列で層ごとに設定する。")]
+        public float cratesPerCell = 0.5f;
+        [Range(0f, 1f), Tooltip("普通の部屋 1 つに宝箱を 1 つ置く確率。Settings/Tables/Floors.csv の chest_chance 列で層ごとに設定する。")]
+        public float chestChance = 0.2f;
+        [Tooltip("木箱・宝箱から武器が出たときのランク（E・D・C・B・A・S の順）の重み。Settings/Tables/BreakableWeaponRanks.csv で層ごとに設定する。")]
+        public float[] boxWeaponRanks = { 1f, 0f, 0f, 0f, 0f, 0f };
+
         [Header("見た目")]
         [Tooltip("壁・天井・ドア・階段の素材。層ごとに差し替えて見た目を変える。共通パーツはこれで作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
         public FloorTheme theme;

@@ -29,6 +29,43 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void 木箱の数と宝箱の確率は列が無いか空なら変えない()
+        {
+            const string text =
+                "layer,area,crates_per_cell,chest_chance\n" +
+                "1,20,0.4,0.15\n" +
+                "2,30,,\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.IsEmpty(errors);
+            Assert.IsTrue(rows[0].HasCratesPerCell);
+            Assert.AreEqual(0.4f, rows[0].CratesPerCell);
+            Assert.AreEqual(0.15f, rows[0].ChestChance);
+            Assert.IsFalse(rows[1].HasCratesPerCell);
+            Assert.IsFalse(rows[1].HasChestChance);
+
+            List<FloorLayerCsv.Row> old = FloorLayerCsv.Parse("layer,area\n1,20\n", errors);
+            Assert.IsFalse(old[0].HasCratesPerCell);
+            Assert.IsFalse(old[0].HasChestChance);
+        }
+
+        [Test]
+        public void 木箱の数が負か宝箱の確率が1を超えたら読まない()
+        {
+            const string text =
+                "layer,area,crates_per_cell,chest_chance\n" +
+                "1,20,-0.1,0.1\n" +
+                "2,20,0.1,1.5\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+            Assert.IsEmpty(rows);
+            Assert.AreEqual(2, errors.Count, string.Join("\n", errors));
+            StringAssert.Contains("crates_per_cell", errors[0]);
+            StringAssert.Contains("chest_chance", errors[1]);
+        }
+
+        [Test]
         public void 読めない行はエラーに積んで飛ばす()
         {
             const string text =

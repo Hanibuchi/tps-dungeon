@@ -133,6 +133,45 @@ namespace TpsDungeon.Party
             enemyRoot = null;
             monsterHouses = RoomEnemyRoller.PickMonsterHouses(rules, layout);
             if (monsterHouses.Count > 0) Debug.Log($"[Dungeon] モンスターハウス: 部屋 {string.Join(", ", monsterHouses)}", this);
+            PrepareBreakables();
+        }
+
+        /// <summary>
+        /// 部屋の木箱・宝箱に、この層の敵（表の敵。重みはコストの逆数）を差し、出てきた敵を生成物の下に置く。
+        /// 出てきた敵はその部屋に出した敵にも数える（モンスターハウスで閉じ込めている間に箱から出たら、それも倒すまで出られない）。
+        /// </summary>
+        private void PrepareBreakables()
+        {
+            if (builder.GeneratedRoot == null) return;
+
+            var prefabs = new List<GameObject>();
+            var weights = new List<float>();
+            if (table != null)
+            {
+                foreach (var enemy in table.Enemies)
+                {
+                    prefabs.Add(enemy.prefab);
+                    // 強い（コストの高い）敵ほど出にくい。
+                    weights.Add(enemy.cost > 0f ? 1f / enemy.cost : 0f);
+                }
+            }
+
+            foreach (var prop in builder.GeneratedRoot.GetComponentsInChildren<BreakableProp>(true))
+            {
+                if (prop.DropTable == null) continue;
+                prop.SetEnemyPool(prefabs, weights);
+                prop.SetWeaponRanks(bootstrap != null && bootstrap.Config != null ? bootstrap.Config.boxWeaponRanks : null);
+                prop.SpawnParent = EnemyRoot();
+                int room = builder.CurrentOccupancy != null ? builder.CurrentOccupancy.RoomAt(builder.WorldToCell(prop.transform.position)) : -1;
+                prop.Spawned += (_, spawned) => OnBreakableSpawned(room, spawned);
+            }
+        }
+
+        private void OnBreakableSpawned(int room, GameObject spawned)
+        {
+            if (room < 0 || spawned == null || !spawned.TryGetComponent(out EnemyHealth health)) return;
+            if (!spawnedEnemies.TryGetValue(room, out var enemies)) spawnedEnemies[room] = enemies = new List<EnemyHealth>();
+            enemies.Add(health);
         }
 
         private void OnDoorOpened(Door door, RoomEdge edge)

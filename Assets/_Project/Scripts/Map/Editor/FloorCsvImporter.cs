@@ -14,6 +14,7 @@ namespace TpsDungeon.Map.Editor
     ///   階段・ショップの部屋は必ず出るので、カタログの大きさで別に数える。上限は下限の 2 倍。ボス階には触らない。
     /// - 高さ（elevation）は、その層のランダムな階とボス階の両方の FloorConfig.elevation に入れ、変わった層は土台のプレハブを作り直す。
     ///   窓の外の景色と地上の塔は高さで置き方が変わるので、変わったら「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すよう知らせる。
+    /// - 木箱の数（crates_per_cell）と宝箱の確率（chest_chance）は、その層のランダムな階の FloorConfig に入れる。
     /// Floors.csv か Rooms.csv を保存すると自動で取り込む（部屋の大きさや重みを変えても平均面積が変わるので）。メニューからも呼べる。
     /// </summary>
     public sealed class FloorCsvImporter : AssetPostprocessor
@@ -109,8 +110,13 @@ namespace TpsDungeon.Map.Editor
 
                 summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}" + (row.HasElevation ? $"、高さ {row.Elevation} m" : ""));
                 if (ApplyElevation(route.Layers[i], row)) elevationChanged.Add(layer);
+                bool propsChanged = ApplyProps(route.Layers[i], row);
 
-                if (config.minRoomCount == min && config.maxRoomCount == max) continue;
+                if (config.minRoomCount == min && config.maxRoomCount == max)
+                {
+                    if (propsChanged) changed++;
+                    continue;
+                }
                 config.minRoomCount = min;
                 config.maxRoomCount = max;
                 EditorUtility.SetDirty(config);
@@ -147,6 +153,26 @@ namespace TpsDungeon.Map.Editor
                 PlaceholderMapAssetGenerator.RebuildFoundation(config);
                 changed = true;
             }
+            return changed;
+        }
+
+        /// <summary>row に木箱・宝箱の量があれば、層のランダムな階に入れる（ボス階には置かない）。変わったら真。</summary>
+        private static bool ApplyProps(DungeonRoute.Layer layer, FloorLayerCsv.Row row)
+        {
+            FloorConfig config = layer.randomConfig;
+            if (config == null) return false;
+            bool changed = false;
+            if (row.HasCratesPerCell && !Mathf.Approximately(config.cratesPerCell, row.CratesPerCell))
+            {
+                config.cratesPerCell = row.CratesPerCell;
+                changed = true;
+            }
+            if (row.HasChestChance && !Mathf.Approximately(config.chestChance, row.ChestChance))
+            {
+                config.chestChance = row.ChestChance;
+                changed = true;
+            }
+            if (changed) EditorUtility.SetDirty(config);
             return changed;
         }
 

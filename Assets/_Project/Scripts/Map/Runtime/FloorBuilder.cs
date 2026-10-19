@@ -97,6 +97,9 @@ namespace TpsDungeon.Map.Runtime
         private float cellSize = 3f;
         private float wallHeight = 5f;
 
+        // 窓にした境界（両側から引けるよう、セルと向きの組を 2 通り入れる）。置き物の松明を窓に掛けないため。
+        private readonly HashSet<(GridPos cell, Direction dir)> windowEdges = new HashSet<(GridPos, Direction)>();
+
         // FeatureCell に置いた物のうち、床・天井・土台の組み方を頼んできたもの（FloorFeature）。
         private readonly Dictionary<GridPos, FloorFeature> featureAt = new Dictionary<GridPos, FloorFeature>();
 
@@ -119,12 +122,14 @@ namespace TpsDungeon.Map.Runtime
             var rooms = NewGroup(root, "Rooms");
             var boundaries = NewGroup(root, "Walls");
             var features = NewGroup(root, "Features");
+            var props = NewGroup(root, "Props");
             var ceiling = NewGroup(root, "Ceiling");
             var foundation = NewGroup(root, "Foundation");
 
             var roomObjects = BuildRooms(layout, config, rooms);
             BuildBoundaries(layout, occupancy, config, boundaries, new System.Random(seed));
             BuildFeatures(layout, config, features, roomObjects);
+            BuildProps(layout, occupancy, config, props);
             BuildCeiling(occupancy, config, ceiling);
             BuildFoundation(occupancy, config, foundation);
             BuildVolume(config, root);
@@ -154,6 +159,7 @@ namespace TpsDungeon.Map.Runtime
             }
             doorEdges.Clear();
             featureAt.Clear();
+            windowEdges.Clear();
 
             // 生成物は毎回同じ名前のルートにまとめているので、名前で探して消す。
             // エディタから作り直したときに前回分が残らないよう、子を全部見る。
@@ -264,6 +270,12 @@ namespace TpsDungeon.Map.Runtime
                             : kind == BoundaryKind.Door && config.doorPrefab != null ? config.doorPrefab
                             : window ? config.windowWallPrefab
                             : config.wallPrefab;
+
+                        if (window)
+                        {
+                            windowEdges.Add((cell, dir));
+                            windowEdges.Add((neighbor, dir.Opposite()));
+                        }
 
                         var piece = Instantiate(prefab, parent);
                         piece.name = window ? $"Window_{x}_{y}_{dir}" : grand ? $"GrandDoor_{x}_{y}_{dir}" : $"{kind}_{x}_{y}_{dir}";
@@ -431,6 +443,49 @@ namespace TpsDungeon.Map.Runtime
                     if (feature.replacesRoomFloor) RemoveRoomFloor(room, roomObjects);
                 }
                 return marker;
+            }
+        }
+
+        /// <summary>
+        /// 部屋ごとに置き物（松明・柱・机と椅子・小物・木箱・宝箱）を置く。どこに何を置くかは RoomPropPlanner が決め、
+        /// 部屋ごとの乱数（階のシードと部屋の番号）を使うので、同じシードなら同じになる。プレハブは config.propSet から選ぶ。
+        /// NavMesh を焼く前（Built の前）に置くので、机や柱の当たりは焼き込まれる。壊せる箱は自分で焼き込みから外れ、道を NavMeshObstacle で切る。
+        /// </summary>
+        private void BuildProps(FloorLayout layout, FloorOccupancy occupancy, FloorConfig config, Transform parent)
+        {
+            var set = config.propSet;
+            if (set == null) return;
+
+            var settings = new RoomPropSettings
+            {
+                CellSize = cellSize,
+                CratesPerCell = config.cratesPerCell,
+                ChestChance = config.chestChance,
+                BossFloor = config.layoutShape == FloorLayoutShape.Boss,
+                BossArenaId = FloorConfig.BossArenaId,
+            };
+            set.FillSizes(settings);
+
+            RoomEdgeKind EdgeAt(GridPos cell, Direction dir)
+            {
+                var kind = occupancy.BoundaryAt(cell, dir);
+                if (kind == BoundaryKind.Door) return RoomEdgeKind.Door;
+                return windowEdges.Contains((cell, dir)) ? RoomEdgeKind.Window : RoomEdgeKind.Wall;
+            }
+
+            foreach (var room in layout.Rooms)
+            {
+                var random = new System.Random(RoomEnemyRoller.RoomSeed(layout.Seed, room.Index, RoomPropPlanner.PropSalt));
+                var group = NewGroup(parent, $"Room{room.Index}");
+                foreach (var placement in RoomPropPlanner.PlanRoom(room, EdgeAt, settings, random))
+                {
+                    var prefab = set.Pick(placement.Kind, placement.Variant);
+                    if (prefab == null) continue;
+                    var prop = Instantiate(prefab, group);
+                    prop.name = $"{prefab.name}_Room{room.Index}";
+                    prop.transform.SetLocalPositionAndRotation(
+                        new Vector3(placement.X, placement.Y, placement.Z), Quaternion.Euler(0f, placement.Yaw, 0f));
+                }
             }
         }
 

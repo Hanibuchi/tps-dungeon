@@ -830,7 +830,9 @@ namespace TpsDungeon.Party.Editor
             {
                 if (!prefabs.TryGetValue(path, out GameObject prefab))
                 {
-                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Pack + path + ".prefab");
+                    // 壊せる草花のプレハブ（BreakablePrefabBuilder）があれば、素材の代わりにそれを置く。
+                    prefab = BreakablePrefabBuilder.PlantPrefabFor(System.IO.Path.GetFileName(path));
+                    if (prefab == null) prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Pack + path + ".prefab");
                     if (prefab == null) throw new InvalidOperationException($"素材が無い: {Pack}{path}.prefab");
                     prefabs[path] = prefab;
                 }
@@ -846,7 +848,8 @@ namespace TpsDungeon.Party.Editor
                 }
                 instance.transform.SetLocalPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
                 AddCollider(instance, collide);
-                if (isStatic) SetStatic(instance);
+                // 壊せる草花は壊れるときに倒れて潰れる（Transform を動かす）ので静的にしない。
+                if (isStatic && instance.GetComponent<BreakableProp>() == null) SetStatic(instance);
                 return instance;
             }
         }
@@ -871,7 +874,7 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        [MenuItem("Tools/TPS Dungeon/地上の草花を壊せるようにする")]
+        [MenuItem("Tools/TPS Dungeon/地上の草花を壊せる草花のプレハブに差し替える")]
         public static void MakePlantsBreakableFromMenu()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -886,23 +889,44 @@ namespace TpsDungeon.Party.Editor
             int count = MakePlantsBreakable(village);
             BakeNavMesh(surface);
             EditorSceneManager.MarkSceneDirty(scene);
-            Debug.Log($"地上の草花 {count} 本を攻撃で壊せるようにした（壊すと {BreakablePlantSetup.SpawnTablePath} の表で敵が出る）。シーンは保存していない。");
+            Debug.Log($"地上の草花 {count} 本を壊せる草花のプレハブに差し替えた（壊すと {BreakablePlantSetup.SpawnTablePath} の表で敵が出る）。シーンは保存していない。");
         }
 
-        /// <summary>村の草・花・草木（茂みは除く）を、攻撃で壊せて敵が出てくることのある草花にする。配置は変えない。壊せるようにした数を返す。</summary>
+        /// <summary>
+        /// 村の草・花・草木（茂みは除く）のうち、素材のプレハブを直に置いている物を、壊せる草花のプレハブ（BreakablePrefabBuilder）に差し替える。
+        /// 位置・向き・大きさ・並び順は変えない。もう差し替えてある物は触らない。プレハブが無ければ作る。差し替えた数を返す。
+        /// </summary>
         internal static int MakePlantsBreakable(Transform village)
         {
-            PlantSpawnTable table = BreakablePlantSetup.EnsureAssets();
             int count = 0;
+            var items = new List<Transform>();
             foreach (Transform group in village)
             {
                 if (group.name == "Ground" || group.name == "Roads") continue;
-                foreach (Transform item in group)
+                foreach (Transform item in group) items.Add(item);
+            }
+
+            foreach (Transform item in items)
+            {
+                if (!BreakablePlantSetup.IsPlant(item.gameObject)) continue;
+                GameObject source = PrefabUtility.GetCorrespondingObjectFromOriginalSource(item.gameObject);
+                if (source == null) continue;
+                GameObject current = PrefabUtility.GetCorrespondingObjectFromSource(item.gameObject);
+                GameObject breakable = BreakablePrefabBuilder.PlantPrefabFor(source.name);
+                if (breakable == null)
                 {
-                    if (!BreakablePlantSetup.IsPlant(item.gameObject)) continue;
-                    BreakablePlantSetup.MakeBreakable(item.gameObject, table);
-                    count++;
+                    BreakablePrefabBuilder.BuildAll();
+                    breakable = BreakablePrefabBuilder.PlantPrefabFor(source.name);
                 }
+                if (breakable == null || current == breakable) continue;
+
+                var replacement = (GameObject)PrefabUtility.InstantiatePrefab(breakable, item.parent);
+                replacement.transform.SetLocalPositionAndRotation(item.localPosition, item.localRotation);
+                replacement.transform.localScale = item.localScale;
+                replacement.transform.SetSiblingIndex(item.GetSiblingIndex());
+                replacement.name = item.name;
+                Object.DestroyImmediate(item.gameObject);
+                count++;
             }
             return count;
         }
@@ -955,7 +979,7 @@ namespace TpsDungeon.Party.Editor
         private static bool Refit(GameObject item)
         {
             // 壊せる草花は、すり抜けられるレイヤーの箱を自分で持つ（BreakablePlantSetup）。
-            if (item.GetComponent<BreakablePlant>() != null) return false;
+            if (item.GetComponent<BreakableProp>() != null) return false;
 
             foreach (Collider c in item.GetComponentsInChildren<Collider>(true))
             {

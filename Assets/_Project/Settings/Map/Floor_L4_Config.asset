@@ -36,5 +36,15 @@ MonoBehaviour:
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
   grandDoorPrefab: {fileID: 2668304974302471386, guid: c68de80406d7040fdb4e4efeb89bdae4, type: 3}
   shortcutMarkerPrefab: {fileID: 0}
+  propSet: {fileID: 11400000, guid: 3ecf7e11285654df2a4982c3e602937e, type: 2}
+  cratesPerCell: 0.5
+  chestChance: 0.22
+  boxWeaponRanks:
+  - 3
+  - 5
+  - 5
+  - 2
+  - 0.5
+  - 0.05
   theme: {fileID: 11400000, guid: bff744c3a846742a9ada8743b553f0f1, type: 2}
   volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}
