@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
-    /// 攻撃で壊せる草花（<see cref="BreakablePlant"/>）に要る物をそろえ、置いてある草花を壊せるようにする。
+    /// 攻撃で壊せる置物（<see cref="BreakableProp"/>）に要る物をそろえ、草花や箱を壊せるようにする。
     /// - レイヤー Breakable（9 番）を作り、物理ではどのレイヤーとも当たらないようにする（歩いてすり抜けられる。攻撃の重なり判定には映る）。
-    /// - 飛び散るかけら（Effect_PlantChips）：薄い板の粒が回りながら噴き上がって落ち、地面で跳ねて縮んで消える。色は植物ごとに BreakablePlant が塗る。
+    /// - 飛び散るかけら（Effect_PlantChips）：薄い板の粒が回りながら噴き上がって落ち、地面で跳ねて縮んで消える。色は置物ごとに BreakableProp が塗る。
     /// - 出てくる敵の表（PlantSpawnTable_Surface）：既にあれば中身は変えない（手で直した確率を守る）。
     /// - 音：壊れる音は効果音ラボ「パンチの衣擦れ1」、敵が出る音は「ジャンプ」。ThirdParty は git に上げないので、無ければ空のまま（鳴らない）。
     /// </summary>
@@ -64,11 +65,65 @@ namespace TpsDungeon.Enemies.Editor
         }
 
         /// <summary>
-        /// item（草花のプレハブの実体）を壊せるようにする。当たり（すり抜けられるレイヤーの箱）・HP 1 の置物の体力・BreakablePlant を付ける。
+        /// item（草花のプレハブの実体）を壊せるようにする。当たり（すり抜けられるレイヤーの箱）・HP 1 の置物の体力・BreakableProp を付ける。
         /// 何度呼んでも同じになる。
         /// </summary>
         public static void MakeBreakable(GameObject item, PlantSpawnTable table)
         {
+            BreakableProp plant = AddBreakable(item, 0.6f);
+            var serialized = new SerializedObject(plant);
+            serialized.FindProperty("breakSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BreakSoundPath);
+            serialized.FindProperty("spawnTable").objectReferenceValue = table;
+            serialized.FindProperty("dropTable").objectReferenceValue = null;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// item（木箱・宝箱）を壊せるようにする。草花と同じ当たり・体力・BreakableProp に加えて、
+        /// 体で当たる子（Solid。Default レイヤーの箱）と、道を切る NavMeshObstacle を付ける。壊れ方は砕ける。
+        /// 出てくるものは table の kind の行で決まる（敵の候補は実行時に RoomEnemySpawner が差す）。何度呼んでも同じになる。
+        /// </summary>
+        public static BreakableProp MakeBreakableBox(GameObject item, BreakableDropTable table, BreakableDropKind kind, AudioClip breakSound)
+        {
+            BreakableProp box = AddBreakable(item, 0.3f);
+            Bounds b = LocalBounds(item);
+
+            Transform old = item.transform.Find("Solid");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var solid = new GameObject("Solid");
+            solid.transform.SetParent(item.transform, false);
+            solid.layer = 0;
+            var solidBox = solid.AddComponent<BoxCollider>();
+            solidBox.center = b.center;
+            solidBox.size = b.size;
+
+            NavMeshObstacle obstacle = item.GetComponent<NavMeshObstacle>();
+            if (obstacle == null) obstacle = item.AddComponent<NavMeshObstacle>();
+            obstacle.shape = NavMeshObstacleShape.Box;
+            obstacle.center = b.center;
+            obstacle.size = b.size;
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = true;
+
+            var serialized = new SerializedObject(box);
+            serialized.FindProperty("breakSound").objectReferenceValue = breakSound;
+            serialized.FindProperty("breakSoundVolume").floatValue = 0.9f;
+            serialized.FindProperty("breakStyle").enumValueIndex = (int)BreakableProp.BreakStyle.Shatter;
+            serialized.FindProperty("chipScale").floatValue = 1.8f;
+            serialized.FindProperty("spawnTable").objectReferenceValue = null;
+            serialized.FindProperty("dropTable").objectReferenceValue = table;
+            serialized.FindProperty("dropKind").enumValueIndex = (int)kind;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return box;
+        }
+
+        /// <summary>
+        /// 当たり（すり抜けられるレイヤーの箱。各辺 minSize 以上）・HP 1 の置物の体力・BreakableProp（かけら・色・敵の出し方）を付ける。
+        /// 出てくるものと壊れる音は呼び手が入れる。
+        /// </summary>
+        private static BreakableProp AddBreakable(GameObject item, float minSize)
+        {
+            EnsureLayer();
             foreach (Collider c in item.GetComponentsInChildren<Collider>(true))
             {
                 if (!c.isTrigger) Object.DestroyImmediate(c);
@@ -80,7 +135,7 @@ namespace TpsDungeon.Enemies.Editor
             Bounds b = LocalBounds(item);
             var box = item.AddComponent<BoxCollider>();
             // 小さな草でも当てやすいよう、少し大きめに。
-            Vector3 size = new Vector3(Mathf.Max(b.size.x, 0.6f), Mathf.Max(b.size.y, 0.6f), Mathf.Max(b.size.z, 0.6f));
+            Vector3 size = new Vector3(Mathf.Max(b.size.x, minSize), Mathf.Max(b.size.y, minSize), Mathf.Max(b.size.z, minSize));
             box.size = size;
             box.center = new Vector3(b.center.x, Mathf.Max(b.min.y, 0f) + size.y * 0.5f, b.center.z);
 
@@ -91,24 +146,23 @@ namespace TpsDungeon.Enemies.Editor
             serializedHealth.FindProperty("prop").boolValue = true;
             serializedHealth.ApplyModifiedPropertiesWithoutUndo();
 
-            BreakablePlant plant = item.GetComponent<BreakablePlant>();
-            if (plant == null) plant = item.AddComponent<BreakablePlant>();
+            BreakableProp prop = item.GetComponent<BreakableProp>();
+            if (prop == null) prop = item.AddComponent<BreakableProp>();
             (Color primary, Color secondary) = PlantColors(item);
-            var serialized = new SerializedObject(plant);
+            var serialized = new SerializedObject(prop);
             serialized.FindProperty("chipEffect").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(ChipEffectPath);
             serialized.FindProperty("primaryColor").colorValue = primary;
             serialized.FindProperty("secondaryColor").colorValue = secondary;
-            serialized.FindProperty("breakSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BreakSoundPath);
-            serialized.FindProperty("spawnTable").objectReferenceValue = table;
             serialized.FindProperty("spawnEffect").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(SpawnDustPath);
             serialized.FindProperty("spawnEffectScale").floatValue = 1.4f;
             serialized.FindProperty("spawnSound").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(SpawnSoundPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            return prop;
         }
 
         // --- レイヤー ---
 
-        private static void EnsureLayer()
+        public static void EnsureLayer()
         {
             var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
             SerializedProperty layers = tagManager.FindProperty("layers");
@@ -312,7 +366,7 @@ namespace TpsDungeon.Enemies.Editor
 
         // --- 補助 ---
 
-        private static Bounds LocalBounds(GameObject instance)
+        public static Bounds LocalBounds(GameObject instance)
         {
             Transform root = instance.transform;
             bool any = false;

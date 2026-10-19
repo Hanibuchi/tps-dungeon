@@ -14,6 +14,8 @@ namespace TpsDungeon.Map.Editor
     ///   階段・ショップの部屋は必ず出るので、カタログの大きさで別に数える。上限は下限の 2 倍。ボス階には触らない。
     /// - 高さ（elevation）は、その層のランダムな階とボス階の両方の FloorConfig.elevation に入れ、変わった層は土台のプレハブを作り直す。
     ///   窓の外の景色と地上の塔は高さで置き方が変わるので、変わったら「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すよう知らせる。
+    /// - 木箱の数（crates_per_cell）と宝箱の確率（chest_chance）は、その層のランダムな階の FloorConfig に入れる。
+    /// - 壁の高さ（wall_height）は、その層のランダムな階とボス階の両方の FloorConfig.wallHeight に入れ、変わった層のテーマの壁・窓・ドア・階段を作り直す。
     /// Floors.csv か Rooms.csv を保存すると自動で取り込む（部屋の大きさや重みを変えても平均面積が変わるので）。メニューからも呼べる。
     /// </summary>
     public sealed class FloorCsvImporter : AssetPostprocessor
@@ -64,6 +66,8 @@ namespace TpsDungeon.Map.Editor
 
             var summary = new List<string>();
             var elevationChanged = new List<int>();
+            var wallChanged = new List<FloorConfig>();
+            var wallChangedLayers = new List<int>();
             int changed = 0;
             for (int i = 0; i < route.Layers.Count; i++)
             {
@@ -107,17 +111,27 @@ namespace TpsDungeon.Map.Editor
                 if (row.Area > gridArea / 2f)
                     warnings.Add($"{row.Line} 行目: 層 {layer} の面積 {row.Area} が {config.name} の枠 {config.widthInCells}x{config.heightInCells} の半分を超えている（伸びきれずに作り直しが増える）");
 
-                summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}" + (row.HasElevation ? $"、高さ {row.Elevation} m" : ""));
+                summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}" + (row.HasElevation ? $"、高さ {row.Elevation} m" : "")
+                            + (row.HasWallHeight ? $"、壁 {row.WallHeight} m" : ""));
                 if (ApplyElevation(route.Layers[i], row)) elevationChanged.Add(layer);
+                if (ApplyWallHeight(route.Layers[i], row, wallChanged)) wallChangedLayers.Add(layer);
+                bool propsChanged = ApplyProps(route.Layers[i], row);
 
-                if (config.minRoomCount == min && config.maxRoomCount == max) continue;
+                if (config.minRoomCount == min && config.maxRoomCount == max)
+                {
+                    if (propsChanged) changed++;
+                    continue;
+                }
                 config.minRoomCount = min;
                 config.maxRoomCount = max;
                 EditorUtility.SetDirty(config);
                 changed++;
             }
 
+            // 壁・窓・ドア・階段は壁の高さの実寸で作るので、高さが変わった層のテーマの部品を作り直す。
+            if (wallChanged.Count > 0) PlaceholderMapAssetGenerator.RebuildParts(wallChanged);
             AssetDatabase.SaveAssets();
+            if (wallChangedLayers.Count > 0) Debug.Log($"階の広さの CSV: 層 {string.Join("・", wallChangedLayers)} の壁の高さを変えて、壁・窓・ドア・階段の部品を作り直した");
             if (elevationChanged.Count > 0)
                 warnings.Add($"層 {string.Join("・", elevationChanged)} の高さを変えて土台を作り直した。窓の外の景色と地上の塔に入れるには「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すこと");
             foreach (string warning in warnings) Debug.LogWarning($"階の広さの CSV: {warning}");
@@ -147,6 +161,42 @@ namespace TpsDungeon.Map.Editor
                 PlaceholderMapAssetGenerator.RebuildFoundation(config);
                 changed = true;
             }
+            return changed;
+        }
+
+        /// <summary>row に壁の高さがあれば、層のランダムな階とボス階の両方に入れる。変わった設定は changed に足し、どれかが変わったら真。</summary>
+        private static bool ApplyWallHeight(DungeonRoute.Layer layer, FloorLayerCsv.Row row, List<FloorConfig> changed)
+        {
+            if (!row.HasWallHeight) return false;
+            bool any = false;
+            foreach (FloorConfig config in new[] { layer.randomConfig, layer.bossConfig })
+            {
+                if (config == null || Mathf.Approximately(config.wallHeight, row.WallHeight)) continue;
+                config.wallHeight = row.WallHeight;
+                EditorUtility.SetDirty(config);
+                changed.Add(config);
+                any = true;
+            }
+            return any;
+        }
+
+        /// <summary>row に木箱・宝箱の量があれば、層のランダムな階に入れる（ボス階には置かない）。変わったら真。</summary>
+        private static bool ApplyProps(DungeonRoute.Layer layer, FloorLayerCsv.Row row)
+        {
+            FloorConfig config = layer.randomConfig;
+            if (config == null) return false;
+            bool changed = false;
+            if (row.HasCratesPerCell && !Mathf.Approximately(config.cratesPerCell, row.CratesPerCell))
+            {
+                config.cratesPerCell = row.CratesPerCell;
+                changed = true;
+            }
+            if (row.HasChestChance && !Mathf.Approximately(config.chestChance, row.ChestChance))
+            {
+                config.chestChance = row.ChestChance;
+                changed = true;
+            }
+            if (changed) EditorUtility.SetDirty(config);
             return changed;
         }
 

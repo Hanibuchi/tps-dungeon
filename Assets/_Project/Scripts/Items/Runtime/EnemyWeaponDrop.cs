@@ -11,9 +11,7 @@ namespace TpsDungeon.Items
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）が掛かる。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
-    /// 落とした物は敵の居た所（浮く敵なら宙）に出し、Rigidbody で床まで落とす（<see cref="DroppedItemSettle"/> が止まったら固める）。
-    /// 拾う物のプレハブは照準用のトリガーしか持たないので、同じ大きさの物理の箱を死体・落とし物のレイヤー（<see cref="DebrisLayer"/>）で足す。
-    /// このレイヤーは床や壁とだけ当たるので、パーティーの邪魔にならない。
+    /// 落とした物は敵の居た所（浮く敵なら宙）に出し、床まで落とす（<see cref="ItemDropper"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyHealth), typeof(EnemyIdentity))]
@@ -131,59 +129,8 @@ namespace TpsDungeon.Items
 
         private void Spawn(ItemInstance item)
         {
-            ItemPickup prefab = item.WorldPrefab;
-            if (prefab == null)
-            {
-                Debug.LogWarning($"{item.DisplayName} には床に出す物が無いので落とせない", item.Definition);
-                return;
-            }
-
-            Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-            ItemPickup pickup = Instantiate(prefab, DropPosition(), rotation);
-            pickup.name = prefab.name;
-            pickup.Instance = item;
-            MakeFall(pickup);
-            pickup.PlayDropSound();
-        }
-
-        /// <summary>敵の居た所（少しずらし、少し浮かせる）。浮く敵ならその高さから落ちる。</summary>
-        private Vector3 DropPosition()
-        {
             Vector2 offset = Random.insideUnitCircle * scatter;
-            return transform.position + new Vector3(offset.x, spawnLift, offset.y);
-        }
-
-        /// <summary>
-        /// 照準用のトリガーと同じ大きさの物理の箱を足し、Rigidbody で床へ落とす。向きはプレハブのまま（回転は止める）。
-        /// </summary>
-        private static void MakeFall(ItemPickup pickup)
-        {
-            BoxCollider trigger = null;
-            foreach (BoxCollider box in pickup.GetComponentsInChildren<BoxCollider>())
-            {
-                if (!box.isTrigger) continue;
-                trigger = box;
-                break;
-            }
-            if (trigger == null)
-            {
-                Debug.LogWarning($"{pickup.name} にトリガーの BoxCollider が無いので、床へ落とせない", pickup);
-                return;
-            }
-
-            var physics = new GameObject("Physics");
-            int debris = DebrisLayer.Index;
-            if (debris >= 0) physics.layer = debris;
-            physics.transform.SetParent(trigger.transform, false);
-            var solid = physics.AddComponent<BoxCollider>();
-            solid.center = trigger.center;
-            solid.size = trigger.size;
-
-            var body = pickup.gameObject.AddComponent<Rigidbody>();
-            body.constraints = RigidbodyConstraints.FreezeRotation;
-            body.interpolation = RigidbodyInterpolation.Interpolate;
-            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            pickup.gameObject.AddComponent<DroppedItemSettle>();
+            ItemDropper.Drop(item, transform.position + new Vector3(offset.x, spawnLift, offset.y));
         }
     }
 }

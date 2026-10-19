@@ -10,7 +10,10 @@ namespace TpsDungeon.Map.Data
     ///   layer     … 層（1 始まり）
     ///   area      … 階の平均面積（セル数、0 より大きい）。部屋の面積の合計の平均がこの値になるよう部屋数を決める
     ///   elevation … 階の床の地面からの高さ（メートル、0 以上。FloorConfig.elevation）。列が無いか空なら設定を変えない
-    /// 例: <c>1,27,20</c>
+    ///   crates_per_cell … 普通の部屋のセル 1 つあたりの木箱の数の平均（0 以上。FloorConfig.cratesPerCell）。列が無いか空なら設定を変えない
+    ///   chest_chance    … 普通の部屋 1 つに宝箱を置く確率（0〜1。FloorConfig.chestChance）。列が無いか空なら設定を変えない
+    ///   wall_height     … 部屋の壁の高さ（メートル、2 以上。FloorConfig.wallHeight。天井はこの高さ）。列が無いか空なら設定を変えない
+    /// 例: <c>1,27,20,0.5,0.2,5</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class FloorLayerCsv
@@ -18,6 +21,12 @@ namespace TpsDungeon.Map.Data
         public const string LayerColumn = "layer";
         public const string AreaColumn = "area";
         public const string ElevationColumn = "elevation";
+        public const string CratesPerCellColumn = "crates_per_cell";
+        public const string ChestChanceColumn = "chest_chance";
+        public const string WallHeightColumn = "wall_height";
+
+        /// <summary>壁の高さの下限（FloorConfig.wallHeight の Min と同じ）。</summary>
+        public const float MinWallHeight = 2f;
 
         private static readonly string[] RequiredColumns = { LayerColumn, AreaColumn };
 
@@ -28,16 +37,29 @@ namespace TpsDungeon.Map.Data
             public readonly float Area;
             /// <summary>階の高さ（メートル）。書いていなければ NaN。</summary>
             public readonly float Elevation;
+            /// <summary>セル 1 つあたりの木箱の数。書いていなければ NaN。</summary>
+            public readonly float CratesPerCell;
+            /// <summary>部屋 1 つに宝箱を置く確率。書いていなければ NaN。</summary>
+            public readonly float ChestChance;
+            /// <summary>部屋の壁の高さ（メートル）。書いていなければ NaN。</summary>
+            public readonly float WallHeight;
 
-            public Row(int line, int layer, float area, float elevation = float.NaN)
+            public Row(int line, int layer, float area, float elevation = float.NaN, float cratesPerCell = float.NaN, float chestChance = float.NaN,
+                float wallHeight = float.NaN)
             {
                 Line = line;
                 Layer = layer;
                 Area = area;
                 Elevation = elevation;
+                CratesPerCell = cratesPerCell;
+                ChestChance = chestChance;
+                WallHeight = wallHeight;
             }
 
             public bool HasElevation => !float.IsNaN(Elevation);
+            public bool HasCratesPerCell => !float.IsNaN(CratesPerCell);
+            public bool HasChestChance => !float.IsNaN(ChestChance);
+            public bool HasWallHeight => !float.IsNaN(WallHeight);
         }
 
         public static List<Row> Parse(string text, List<string> errors)
@@ -90,13 +112,33 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
+                if (!TryOptional(CratesPerCellColumn, 0f, float.PositiveInfinity, out float cratesPerCell)) continue;
+                if (!TryOptional(ChestChanceColumn, 0f, 1f, out float chestChance)) continue;
+                if (!TryOptional(WallHeightColumn, MinWallHeight, float.PositiveInfinity, out float wallHeight)) continue;
+
                 if (!seen.Add(layer))
                 {
                     errors?.Add($"{line} 行目: 層 {layer} の行が重複している");
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, area, elevation));
+                rows.Add(new Row(line, layer, area, elevation, cratesPerCell, chestChance, wallHeight));
+
+                // 空なら NaN（設定を変えない）。書いてあれば min〜max の数。
+                bool TryOptional(string column, float min, float max, out float value)
+                {
+                    value = float.NaN;
+                    string cell = Cell(column);
+                    if (cell.Length == 0) return true;
+                    if (float.TryParse(cell, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
+                        && !float.IsNaN(value) && !float.IsInfinity(value) && value >= min && value <= max) return true;
+
+                    errors?.Add(float.IsPositiveInfinity(max)
+                        ? $"{line} 行目: 層 {layer} の {column} は {min} 以上の数「{cell}」"
+                        : $"{line} 行目: 層 {layer} の {column} は {min}〜{max} の数「{cell}」");
+                    value = float.NaN;
+                    return false;
+                }
             }
 
             return rows;

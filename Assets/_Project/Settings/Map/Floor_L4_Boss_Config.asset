@@ -23,7 +23,7 @@ MonoBehaviour:
   startJitter: 4
   includeShop: 0
   extraDoorCount: 2
-  wallHeight: 5
+  wallHeight: 6.5
   elevation: 120
   wallPrefab: {fileID: 7840100939382639473, guid: 4ab4776904f2b4062acae7034e2d1216, type: 3}
   windowWallPrefab: {fileID: 837108515896441589, guid: c2723856c0fee49a888176abd9fe3b45, type: 3}
@@ -36,5 +36,24 @@ MonoBehaviour:
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
   grandDoorPrefab: {fileID: 2668304974302471386, guid: c68de80406d7040fdb4e4efeb89bdae4, type: 3}
   shortcutMarkerPrefab: {fileID: 8426026503290470288, guid: 8176e97a16db34973b2b82d4e9071866, type: 3}
+  propSet: {fileID: 11400000, guid: b5bdf5714cab14ba3a6daef56774706e, type: 2}
+  cratesPerCell: 0.5
+  chestChance: 0.2
+  boxWeaponRanks:
+  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  mood:
+    ambient: {r: 0.47843137, g: 0.53333336, b: 0.63529414, a: 1}
+    filter: {r: 0.78431374, g: 0.8156863, b: 0.8862745, a: 1}
+    saturation: -18
+    vignette: 0.3
+    torchColor: {r: 1, g: 0.5019608, b: 0.21960784, a: 1}
+    torchIntensity: 5
+    torchRange: 9
+    flicker: 0.22
   theme: {fileID: 11400000, guid: bff744c3a846742a9ada8743b553f0f1, type: 2}
   volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}

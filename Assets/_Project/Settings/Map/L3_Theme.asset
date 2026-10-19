@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: L3_Theme
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorTheme
   partsFolder: Assets/_Project/Prefabs/Map/L3/Parts
-  wall: {fileID: 2100000, guid: 05a0649a46f7fcb42ab5b5322e1cb91d, type: 2}
-  ceiling: {fileID: 2100000, guid: 05a0649a46f7fcb42ab5b5322e1cb91d, type: 2}
+  wall: {fileID: 2100000, guid: 712a0ac09b24d6b4485b3a3544c6f620, type: 2}
+  ceiling: {fileID: 2100000, guid: 712a0ac09b24d6b4485b3a3544c6f620, type: 2}
   foundation: {fileID: 2100000, guid: fdd50fb5ce564476a9ffc4d0bcae4ffb, type: 2}
-  doorBrick: {fileID: 2100000, guid: 1cdda630b50e74ec59408616745e7120, type: 2}
-  doorLeaf: {fileID: 2100000, guid: d6c1a5560ac774692b5eab2c98577e54, type: 2}
+  doorBrick: {fileID: 2100000, guid: caf4abb7615724ceba820364bfae4e0d, type: 2}
+  doorLeaf: {fileID: 2100000, guid: bf53192ba79ab49deaf1156c13d311f2, type: 2}
   doorKnob: {fileID: 2100000, guid: eb47662280b7f4b47bc55802e4a13cb8, type: 2}
-  stair: {fileID: 2100000, guid: 05a0649a46f7fcb42ab5b5322e1cb91d, type: 2}
+  stair: {fileID: 2100000, guid: 712a0ac09b24d6b4485b3a3544c6f620, type: 2}
   stairVoid: {fileID: 2100000, guid: b44d0103dca21430d991afd75176da08, type: 2}

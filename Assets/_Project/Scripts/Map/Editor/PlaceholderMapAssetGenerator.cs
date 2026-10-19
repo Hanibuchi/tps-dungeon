@@ -261,17 +261,8 @@ namespace TpsDungeon.Map.Editor
                     Debug.LogWarning($"{config.name} は同じテーマの {entry.owner.name} と寸法が違うが、パーツは {entry.owner.name} の寸法で作ってある。", config);
                 }
 
-                var parts = entry.parts;
-                config.wallPrefab = parts["Wall"];
-                config.windowWallPrefab = parts["Window"];
-                config.doorPrefab = parts["Door"];
-                config.grandDoorPrefab = parts["GrandDoor"];
-                config.ceilingPrefab = parts["Ceiling"];
-                config.foundationPrefab = parts["Foundation"];
-                config.stairUpPrefab = parts["StairUp"];
-                config.stairDownPrefab = parts["StairDown"];
+                AssignParts(config, entry.parts);
                 if (config.volumeProfile == null) config.volumeProfile = LoadOrCreateVolumeProfile();
-                EditorUtility.SetDirty(config);
 
                 if (config.roomCatalog == null) continue;
                 foreach (var room in config.roomCatalog.Entries)
@@ -283,6 +274,46 @@ namespace TpsDungeon.Map.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"壁・ドア・天井・土台・階段のパーツをテーマ {built.Count} 種類ぶん作り直して FloorConfig に差した（作り直した部屋の床 {floors} 個、ドア候補を揃えた部屋 {sockets} 個）");
+        }
+
+        /// <summary>
+        /// changed のテーマの壁・窓付きの壁・ドア・天井・土台・階段だけを、その階の寸法で作り直し、同じテーマを使う FloorConfig 全部に差す。
+        /// 層ごとの壁の高さ（Floors.csv の wall_height）を変えたときに使う。部屋の床・ドア候補や、ほかのテーマには触らない。
+        /// </summary>
+        internal static void RebuildParts(IEnumerable<FloorConfig> changed)
+        {
+            var themes = new HashSet<FloorTheme>();
+            foreach (var config in changed)
+            {
+                if (config != null && config.theme != null && !string.IsNullOrEmpty(config.theme.partsFolder)) themes.Add(config.theme);
+            }
+            if (themes.Count == 0) return;
+
+            var built = new Dictionary<FloorTheme, Dictionary<string, GameObject>>();
+            foreach (string guid in AssetDatabase.FindAssets("t:FloorConfig"))
+            {
+                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(AssetDatabase.GUIDToAssetPath(guid));
+                if (config == null || config.theme == null || !themes.Contains(config.theme)) continue;
+                if (!built.TryGetValue(config.theme, out var parts))
+                {
+                    parts = BuildParts(config.theme, config.cellSize, config.wallHeight, config.elevation, reuseAnimator: true);
+                    built.Add(config.theme, parts);
+                }
+                AssignParts(config, parts);
+            }
+        }
+
+        private static void AssignParts(FloorConfig config, Dictionary<string, GameObject> parts)
+        {
+            config.wallPrefab = parts["Wall"];
+            config.windowWallPrefab = parts["Window"];
+            config.doorPrefab = parts["Door"];
+            config.grandDoorPrefab = parts["GrandDoor"];
+            config.ceilingPrefab = parts["Ceiling"];
+            config.foundationPrefab = parts["Foundation"];
+            config.stairUpPrefab = parts["StairUp"];
+            config.stairDownPrefab = parts["StairDown"];
+            EditorUtility.SetDirty(config);
         }
 
         /// <summary>ボス階を作る層の数。Floor_L{n}_Config（n = 1..この数）を元にする。</summary>

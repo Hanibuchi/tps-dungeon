@@ -29,6 +29,62 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void 木箱の数と宝箱の確率は列が無いか空なら変えない()
+        {
+            const string text =
+                "layer,area,crates_per_cell,chest_chance\n" +
+                "1,20,0.4,0.15\n" +
+                "2,30,,\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.IsEmpty(errors);
+            Assert.IsTrue(rows[0].HasCratesPerCell);
+            Assert.AreEqual(0.4f, rows[0].CratesPerCell);
+            Assert.AreEqual(0.15f, rows[0].ChestChance);
+            Assert.IsFalse(rows[1].HasCratesPerCell);
+            Assert.IsFalse(rows[1].HasChestChance);
+
+            List<FloorLayerCsv.Row> old = FloorLayerCsv.Parse("layer,area\n1,20\n", errors);
+            Assert.IsFalse(old[0].HasCratesPerCell);
+            Assert.IsFalse(old[0].HasChestChance);
+        }
+
+        [Test]
+        public void 壁の高さは列が無いか空なら変えず_2未満なら読まない()
+        {
+            const string text =
+                "layer,area,wall_height\n" +
+                "1,20,6.5\n" +
+                "2,30,\n" +
+                "3,40,1.5\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(2, rows.Count);
+            Assert.IsTrue(rows[0].HasWallHeight);
+            Assert.AreEqual(6.5f, rows[0].WallHeight);
+            Assert.IsFalse(rows[1].HasWallHeight);
+            Assert.AreEqual(1, errors.Count, string.Join("\n", errors));
+            StringAssert.Contains("wall_height", errors[0]);
+        }
+
+        [Test]
+        public void 木箱の数が負か宝箱の確率が1を超えたら読まない()
+        {
+            const string text =
+                "layer,area,crates_per_cell,chest_chance\n" +
+                "1,20,-0.1,0.1\n" +
+                "2,20,0.1,1.5\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+            Assert.IsEmpty(rows);
+            Assert.AreEqual(2, errors.Count, string.Join("\n", errors));
+            StringAssert.Contains("crates_per_cell", errors[0]);
+            StringAssert.Contains("chest_chance", errors[1]);
+        }
+
+        [Test]
         public void 読めない行はエラーに積んで飛ばす()
         {
             const string text =

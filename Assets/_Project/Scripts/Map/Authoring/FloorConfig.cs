@@ -56,7 +56,7 @@ namespace TpsDungeon.Map.Authoring
         public int extraDoorCount = 2;
 
         [Header("高さ")]
-        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張り、ドアの枠はこの高さに伸びる。壁・窓は実寸で作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
+        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張り、ドアの枠はこの高さに伸びる。Settings/Tables/Floors.csv の wall_height 列で層ごとに設定する（取り込むとランダムな階とボス階の両方に入り、壁・窓・ドア・階段が作り直される）。ここで直したら「壁・床・天井のパーツを生成」を回すこと。")]
         public float wallHeight = 5f;
         [Min(0f), Tooltip("この階の床が地面からどれだけ高いか（メートル）。高い建物の上の階なら大きくする。窓の外の景色はこの分だけ下に置き、部屋の下には地面まで土台を置く。Settings/Tables/Floors.csv の elevation 列で層ごとに設定する（取り込むとここと土台が書き換わる）。変えたら「階の外の景色を置く」と「地上のダンジョンの塔を建て直す」を回すこと。")]
         public float elevation = 40f;
@@ -84,6 +84,20 @@ namespace TpsDungeon.Map.Authoring
         public GameObject grandDoorPrefab;
         [Tooltip("ショートカット解放用の場所の目印。レイアウトが決めたセルの中央に置く。")]
         public GameObject shortcutMarkerPrefab;
+
+        [Header("置き物")]
+        [Tooltip("部屋に置く物（松明・柱・机・小物・木箱・宝箱）のプレハブの一覧。未設定なら何も置かない。")]
+        public RoomPropSet propSet;
+        [Min(0f), Tooltip("普通の部屋のセル 1 つあたりの木箱の数の平均。Settings/Tables/Floors.csv の crates_per_cell 列で層ごとに設定する。")]
+        public float cratesPerCell = 0.5f;
+        [Range(0f, 1f), Tooltip("普通の部屋 1 つに宝箱を 1 つ置く確率。Settings/Tables/Floors.csv の chest_chance 列で層ごとに設定する。")]
+        public float chestChance = 0.2f;
+        [Tooltip("木箱・宝箱から武器が出たときのランク（E・D・C・B・A・S の順）の重み。Settings/Tables/BreakableWeaponRanks.csv で層ごとに設定する。")]
+        public float[] boxWeaponRanks = { 1f, 0f, 0f, 0f, 0f, 0f };
+
+        [Header("光と色")]
+        [Tooltip("この階の光と色（重ねる Volume の色・彩度・周りの暗さ、Play 中の環境光、松明の光）。Settings/Tables/FloorMoods.csv で層ごとに設定する（取り込むとランダムな階とボス階の両方に入る）。")]
+        public FloorMood mood = FloorMood.Default;
 
         [Header("見た目")]
         [Tooltip("壁・天井・ドア・階段の素材。層ごとに差し替えて見た目を変える。共通パーツはこれで作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]

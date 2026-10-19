@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 namespace TpsDungeon.Map.Tests
 {
     /// <summary>
-    /// 階を組むと、FloorConfig の Volume の profile が Global Volume として一緒に置かれることを確かめる。
+    /// 階を組むと、FloorConfig の Volume の profile が Global Volume として一緒に置かれ、その上に層の色味（FloorMood）の Volume が重なることを確かめる。
     /// どのシーンで階を作っても（L1_Random でも確認用シーンでも）同じ明るさになるように。
     /// アセットは書き換えないよう、FloorConfig は複製して使い、profile もその場で作る。
     /// </summary>
@@ -46,10 +46,19 @@ namespace TpsDungeon.Map.Tests
             builder.Build(config, 7);
 
             var volumes = builder.GeneratedRoot.GetComponentsInChildren<Volume>(true);
-            Assert.AreEqual(1, volumes.Length, "Volume は 1 つ");
-            Assert.IsTrue(volumes[0].isGlobal);
-            Assert.AreSame(profile, volumes[0].sharedProfile);
-            Assert.IsNotNull(volumes[0].GetComponent<FloorPostProcessing>(), "カメラの post-processing を有効にする役も付く");
+            Assert.AreEqual(2, volumes.Length, "共通の Volume と、層の色味を重ねる Volume");
+            Volume shared = System.Array.Find(volumes, v => v.sharedProfile == profile);
+            Assert.IsNotNull(shared, "FloorConfig の profile の Volume がある");
+            Assert.IsTrue(shared.isGlobal);
+            Assert.IsNotNull(shared.GetComponent<FloorPostProcessing>(), "カメラの post-processing を有効にする役も付く");
+
+            Volume mood = System.Array.Find(volumes, v => v != shared);
+            Assert.IsTrue(mood.isGlobal);
+            Assert.Greater(mood.priority, shared.priority, "層の色味は共通の Volume の上に重ねる");
+            Assert.IsTrue(mood.sharedProfile.TryGet(out UnityEngine.Rendering.Universal.ColorAdjustments color));
+            Assert.IsTrue(color.colorFilter.overrideState);
+            Assert.IsFalse(color.postExposure.overrideState, "露出は共通の Volume の値を使う（上書きしない）");
+            Assert.AreEqual(config.mood.filter, color.colorFilter.value);
         }
 
         [Test]

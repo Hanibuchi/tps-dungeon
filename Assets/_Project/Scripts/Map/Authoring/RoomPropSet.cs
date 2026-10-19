@@ -1,0 +1,120 @@
+using System.Collections.Generic;
+using UnityEngine;
+using TpsDungeon.Map.Generation;
+
+namespace TpsDungeon.Map.Authoring
+{
+    /// <summary>
+    /// 部屋に置く物のプレハブの一覧（種類ごと）。FloorConfig から差し、層ごとに差し替えられる。
+    /// どこに何を置くかは RoomPropPlanner が決め、ここからは種類ごとに 1 つを乱数で選ぶ。
+    /// プレハブは原点が床（壁掛けは壁の面）で、正面（部屋の内側を向く面）が +Z になるように作る（BreakablePrefabBuilder が作る）。
+    /// </summary>
+    [CreateAssetMenu(menuName = "TPS Dungeon/Room Prop Set", fileName = "RoomPropSet")]
+    public sealed class RoomPropSet : ScriptableObject
+    {
+        [Tooltip("壁掛けの松明。原点が壁の面に付く所。")]
+        public List<GameObject> torches = new List<GameObject>();
+        [Tooltip("床から天井までの柱。")]
+        public List<GameObject> pillars = new List<GameObject>();
+        [Tooltip("机。長い辺がローカルの Z。")]
+        public List<GameObject> tables = new List<GameObject>();
+        [Tooltip("椅子。正面（座る人が向く方）が +Z。")]
+        public List<GameObject> chairs = new List<GameObject>();
+        [Tooltip("机の上に載せる小物（ろうそく・本など）。")]
+        public List<GameObject> tableTops = new List<GameObject>();
+        [Tooltip("机の上の小物の重み（上の一覧と同じ並び）。空なら同じ重み。")]
+        public List<float> tableTopWeights = new List<float>();
+        [Tooltip("壁ぎわの床の小物（骨・本・薬瓶・ろうそくなど）。")]
+        public List<GameObject> wallClutter = new List<GameObject>();
+        [Tooltip("壁ぎわの小物の重み（上の一覧と同じ並び）。空なら同じ重み。")]
+        public List<float> wallClutterWeights = new List<float>();
+        [Tooltip("壊せる木箱。")]
+        public List<GameObject> crates = new List<GameObject>();
+        [Tooltip("壊せる宝箱。正面（錠の側）が +Z。")]
+        public List<GameObject> chests = new List<GameObject>();
+
+        [Range(0f, 1f), Tooltip("普通の部屋に机と椅子を置く確率。Settings/Tables/RoomProps.csv の table_chance。")]
+        public float tableChance = 0.4f;
+
+        [Header("大きさ（置き方を決めるときの床の上の四角、m）")]
+        [Min(0.5f)] public float torchHeight = 2.6f;
+        [Min(0.1f)] public float pillarSize = 1.1f;
+        [Min(0.1f), Tooltip("柱のプレハブの高さ。置くときに、階の壁の高さ（天井）まで縦に伸ばす。")] public float pillarHeight = 5f;
+        [Min(0.1f)] public float tableWidth = 1.5f;
+        [Min(0.1f)] public float tableLength = 2.3f;
+        [Min(0.1f), Tooltip("机の天板の高さ。机の上の小物をここに載せる。")] public float tableTopHeight = 1f;
+        [Min(0.1f)] public float chairSize = 0.65f;
+        [Min(0.1f)] public float crateSize = 0.85f;
+        [Min(0.1f)] public float chestWidth = 1.2f;
+        [Min(0.1f)] public float chestDepth = 0.7f;
+        [Min(0.1f)] public float clutterSize = 0.6f;
+
+        /// <summary>種類の一覧から variant（0 以上 65536 未満の乱数）で 1 つ。重みの一覧があれば重みで選ぶ。無ければ null。</summary>
+        public GameObject Pick(RoomPropKind kind, int variant)
+        {
+            List<GameObject> list = ListOf(kind);
+            if (list == null || list.Count == 0) return null;
+            List<float> weights = WeightsOf(kind);
+            if (weights == null || weights.Count != list.Count) return list[(variant & int.MaxValue) % list.Count];
+
+            float total = 0f;
+            foreach (float w in weights) total += Mathf.Max(0f, w);
+            if (total <= 0f) return null;
+            float target = (variant & 0xFFFF) / 65536f * total;
+            for (int i = 0; i < list.Count; i++)
+            {
+                float w = Mathf.Max(0f, weights[i]);
+                if (w <= 0f) continue;
+                target -= w;
+                if (target < 0f) return list[i];
+            }
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                if (weights[i] > 0f) return list[i];
+            }
+            return null;
+        }
+
+        private List<float> WeightsOf(RoomPropKind kind)
+        {
+            switch (kind)
+            {
+                case RoomPropKind.TableTop: return tableTopWeights;
+                case RoomPropKind.WallClutter: return wallClutterWeights;
+                default: return null;
+            }
+        }
+
+        public List<GameObject> ListOf(RoomPropKind kind)
+        {
+            switch (kind)
+            {
+                case RoomPropKind.Torch: return torches;
+                case RoomPropKind.Pillar: return pillars;
+                case RoomPropKind.Table: return tables;
+                case RoomPropKind.Chair: return chairs;
+                case RoomPropKind.TableTop: return tableTops;
+                case RoomPropKind.WallClutter: return wallClutter;
+                case RoomPropKind.Crate: return crates;
+                case RoomPropKind.Chest: return chests;
+                default: return null;
+            }
+        }
+
+        /// <summary>置き方を決めるための大きさを settings に入れる。</summary>
+        public void FillSizes(RoomPropSettings settings)
+        {
+            settings.TorchHeight = torchHeight;
+            settings.PillarSize = pillarSize;
+            settings.TableWidth = tableWidth;
+            settings.TableLength = tableLength;
+            settings.TableTopHeight = tableTopHeight;
+            settings.ChairSize = chairSize;
+            settings.CrateSize = crateSize;
+            settings.ChestWidth = chestWidth;
+            settings.ChestDepth = chestDepth;
+            settings.ClutterSize = clutterSize;
+            settings.TableChance = tableChance;
+        }
+    }
+}
