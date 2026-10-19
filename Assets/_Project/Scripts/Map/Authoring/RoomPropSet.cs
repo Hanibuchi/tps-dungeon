@@ -32,6 +32,7 @@ namespace TpsDungeon.Map.Authoring
         [Header("大きさ（置き方を決めるときの床の上の四角、m）")]
         [Min(0.5f)] public float torchHeight = 2.6f;
         [Min(0.1f)] public float pillarSize = 1.1f;
+        [Min(0.1f), Tooltip("柱のプレハブの高さ。置くときに、階の壁の高さ（天井）まで縦に伸ばす。")] public float pillarHeight = 5f;
         [Min(0.1f)] public float tableWidth = 1.5f;
         [Min(0.1f)] public float tableLength = 2.3f;
         [Min(0.1f), Tooltip("机の天板の高さ。机の上の小物をここに載せる。")] public float tableTopHeight = 1f;

@@ -51,6 +51,25 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void 壁の高さは列が無いか空なら変えず_2未満なら読まない()
+        {
+            const string text =
+                "layer,area,wall_height\n" +
+                "1,20,6.5\n" +
+                "2,30,\n" +
+                "3,40,1.5\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(2, rows.Count);
+            Assert.IsTrue(rows[0].HasWallHeight);
+            Assert.AreEqual(6.5f, rows[0].WallHeight);
+            Assert.IsFalse(rows[1].HasWallHeight);
+            Assert.AreEqual(1, errors.Count, string.Join("\n", errors));
+            StringAssert.Contains("wall_height", errors[0]);
+        }
+
+        [Test]
         public void 木箱の数が負か宝箱の確率が1を超えたら読まない()
         {
             const string text =

@@ -23,7 +23,7 @@ MonoBehaviour:
   startJitter: 4
   includeShop: 0
   extraDoorCount: 2
-  wallHeight: 5
+  wallHeight: 6
   elevation: 80
   wallPrefab: {fileID: 1954441390823875448, guid: 98733779a550344b3a5d395147c1fcf5, type: 3}
   windowWallPrefab: {fileID: 7938535410742709804, guid: c6c8e83953258451b88e9e7e668bce92, type: 3}
@@ -39,5 +39,12 @@ MonoBehaviour:
   propSet: {fileID: 11400000, guid: 3ecf7e11285654df2a4982c3e602937e, type: 2}
   cratesPerCell: 0.5
   chestChance: 0.2
+  boxWeaponRanks:
+  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
   theme: {fileID: 11400000, guid: 22fab9359de6f4d39a924d173f67ae17, type: 2}
   volumeProfile: {fileID: 11400000, guid: 84a7c9a746aad438895b8c6e3e85deda, type: 2}

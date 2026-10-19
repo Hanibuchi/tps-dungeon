@@ -23,7 +23,7 @@ MonoBehaviour:
   startJitter: 4
   includeShop: 1
   extraDoorCount: 2
-  wallHeight: 5
+  wallHeight: 7
   elevation: 150
   wallPrefab: {fileID: 7629975379038468005, guid: af043d2f03f2c446fa6ceaad10b19fb1, type: 3}
   windowWallPrefab: {fileID: 3037749668641861748, guid: e2f68324abd22467cabad5755892a593, type: 3}

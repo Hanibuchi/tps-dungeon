@@ -56,7 +56,7 @@ namespace TpsDungeon.Map.Authoring
         public int extraDoorCount = 2;
 
         [Header("高さ")]
-        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張り、ドアの枠はこの高さに伸びる。壁・窓は実寸で作るので、変えたら「壁・床・天井のパーツを生成」を回すこと。")]
+        [Min(2f), Tooltip("壁の高さ（メートル）。天井はこの高さに張り、ドアの枠はこの高さに伸びる。Settings/Tables/Floors.csv の wall_height 列で層ごとに設定する（取り込むとランダムな階とボス階の両方に入り、壁・窓・ドア・階段が作り直される）。ここで直したら「壁・床・天井のパーツを生成」を回すこと。")]
         public float wallHeight = 5f;
         [Min(0f), Tooltip("この階の床が地面からどれだけ高いか（メートル）。高い建物の上の階なら大きくする。窓の外の景色はこの分だけ下に置き、部屋の下には地面まで土台を置く。Settings/Tables/Floors.csv の elevation 列で層ごとに設定する（取り込むとここと土台が書き換わる）。変えたら「階の外の景色を置く」と「地上のダンジョンの塔を建て直す」を回すこと。")]
         public float elevation = 40f;

@@ -485,6 +485,9 @@ namespace TpsDungeon.Map.Runtime
                     prop.name = $"{prefab.name}_Room{room.Index}";
                     prop.transform.SetLocalPositionAndRotation(
                         new Vector3(placement.X, placement.Y, placement.Z), Quaternion.Euler(0f, placement.Yaw, 0f));
+                    // 柱は天井まで届くよう、階の壁の高さに合わせて縦に伸ばす。
+                    if (placement.Kind == RoomPropKind.Pillar && set.pillarHeight > 0f)
+                        prop.transform.localScale = Vector3.Scale(prop.transform.localScale, new Vector3(1f, wallHeight / set.pillarHeight, 1f));
                 }
             }
         }
