@@ -367,7 +367,11 @@ namespace TpsDungeon.Party.Editor
             return p.Place("Buildings/Bld_closed/" + prefabName, parent, at, doorYaw - DoorYaw(prefabName), Vector3.one, Collide.None, true);
         }
 
-        /// <summary>建物の扉の前に照準用のトリガーを張り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。</summary>
+        /// <summary>
+        /// 建物の扉の面に照準用の薄いトリガーを貼り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。
+        /// トリガーは扉の面から <see cref="DoorTriggerDepth"/> だけ外へ出る薄い板にする。厚くして外へ張り出すと、扉に正面から擦り付いたときに
+        /// 照準の線の出どころ（胸の高さ）がトリガーの中に入り、中から出た線はトリガーに当たらないので調べられなくなる。
+        /// </summary>
         private static void AddDoorGate(GameObject building, string title, string body, MapIcon icon)
         {
             var door = new GameObject("Door");
@@ -375,7 +379,7 @@ namespace TpsDungeon.Party.Editor
             PlaceDoor(building, door.transform);
             var trigger = door.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = new Vector3(2.4f, 2.6f, 0.8f);
+            trigger.size = new Vector3(2.4f, 2.6f, DoorTriggerDepth);
 
             var gate = door.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -389,13 +393,16 @@ namespace TpsDungeon.Party.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>扉のトリガーを、建物の扉の面の真ん中の少し外に置き、その面に向ける。</summary>
+        /// <summary>扉のトリガーの厚み（m）。扉の面から外へこれだけ出る。</summary>
+        internal const float DoorTriggerDepth = 0.1f;
+
+        /// <summary>扉のトリガーを、建物の扉の面の真ん中に貼り付けるように置き（面から外へ厚みの半分）、その面に向ける。</summary>
         public static void PlaceDoor(GameObject building, Transform door)
         {
             Bounds local = LocalBounds(building);
             float yaw = DoorYaw(SourceName(building));
             Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
-            float reach = Mathf.Abs(dir.x) * local.extents.x + Mathf.Abs(dir.z) * local.extents.z + 0.3f;
+            float reach = Mathf.Abs(dir.x) * local.extents.x + Mathf.Abs(dir.z) * local.extents.z + DoorTriggerDepth * 0.5f;
             Vector3 at = local.center + dir * reach;
             door.localPosition = new Vector3(at.x, 1.3f, at.z);
             door.localRotation = Quaternion.Euler(0f, yaw, 0f);
