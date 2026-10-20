@@ -199,16 +199,16 @@ namespace TpsDungeon.Map.Editor
             Cylinder(anchor.transform, "Rope", Rope(), new Vector3(0f, -ropeLength * 0.5f, 0f), RopeRadius * 1.3f, ropeLength, 8);
             Knot(anchor.transform, new Vector3(0f, -ropeTop + DaisHeight + 0.2f, 0f));
 
-            // 調べる所。台座の上、ロープの下の方（揺れない当たり）。当たりも開いているときだけ置き、閉じている間は照準を遮らない。
-            var reach = new GameObject("Reach");
-            reach.transform.SetParent(root.transform, false);
-            var volume = new GameObject("Volume");
-            volume.transform.SetParent(reach.transform, false);
-            var trigger = volume.AddComponent<BoxCollider>();
+            // 調べる所はショートカット全体（台座・石板・旗と、ロープのまわり）。ロープは細いので、まわりに太めの見えない円柱（トリガー）を立てて
+            // 狙いやすくする。台座の上に立つとその円柱の中に入るが、台座を見下ろせば調べられる。円柱は開いているときだけ置き、閉じている間は照準を遮らない。
+            var volume = new GameObject("Reach");
+            volume.transform.SetParent(root.transform, false);
+            var trigger = volume.AddComponent<CapsuleCollider>();
             trigger.isTrigger = true;
-            trigger.center = new Vector3(0f, 1.6f, 0f);
-            trigger.size = new Vector3(1.4f, 3.2f, 1.4f);
-            var point = reach.AddComponent<ShortcutPoint>();
+            trigger.center = new Vector3(0f, 2f, 0f);
+            trigger.radius = 0.9f;
+            trigger.height = 4f;
+            var point = root.AddComponent<ShortcutPoint>();
             Configure(point, ShortcutDirection.ToBossFloor, route, "ロープを登る", "",
                 "第 {0} 層への近道",
                 "空から垂れたロープ。登った先は、ダンジョンの第 {0} 層のボス階に通じている。",
