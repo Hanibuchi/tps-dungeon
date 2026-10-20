@@ -61,11 +61,11 @@
 .AAAAA....
 .AAAAA....
 .AAAAA....
-.AAAAAaa..
+.AAAAAaaS.
 .AAAAAaaE.
-.SHHHHbbb.
+..HHHHbbb.
 ..HHHHbbb.
 ..HHHHbbb.
 ..HHHH....
-扉: E-a a-b b-H H-S
+扉: E-a a-b b-H a-S
 敵: a b H

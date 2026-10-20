@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Floor_L5_Boss_Config
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
   layoutShape: 1
-  bossBlueprint: "...X......\n.AAAAA....\n.AAAAA....\n.AAAAA....\n.AAAAAaa..\n.AAAAAaaE.\n.SHHHHbbb.\n..HHHHbbb.\n..HHHHbbb.\n..HHHH....\n\u6249:
-    E-a a-b b-H H-S\n\u6575: a b H"
+  bossBlueprint: "...X......\n.AAAAA....\n.AAAAA....\n.AAAAA....\n.AAAAAaaS.\n.AAAAAaaE.\n..HHHHbbb.\n..HHHHbbb.\n..HHHHbbb.\n..HHHH....\n\u6249:
+    E-a a-b b-H a-S\n\u6575: a b H"
   widthInCells: 16
   heightInCells: 16
   cellSize: 5
