@@ -195,9 +195,11 @@ namespace TpsDungeon.Map.Editor
             anchor.transform.SetParent(root.transform, false);
             anchor.transform.localPosition = new Vector3(0f, ropeTop, 0f);
             anchor.AddComponent<RopeSway>();
-            float ropeLength = ropeTop - DaisHeight - 0.15f;
+            // 先は台座から手の届く高さで止める（地面に着けると、揺れたときに台座へめり込む）。
+            float ropeEnd = DaisHeight + 0.9f;
+            float ropeLength = ropeTop - ropeEnd;
             Cylinder(anchor.transform, "Rope", Rope(), new Vector3(0f, -ropeLength * 0.5f, 0f), RopeRadius * 1.3f, ropeLength, 8);
-            Knot(anchor.transform, new Vector3(0f, -ropeTop + DaisHeight + 0.2f, 0f));
+            Knot(anchor.transform, new Vector3(0f, -ropeTop + ropeEnd + 0.08f, 0f));
 
             // 調べる所はショートカット全体（台座・石板・旗と、ロープのまわり）。ロープは細いので、まわりに太めの見えない円柱（トリガー）を立てて
             // 狙いやすくする。台座の上に立つとその円柱の中に入るが、台座を見下ろせば調べられる。円柱は開いているときだけ置き、閉じている間は照準を遮らない。
@@ -211,7 +213,7 @@ namespace TpsDungeon.Map.Editor
             var point = root.AddComponent<ShortcutPoint>();
             Configure(point, ShortcutDirection.ToBossFloor, route, "ロープを登る", "",
                 "第 {0} 層への近道",
-                "空から垂れたロープ。登った先は、ダンジョンの第 {0} 層のボス階に通じている。",
+                "登った先は第 {0} 層に通じている。",
                 new[] { anchor, ring, volume }, new GameObject[0]);
             // 置いたときは閉じた見た目にしておく（実行中は ShortcutPoint が解放状態に合わせる）。
             anchor.SetActive(false);
