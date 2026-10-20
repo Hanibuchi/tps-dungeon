@@ -488,3 +488,105 @@
     font-size: 22px;
     color: var(--blood-bright);
 }
+
+/* ---- 上中央: モンスターハウス（GameHudView が閉じ込められたときに出す） ---- */
+
+/* 左右 0 で横いっぱいに広げ、中身を中央に寄せる。 */
+.monster-house {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 56px;
+    align-items: center;
+}
+
+/* 閉じ込めた瞬間に大きく叩きつけるように現れ、しばらくして上へ抜けて消える。 */
+.monster-house__banner {
+    align-items: center;
+    opacity: 0;
+    scale: 1.6 1.6;
+    transition-property: opacity, scale, translate;
+    transition-duration: 0.18s, 0.32s, 0.4s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-in-cubic;
+}
+
+.monster-house__banner.is-shown {
+    opacity: 1;
+    scale: 1 1;
+}
+
+/* 消えるときは大きくならず、上へ少し抜ける。 */
+.monster-house__banner.monster-house__banner--leaving {
+    scale: 1 1;
+    translate: 0 -12px;
+    transition-duration: 0.4s;
+}
+
+.monster-house__title {
+    padding: 0;
+    margin: 0;
+    font-size: 46px;
+    letter-spacing: 6px;
+    color: var(--blood-bright);
+    -unity-text-outline-width: 1.5px;
+    -unity-text-outline-color: rgb(30, 6, 4);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+    -unity-text-align: middle-center;
+}
+
+/* 鍵が開いたときの見出し。 */
+.monster-house--released .monster-house__title {
+    font-size: 34px;
+    color: var(--gold-bright);
+    -unity-text-outline-color: rgb(40, 28, 10);
+}
+
+.monster-house__note {
+    padding: 0;
+    margin: 2px 0 0 0;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--ink);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    -unity-text-align: middle-center;
+}
+
+/* 閉じ込めている間ずっと出しておく残りの敵の数。 */
+.monster-house__count {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-top: 10px;
+    padding: 6px 18px 7px 18px;
+    background-color: rgba(20, 17, 15, 0.84);
+    opacity: 0;
+    translate: 0 -6px;
+    transition-property: opacity, translate, scale;
+    transition-duration: 0.25s, 0.25s, 0.1s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.monster-house__count.is-shown {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* 1 体減った瞬間だけ小さく弾む。 */
+.monster-house__count.is-shown.monster-house__count--pop {
+    scale: 1.15 1.15;
+}
+
+.monster-house__count-caption {
+    padding: 0;
+    margin: 0 8px 3px 0;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--gold);
+}
+
+.monster-house__count-value {
+    padding: 0;
+    margin: 0;
+    font-size: 24px;
+    color: var(--blood-bright);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
