@@ -124,6 +124,11 @@ namespace TpsDungeon.Hud
         private int shownRemaining = -1;
         private float nextFloorSearchTime;
 
+        // 地上の地図の元（地上にいる間だけ）。印（解放したショートカットなど）はときどき拾い直す。
+        private SurfaceMapSource surfaceMap;
+        private float nextMarkerRefreshTime;
+        private const float MarkerRefreshInterval = 0.5f;
+
         private void Reset()
         {
             health = GetComponentInParent<PlayerHealth>();
@@ -274,6 +279,7 @@ namespace TpsDungeon.Hud
                 nextFloorSearchTime = Time.unscaledTime + FloorSearchInterval;
                 BindFloor(FindAnyObjectByType<FloorBootstrap>());
             }
+            BindSurfaceMap();
             UpdateMinimap();
             RefreshCooldown();
             RefreshCrosshair();
@@ -531,6 +537,27 @@ namespace TpsDungeon.Hud
             foreach (var m in maps) m.SetExploration(exploration);
         }
 
+        /// <summary>
+        /// 地上（地図の元のあるシーン）にいる間は、地上の絵と印を地図に渡す。印は解放の切り替えに追いつくよう、ときどき拾い直す。
+        /// 階に着いたら（フロアがある）地上の地図は外す。
+        /// </summary>
+        private void BindSurfaceMap()
+        {
+            if (maps == null) return;
+            var current = floorBuilder == null ? SurfaceMapSource.Current : null;
+            if (current != surfaceMap)
+            {
+                surfaceMap = current;
+                nextMarkerRefreshTime = 0f;
+                foreach (var m in maps) m.SetSurface(surfaceMap);
+            }
+            if (surfaceMap == null || Time.unscaledTime < nextMarkerRefreshTime) return;
+
+            nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
+            var markers = surfaceMap.Markers();
+            foreach (var m in maps) m.SetMarkers(markers);
+        }
+
         private void UpdateMinimap()
         {
             if (maps == null) return;
@@ -542,8 +569,11 @@ namespace TpsDungeon.Hud
 
             if (floorBuilder == null || exploration == null)
             {
-                // フロアが無いシーンでは向きだけ出す。
-                foreach (var m in maps) m.SetPlayer(Vector2.zero, player.eulerAngles.y);
+                // 地上ではワールドの位置をそのまま（地上の地図のセルで）出す。フロアも地上の地図も無いシーンでは向きだけ出す。
+                var at = surfaceMap != null
+                    ? new Vector2(player.position.x, player.position.z) / MinimapElement.SurfaceMetersPerCell
+                    : Vector2.zero;
+                foreach (var m in maps) m.SetPlayer(at, player.eulerAngles.y);
                 return;
             }
 
@@ -552,7 +582,7 @@ namespace TpsDungeon.Hud
             bool firstVisit = !SceneTravel.Traveling && exploration.Visit(floorBuilder.WorldToCell(player.position));
             if (firstVisit || exploration.CurrentRoom != previousRoom)
             {
-                foreach (var m in maps) m.MarkDirtyRepaint();
+                foreach (var m in maps) m.Repaint();
             }
 
             var local = floorBuilder.transform.InverseTransformPoint(player.position);

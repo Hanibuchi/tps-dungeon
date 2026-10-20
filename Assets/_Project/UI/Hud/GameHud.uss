@@ -347,6 +347,24 @@
     --map-feature: rgb(236, 226, 206);
     --map-player: rgb(248, 220, 150);
     --map-pixels-per-cell: 32;
+    --map-castle: rgb(52, 46, 40);
+    --map-shortcut: rgb(120, 206, 222);
+}
+
+/* 地上の地図の下に敷く、真上から撮った地上の絵（MinimapElement が位置と大きさを入れる）。少し落として印を読みやすくする。 */
+.minimap__backdrop {
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-background-image-tint-color: rgb(200, 192, 176);
+}
+
+/* 地上の地図のショートカットの印の上の、層の番号。 */
+.minimap__marker-label {
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 11px;
+    color: rgb(20, 17, 15);
+    padding: 0;
+    margin: 0;
 }
 
 /* ---- マップキーで開く大きな地図 ---- */
@@ -403,6 +421,8 @@
 /* 小さい地図と同じ要素を、寄って大きく描く。枠を縮めたぶん縮尺も合わせ、見える範囲を変えない。 */
 .map-large__canvas {
     --map-pixels-per-cell: 42;
+    /* 地上では、地上全体を枠に収めて描く。 */
+    --map-fit-surface: 1;
 }
 
 .map-large__caption {

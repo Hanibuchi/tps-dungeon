@@ -337,7 +337,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>土台の上面の四角（x と z）。</summary>
-        private static Rect BaseFoot() => Rect.MinMaxRect(-BaseWidth * 0.5f, Front, BaseWidth * 0.5f, Front + BaseDepth);
+        internal static Rect BaseFoot() => Rect.MinMaxRect(-BaseWidth * 0.5f, Front, BaseWidth * 0.5f, Front + BaseDepth);
 
         /// <summary>index 階目（全 total 階のうち）の足元の四角。土台から一番上へ、上ほど急に広げる。</summary>
         private static Rect Foot(int index, int total) => FootAt((index + 1f) / total);

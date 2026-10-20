@@ -10,6 +10,7 @@ namespace TpsDungeon.Party.Editor
     /// - 見えない壁（[Bounds]）をその四角のまわりに立て直す。
     /// - 四角の中の森の木と岩に当たりを付ける（森は歩ける範囲の外の飾りとして当たり無しで置いてあるので、すり抜けないように）。
     /// - NavMesh はその四角の中の当たりから焼く（森の地面・木も入る。仲間がショートカットまで付いてこられるように）。
+    /// - 地上の地図の絵をその四角で撮り直す（<see cref="SurfaceMapCapture"/>）。
     /// NavMesh を焼く前に毎回呼ぶ（<see cref="SurfaceScenery.BakeNavMesh"/>）。景色・塔・ショートカットのどれを置き直しても揃う。
     /// </summary>
     public static class SurfaceWalkArea
@@ -39,7 +40,9 @@ namespace TpsDungeon.Party.Editor
                 surface.size = new Vector3(area.width, NavMeshTop - NavMeshBottom, area.height);
                 EditorUtility.SetDirty(surface);
             }
-            Debug.Log($"地上の歩ける範囲: x {area.xMin:0}〜{area.xMax:0}、z {area.yMin:0}〜{area.yMax:0}（森の木と岩 {solid} 個に当たりを付けた）");
+            // 地図の絵も、この範囲で撮り直す。
+            SurfaceMapCapture.Capture(surfaceRoot, area);
+            Debug.Log($"地上の歩ける範囲: x {area.xMin:0}〜{area.xMax:0}、z {area.yMin:0}〜{area.yMax:0}（森の木と岩 {solid} 個に当たりを付けた。地図を撮り直した）");
             return area;
         }
 
