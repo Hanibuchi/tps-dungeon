@@ -6,7 +6,7 @@ namespace TpsDungeon.Map.Runtime
 {
     /// <summary>
     /// シーンに入ったパーティーの先頭が立つ所。向きはこの Transform の前方。
-    /// 地上はシーンに置き、階は FloorBuilder が入口の部屋（上の階から降りてきたときは出口の部屋）に生成のたびに置く。
+    /// 地上はシーンに置き、階は FloorBuilder が入口の部屋（上の階から降りてきたときは出口の部屋）に生成のたびに置く。ボス階はショートカットの部屋にも置く。
     /// 名前（pointId）を付けておくと、移るときにその名前を頼まれたらそこに立つ（地上の城の門の前など）。名前の無い地点が既定。
     /// </summary>
     [DisallowMultipleComponent]
@@ -15,6 +15,9 @@ namespace TpsDungeon.Map.Runtime
     {
         /// <summary>地上の城の門の前。ダンジョンから地上へ降りてきたときに立つ。</summary>
         public const string CastleGate = "CastleGate";
+
+        /// <summary>ボス階のショートカットの部屋。地上のロープを登ってきたときに立つ。</summary>
+        public const string Shortcut = "Shortcut";
 
         private static readonly List<PlayerSpawnPoint> Active = new List<PlayerSpawnPoint>();
 

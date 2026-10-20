@@ -223,14 +223,7 @@ namespace TpsDungeon.Map.Tests
         [Test]
         public void ボス階は松明と柱だけで_闘技場の真ん中を空ける()
         {
-            var templates = new BossFloorTemplates
-            {
-                Entrance = new RoomTemplateData("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f,
-                    RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.South)),
-                Hall = FloorGenerationFixture.Template("Room_BossHall", 3, 1, RoomTag.Boss, false, 0f),
-                Arena = FloorGenerationFixture.Template("Room_BossArena", 5, 5, RoomTag.Boss, false, 0f),
-            };
-            var layout = BossFloorLayout.Generate(templates, 16, 16, 3);
+            var layout = BossFloorLayout.Generate(FloorGenerationFixture.BossTemplates(), 16, 16, 3);
             var occupancy = new FloorOccupancy(layout);
             var settings = Settings(crates: 2f, chest: 1f, boss: true);
             int pillars = 0;
@@ -248,6 +241,33 @@ namespace TpsDungeon.Map.Tests
                 }
             }
             Assert.AreEqual(4, pillars, "闘技場の真ん中の四隅に 1 本ずつ");
+        }
+
+        [Test]
+        public void ボス階の道のりの部屋は木箱と宝箱を置かず_ショートカットの部屋は井戸の所を空ける()
+        {
+            var parameters = new BossFloorParams { Width = 40, Height = 40, Templates = FloorGenerationFixture.BossTemplates(), LayoutSeed = 5, PathRooms = 4, SideRooms = 2 };
+            var layout = BossFloorLayout.Generate(parameters, 3);
+            var occupancy = new FloorOccupancy(layout);
+            var settings = Settings(crates: 3f, chest: 1f, boss: true);
+            int pathProps = 0;
+            foreach (var room in layout.Rooms)
+            {
+                bool bossRoom = (room.Template.Tags & RoomTag.Boss) != 0;
+                foreach (var p in Plan(layout, occupancy, room, settings))
+                {
+                    Assert.AreNotEqual(RoomPropKind.Crate, p.Kind, $"{room} に木箱");
+                    Assert.AreNotEqual(RoomPropKind.Chest, p.Kind, $"{room} に宝箱");
+                    if (bossRoom) Assert.That(p.Kind, Is.EqualTo(RoomPropKind.Torch).Or.EqualTo(RoomPropKind.Pillar), $"{room} の {p}");
+                    else if (room.Role == RoomRole.Normal && p.Kind != RoomPropKind.Torch) pathProps++;
+
+                    if (room.Template.Id != "Room_BossShortcut" || !OnFloor(p.Kind)) continue;
+                    var c = room.Bounds.Center;
+                    Assert.IsTrue(Math.Abs(p.X - (c.X + 0.5f) * Cell) > Cell * 0.5f || Math.Abs(p.Z - (c.Y + 0.5f) * Cell) > Cell * 0.5f,
+                        $"{p} がショートカットの部屋の真ん中（井戸の所）にある");
+                }
+            }
+            Assert.Greater(pathProps, 0, "道のりの部屋には机や小物を置く");
         }
     }
 }

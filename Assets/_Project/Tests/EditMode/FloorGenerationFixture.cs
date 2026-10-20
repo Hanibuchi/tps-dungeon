@@ -35,6 +35,24 @@ namespace TpsDungeon.Map.Tests
             },
         };
 
+        /// <summary>ボス階の部屋（入口・3x1・ボス部屋・ショートカットの部屋）と、道のりに使う第 1 層の普通の部屋。</summary>
+        public static BossFloorTemplates BossTemplates() => new BossFloorTemplates
+        {
+            Entrance = new RoomTemplateData("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f,
+                RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.South)),
+            Hall = Template("Room_BossHall", 3, 1, RoomTag.Boss, false, 0f),
+            Arena = Template("Room_BossArena", 5, 5, RoomTag.Boss, false, 0f),
+            Shortcut = new RoomTemplateData("Room_BossShortcut", 1, 1, RoomTag.Boss, false, 0f,
+                RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.West)),
+            PathRooms = new List<RoomTemplateData>
+            {
+                Template("Room_1x1", 1, 1, RoomTag.Normal, true, 1f, 2),
+                Template("Room_1x2", 1, 2, RoomTag.Normal, true, 1f, 3),
+                Template("Room_2x2", 2, 2, RoomTag.Normal, true, 0.5f, 3),
+                Template("Room_2x3", 2, 3, RoomTag.Normal, true, 0.25f, 4),
+            },
+        };
+
         /// <summary>まとまった数のシードを流して統計的な破綻を拾うためのシード列。</summary>
         public static IEnumerable<int> Seeds(int count)
         {

@@ -13,6 +13,11 @@ namespace TpsDungeon.Map.Data
     ///   crates_per_cell … 普通の部屋のセル 1 つあたりの木箱の数の平均（0 以上。FloorConfig.cratesPerCell）。列が無いか空なら設定を変えない
     ///   chest_chance    … 普通の部屋 1 つに宝箱を置く確率（0〜1。FloorConfig.chestChance）。列が無いか空なら設定を変えない
     ///   wall_height     … 部屋の壁の高さ（メートル、2 以上。FloorConfig.wallHeight。天井はこの高さ）。列が無いか空なら設定を変えない
+    ///   boss_layout_seed  … ボス階の道のりの形を決めるシード（0 以外の整数。FloorConfig.bossLayoutSeed）。同じ値ならいつも同じ形
+    ///   boss_path_rooms   … ボス階の入口から大扉の手前の部屋までに通る部屋の数（0 以上。FloorConfig.bossPathRooms）
+    ///   boss_side_rooms   … ボス階の道のりから生やす行き止まりの部屋の数（0 以上。FloorConfig.bossSideRooms）
+    ///   boss_path_enemies … ボス階の道のりの部屋に敵を出すか（0 か 1。FloorConfig.bossPathEnemies）
+    ///   ボス階の 4 列も、列が無いか空なら設定を変えない
     /// 例: <c>1,27,20,0.5,0.2,5</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
@@ -24,6 +29,13 @@ namespace TpsDungeon.Map.Data
         public const string CratesPerCellColumn = "crates_per_cell";
         public const string ChestChanceColumn = "chest_chance";
         public const string WallHeightColumn = "wall_height";
+        public const string BossLayoutSeedColumn = "boss_layout_seed";
+        public const string BossPathRoomsColumn = "boss_path_rooms";
+        public const string BossSideRoomsColumn = "boss_side_rooms";
+        public const string BossPathEnemiesColumn = "boss_path_enemies";
+
+        /// <summary>整数の列を書いていないときの値。</summary>
+        public const int Unset = int.MinValue;
 
         /// <summary>壁の高さの下限（FloorConfig.wallHeight の Min と同じ）。</summary>
         public const float MinWallHeight = 2f;
@@ -43,10 +55,19 @@ namespace TpsDungeon.Map.Data
             public readonly float ChestChance;
             /// <summary>部屋の壁の高さ（メートル）。書いていなければ NaN。</summary>
             public readonly float WallHeight;
+            /// <summary>ボス階の道のりのシード・部屋数・脇道の部屋数・敵を出すか（0/1）。書いていなければ <see cref="Unset"/>。</summary>
+            public readonly int BossLayoutSeed;
+            public readonly int BossPathRooms;
+            public readonly int BossSideRooms;
+            public readonly int BossPathEnemies;
 
             public Row(int line, int layer, float area, float elevation = float.NaN, float cratesPerCell = float.NaN, float chestChance = float.NaN,
-                float wallHeight = float.NaN)
+                float wallHeight = float.NaN, int bossLayoutSeed = Unset, int bossPathRooms = Unset, int bossSideRooms = Unset, int bossPathEnemies = Unset)
             {
+                BossLayoutSeed = bossLayoutSeed;
+                BossPathRooms = bossPathRooms;
+                BossSideRooms = bossSideRooms;
+                BossPathEnemies = bossPathEnemies;
                 Line = line;
                 Layer = layer;
                 Area = area;
@@ -60,6 +81,10 @@ namespace TpsDungeon.Map.Data
             public bool HasCratesPerCell => !float.IsNaN(CratesPerCell);
             public bool HasChestChance => !float.IsNaN(ChestChance);
             public bool HasWallHeight => !float.IsNaN(WallHeight);
+            public bool HasBossLayoutSeed => BossLayoutSeed != Unset;
+            public bool HasBossPathRooms => BossPathRooms != Unset;
+            public bool HasBossSideRooms => BossSideRooms != Unset;
+            public bool HasBossPathEnemies => BossPathEnemies != Unset;
         }
 
         public static List<Row> Parse(string text, List<string> errors)
@@ -115,6 +140,15 @@ namespace TpsDungeon.Map.Data
                 if (!TryOptional(CratesPerCellColumn, 0f, float.PositiveInfinity, out float cratesPerCell)) continue;
                 if (!TryOptional(ChestChanceColumn, 0f, 1f, out float chestChance)) continue;
                 if (!TryOptional(WallHeightColumn, MinWallHeight, float.PositiveInfinity, out float wallHeight)) continue;
+                if (!TryOptionalInt(BossLayoutSeedColumn, int.MinValue + 1, int.MaxValue, out int bossLayoutSeed)) continue;
+                if (bossLayoutSeed == 0)
+                {
+                    errors?.Add($"{line} 行目: 層 {layer} の {BossLayoutSeedColumn} は 0 以外の整数");
+                    continue;
+                }
+                if (!TryOptionalInt(BossPathRoomsColumn, 0, 64, out int bossPathRooms)) continue;
+                if (!TryOptionalInt(BossSideRoomsColumn, 0, 64, out int bossSideRooms)) continue;
+                if (!TryOptionalInt(BossPathEnemiesColumn, 0, 1, out int bossPathEnemies)) continue;
 
                 if (!seen.Add(layer))
                 {
@@ -122,7 +156,23 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, area, elevation, cratesPerCell, chestChance, wallHeight));
+                rows.Add(new Row(line, layer, area, elevation, cratesPerCell, chestChance, wallHeight,
+                    bossLayoutSeed, bossPathRooms, bossSideRooms, bossPathEnemies));
+
+                // 空なら Unset（設定を変えない）。書いてあれば min〜max の整数。
+                bool TryOptionalInt(string column, int min, int max, out int value)
+                {
+                    value = Unset;
+                    string cell = Cell(column);
+                    if (cell.Length == 0) return true;
+                    if (int.TryParse(cell, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value) && value >= min && value <= max) return true;
+
+                    errors?.Add(max == int.MaxValue
+                        ? $"{line} 行目: 層 {layer} の {column} は整数「{cell}」"
+                        : $"{line} 行目: 層 {layer} の {column} は {min}〜{max} の整数「{cell}」");
+                    value = Unset;
+                    return false;
+                }
 
                 // 空なら NaN（設定を変えない）。書いてあれば min〜max の数。
                 bool TryOptional(string column, float min, float max, out float value)

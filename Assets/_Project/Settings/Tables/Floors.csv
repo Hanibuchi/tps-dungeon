@@ -1,6 +1,6 @@
-layer,area,elevation,crates_per_cell,chest_chance,wall_height
-1,20,20,0.4,0.15,5
-2,30,50,0.45,0.18,5.5
-3,50,80,0.5,0.2,6
-4,70,120,0.5,0.22,6.5
-5,100,150,0.55,0.25,7
+layer,area,elevation,crates_per_cell,chest_chance,wall_height,boss_layout_seed,boss_path_rooms,boss_side_rooms,boss_path_enemies
+1,20,20,0.4,0.15,5,1,0,0,0
+2,30,50,0.45,0.18,5.5,282,2,1,0
+3,50,80,0.5,0.2,6,280,4,1,1
+4,70,120,0.5,0.22,6.5,167,3,3,0
+5,100,150,0.55,0.25,7,181,6,2,1

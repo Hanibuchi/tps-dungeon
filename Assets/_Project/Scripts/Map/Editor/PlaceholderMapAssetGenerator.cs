@@ -226,6 +226,7 @@ namespace TpsDungeon.Map.Editor
                 ["Foundation"] = BuildFoundationPrefab($"{folder}/Foundation.prefab", theme.foundation, cellSize, elevation),
                 ["StairUp"] = BuildStairUpPrefab($"{folder}/Stair_Up.prefab", theme, cellSize, wallHeight),
                 ["StairDown"] = BuildStairDownPrefab($"{folder}/Stair_Down.prefab", theme, cellSize),
+                ["ShortcutWell"] = ShortcutArt.BuildWellPrefab($"{folder}/Shortcut_Well.prefab", theme, cellSize, theme.stair),
             };
         }
 
@@ -313,37 +314,32 @@ namespace TpsDungeon.Map.Editor
             config.foundationPrefab = parts["Foundation"];
             config.stairUpPrefab = parts["StairUp"];
             config.stairDownPrefab = parts["StairDown"];
+            if (config.layoutShape == FloorLayoutShape.Boss) config.shortcutMarkerPrefab = parts["ShortcutWell"];
             EditorUtility.SetDirty(config);
         }
 
         /// <summary>ボス階を作る層の数。Floor_L{n}_Config（n = 1..この数）を元にする。</summary>
         private const int BossFloorLayers = 5;
         private const int BossFloorGridSize = 16;
-        private const string ShortcutMarkerPath = PartsFolder + "/Shortcut_Marker.prefab";
 
-        /// <summary>ボス階の 2 部屋。入口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
+        /// <summary>ボス階の 3 部屋。入口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
         private static readonly RoomSpec[] BossRooms =
         {
             new RoomSpec(FloorConfig.BossHallId, BossFloorLayout.HallWidth, 1, RoomTag.Boss, false, 0f, "Floor"),
             new RoomSpec(FloorConfig.BossArenaId, BossFloorLayout.ArenaSize, BossFloorLayout.ArenaSize, RoomTag.Boss, false, 0f, "Floor"),
+            // ショートカットの部屋。3x1 の部屋の東端に付くので、ドア候補は西の辺だけ。
+            new RoomSpec(FloorConfig.BossShortcutId, 1, 1, RoomTag.Boss, false, 0f, "Floor", Direction.West),
         };
 
         /// <summary>
-        /// 各層のボス階の一式を作る：部屋（Room_BossHall 3x1・Room_BossArena 5x5、床はその層の Room_1x1 と同じ素材）、
-        /// カタログ（L{n}_BossCatalog）、設定（Floor_L{n}_Boss_Config。間取りは Boss、他の値はその層の Floor_L{n}_Config から写す）、
-        /// ショートカットの目印。最後に「壁・床・天井のパーツを生成」を回して大扉などを差す。
-        /// 既にある部屋・カタログ・設定は作り直さない（手で変えた値を残す）。
+        /// 各層のボス階の一式を作る：部屋（Room_BossHall 3x1・Room_BossArena 5x5・Room_BossShortcut 1x1、床はその層の Room_1x1 と同じ素材）、
+        /// カタログ（L{n}_BossCatalog）、設定（Floor_L{n}_Boss_Config。間取りは Boss、他の値はその層の Floor_L{n}_Config から写す）。
+        /// 道のりの部屋は、その層のランダムな階のカタログ（bossPathCatalog）から引く。最後に「壁・床・天井のパーツを生成」を回して大扉・井戸などを差す。
+        /// 既にある部屋・設定は作り直さない（手で変えた値を残す）。既にあるカタログには、足りない部屋だけを足す。
         /// </summary>
         [MenuItem("Tools/TPS Dungeon/ボス階の一式を作る")]
         public static void GenerateBossFloors()
         {
-            var shortcutMarker = AssetDatabase.LoadAssetAtPath<GameObject>(ShortcutMarkerPath);
-            if (shortcutMarker == null)
-            {
-                EnsureFolder(PartsFolder);
-                shortcutMarker = BuildMarkerPrefab(ShortcutMarkerPath, Material("Placeholder_Shortcut", new Color(0.2f, 0.75f, 0.7f)), PrimitiveType.Cylinder);
-            }
-
             int made = 0;
             for (int n = 1; n <= BossFloorLayers; n++)
             {
@@ -373,6 +369,23 @@ namespace TpsDungeon.Map.Editor
                     catalog.SetEntries(entries);
                     AssetDatabase.CreateAsset(catalog, catalogPath);
                 }
+                else
+                {
+                    // 後から足したボス階の部屋（ショートカットの部屋など）を、手で変えた並びや重みを残したまま足す。
+                    var current = new List<RoomTemplateCatalog.Entry>(catalog.Entries);
+                    bool added = false;
+                    foreach (var entry in entries)
+                    {
+                        if (catalog.PrefabFor(entry.prefab.name) != null) continue;
+                        current.Add(entry);
+                        added = true;
+                    }
+                    if (added)
+                    {
+                        catalog.SetEntries(current);
+                        EditorUtility.SetDirty(catalog);
+                    }
+                }
 
                 string configPath = $"{SettingsFolder}/Floor_L{n}_Boss_Config.asset";
                 var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(configPath);
@@ -385,16 +398,42 @@ namespace TpsDungeon.Map.Editor
                     config.heightInCells = BossFloorGridSize;
                     config.includeShop = false;
                     config.roomCatalog = catalog;
-                    config.shortcutMarkerPrefab = shortcutMarker;
+                    config.bossPathCatalog = baseConfig.roomCatalog;
                     config.name = System.IO.Path.GetFileNameWithoutExtension(configPath);
                     AssetDatabase.CreateAsset(config, configPath);
                     made++;
                 }
+                else if (config.bossPathCatalog == null)
+                {
+                    config.bossPathCatalog = baseConfig.roomCatalog;
+                    EditorUtility.SetDirty(config);
+                }
             }
 
             AssetDatabase.SaveAssets();
-            GenerateStructureParts();
+            // 新しく作った設定には大扉などのパーツを差す。既にある設定には井戸だけ作り直して差す（ほかのパーツは作り直さない）。
+            if (made > 0) GenerateStructureParts();
+            else BuildShortcutWells();
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
+        }
+
+        /// <summary>ボス階の設定ごとに、そのテーマの素材でショートカットの井戸（Shortcut_Well）を作り直して差す。同じテーマは 1 つを共有する。</summary>
+        public static void BuildShortcutWells()
+        {
+            var built = new Dictionary<FloorTheme, GameObject>();
+            foreach (string guid in AssetDatabase.FindAssets("t:FloorConfig"))
+            {
+                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(AssetDatabase.GUIDToAssetPath(guid));
+                if (config == null || config.layoutShape != FloorLayoutShape.Boss || config.theme == null || string.IsNullOrEmpty(config.theme.partsFolder)) continue;
+                if (!built.TryGetValue(config.theme, out var well))
+                {
+                    well = ShortcutArt.BuildWellPrefab($"{config.theme.partsFolder}/Shortcut_Well.prefab", config.theme, config.cellSize, config.theme.stair);
+                    built.Add(config.theme, well);
+                }
+                config.shortcutMarkerPrefab = well;
+                EditorUtility.SetDirty(config);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         public const string RoutePath = SettingsFolder + "/DungeonRoute.asset";

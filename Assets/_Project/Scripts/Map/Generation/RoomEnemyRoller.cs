@@ -90,8 +90,9 @@ namespace TpsDungeon.Map.Generation
         public static double BudgetSize(RoomBudgetBasis basis, GridRect bounds) =>
             basis == RoomBudgetBasis.MeanSide ? (bounds.Width + bounds.Height) * 0.5d : bounds.Area;
 
-        /// <summary>敵を出す部屋か。普通の部屋だけ（入口・出口・ショップには出さない）。</summary>
-        public static bool CanHostEnemies(RoomInstance room) => room != null && room.Role == RoomRole.Normal;
+        /// <summary>敵を出す部屋か。普通の部屋だけ（入口・出口・ショップ、ボス階の決まった部屋（Boss タグ）には出さない）。</summary>
+        public static bool CanHostEnemies(RoomInstance room) =>
+            room != null && room.Role == RoomRole.Normal && (room.Template == null || (room.Template.Tags & RoomTag.Boss) == 0);
 
         /// <summary>予算を [0, maxBudget] から引いて、その部屋に出すグループを決める。0 体なら空。</summary>
         public static List<EnemyGroup> Roll(EnemySpawnRules rules, double maxBudget, Random rng)

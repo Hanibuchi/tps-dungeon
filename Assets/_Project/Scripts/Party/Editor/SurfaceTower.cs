@@ -326,7 +326,7 @@ namespace TpsDungeon.Party.Editor
             try
             {
                 return boss
-                    ? BossFloorLayout.Generate(config.BuildBossTemplates(), config.widthInCells, config.heightInCells, seed)
+                    ? BossFloorLayout.Generate(config.BuildBossParams(), seed)
                     : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
             }
             catch (Exception e)

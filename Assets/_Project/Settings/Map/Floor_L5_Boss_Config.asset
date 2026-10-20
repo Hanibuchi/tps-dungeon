@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: Floor_L5_Boss_Config
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
   layoutShape: 1
+  bossLayoutSeed: 181
+  bossPathRooms: 6
+  bossSideRooms: 2
+  bossPathEnemies: 1
+  bossPathCatalog: {fileID: 11400000, guid: c16c6c4411c68493aba128ce636edb71, type: 2}
   widthInCells: 16
   heightInCells: 16
   cellSize: 5
@@ -35,7 +40,7 @@ MonoBehaviour:
   stairDownPrefab: {fileID: 8161876000144564198, guid: 8baf2ea84f328470a991a19b4f4cb816, type: 3}
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
   grandDoorPrefab: {fileID: 4950961846448572740, guid: ece14af2b29f8465f8538560b75f522e, type: 3}
-  shortcutMarkerPrefab: {fileID: 8426026503290470288, guid: 8176e97a16db34973b2b82d4e9071866, type: 3}
+  shortcutMarkerPrefab: {fileID: 5950995294658842496, guid: a649c28de876c47488d0df5e680132f1, type: 3}
   propSet: {fileID: 11400000, guid: 2d19a1a7fbdfb4c16ac6164b7106f649, type: 2}
   cratesPerCell: 0.5
   chestChance: 0.2

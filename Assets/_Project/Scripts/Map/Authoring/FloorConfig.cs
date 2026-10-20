@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Authoring
     {
         /// <summary>部屋を成長させて毎回違う形に作る（普通の階）。</summary>
         Random = 0,
-        /// <summary>決まった間取り（入口 → 横長の部屋 → 大扉 → ボス部屋 → 閉ざされた扉 → 出口）。BossFloorLayout を見る。</summary>
+        /// <summary>ボス階の間取り（入口 → 道のり → 横長の部屋 → 大扉 → ボス部屋 → 閉ざされた扉 → 出口。横長の部屋の東にショートカットの部屋）。BossFloorLayout を見る。</summary>
         Boss = 1,
     }
 
@@ -24,10 +24,23 @@ namespace TpsDungeon.Map.Authoring
         public const string BossEntranceId = "Room_Stair";
         public const string BossHallId = "Room_BossHall";
         public const string BossArenaId = "Room_BossArena";
+        public const string BossShortcutId = "Room_BossShortcut";
 
         [Header("間取り")]
-        [Tooltip("Random は毎回違う形、Boss は決まった間取り（カタログに Room_Stair・Room_BossHall・Room_BossArena を入れる。部屋数・接続の値は使わない）。")]
+        [Tooltip("Random は毎回違う形、Boss はボス階の間取り（カタログに Room_Stair・Room_BossHall・Room_BossArena・Room_BossShortcut と、道のりに使う普通の部屋を入れる。部屋数・接続の値は使わない）。")]
         public FloorLayoutShape layoutShape = FloorLayoutShape.Random;
+
+        [Header("ボス階の道のり")]
+        [Tooltip("ボス階の道のりの形を決めるシード（0 以外）。同じ値ならいつも同じ形になる。Settings/Tables/Floors.csv の boss_layout_seed 列で層ごとに設定する。")]
+        public int bossLayoutSeed = 1;
+        [Min(0), Tooltip("ボス階の入口から大扉の手前の部屋までに通る部屋の数。0 なら入口がすぐ大扉の手前の部屋の南。Floors.csv の boss_path_rooms 列。")]
+        public int bossPathRooms;
+        [Min(0), Tooltip("ボス階の道のりから生やす行き止まりの部屋の数。Floors.csv の boss_side_rooms 列。")]
+        public int bossSideRooms;
+        [Tooltip("ボス階の道のりの部屋に、その層の敵の表で敵を出すか（大扉の手前の部屋・ボス部屋・ショートカットの部屋には出さない）。Floors.csv の boss_path_enemies 列。")]
+        public bool bossPathEnemies;
+        [Tooltip("ボス階の道のりに使う部屋のカタログ（その層のランダムな階のカタログ）。普通の部屋（Normal タグ）を重みで選ぶ。")]
+        public RoomTemplateCatalog bossPathCatalog;
 
         [Header("グリッド")]
         [Min(16), Tooltip("フロア全体の横幅（セル数）。部屋はこの範囲からはみ出さない。余裕があるほど広がった形になる。")]
@@ -82,7 +95,7 @@ namespace TpsDungeon.Map.Authoring
         public GameObject shopMarkerPrefab;
         [Tooltip("大扉（両開き）。ボス部屋の入口など、レイアウトが大扉にした辺に普通のドアの代わりに置く。向きと大きさは壁と同じ。未設定なら普通のドア。")]
         public GameObject grandDoorPrefab;
-        [Tooltip("ショートカット解放用の場所の目印。レイアウトが決めたセルの中央に置く。")]
+        [Tooltip("ショートカットの井戸。ボス階のショートカットの部屋の中央に置く（子に ShortcutPoint を持つ）。")]
         public GameObject shortcutMarkerPrefab;
 
         [Header("置き物")]
@@ -124,7 +137,10 @@ namespace TpsDungeon.Map.Authoring
             return parameters;
         }
 
-        /// <summary>ボス階の 3 つの部屋のテンプレートをカタログから ID で引く。無いものは null のまま（BossFloorLayout が知らせる）。</summary>
+        /// <summary>
+        /// ボス階の部屋のテンプレートをカタログから ID で引く。無いものは null のまま（BossFloorLayout が知らせる）。
+        /// 道のりには、bossPathCatalog に入っている普通の部屋（Normal タグ）をカタログの順に使う。
+        /// </summary>
         public BossFloorTemplates BuildBossTemplates()
         {
             var templates = new BossFloorTemplates();
@@ -135,9 +151,35 @@ namespace TpsDungeon.Map.Authoring
                 if (data.Id == BossEntranceId) templates.Entrance = data;
                 else if (data.Id == BossHallId) templates.Hall = data;
                 else if (data.Id == BossArenaId) templates.Arena = data;
+                else if (data.Id == BossShortcutId) templates.Shortcut = data;
+            }
+            if (bossPathCatalog == null) return templates;
+
+            foreach (var data in bossPathCatalog.BuildTemplateData())
+            {
+                if ((data.Tags & Data.RoomTag.Normal) != 0) templates.PathRooms.Add(data);
             }
             return templates;
         }
+
+        /// <summary>テンプレート ID から部屋の Prefab を引く（ボス階の道のりの部屋は bossPathCatalog から）。</summary>
+        public GameObject RoomPrefabFor(string templateId)
+        {
+            var prefab = roomCatalog != null ? roomCatalog.PrefabFor(templateId) : null;
+            if (prefab == null && layoutShape == FloorLayoutShape.Boss && bossPathCatalog != null) prefab = bossPathCatalog.PrefabFor(templateId);
+            return prefab;
+        }
+
+        /// <summary>ボス階の生成条件（グリッド・部屋・道のりの形）。</summary>
+        public BossFloorParams BuildBossParams() => new BossFloorParams
+        {
+            Width = widthInCells,
+            Height = heightInCells,
+            Templates = BuildBossTemplates(),
+            LayoutSeed = bossLayoutSeed,
+            PathRooms = bossPathRooms,
+            SideRooms = bossSideRooms,
+        };
 
 #if UNITY_EDITOR
         /// <summary>古いアセットを開いたときや手入力で範囲が逆転したときに、生成器が例外を投げないよう均す。</summary>
@@ -145,6 +187,7 @@ namespace TpsDungeon.Map.Authoring
         {
             minRoomCount = Mathf.Max(includeShop ? 4 : 3, minRoomCount);
             maxRoomCount = Mathf.Max(minRoomCount, maxRoomCount);
+            if (bossLayoutSeed == 0) bossLayoutSeed = 1;
         }
 #endif
     }
