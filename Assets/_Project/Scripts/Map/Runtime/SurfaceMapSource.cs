@@ -6,7 +6,7 @@ namespace TpsDungeon.Map.Runtime
     /// <summary>
     /// 地上の地図の元。真上から撮った地上の絵（城を除く）と、その絵が写す範囲・城の土台の範囲（どちらもワールドの x と z、メートル）を持つ。
     /// 地上シーンの [Surface] に付け、生成器（地上の地図を撮る）が中身を入れる。HUD がこれを見つけて地図に描く。
-    /// 地図に重ねる印（城の門・解放したショートカット）は、描くたびにシーンから拾う（<see cref="Markers"/>）。
+    /// 地図に重ねる印（ダンジョンの入口・武器屋・銀行・解放したショートカット）は、描くたびにシーンから拾う（<see cref="Markers"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Surface Map Source")]
@@ -16,9 +16,11 @@ namespace TpsDungeon.Map.Runtime
         public enum MarkerKind
         {
             /// <summary>ダンジョンへ入る城の門。</summary>
-            Gate = 0,
+            DungeonEntrance = 0,
+            WeaponShop = 1,
+            Bank = 2,
             /// <summary>解放したショートカット（Layer にその層、0 始まり）。</summary>
-            Shortcut = 1,
+            Shortcut = 3,
         }
 
         public readonly struct Marker
@@ -27,12 +29,15 @@ namespace TpsDungeon.Map.Runtime
             /// <summary>ワールドの x と z。</summary>
             public readonly Vector2 Position;
             public readonly int Layer;
+            /// <summary>印の下に出す名前（建物・入口）。ショートカットは空。</summary>
+            public readonly string Label;
 
-            public Marker(MarkerKind kind, Vector2 position, int layer)
+            public Marker(MarkerKind kind, Vector2 position, int layer, string label = null)
             {
                 Kind = kind;
                 Position = position;
                 Layer = layer;
+                Label = label;
             }
         }
 
@@ -66,17 +71,20 @@ namespace TpsDungeon.Map.Runtime
         private void OnDisable() => Active.Remove(this);
 
         /// <summary>
-        /// 地図に重ねる印。行き先のある門（SceneGate）と、開いている（解放した）地上のショートカット（登る方）。
-        /// 解放していないショートカットは入れない。
+        /// 地図に重ねる印。地図の印を決めてある門（SceneGate.Icon。ダンジョンの入口・武器屋・銀行）と、
+        /// 開いている（解放した）地上のショートカット（登る方）。解放していないショートカットは入れない。
         /// </summary>
         public List<Marker> Markers()
         {
             var markers = new List<Marker>();
             foreach (var gate in GetComponentsInChildren<SceneGate>())
             {
-                if (string.IsNullOrEmpty(gate.SceneName)) continue;
+                if (gate.Icon == MapIcon.None) continue;
+                var kind = gate.Icon == MapIcon.DungeonEntrance ? MarkerKind.DungeonEntrance
+                    : gate.Icon == MapIcon.WeaponShop ? MarkerKind.WeaponShop
+                    : MarkerKind.Bank;
                 var p = gate.transform.position;
-                markers.Add(new Marker(MarkerKind.Gate, new Vector2(p.x, p.z), -1));
+                markers.Add(new Marker(kind, new Vector2(p.x, p.z), -1, gate.MapLabel));
             }
             foreach (var point in GetComponentsInChildren<ShortcutPoint>())
             {

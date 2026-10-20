@@ -16972,6 +16972,8 @@ MonoBehaviour:
   closedLabel: "\u6E96\u5099\u4E2D"
   title: "\u6B66\u5668\u5C4B"
   description: "\u6B66\u5668\u3092\u58F2\u308A\u8CB7\u3044\u3067\u304D\u308B\u3002\uFF08\u6E96\u5099\u4E2D\uFF09"
+  mapIcon: 2
+  mapLabel: 
 --- !u!65 &101260111
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -39373,6 +39375,8 @@ MonoBehaviour:
   closedLabel: "\u307E\u3060\u958B\u3044\u3066\u3044\u306A\u3044"
   title: "\u57CE\u306E\u5927\u9580"
   description: "\u7B2C 1 \u5C64\u300C\u7384\u95A2\u300D\u3078\u5165\u308B\u3002"
+  mapIcon: 1
+  mapLabel: "\u30C0\u30F3\u30B8\u30E7\u30F3"
 --- !u!64 &328962587
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -181597,6 +181601,8 @@ MonoBehaviour:
   closedLabel: "\u6E96\u5099\u4E2D"
   title: "\u9280\u884C"
   description: "\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B\u3002\uFF08\u6E96\u5099\u4E2D\uFF09"
+  mapIcon: 3
+  mapLabel: 
 --- !u!65 &1595337284
 BoxCollider:
   m_ObjectHideFlags: 0

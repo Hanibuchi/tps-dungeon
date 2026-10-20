@@ -189,7 +189,8 @@ namespace TpsDungeon.Party.Editor
             return spawn.transform;
         }
 
-        internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body)
+        internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body,
+            MapIcon icon = MapIcon.None, string mapLabel = null)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -199,6 +200,8 @@ namespace TpsDungeon.Party.Editor
             serialized.FindProperty("closedLabel").stringValue = closedLabel;
             serialized.FindProperty("title").stringValue = title;
             serialized.FindProperty("description").stringValue = body;
+            serialized.FindProperty("mapIcon").enumValueIndex = (int)icon;
+            serialized.FindProperty("mapLabel").stringValue = mapLabel ?? string.Empty;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

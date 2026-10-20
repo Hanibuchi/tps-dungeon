@@ -340,9 +340,9 @@ namespace TpsDungeon.Party.Editor
         {
             // 向きは扉が向く方角で決める（90 で東、-90 で西）。
             GameObject shop = PlaceBuilding(p, "rpgpp_lt_building_02", parent, new Vector3(-25f, 0f, 6f), 90f);
-            AddDoorGate(shop, "武器屋", "武器を売り買いできる。（準備中）");
+            AddDoorGate(shop, "武器屋", "武器を売り買いできる。（準備中）", MapIcon.WeaponShop);
             GameObject bank = PlaceBuilding(p, "rpgpp_lt_building_04", parent, new Vector3(-25f, 0f, -13f), 90f);
-            AddDoorGate(bank, "銀行", "持ち物を預けられる。（準備中）");
+            AddDoorGate(bank, "銀行", "持ち物を預けられる。（準備中）", MapIcon.Bank);
 
             // 東の民家（入れない）。
             PlaceBuilding(p, "rpgpp_lt_building_01", parent, new Vector3(25f, 0f, -14f), -90f);
@@ -368,7 +368,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>建物の扉の前に照準用のトリガーを張り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。</summary>
-        private static void AddDoorGate(GameObject building, string title, string body)
+        private static void AddDoorGate(GameObject building, string title, string body, MapIcon icon)
         {
             var door = new GameObject("Door");
             door.transform.SetParent(building.transform, false);
@@ -385,6 +385,7 @@ namespace TpsDungeon.Party.Editor
             serialized.FindProperty("closedLabel").stringValue = "準備中";
             serialized.FindProperty("title").stringValue = title;
             serialized.FindProperty("description").stringValue = body;
+            serialized.FindProperty("mapIcon").enumValueIndex = (int)icon;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
