@@ -328,10 +328,10 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
-        public void IncludeShopFalse_LeavesNoShop()
+        public void ShopChanceZero_LeavesNoShop()
         {
             var parameters = FloorGenerationFixture.Params();
-            parameters.IncludeShop = false;
+            parameters.ShopChance = 0f;
 
             foreach (int seed in FloorGenerationFixture.Seeds(20))
             {
@@ -339,6 +339,82 @@ namespace TpsDungeon.Map.Tests
 
                 Assert.AreEqual(-1, layout.ShopRoom, $"seed {seed}: ショップを作らない設定なのに割り当てられている");
                 Assert.IsEmpty(layout.Rooms.Where(r => r.Role == RoomRole.Shop));
+            }
+        }
+
+        [Test]
+        public void ShopChanceHalf_PlacesAShopOnAboutHalfOfTheFloors()
+        {
+            var parameters = FloorGenerationFixture.Params();
+            parameters.ShopChance = 0.5f;
+
+            int shops = 0;
+            foreach (int seed in FloorGenerationFixture.Seeds(200))
+            {
+                if (FloorLayoutGenerator.Generate(parameters, seed).ShopRoom >= 0) shops++;
+            }
+            Assert.That(shops, Is.InRange(70, 130), "確率 0.5 なら半分くらいの階にショップ");
+        }
+
+        private static FloorGenerationParams WithShortcutRoom(float chance)
+        {
+            var parameters = FloorGenerationFixture.Params();
+            var templates = new List<RoomTemplateData>(parameters.Templates)
+            {
+                new RoomTemplateData("Room_Shortcut", 1, 1, RoomTag.Shortcut, true, 0.2f,
+                    RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.West)),
+            };
+            parameters.Templates = templates;
+            parameters.ShortcutChance = chance;
+            return parameters;
+        }
+
+        [Test]
+        public void ShortcutChanceOne_PlacesAShortcutRoomOfItsOwn()
+        {
+            var parameters = WithShortcutRoom(1f);
+            int placed = 0;
+            foreach (int seed in FloorGenerationFixture.Seeds(50))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+                var shortcuts = layout.Rooms.Where(r => r.Role == RoomRole.Shortcut).ToList();
+                Assert.LessOrEqual(shortcuts.Count, 1, $"seed {seed}: ショートカットの部屋は 1 つまで");
+                if (shortcuts.Count == 0) continue;
+                placed++;
+
+                var room = shortcuts[0];
+                Assert.AreEqual("Room_Shortcut", room.Template.Id, $"seed {seed}: 井戸は専用の部屋に置く");
+                Assert.AreEqual(1, room.UsedSockets().Count(), $"seed {seed}: 扉は 1 枚");
+                Assert.AreNotEqual(layout.EntranceRoom, room.Index);
+                Assert.AreNotEqual(layout.ExitRoom, room.Index);
+                Assert.AreNotEqual(layout.ShopRoom, room.Index);
+                Assert.AreEqual(room.FeatureCell, layout.ShortcutCell, $"seed {seed}: 井戸は部屋の真ん中");
+                Assert.IsFalse(RoomEnemyRoller.CanHostEnemies(room), "ショートカットの部屋に敵は出ない");
+            }
+            Assert.Greater(placed, 45, "確率 1 ならほとんどの階に出る（置き場が無かった階だけ出ない）");
+        }
+
+        [Test]
+        public void ShortcutChanceZero_LeavesNoShortcutRoom()
+        {
+            var parameters = WithShortcutRoom(0f);
+            foreach (int seed in FloorGenerationFixture.Seeds(30))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+                Assert.IsFalse(layout.ShortcutCell.HasValue, $"seed {seed}: ショートカットを置かない回に井戸の場所がある");
+                Assert.IsEmpty(layout.Rooms.Where(r => r.Template.Id == "Room_Shortcut"), $"seed {seed}: 置かない回に専用の部屋が紛れ込んだ");
+            }
+        }
+
+        [Test]
+        public void Chances_AreDeterministicForASeed()
+        {
+            var parameters = WithShortcutRoom(0.5f);
+            parameters.ShopChance = 0.5f;
+            foreach (int seed in FloorGenerationFixture.Seeds(20))
+            {
+                Assert.AreEqual(FloorLayoutGenerator.Generate(parameters, seed).ComputeSignature(),
+                    FloorLayoutGenerator.Generate(parameters, seed).ComputeSignature());
             }
         }
     }

@@ -103,7 +103,7 @@ namespace TpsDungeon.Map.Runtime
             if (builder == null) builder = GetComponent<FloorBuilder>();
 
             CurrentSeed = useSeed;
-            var layout = builder.Build(useConfig, useSeed);
+            var layout = builder.Build(useConfig, useSeed, ShortcutUnlocks.IsUnlocked(ShortcutLayer));
 
             builder.DoorsUnlocked -= ConnectStairs;
             builder.DoorsUnlocked += ConnectStairs;

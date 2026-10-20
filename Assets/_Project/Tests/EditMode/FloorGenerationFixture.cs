@@ -21,6 +21,8 @@ namespace TpsDungeon.Map.Tests
             MaxPackAttempts = 6,
             StartJitter = 4,
             ExtraDoorCount = 2,
+            // ショップは必ず置く（確率の確かめは個別のテストで変える）。
+            ShopChance = 1f,
             // Settings/Map/L1_RoomCatalog の登録内容と揃えてある。実際に出荷している構成を検証したいので、
             // ここを変えるときはプレースホルダ Prefab 側（PlaceholderMapAssetGenerator.Rooms）も合わせること。
             Templates = new List<RoomTemplateData>

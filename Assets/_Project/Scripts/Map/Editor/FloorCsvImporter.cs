@@ -14,7 +14,8 @@ namespace TpsDungeon.Map.Editor
     ///   階段・ショップの部屋は必ず出るので、カタログの大きさで別に数える。上限は下限の 2 倍。ボス階には触らない。
     /// - 高さ（elevation）は、その層のランダムな階とボス階の両方の FloorConfig.elevation に入れ、変わった層は土台のプレハブを作り直す。
     ///   窓の外の景色と地上の塔は高さで置き方が変わるので、変わったら「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すよう知らせる。
-    /// - 木箱の数（crates_per_cell）と宝箱の確率（chest_chance）は、その層のランダムな階の FloorConfig に入れる。
+    /// - 木箱の数（crates_per_cell）と宝箱の確率（chest_chance）、ショップ・ショートカットの部屋を置く確率（shop_chance・shortcut_chance）は、
+    ///   その層のランダムな階の FloorConfig に入れる。部屋数は、ショップ・ショートカットを確率の分だけ数えて見積もる。
     /// - 壁の高さ（wall_height）は、その層のランダムな階とボス階の両方の FloorConfig.wallHeight に入れ、変わった層のテーマの壁・窓・ドア・階段を作り直す。
     /// Floors.csv か Rooms.csv を保存すると自動で取り込む（部屋の大きさや重みを変えても平均面積が変わるので）。メニューからも呼べる。
     /// </summary>
@@ -92,17 +93,16 @@ namespace TpsDungeon.Map.Editor
                     continue;
                 }
 
+                // 部屋数の見積もりに確率を使うので、先に入れる。
+                bool chancesChanged = ApplyChances(config, row);
                 List<RoomTemplateData> templates = config.roomCatalog.BuildTemplateData();
-                int specialCount = 2;
-                float specialArea = 2f * MeanArea(templates, RoomTag.Stair);
-                if (config.includeShop)
-                {
-                    specialCount++;
-                    specialArea += MeanArea(templates, RoomTag.Shop);
-                }
+                // 入口・出口は必ず、ショップとショートカットは確率の分だけ出る（ショートカットは解放した層だけだが、解放してある前提で見積もる）。
+                double specialCount = 2d + config.shopChance + config.shortcutChance;
+                float specialArea = 2f * MeanArea(templates, RoomTag.Stair) + config.shopChance * MeanArea(templates, RoomTag.Shop)
+                                    + config.shortcutChance * MeanArea(templates, RoomTag.Shortcut);
 
-                // FloorGenerationParams.Validate と同じ下限（入口・出口・ショップを別々の部屋に置く分）。
-                int minimum = config.includeShop ? 4 : 3;
+                // FloorGenerationParams.Validate と同じ下限（入口・出口・ショップ・ショートカットを別々の部屋に置く分）。
+                int minimum = Generation.FloorGenerationParams.MinimumRoomCount(config.shopChance, config.shortcutChance);
                 (int min, int max) = FloorLayerCsv.RoomCountRange(row.Area, meanRoomArea, specialCount, specialArea, minimum);
                 if (min == minimum && specialCount + (row.Area - specialArea) / meanRoomArea < minimum * 1.5d)
                     warnings.Add($"{row.Line} 行目: 層 {layer} の面積 {row.Area} は狭すぎるので、部屋数を下限の {min}〜{max} にした");
@@ -112,10 +112,11 @@ namespace TpsDungeon.Map.Editor
                     warnings.Add($"{row.Line} 行目: 層 {layer} の面積 {row.Area} が {config.name} の枠 {config.widthInCells}x{config.heightInCells} の半分を超えている（伸びきれずに作り直しが増える）");
 
                 summary.Add($"層 {layer}: 面積 {row.Area}、部屋 1 つあたり {meanRoomArea:0.##} → 部屋数 {min}〜{max}" + (row.HasElevation ? $"、高さ {row.Elevation} m" : "")
-                            + (row.HasWallHeight ? $"、壁 {row.WallHeight} m" : ""));
+                            + (row.HasWallHeight ? $"、壁 {row.WallHeight} m" : "")
+                            + $"、ショップ {config.shopChance:0.##}・ショートカット {config.shortcutChance:0.##}");
+                bool propsChanged = ApplyProps(route.Layers[i], row) | chancesChanged;
                 if (ApplyElevation(route.Layers[i], row)) elevationChanged.Add(layer);
                 if (ApplyWallHeight(route.Layers[i], row, wallChanged)) wallChangedLayers.Add(layer);
-                bool propsChanged = ApplyProps(route.Layers[i], row);
 
                 if (config.minRoomCount == min && config.maxRoomCount == max)
                 {
@@ -194,6 +195,24 @@ namespace TpsDungeon.Map.Editor
             if (row.HasChestChance && !Mathf.Approximately(config.chestChance, row.ChestChance))
             {
                 config.chestChance = row.ChestChance;
+                changed = true;
+            }
+            if (changed) EditorUtility.SetDirty(config);
+            return changed;
+        }
+
+        /// <summary>row にショップ・ショートカットの部屋を置く確率があれば、ランダムな階の設定に入れる（ボス階には置かない）。変わったら真。</summary>
+        private static bool ApplyChances(FloorConfig config, FloorLayerCsv.Row row)
+        {
+            bool changed = false;
+            if (row.HasShopChance && !Mathf.Approximately(config.shopChance, row.ShopChance))
+            {
+                config.shopChance = row.ShopChance;
+                changed = true;
+            }
+            if (row.HasShortcutChance && !Mathf.Approximately(config.shortcutChance, row.ShortcutChance))
+            {
+                config.shortcutChance = row.ShortcutChance;
                 changed = true;
             }
             if (changed) EditorUtility.SetDirty(config);

@@ -23,7 +23,8 @@ MonoBehaviour:
   maxRoomCount: 20
   maxPackAttempts: 6
   startJitter: 4
-  includeShop: 0
+  shopChance: 0
+  shortcutChance: 0
   extraDoorCount: 2
   wallHeight: 6.5
   elevation: 120

@@ -167,5 +167,24 @@ namespace TpsDungeon.Map.Tests
             // 狭すぎても下限は割らない。
             Assert.AreEqual((4, 8), FloorLayerCsv.RoomCountRange(2f, 2d, 3, 3f, 4));
         }
+
+        [Test]
+        public void ショップとショートカットの確率は空なら変えず_0から1の外なら読まない()
+        {
+            const string text =
+                "layer,area,shop_chance,shortcut_chance\n" +
+                "1,20,0.5,0.25\n" +
+                "2,30,,\n" +
+                "3,40,1.5,0\n";
+            var errors = new List<string>();
+            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
+
+            Assert.AreEqual(2, rows.Count);
+            Assert.AreEqual(1, errors.Count);
+            Assert.AreEqual(0.5f, rows[0].ShopChance);
+            Assert.AreEqual(0.25f, rows[0].ShortcutChance);
+            Assert.IsFalse(rows[1].HasShopChance);
+            Assert.IsFalse(rows[1].HasShortcutChance);
+        }
     }
 }

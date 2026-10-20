@@ -451,6 +451,13 @@ namespace TpsDungeon.Hud
             var p = ToScreen(center, new Vector2(room.FeatureCell.X + 0.5f, room.FeatureCell.Y + 0.5f));
             float s = pixelsPerCell * 0.22f;
 
+            if (room.Role == RoomRole.Shortcut)
+            {
+                // ショートカットの井戸。地上の地図と同じ水色の丸に金の縁。
+                DrawBadge(painter, p, s * 1.1f, shortcutColor);
+                return;
+            }
+
             painter.fillColor = featureColor;
             painter.BeginPath();
             switch (room.Role)

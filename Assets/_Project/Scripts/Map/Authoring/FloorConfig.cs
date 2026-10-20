@@ -47,8 +47,10 @@ namespace TpsDungeon.Map.Authoring
         public int maxPackAttempts = 6;
         [Min(0), Tooltip("最初の部屋をフロア中心からずらす最大セル数。0 なら必ず中心から生える。")]
         public int startJitter = 4;
-        [Tooltip("この階にショップ部屋を 1 つ置くか。")]
-        public bool includeShop = true;
+        [Range(0f, 1f), Tooltip("この階にショップ部屋を 1 つ置く確率（階を作るたびに引く）。Settings/Tables/Floors.csv の shop_chance 列で層ごとに設定する。")]
+        public float shopChance = 0.5f;
+        [Range(0f, 1f), Tooltip("この層のショートカットを解放してあるとき、この階にショートカット（井戸）の部屋を置く確率。Floors.csv の shortcut_chance 列。")]
+        public float shortcutChance = 0.5f;
 
         [Header("接続")]
         [Min(0), Tooltip("行き止まりを減らすために追加で開けるドアの本数の上限。ドア候補がたまたま向かい合った所にしか開かないので、必ずこの本数になるわけではない。")]
@@ -104,7 +106,8 @@ namespace TpsDungeon.Map.Authoring
         [Tooltip("階の明るさ・色味（天井で日の光が遮られる室内を持ち上げるなど）。生成のたびに Global Volume として置く。未設定なら置かない。")]
         public VolumeProfile volumeProfile;
 
-        public FloorGenerationParams BuildParams()
+        /// <param name="shortcutUnlocked">この層のショートカットを解放してあるか。解放していなければショートカットの部屋は出さない。</param>
+        public FloorGenerationParams BuildParams(bool shortcutUnlocked = false)
         {
             var parameters = new FloorGenerationParams
             {
@@ -115,7 +118,8 @@ namespace TpsDungeon.Map.Authoring
                 MaxPackAttempts = maxPackAttempts,
                 StartJitter = startJitter,
                 ExtraDoorCount = extraDoorCount,
-                IncludeShop = includeShop,
+                ShopChance = shopChance,
+                ShortcutChance = shortcutUnlocked ? shortcutChance : 0f,
                 Templates = roomCatalog != null
                     ? roomCatalog.BuildTemplateData()
                     : new System.Collections.Generic.List<Data.RoomTemplateData>(),
@@ -145,7 +149,7 @@ namespace TpsDungeon.Map.Authoring
         /// <summary>古いアセットを開いたときや手入力で範囲が逆転したときに、生成器が例外を投げないよう均す。</summary>
         private void OnValidate()
         {
-            minRoomCount = Mathf.Max(includeShop ? 4 : 3, minRoomCount);
+            minRoomCount = Mathf.Max(FloorGenerationParams.MinimumRoomCount(shopChance, shortcutChance), minRoomCount);
             maxRoomCount = Mathf.Max(minRoomCount, maxRoomCount);
         }
 #endif

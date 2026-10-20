@@ -27,3 +27,5 @@ MonoBehaviour:
     weightOverride: 0
   - prefab: {fileID: 4155326717597408730, guid: fbddd29a9c4dd4fc19217e83bce3aa63, type: 3}
     weightOverride: 0
+  - prefab: {fileID: 2609127780382760534, guid: 95bd7504825bc49dda9f4499ab4b75ee, type: 3}
+    weightOverride: 0

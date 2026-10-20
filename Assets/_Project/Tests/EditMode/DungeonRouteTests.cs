@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using TpsDungeon.Map.Authoring;
@@ -294,6 +295,53 @@ namespace TpsDungeon.Map.Tests
             Assert.IsTrue(builder.ShortcutWell.IsOpen);
             Assert.AreEqual("ロープを伝って降りる", builder.ShortcutWell.PromptLabel);
             Assert.IsTrue(builder.HasLockedDoors, "出口の扉はボスを倒すまで閉ざされたまま");
+        }
+
+        [Test]
+        public void RandomFloor_HasAShortcutWellOnlyWhenItsLayerIsUnlocked()
+        {
+            ShortcutUnlocks.PathOverride = unlockPath;
+            if (System.IO.File.Exists(unlockPath)) System.IO.File.Delete(unlockPath);
+
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            var floor = new DungeonFloor(0, 1);
+            var config = route.ConfigOf(floor);
+            float oldChance = config.shortcutChance;
+            config.shortcutChance = 1f;
+            try
+            {
+                var host = new GameObject("DungeonRouteTests");
+                created.Add(host);
+                var bootstrap = MakeBootstrap(host, route);
+                bootstrap.ArriveAt(floor);
+                var builder = host.GetComponent<FloorBuilder>();
+
+                for (int seed = 1; seed <= 5; seed++)
+                {
+                    bootstrap.Generate(seed);
+                    Assert.IsNull(builder.ShortcutMarker, $"シード {seed}: 解放していない層のランダムな階に井戸がある");
+                }
+
+                ShortcutUnlocks.SetUnlocked(0, true);
+                int wells = 0;
+                for (int seed = 1; seed <= 5; seed++)
+                {
+                    bootstrap.Generate(seed);
+                    if (builder.ShortcutMarker == null) continue;
+                    wells++;
+                    Assert.IsNotNull(builder.ShortcutWell);
+                    Assert.AreEqual(0, builder.ShortcutWell.Layer);
+                    Assert.IsTrue(builder.ShortcutWell.IsOpen, "解放した層の井戸は開いている");
+                    Assert.IsNull(builder.ShortcutDoor, "ランダムな階のショートカットの部屋の扉は閉ざさない");
+                    var room = builder.CurrentLayout.RoomAt(builder.CurrentLayout.Rooms.First(r => r.Role == RoomRole.Shortcut).Index);
+                    Assert.AreEqual(room.FeatureCell, builder.WorldToCell(builder.ShortcutMarker.transform.position));
+                }
+                Assert.Greater(wells, 3, "確率 1 なら（置き場が無かった回を除いて）井戸が出る");
+            }
+            finally
+            {
+                config.shortcutChance = oldChance;
+            }
         }
 
         [Test]

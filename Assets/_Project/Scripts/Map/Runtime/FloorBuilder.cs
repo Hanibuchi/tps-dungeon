@@ -109,7 +109,10 @@ namespace TpsDungeon.Map.Runtime
         // FeatureCell に置いた物のうち、床・天井・土台の組み方を頼んできたもの（FloorFeature）。
         private readonly Dictionary<GridPos, FloorFeature> featureAt = new Dictionary<GridPos, FloorFeature>();
 
-        public FloorLayout Build(FloorConfig config, int seed)
+        public FloorLayout Build(FloorConfig config, int seed) => Build(config, seed, false);
+
+        /// <param name="shortcutUnlocked">この層のショートカットを解放してあるか。解放してあれば、ランダムな階にも確率でショートカットの部屋（井戸）を置く。</param>
+        public FloorLayout Build(FloorConfig config, int seed, bool shortcutUnlocked)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
 
@@ -119,7 +122,7 @@ namespace TpsDungeon.Map.Runtime
             wallHeight = config.wallHeight;
             var layout = config.layoutShape == FloorLayoutShape.Boss
                 ? config.GenerateBossLayout(seed)
-                : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
+                : FloorLayoutGenerator.Generate(config.BuildParams(shortcutUnlocked), seed);
             var occupancy = new FloorOccupancy(layout);
 
             var root = new GameObject(GeneratedRootName).transform;

@@ -144,6 +144,7 @@ namespace TpsDungeon.Map.Generation
                 quota.Add(RoomTag.Stair);
             }
             if (p.IncludeShop && HasPlaceableTemplateWithTag(RoomTag.Shop)) quota.Add(RoomTag.Shop);
+            if (p.IncludeShortcut && HasPlaceableTemplateWithTag(RoomTag.Shortcut)) quota.Add(RoomTag.Shortcut);
         }
 
         /// <summary>そのタグを持ち、かつ抽選対象になるテンプレートがあるか。</summary>

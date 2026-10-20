@@ -314,13 +314,37 @@ namespace TpsDungeon.Map.Editor
             config.foundationPrefab = parts["Foundation"];
             config.stairUpPrefab = parts["StairUp"];
             config.stairDownPrefab = parts["StairDown"];
-            if (config.layoutShape == FloorLayoutShape.Boss) config.shortcutMarkerPrefab = parts["ShortcutWell"];
+            config.shortcutMarkerPrefab = parts["ShortcutWell"];
             EditorUtility.SetDirty(config);
         }
 
         /// <summary>ボス階を作る層の数。Floor_L{n}_Config（n = 1..この数）を元にする。</summary>
         private const int BossFloorLayers = 5;
         private const int BossFloorGridSize = 16;
+
+        /// <summary>ランダムな階のショートカット（井戸）の部屋の Prefab 名（テンプレート ID）。</summary>
+        public const string FloorShortcutRoomId = "Room_Shortcut";
+
+        /// <summary>
+        /// ランダムな階のカタログに、井戸を置く専用の部屋（Room_Shortcut。1x1、ドア候補は西の辺だけ、回してよい、タグ Shortcut）が無ければ、
+        /// その層の階段の部屋と同じフォルダに作って足す。重みは小さめ（ふだんは出ず、置く回だけ枠で 1 つ出す）。
+        /// </summary>
+        private static void EnsureShortcutRoom(FloorConfig config)
+        {
+            var catalog = config.roomCatalog;
+            if (catalog == null || catalog.PrefabFor(FloorShortcutRoomId) != null) return;
+            var stair = catalog.PrefabFor(BossFloorLayout.StairId);
+            if (stair == null) return;
+
+            string folder = System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(stair)).Replace('\\', '/');
+            string path = $"{folder}/{FloorShortcutRoomId}.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path)
+                         ?? BuildRoomPrefab(new RoomSpec(FloorShortcutRoomId, 1, 1, RoomTag.Shortcut, true, 0.2f, "Floor", Direction.West),
+                             RoomFloorMaterial(catalog), folder, config.cellSize);
+            var entries = new List<RoomTemplateCatalog.Entry>(catalog.Entries) { new RoomTemplateCatalog.Entry { prefab = prefab } };
+            catalog.SetEntries(entries);
+            EditorUtility.SetDirty(catalog);
+        }
 
         /// <summary>ボス階の決まった 2 部屋。入口・出口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
         private static readonly RoomSpec[] BossRooms =
@@ -402,7 +426,8 @@ namespace TpsDungeon.Map.Editor
                     config.layoutShape = FloorLayoutShape.Boss;
                     config.widthInCells = BossFloorGridSize;
                     config.heightInCells = BossFloorGridSize;
-                    config.includeShop = false;
+                    config.shopChance = 0f;
+                    config.shortcutChance = 0f;
                     config.roomCatalog = catalog;
                     config.name = System.IO.Path.GetFileNameWithoutExtension(configPath);
                     AssetDatabase.CreateAsset(config, configPath);
@@ -418,14 +443,19 @@ namespace TpsDungeon.Map.Editor
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
         }
 
-        /// <summary>ボス階の設定ごとに、そのテーマの素材でショートカットの井戸（Shortcut_Well）を作り直して差す。同じテーマは 1 つを共有する。</summary>
+        /// <summary>
+        /// 階の設定ごとに、そのテーマの素材でショートカットの井戸（Shortcut_Well）を作り直して差す。同じテーマは 1 つを共有する。
+        /// ランダムな階のカタログには、井戸を置く専用の部屋（Room_Shortcut）が無ければ作って足す。
+        /// </summary>
+        [MenuItem("Tools/TPS Dungeon/ショートカットの井戸と部屋を作る")]
         public static void BuildShortcutWells()
         {
             var built = new Dictionary<FloorTheme, GameObject>();
             foreach (string guid in AssetDatabase.FindAssets("t:FloorConfig"))
             {
                 var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(AssetDatabase.GUIDToAssetPath(guid));
-                if (config == null || config.layoutShape != FloorLayoutShape.Boss || config.theme == null || string.IsNullOrEmpty(config.theme.partsFolder)) continue;
+                if (config != null && config.layoutShape == FloorLayoutShape.Random) EnsureShortcutRoom(config);
+                if (config == null || config.theme == null || string.IsNullOrEmpty(config.theme.partsFolder)) continue;
                 if (!built.TryGetValue(config.theme, out var well))
                 {
                     well = ShortcutArt.BuildWellPrefab($"{config.theme.partsFolder}/Shortcut_Well.prefab", config.theme, config.cellSize, config.theme.stair);
@@ -1546,7 +1576,7 @@ namespace TpsDungeon.Map.Editor
             config.maxPackAttempts = 6;
             config.startJitter = 4;
             config.extraDoorCount = 2;
-            config.includeShop = true;
+            config.shopChance = 0.5f;
             config.roomCatalog = catalog;
             config.wallPrefab = parts["Wall"];
             config.doorPrefab = parts["Door"];
