@@ -38,6 +38,7 @@ namespace TpsDungeon.Map.Editor
 
             var errors = new List<string>();
             var summary = new List<string>();
+            var touched = new List<UnityEngine.Object>();
             foreach (var blueprint in BossFloorBlueprint.ParseFile(File.ReadAllText(BlueprintPath), errors))
             {
                 int index = blueprint.Layer - 1;
@@ -51,6 +52,8 @@ namespace TpsDungeon.Map.Editor
                 try
                 {
                     Apply(config, blueprint);
+                    touched.Add(config);
+                    touched.Add(config.roomCatalog);
                     var layout = config.GenerateBossLayout(1);
                     int enemyRooms = 0;
                     foreach (var room in layout.Rooms) if (RoomEnemyRoller.CanHostEnemies(room)) enemyRooms++;
@@ -63,7 +66,9 @@ namespace TpsDungeon.Map.Editor
                 }
             }
 
-            AssetDatabase.SaveAssets();
+            // 触った設定とカタログだけを保存する。SaveAssets だとほかの未保存のアセット（実行中に書き換わったフォントなど）まで保存され、
+            // UI の読み直しでエディタがエラーを出す。
+            foreach (var asset in touched) AssetDatabase.SaveAssetIfDirty(asset);
             foreach (string error in errors) Debug.LogError($"ボス階の設計図（{BlueprintPath}）: {error}");
             Debug.Log($"ボス階の設計図を取り込んだ\n{string.Join("\n", summary)}");
         }
