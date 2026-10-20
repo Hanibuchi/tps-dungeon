@@ -167,33 +167,5 @@ namespace TpsDungeon.Map.Tests
             // 狭すぎても下限は割らない。
             Assert.AreEqual((4, 8), FloorLayerCsv.RoomCountRange(2f, 2d, 3, 3f, 4));
         }
-
-        [Test]
-        public void ボス階の道のりの列は空なら変えず_範囲の外なら読まない()
-        {
-            const string text =
-                "layer,area,boss_layout_seed,boss_path_rooms,boss_side_rooms,boss_path_enemies\n" +
-                "1,20,1,0,0,0\n" +
-                "2,30,-282,2,1,1\n" +
-                "3,40,,,,\n" +
-                "4,50,0,1,1,0\n" +
-                "5,60,5,-1,0,0\n" +
-                "6,70,5,1,0,2\n";
-            var errors = new List<string>();
-            List<FloorLayerCsv.Row> rows = FloorLayerCsv.Parse(text, errors);
-
-            Assert.AreEqual(3, rows.Count);
-            Assert.AreEqual(3, errors.Count, string.Join("\n", errors));
-            Assert.AreEqual(1, rows[0].BossLayoutSeed);
-            Assert.AreEqual(0, rows[0].BossPathRooms);
-            Assert.AreEqual(-282, rows[1].BossLayoutSeed);
-            Assert.AreEqual(2, rows[1].BossPathRooms);
-            Assert.AreEqual(1, rows[1].BossSideRooms);
-            Assert.AreEqual(1, rows[1].BossPathEnemies);
-            Assert.IsFalse(rows[2].HasBossLayoutSeed);
-            Assert.IsFalse(rows[2].HasBossPathRooms);
-            Assert.IsFalse(rows[2].HasBossSideRooms);
-            Assert.IsFalse(rows[2].HasBossPathEnemies);
-        }
     }
 }

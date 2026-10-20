@@ -223,7 +223,7 @@ namespace TpsDungeon.Map.Tests
         [Test]
         public void ボス階は松明と柱だけで_闘技場の真ん中を空ける()
         {
-            var layout = BossFloorLayout.Generate(FloorGenerationFixture.BossTemplates(), 16, 16, 3);
+            var layout = FloorGenerationFixture.BossLayout(FloorGenerationFixture.SimpleBossBlueprint, 3);
             var occupancy = new FloorOccupancy(layout);
             var settings = Settings(crates: 2f, chest: 1f, boss: true);
             int pillars = 0;
@@ -246,8 +246,17 @@ namespace TpsDungeon.Map.Tests
         [Test]
         public void ボス階の道のりの部屋は木箱と宝箱を置かず_ショートカットの部屋は井戸の所を空ける()
         {
-            var parameters = new BossFloorParams { Width = 40, Height = 40, Templates = FloorGenerationFixture.BossTemplates(), LayoutSeed = 5, PathRooms = 4, SideRooms = 2 };
-            var layout = BossFloorLayout.Generate(parameters, 3);
+            const string body =
+                "......X......\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "...EAAAAAS...\n" +
+                ".aaaaHHHcccc.\n" +
+                ".aaaa...cccc.\n" +
+                "扉: E-a a-H c-H c-S\n";
+            var layout = FloorGenerationFixture.BossLayout(body, 3);
             var occupancy = new FloorOccupancy(layout);
             var settings = Settings(crates: 3f, chest: 1f, boss: true);
             int pathProps = 0;

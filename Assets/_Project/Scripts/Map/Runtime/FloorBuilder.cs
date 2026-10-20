@@ -118,7 +118,7 @@ namespace TpsDungeon.Map.Runtime
             cellSize = config.cellSize;
             wallHeight = config.wallHeight;
             var layout = config.layoutShape == FloorLayoutShape.Boss
-                ? BossFloorLayout.Generate(config.BuildBossParams(), seed)
+                ? config.GenerateBossLayout(seed)
                 : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
             var occupancy = new FloorOccupancy(layout);
 
@@ -492,16 +492,17 @@ namespace TpsDungeon.Map.Runtime
             if (layout.ShortcutCell.HasValue && config.shortcutMarkerPrefab != null)
             {
                 var cell = layout.ShortcutCell.Value;
+                var room = RoomAtCell(layout, cell);
                 var shortcut = Instantiate(config.shortcutMarkerPrefab, parent);
                 shortcut.name = "Shortcut";
-                shortcut.transform.SetLocalPositionAndRotation(CellCenter(cell), Quaternion.identity);
+                // 部屋と同じだけ回す。井戸は部屋の Prefab のドアの向き（西）を前提に作ってある（地上から登ってきたパーティーはドアの側に立つ）。
+                shortcut.transform.SetLocalPositionAndRotation(CellCenter(cell), Quaternion.Euler(0f, 90f * (room != null ? room.Rotation : 0), 0f));
                 ShortcutMarker = shortcut;
                 ShortcutWell = shortcut.GetComponentInChildren<ShortcutPoint>(true);
 
                 if (shortcut.TryGetComponent(out FloorFeature feature))
                 {
                     featureAt[cell] = feature;
-                    var room = RoomAtCell(layout, cell);
                     if (feature.replacesRoomFloor && room != null) RemoveRoomFloor(room, roomObjects);
                 }
 
@@ -552,7 +553,7 @@ namespace TpsDungeon.Map.Runtime
                 CratesPerCell = config.cratesPerCell,
                 ChestChance = config.chestChance,
                 BossFloor = config.layoutShape == FloorLayoutShape.Boss,
-                BossArenaId = FloorConfig.BossArenaId,
+                BossArenaId = BossFloorLayout.ArenaId,
             };
             set.FillSizes(settings);
 

@@ -322,19 +322,25 @@ namespace TpsDungeon.Map.Editor
         private const int BossFloorLayers = 5;
         private const int BossFloorGridSize = 16;
 
-        /// <summary>ボス階の 3 部屋。入口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
+        /// <summary>ボス階の決まった 2 部屋。入口・出口は各層の Room_Stair をそのまま使う。抽選には出ない（重み 0、タグ Boss）。</summary>
         private static readonly RoomSpec[] BossRooms =
         {
-            new RoomSpec(FloorConfig.BossHallId, BossFloorLayout.HallWidth, 1, RoomTag.Boss, false, 0f, "Floor"),
-            new RoomSpec(FloorConfig.BossArenaId, BossFloorLayout.ArenaSize, BossFloorLayout.ArenaSize, RoomTag.Boss, false, 0f, "Floor"),
-            // ショートカットの部屋。3x1 の部屋の東端に付くので、ドア候補は西の辺だけ。
-            new RoomSpec(FloorConfig.BossShortcutId, 1, 1, RoomTag.Boss, false, 0f, "Floor", Direction.West),
+            new RoomSpec(BossFloorLayout.ArenaId, 5, 5, RoomTag.Boss, false, 0f, "Floor"),
+            // ショートカットの部屋。ドア候補は西の辺だけで、扉の向きへ回して置く（井戸も一緒に回る）。
+            new RoomSpec(BossFloorLayout.ShortcutId, 1, 1, RoomTag.Boss, false, 0f, "Floor", Direction.West),
         };
 
         /// <summary>
-        /// 各層のボス階の一式を作る：部屋（Room_BossHall 3x1・Room_BossArena 5x5・Room_BossShortcut 1x1、床はその層の Room_1x1 と同じ素材）、
+        /// ボス階の設計図の部屋（大扉の手前の部屋・道のりの部屋）を folder/name.prefab に作る。回さずに置くので回転は許さず、ドア候補は外周全部。抽選には出ない（重み 0）。
+        /// </summary>
+        internal static GameObject BuildBossRoomPrefab(string name, int width, int height, RoomTag tag, Material material, string folder, float cellSize) =>
+            BuildRoomPrefab(new RoomSpec(name, width, height, tag, false, 0f, "Floor"), material, folder, cellSize);
+
+        /// <summary>
+        /// 各層のボス階の一式を作る：部屋（Room_BossArena 5x5・Room_BossShortcut 1x1、床はその層の Room_1x1 と同じ素材）、
         /// カタログ（L{n}_BossCatalog）、設定（Floor_L{n}_Boss_Config。間取りは Boss、他の値はその層の Floor_L{n}_Config から写す）。
-        /// 道のりの部屋は、その層のランダムな階のカタログ（bossPathCatalog）から引く。最後に「壁・床・天井のパーツを生成」を回して大扉・井戸などを差す。
+        /// 間取りと、大扉の手前の部屋・道のりの部屋は、最後に設計図（Settings/Tables/BossFloors.md）を取り込んで入れる。
+        /// 新しく作った設定には「壁・床・天井のパーツを生成」を回して大扉・井戸などを差す。
         /// 既にある部屋・設定は作り直さない（手で変えた値を残す）。既にあるカタログには、足りない部屋だけを足す。
         /// </summary>
         [MenuItem("Tools/TPS Dungeon/ボス階の一式を作る")]
@@ -344,10 +350,10 @@ namespace TpsDungeon.Map.Editor
             for (int n = 1; n <= BossFloorLayers; n++)
             {
                 var baseConfig = AssetDatabase.LoadAssetAtPath<FloorConfig>($"{SettingsFolder}/Floor_L{n}_Config.asset");
-                var stair = baseConfig != null && baseConfig.roomCatalog != null ? baseConfig.roomCatalog.PrefabFor(FloorConfig.BossEntranceId) : null;
+                var stair = baseConfig != null && baseConfig.roomCatalog != null ? baseConfig.roomCatalog.PrefabFor(BossFloorLayout.StairId) : null;
                 if (stair == null)
                 {
-                    Debug.LogWarning($"Floor_L{n}_Config か、そのカタログの {FloorConfig.BossEntranceId} が無いので、L{n} のボス階を飛ばした。");
+                    Debug.LogWarning($"Floor_L{n}_Config か、そのカタログの {BossFloorLayout.StairId} が無いので、L{n} のボス階を飛ばした。");
                     continue;
                 }
 
@@ -398,15 +404,9 @@ namespace TpsDungeon.Map.Editor
                     config.heightInCells = BossFloorGridSize;
                     config.includeShop = false;
                     config.roomCatalog = catalog;
-                    config.bossPathCatalog = baseConfig.roomCatalog;
                     config.name = System.IO.Path.GetFileNameWithoutExtension(configPath);
                     AssetDatabase.CreateAsset(config, configPath);
                     made++;
-                }
-                else if (config.bossPathCatalog == null)
-                {
-                    config.bossPathCatalog = baseConfig.roomCatalog;
-                    EditorUtility.SetDirty(config);
                 }
             }
 
@@ -414,6 +414,7 @@ namespace TpsDungeon.Map.Editor
             // 新しく作った設定には大扉などのパーツを差す。既にある設定には井戸だけ作り直して差す（ほかのパーツは作り直さない）。
             if (made > 0) GenerateStructureParts();
             else BuildShortcutWells();
+            BossBlueprintImporter.Import();
             Debug.Log($"ボス階の一式を作った（新しく作った設定 {made} 個）");
         }
 

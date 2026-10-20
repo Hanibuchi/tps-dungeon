@@ -40,6 +40,9 @@ namespace TpsDungeon.Map.Data
         public RoomRole Role { get; internal set; }
         public IReadOnlyList<PlacedSocket> Sockets { get; }
 
+        /// <summary>敵を出してよい部屋か。普通の階はどの部屋も真（役割で絞る）。ボス階は設計図の「敵:」に書いた部屋だけ真。</summary>
+        public bool HostsEnemies { get; internal set; } = true;
+
         /// <summary>階段/ショップなど役割マーカーを置くセル。既定は部屋の中心。</summary>
         public GridPos FeatureCell { get; internal set; }
 

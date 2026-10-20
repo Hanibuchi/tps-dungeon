@@ -9,7 +9,7 @@ namespace TpsDungeon.Map.Authoring
     {
         /// <summary>部屋を成長させて毎回違う形に作る（普通の階）。</summary>
         Random = 0,
-        /// <summary>ボス階の間取り（入口 → 道のり → 横長の部屋 → 大扉 → ボス部屋 → 閉ざされた扉 → 出口。横長の部屋の東にショートカットの部屋）。BossFloorLayout を見る。</summary>
+        /// <summary>ボス階の間取り。設計図（bossBlueprint。Settings/Tables/BossFloors.md の層の分）のとおりに組む。BossFloorLayout を見る。</summary>
         Boss = 1,
     }
 
@@ -20,27 +20,13 @@ namespace TpsDungeon.Map.Authoring
     [CreateAssetMenu(fileName = "FloorConfig", menuName = "TPS Dungeon/Floor Config")]
     public sealed class FloorConfig : ScriptableObject
     {
-        /// <summary>ボス階のカタログで、各部屋に使う Prefab の名前（テンプレート ID）。</summary>
-        public const string BossEntranceId = "Room_Stair";
-        public const string BossHallId = "Room_BossHall";
-        public const string BossArenaId = "Room_BossArena";
-        public const string BossShortcutId = "Room_BossShortcut";
-
         [Header("間取り")]
-        [Tooltip("Random は毎回違う形、Boss はボス階の間取り（カタログに Room_Stair・Room_BossHall・Room_BossArena・Room_BossShortcut と、道のりに使う普通の部屋を入れる。部屋数・接続の値は使わない）。")]
+        [Tooltip("Random は毎回違う形、Boss は設計図（bossBlueprint）のとおりの間取り（部屋数・接続の値は使わない）。")]
         public FloorLayoutShape layoutShape = FloorLayoutShape.Random;
 
-        [Header("ボス階の道のり")]
-        [Tooltip("ボス階の道のりの形を決めるシード（0 以外）。同じ値ならいつも同じ形になる。Settings/Tables/Floors.csv の boss_layout_seed 列で層ごとに設定する。")]
-        public int bossLayoutSeed = 1;
-        [Min(0), Tooltip("ボス階の入口から大扉の手前の部屋までに通る部屋の数。0 なら入口がすぐ大扉の手前の部屋の南。Floors.csv の boss_path_rooms 列。")]
-        public int bossPathRooms;
-        [Min(0), Tooltip("ボス階の道のりから生やす行き止まりの部屋の数。Floors.csv の boss_side_rooms 列。")]
-        public int bossSideRooms;
-        [Tooltip("ボス階の道のりの部屋に、その層の敵の表で敵を出すか（大扉の手前の部屋・ボス部屋・ショートカットの部屋には出さない）。Floors.csv の boss_path_enemies 列。")]
-        public bool bossPathEnemies;
-        [Tooltip("ボス階の道のりに使う部屋のカタログ（その層のランダムな階のカタログ）。普通の部屋（Normal タグ）を重みで選ぶ。")]
-        public RoomTemplateCatalog bossPathCatalog;
+        [Tooltip("ボス階の設計図（地図と扉・敵の行）。Settings/Tables/BossFloors.md を取り込むと、その層の分が入る。ここは直接直さず、設計図のファイルを直すこと。")]
+        [TextArea(6, 20)]
+        public string bossBlueprint;
 
         [Header("グリッド")]
         [Min(16), Tooltip("フロア全体の横幅（セル数）。部屋はこの範囲からはみ出さない。余裕があるほど広がった形になる。")]
@@ -137,49 +123,23 @@ namespace TpsDungeon.Map.Authoring
             return parameters;
         }
 
-        /// <summary>
-        /// ボス階の部屋のテンプレートをカタログから ID で引く。無いものは null のまま（BossFloorLayout が知らせる）。
-        /// 道のりには、bossPathCatalog に入っている普通の部屋（Normal タグ）をカタログの順に使う。
-        /// </summary>
-        public BossFloorTemplates BuildBossTemplates()
-        {
-            var templates = new BossFloorTemplates();
-            if (roomCatalog == null) return templates;
+        /// <summary>テンプレート ID から部屋の Prefab を引く。</summary>
+        public GameObject RoomPrefabFor(string templateId) => roomCatalog != null ? roomCatalog.PrefabFor(templateId) : null;
 
-            foreach (var data in roomCatalog.BuildTemplateData())
+        /// <summary>ボス階を設計図（bossBlueprint）のとおりに組む。部屋のテンプレートはカタログから ID で引く。設計図が読めなければ例外。</summary>
+        public Data.FloorLayout GenerateBossLayout(int seed)
+        {
+            var errors = new System.Collections.Generic.List<string>();
+            var blueprint = Data.BossFloorBlueprint.Parse(bossBlueprint, errors);
+            if (errors.Count > 0) throw new System.ArgumentException($"{name} のボス階の設計図が読めない: {string.Join(" / ", errors)}");
+
+            var templates = new System.Collections.Generic.Dictionary<string, Data.RoomTemplateData>();
+            if (roomCatalog != null)
             {
-                if (data.Id == BossEntranceId) templates.Entrance = data;
-                else if (data.Id == BossHallId) templates.Hall = data;
-                else if (data.Id == BossArenaId) templates.Arena = data;
-                else if (data.Id == BossShortcutId) templates.Shortcut = data;
+                foreach (var data in roomCatalog.BuildTemplateData()) templates[data.Id] = data;
             }
-            if (bossPathCatalog == null) return templates;
-
-            foreach (var data in bossPathCatalog.BuildTemplateData())
-            {
-                if ((data.Tags & Data.RoomTag.Normal) != 0) templates.PathRooms.Add(data);
-            }
-            return templates;
+            return BossFloorLayout.Generate(blueprint, id => templates.TryGetValue(id, out var t) ? t : null, widthInCells, heightInCells, seed);
         }
-
-        /// <summary>テンプレート ID から部屋の Prefab を引く（ボス階の道のりの部屋は bossPathCatalog から）。</summary>
-        public GameObject RoomPrefabFor(string templateId)
-        {
-            var prefab = roomCatalog != null ? roomCatalog.PrefabFor(templateId) : null;
-            if (prefab == null && layoutShape == FloorLayoutShape.Boss && bossPathCatalog != null) prefab = bossPathCatalog.PrefabFor(templateId);
-            return prefab;
-        }
-
-        /// <summary>ボス階の生成条件（グリッド・部屋・道のりの形）。</summary>
-        public BossFloorParams BuildBossParams() => new BossFloorParams
-        {
-            Width = widthInCells,
-            Height = heightInCells,
-            Templates = BuildBossTemplates(),
-            LayoutSeed = bossLayoutSeed,
-            PathRooms = bossPathRooms,
-            SideRooms = bossSideRooms,
-        };
 
 #if UNITY_EDITOR
         /// <summary>古いアセットを開いたときや手入力で範囲が逆転したときに、生成器が例外を投げないよう均す。</summary>
@@ -187,7 +147,6 @@ namespace TpsDungeon.Map.Authoring
         {
             minRoomCount = Mathf.Max(includeShop ? 4 : 3, minRoomCount);
             maxRoomCount = Mathf.Max(minRoomCount, maxRoomCount);
-            if (bossLayoutSeed == 0) bossLayoutSeed = 1;
         }
 #endif
     }

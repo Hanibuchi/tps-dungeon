@@ -13,11 +13,8 @@ MonoBehaviour:
   m_Name: Floor_L2_Boss_Config
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
   layoutShape: 1
-  bossLayoutSeed: 282
-  bossPathRooms: 2
-  bossSideRooms: 1
-  bossPathEnemies: 0
-  bossPathCatalog: {fileID: 11400000, guid: a39a17f1150984cdfb9130fa223fbb78, type: 2}
+  bossBlueprint: "......X......\n....AAAAA....\n....AAAAA....\n....AAAAA....\n....AAAAA....\n...EAAAAAS...\n.aaaaHHHcccc.\n.aaaa...cccc.\n\u6249:
+    E-a a-H c-H c-S\n\u6575: a c H"
   widthInCells: 16
   heightInCells: 16
   cellSize: 5

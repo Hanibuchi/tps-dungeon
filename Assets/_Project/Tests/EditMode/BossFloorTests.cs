@@ -10,25 +10,11 @@ using UnityEngine;
 namespace TpsDungeon.Map.Tests
 {
     /// <summary>
-    /// ボス階の間取り（入口 → 道のり → 横長の部屋 → 大扉 → 5x5 のボス部屋、横長の部屋の東にショートカットの部屋）と、
-    /// それを今の設定（Floor_L*_Boss_Config）で組んだときに大扉・閉ざされた扉・井戸・窓が揃うこと、大扉が両側へ開くことを確かめる。
+    /// ボス階を設計図（BossFloors.md）のとおりに組むこと（部屋・扉・敵の出る部屋・ショートカットの部屋）と、
+    /// それを今の設定（Floor_L*_Boss_Config）で組んだときに大扉・閉ざされた扉・井戸が揃うこと、大扉が両側へ開くことを確かめる。
     /// </summary>
     public sealed class BossFloorTests
     {
-        private const int GridSize = 16;
-
-        private static BossFloorTemplates Templates() => FloorGenerationFixture.BossTemplates();
-
-        private static BossFloorParams PathParams(int layoutSeed, int pathRooms = 4, int sideRooms = 2) => new BossFloorParams
-        {
-            Width = 40,
-            Height = 40,
-            Templates = Templates(),
-            LayoutSeed = layoutSeed,
-            PathRooms = pathRooms,
-            SideRooms = sideRooms,
-        };
-
         private static RoomInstance RoomWithId(FloorLayout layout, string id)
         {
             foreach (var room in layout.Rooms)
@@ -38,209 +24,166 @@ namespace TpsDungeon.Map.Tests
             return null;
         }
 
-        /// <summary>シグネチャのうち、形の部分（最初の | より後。先頭のグリッドの広さは除く）。</summary>
-        private static string Shape(FloorLayout layout)
+        private static RoomEdge EdgeBetween(FloorLayout layout, RoomInstance a, RoomInstance b)
         {
-            string signature = layout.ComputeSignature();
-            return signature.Substring(signature.IndexOf('|'));
+            foreach (var edge in layout.Edges)
+            {
+                if ((edge.RoomA == a.Index && edge.RoomB == b.Index) || (edge.RoomA == b.Index && edge.RoomB == a.Index)) return edge;
+            }
+            return null;
         }
 
         [Test]
-        public void Layout_StacksEntranceHallArenaAndExitAlongTheCenterColumn()
+        public void Blueprint_ReadsRoomsDoorsAndEnemies()
         {
-            var layout = BossFloorLayout.Generate(Templates(), GridSize, GridSize, 1);
-            Assert.AreEqual(5, layout.Rooms.Count);
-            int center = layout.MirrorColumn.Value;
+            var errors = new List<string>();
+            var blueprint = BossFloorBlueprint.Parse(FloorGenerationFixture.SimpleBossBlueprint, errors);
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(new GridRect(3, 0, 1, 1), blueprint.Rooms['E'], "一番下の行が Y 0");
+            Assert.AreEqual(new GridRect(2, 1, 3, 1), blueprint.Rooms['H']);
+            Assert.AreEqual(new GridRect(5, 1, 1, 1), blueprint.Rooms['S']);
+            Assert.AreEqual(new GridRect(1, 2, 5, 5), blueprint.Rooms['A']);
+            Assert.AreEqual(new GridRect(3, 7, 1, 1), blueprint.Rooms['X']);
+            Assert.IsTrue(blueprint.HasDoor('H', 'E'));
+            Assert.IsTrue(blueprint.IsEnemyRoom('H'));
+            Assert.IsFalse(blueprint.IsEnemyRoom('A'));
+        }
 
+        [TestCase("..X..\n.AAAAA\n", "ボス部屋")]
+        [TestCase("aa.a\n", "四角形")]
+        [TestCase("...X...\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n..HHHS.\n...E...\nB\n", "大文字")]
+        [TestCase("...X...\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n..HHHS.\n...E...\n扉: E-S\n", "接していない")]
+        [TestCase("...X...\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n..HHHS.\n...E...\n扉: E-H\n敵: z\n", "地図に無い")]
+        [TestCase("...X...\nこれは何\n", "読めない行")]
+        public void Blueprint_ReportsMistakes(string body, string expected)
+        {
+            var errors = new List<string>();
+            BossFloorBlueprint.Parse(body, errors);
+            Assert.IsTrue(errors.Exists(e => e.Contains(expected)), $"「{expected}」の知らせが無い: {string.Join(" / ", errors)}");
+        }
+
+        [Test]
+        public void Blueprint_SplitsTheFileByLayer()
+        {
+            string text = "> 説明\n# 第1層\n" + FloorGenerationFixture.SimpleBossBlueprint + "\n# 第 2 層\n" + FloorGenerationFixture.SimpleBossBlueprint;
+            var errors = new List<string>();
+            var blueprints = BossFloorBlueprint.ParseFile(text, errors);
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(2, blueprints.Count);
+            Assert.AreEqual(1, blueprints[0].Layer);
+            Assert.AreEqual(2, blueprints[1].Layer);
+            Assert.AreEqual(2, blueprints[0].Line);
+            StringAssert.StartsWith("...X...", blueprints[1].Body);
+        }
+
+        [Test]
+        public void Layout_FollowsTheBlueprint()
+        {
+            var layout = FloorGenerationFixture.BossLayout(FloorGenerationFixture.SimpleBossBlueprint);
+            Assert.AreEqual(5, layout.Rooms.Count);
             var entrance = layout.RoomAt(layout.EntranceRoom);
             var exit = layout.RoomAt(layout.ExitRoom);
-            var hall = layout.Rooms[1];
-            var arena = layout.Rooms[2];
-            Assert.AreEqual("Room_Stair", entrance.Template.Id);
-            Assert.AreEqual(new GridRect(center, entrance.Bounds.Y, 1, 1), entrance.Bounds);
-            Assert.AreEqual(new GridRect(center - 1, entrance.Bounds.Y + 1, 3, 1), hall.Bounds, "入口のすぐ奥（北）に横長の部屋");
-            Assert.AreEqual(new GridRect(center - 2, entrance.Bounds.Y + 2, 5, 5), arena.Bounds, "その奥に 5x5 のボス部屋");
-            Assert.AreEqual(-1, layout.ShopRoom);
+            var hall = RoomWithId(layout, "Room_BossHall_3x1");
+            var arena = RoomWithId(layout, BossFloorLayout.ArenaId);
+            var shortcut = RoomWithId(layout, BossFloorLayout.ShortcutId);
 
-            // 間取りはグリッドの真ん中に置く（外の景色はグリッドの真ん中を基準に置く）。道のりの無い層は今までと同じ所。
-            Assert.AreEqual(7, center);
-            Assert.AreEqual(4, entrance.Bounds.Y);
-
-            // 出口はボス部屋の奥の壁の真ん中に接する 1x1 の部屋で、階段の部屋をそのまま（ドアが南）置く。
-            Assert.AreEqual("Room_Stair", exit.Template.Id);
-            Assert.AreEqual(new GridRect(center, arena.Bounds.MaxY + 1, 1, 1), exit.Bounds);
-            Assert.AreEqual(0, exit.Rotation);
-            Assert.AreEqual(RoomRole.Exit, exit.Role);
-            Assert.AreEqual(RoomRole.Normal, arena.Role);
-            Assert.AreEqual(RoomRole.Entrance, entrance.Role);
-
-            // ショートカットの部屋は横長の部屋の東隣の 1x1。井戸はその真ん中。
-            var shortcut = RoomWithId(layout, "Room_BossShortcut");
-            Assert.AreEqual(new GridRect(hall.Bounds.MaxX + 1, hall.Bounds.Y, 1, 1), shortcut.Bounds);
+            // 部屋の並びは設計図のまま、全体をグリッドの真ん中に寄せる（7x8 を 16x16 の真ん中へ）。
+            Assert.AreEqual(new GridRect(5, 6, 5, 5), arena.Bounds);
+            Assert.AreEqual(new GridRect(6, 5, 3, 1), hall.Bounds);
+            Assert.AreEqual(new GridRect(9, 5, 1, 1), shortcut.Bounds);
+            Assert.AreEqual(new GridRect(7, 4, 1, 1), entrance.Bounds);
+            Assert.AreEqual(new GridRect(7, 11, 1, 1), exit.Bounds);
             Assert.AreEqual(shortcut.Bounds.Center, layout.ShortcutCell);
+            Assert.IsNull(layout.MirrorColumn);
+
+            // 決まった扉：大扉（H-A、ボス部屋の真ん中の列）と、ボスを倒すまで閉ざされた出口の扉（A-X）。S は書いていないので H と繋ぐ。
+            var grand = EdgeBetween(layout, hall, arena);
+            Assert.IsTrue(grand.IsGrandDoor);
+            Assert.AreEqual(arena.Bounds.Center.X, grand.SocketA.Cell.X);
+            Assert.IsTrue(EdgeBetween(layout, arena, exit).IsLocked);
+            Assert.IsTrue(EdgeBetween(layout, hall, shortcut).IsShortcutDoor);
+            Assert.IsNotNull(EdgeBetween(layout, entrance, hall));
+            Assert.AreEqual(4, layout.Edges.Count);
+
+            // 階段の部屋はドアの向きへ回す（入口は北の H へ、出口は南の A へ）。ショートカットの部屋は西の H へ（回さない）。
+            Assert.AreEqual(2, entrance.Rotation);
+            Assert.AreEqual(0, exit.Rotation);
+            Assert.AreEqual(0, shortcut.Rotation);
+
+            // 敵は設計図に書いた部屋だけ。
+            foreach (var room in layout.Rooms) Assert.AreEqual(room == hall, RoomEnemyRoller.CanHostEnemies(room), $"{room}");
             Assert.IsTrue(FloorLayoutAnalysis.IsFullyConnected(layout));
         }
 
         [Test]
-        public void Layout_IsSymmetricWithAGrandDoorInALockedDoorOutAndALockedShortcutDoor()
+        public void Layout_TurnsTheShortcutRoomToItsDoor()
         {
-            var layout = BossFloorLayout.Generate(Templates(), GridSize, GridSize, 1);
-            int axis = layout.MirrorColumn.Value;
-
-            foreach (var room in layout.Rooms)
-            {
-                if (room.Template.Id == "Room_BossShortcut") continue;
-                Assert.AreEqual(2 * axis, room.Bounds.X + room.Bounds.MaxX, $"{room} が軸 {axis} で左右対称でない");
-            }
-
-            Assert.AreEqual(4, layout.Edges.Count);
-            int grand = 0, locked = 0, shortcut = 0;
-            foreach (var edge in layout.Edges)
-            {
-                Assert.LessOrEqual((edge.IsGrandDoor ? 1 : 0) + (edge.IsLocked ? 1 : 0) + (edge.IsShortcutDoor ? 1 : 0), 1);
-                if (edge.IsShortcutDoor)
-                {
-                    shortcut++;
-                    Assert.AreEqual(1, edge.RoomA, "ショートカットの扉の手前は横長の部屋");
-                    Assert.AreEqual("Room_BossShortcut", layout.RoomAt(edge.RoomB).Template.Id);
-                    Assert.AreEqual(Direction.East, edge.SocketA.Facing, "横長の部屋の東端から入る");
-                    continue;
-                }
-                Assert.AreEqual(axis, edge.SocketA.Cell.X, $"{edge} のドアが真ん中の列に無い");
-                Assert.AreEqual(Direction.North, edge.SocketA.Facing, "ドアはどれも奥（北）へ抜ける");
-                if (edge.IsGrandDoor)
-                {
-                    grand++;
-                    Assert.AreEqual(1, edge.RoomA, "大扉の手前は横長の部屋");
-                    Assert.AreEqual(2, edge.RoomB, "大扉の先はボス部屋");
-                }
-                if (edge.IsLocked)
-                {
-                    locked++;
-                    Assert.AreEqual(2, edge.RoomA, "閉ざされた扉の手前はボス部屋");
-                    Assert.AreEqual(layout.ExitRoom, edge.RoomB, "閉ざされた扉の先は出口");
-                }
-            }
-            Assert.AreEqual(1, grand, "大扉は 1 枚だけ");
-            Assert.AreEqual(1, locked, "閉ざされた扉は 1 枚だけ");
-            Assert.AreEqual(1, shortcut, "ショートカットの扉は 1 枚だけ");
-
-            // 出口の部屋のドアは南（ボス部屋の側）だけ。
-            foreach (var socket in layout.RoomAt(layout.ExitRoom).UsedSockets()) Assert.AreEqual(Direction.South, socket.Facing);
-
-            // 入口の部屋はドアが北に向くよう半周回してある（階段は部屋と一緒に回る）。
+            // ショートカットの部屋が道のりの部屋 c の上にあり、扉は南。
+            const string body =
+                "......X......\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "....AAAAA....\n" +
+                "...EAAAAAS...\n" +
+                ".aaaaHHHcccc.\n" +
+                ".aaaa...cccc.\n" +
+                "扉: E-a a-H c-H c-S\n" +
+                "敵: a c H\n";
+            var layout = FloorGenerationFixture.BossLayout(body);
+            var shortcut = RoomWithId(layout, BossFloorLayout.ShortcutId);
+            RoomEdge edge = null;
+            foreach (var e in layout.Edges) if (e.IsShortcutDoor) edge = e;
+            var other = layout.RoomAt(edge.Other(shortcut.Index));
+            Assert.AreEqual("Room_BossPath_4x2", other.Template.Id, "ショートカットの部屋は c と繋がる");
+            Assert.Greater(other.Bounds.X, shortcut.Bounds.X - 2, "東側の c（西の a ではない）");
+            Assert.AreEqual(3, shortcut.Rotation, "西のドア候補を南へ回す");
             var entrance = layout.RoomAt(layout.EntranceRoom);
-            Assert.AreEqual(2, entrance.Rotation);
-            foreach (var socket in entrance.UsedSockets()) Assert.AreEqual(Direction.North, socket.Facing);
+            Assert.AreEqual(0, entrance.Rotation, "入口のドアは南の a へ（階段の部屋はもともと南向き）");
+            Assert.IsNull(EdgeBetween(layout, entrance, RoomWithId(layout, BossFloorLayout.ArenaId)), "接していても書いていなければ扉は無い");
+            Assert.IsTrue(FloorLayoutAnalysis.IsFullyConnected(layout));
+        }
+
+        [Test]
+        public void Layout_RejectsRoomsThatCannotBeReached()
+        {
+            const string body =
+                "...X...\n" +
+                ".AAAAA.\n" +
+                ".AAAAA.\n" +
+                ".AAAAA.\n" +
+                ".AAAAA.\n" +
+                ".AAAAA.\n" +
+                "..HHHS.\n" +
+                "...Eb..\n";
+            Assert.Throws<System.ArgumentException>(() => FloorGenerationFixture.BossLayout(body), "扉の無い入口は H と繋がらない");
         }
 
         [Test]
         public void Layout_ShapeDoesNotDependOnSeed()
         {
-            Assert.AreEqual(Shape(BossFloorLayout.Generate(Templates(), GridSize, GridSize, 1)), Shape(BossFloorLayout.Generate(Templates(), GridSize, GridSize, 999)));
-            // 道のりのある層も、形は LayoutSeed だけで決まる（来るたびに変わるシードは窓などにだけ効く）。
-            Assert.AreEqual(Shape(BossFloorLayout.Generate(PathParams(7), 1)), Shape(BossFloorLayout.Generate(PathParams(7), 12345)));
+            string a = FloorGenerationFixture.BossLayout(FloorGenerationFixture.SimpleBossBlueprint, 1).ComputeSignature();
+            string b = FloorGenerationFixture.BossLayout(FloorGenerationFixture.SimpleBossBlueprint, 999).ComputeSignature();
+            Assert.AreEqual(a.Substring(a.IndexOf('|')), b.Substring(b.IndexOf('|')));
         }
 
         [Test]
-        public void Layout_RejectsWrongSizedTemplates()
+        public void ShippedBlueprints_BuildEveryLayer()
         {
-            var templates = Templates();
-            templates.Arena = FloorGenerationFixture.Template("Room_BossArena", 4, 4, RoomTag.Boss, false, 0f);
-            Assert.Throws<System.ArgumentException>(() => BossFloorLayout.Generate(templates, GridSize, GridSize, 1));
-
-            templates = Templates();
-            templates.Shortcut = null;
-            Assert.Throws<System.ArgumentException>(() => BossFloorLayout.Generate(templates, GridSize, GridSize, 1), "ショートカットの部屋は必ず要る");
-        }
-
-        [Test]
-        public void PathLayout_GrowsTheRequestedRoomsFromTheHallAndKeepsTheShortcutRoomApart()
-        {
-            var shapes = new HashSet<string>();
-            for (int seed = 1; seed <= 60; seed++)
+            var errors = new List<string>();
+            var blueprints = BossFloorBlueprint.ParseFile(System.IO.File.ReadAllText("Assets/_Project/Settings/Tables/BossFloors.md"), errors);
+            Assert.IsEmpty(errors, string.Join("\n", errors));
+            Assert.AreEqual(5, blueprints.Count);
+            foreach (var blueprint in blueprints)
             {
-                var parameters = PathParams(seed);
-                var layout = BossFloorLayout.Generate(parameters, 1);
-                string label = $"シード {seed}";
-                Assert.IsTrue(FloorLayoutAnalysis.IsFullyConnected(layout), $"{label}: 入口から行けない部屋がある");
-                Assert.IsNull(layout.MirrorColumn, $"{label}: 道のりのある層は左右対称でない");
-                shapes.Add(Shape(layout));
-
-                int normal = 0;
-                foreach (var room in layout.Rooms)
-                {
-                    Assert.IsTrue(layout.IsInsideGrid(new GridPos(room.Bounds.X, room.Bounds.Y)) && layout.IsInsideGrid(new GridPos(room.Bounds.MaxX, room.Bounds.MaxY)), $"{label}: {room} がグリッドの外");
-                    if ((room.Template.Tags & RoomTag.Normal) != 0) normal++;
-                    foreach (var other in layout.Rooms)
-                    {
-                        if (other != room) Assert.IsFalse(room.Bounds.Overlaps(other.Bounds), $"{label}: {room} と {other} が重なる");
-                    }
-                }
-                Assert.AreEqual(parameters.PathRooms + parameters.SideRooms, normal, $"{label}: 道のりと脇道の部屋の数");
-
-                var hall = RoomWithId(layout, "Room_BossHall");
-                var arena = RoomWithId(layout, "Room_BossArena");
-                var shortcut = RoomWithId(layout, "Room_BossShortcut");
-                var entrance = layout.RoomAt(layout.EntranceRoom);
-                Assert.AreEqual(5, arena.Bounds.Width);
-                Assert.AreEqual(5, arena.Bounds.Height);
-                Assert.AreEqual(new GridRect(hall.Bounds.MaxX + 1, hall.Bounds.Y, 1, 1), shortcut.Bounds, $"{label}: ショートカットの部屋は横長の部屋の東隣");
-                Assert.Greater(GridRect.Distance(entrance.Bounds, hall.Bounds), 1, $"{label}: 入口が横長の部屋に接している");
-                Assert.Greater(GridRect.Distance(entrance.Bounds, arena.Bounds), 1, $"{label}: 入口がボス部屋に接している");
-
-                foreach (var edge in layout.Edges)
-                {
-                    var a = layout.RoomAt(edge.RoomA);
-                    var b = layout.RoomAt(edge.RoomB);
-                    // ショートカットの部屋は横長の部屋とだけ繋がり、道のりの部屋はショートカットの部屋に接しない。
-                    if (a == shortcut || b == shortcut) Assert.IsTrue(edge.IsShortcutDoor && (a == hall || b == hall), $"{label}: {edge}");
-                    // ボス部屋に入るのは大扉だけ。
-                    if ((a == arena || b == arena) && a != layout.RoomAt(layout.ExitRoom) && b != layout.RoomAt(layout.ExitRoom))
-                        Assert.IsTrue(edge.IsGrandDoor, $"{label}: ボス部屋に大扉以外のドア {edge}");
-                }
-                foreach (var room in layout.Rooms)
-                {
-                    if ((room.Template.Tags & RoomTag.Normal) != 0)
-                        Assert.Greater(GridRect.Distance(room.Bounds, shortcut.Bounds), 1, $"{label}: {room} がショートカットの部屋に接している");
-                }
-            }
-            Assert.Greater(shapes.Count, 50, "シードごとに形が違う");
-        }
-
-        [Test]
-        public void ShippedBossFloors_HaveTheirOwnShapeOnEveryLayer()
-        {
-            var shapes = new HashSet<string>();
-            for (int layer = 1; layer <= 5; layer++)
-            {
-                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>($"Assets/_Project/Settings/Map/Floor_L{layer}_Boss_Config.asset");
-                Assert.IsNotNull(config);
-                var parameters = config.BuildBossParams();
-                Assert.IsNotNull(parameters.Templates.Shortcut, $"L{layer} のカタログに {FloorConfig.BossShortcutId} が無い");
-                var layout = BossFloorLayout.Generate(parameters, 1);
+                var config = AssetDatabase.LoadAssetAtPath<FloorConfig>($"Assets/_Project/Settings/Map/Floor_L{blueprint.Layer}_Boss_Config.asset");
+                Assert.AreEqual(blueprint.Body, config.bossBlueprint, $"第 {blueprint.Layer} 層の設計図が取り込まれていない");
+                var layout = config.GenerateBossLayout(1);
                 Assert.IsTrue(FloorLayoutAnalysis.IsFullyConnected(layout));
-                Assert.IsTrue(shapes.Add(Shape(layout)), $"L{layer} の形がほかの層と同じ");
-
-                int normal = 0;
-                foreach (var room in layout.Rooms)
-                {
-                    if ((room.Template.Tags & RoomTag.Normal) != 0) normal++;
-                }
-                Assert.AreEqual(config.bossPathRooms + config.bossSideRooms, normal, $"L{layer} の道のりの部屋の数");
-                if (layer == 1) Assert.AreEqual(0, normal, "1 層は道のりが無い（今までの形）");
-                else Assert.Greater(config.bossPathRooms, 0, $"L{layer} には道のりがある");
-            }
-        }
-
-        [Test]
-        public void BossRooms_DoNotHostEnemies()
-        {
-            var layout = BossFloorLayout.Generate(PathParams(3), 1);
-            foreach (var room in layout.Rooms)
-            {
-                bool normal = (room.Template.Tags & RoomTag.Normal) != 0 && room.Role == RoomRole.Normal;
-                Assert.AreEqual(normal, RoomEnemyRoller.CanHostEnemies(room), $"{room}");
+                Assert.AreEqual(blueprint.Rooms.Count, layout.Rooms.Count);
+                int enemyRooms = 0;
+                foreach (var room in layout.Rooms) if (RoomEnemyRoller.CanHostEnemies(room)) enemyRooms++;
+                Assert.AreEqual(blueprint.EnemyRooms.Count, enemyRooms, $"第 {blueprint.Layer} 層の敵の出る部屋");
             }
         }
 
@@ -266,9 +209,11 @@ namespace TpsDungeon.Map.Tests
         }
 
         [TestCase(1, 1)]
-        [TestCase(3, 42)]
+        [TestCase(2, 42)]
+        [TestCase(3, 7)]
+        [TestCase(4, 9)]
         [TestCase(5, 777)]
-        public void BossFloor_BuildsGrandDoorLockedShortcutRoomAndWindows(int layer, int seed)
+        public void BossFloor_BuildsGrandDoorLockedShortcutRoomAndWell(int layer, int seed)
         {
             string path = $"Assets/_Project/Settings/Map/Floor_L{layer}_Boss_Config.asset";
             var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(path);
@@ -281,24 +226,19 @@ namespace TpsDungeon.Map.Tests
 
             var walls = builder.GeneratedRoot.Find("Walls");
             int grand = 0, doors = 0;
-            var windows = new HashSet<(int, int, Direction)>();
             foreach (Transform piece in walls)
             {
                 if (piece.name.StartsWith("GrandDoor_")) grand++;
                 else if (piece.name.StartsWith("Door_")) doors++;
-                else if (piece.name.StartsWith("Window_")) windows.Add(Parse(piece.name));
             }
             Assert.AreEqual(1, grand, "大扉は 1 枚");
-            Assert.AreEqual(layout.Edges.Count - 1, doors, "大扉のほかは普通のドア（道のり・出口・ショートカットの部屋）");
+            Assert.AreEqual(layout.Edges.Count - 1, doors, "大扉のほかは普通のドア");
 
             // 出口の扉はボスを倒すまで閉ざされていて、調べても開かない。UnlockDoors で開けられるようになる。
             Assert.AreEqual(1, builder.LockedDoors.Count);
             var gate = builder.LockedDoors[0];
             Assert.IsTrue(gate.IsLocked);
             Assert.AreEqual("閉ざされている", gate.PromptLabel);
-            var exitRoom = layout.RoomAt(layout.ExitRoom);
-            Assert.AreEqual(new GridPos(exitRoom.Bounds.X, exitRoom.Bounds.Y - 1), builder.WorldToCell(gate.transform.position + Vector3.back * 0.1f),
-                "閉ざされた扉はボス部屋と出口の部屋の間");
             gate.Interact(null);
             Assert.IsFalse(gate.IsOpen, "閉ざされている間は開かない");
             // ショートカットの部屋の扉も閉ざされているが、ボスを倒しても開かない（解放は層ごとの永続アップグレード）。
@@ -309,55 +249,21 @@ namespace TpsDungeon.Map.Tests
             Assert.IsFalse(gate.IsLocked);
             Assert.IsFalse(builder.HasLockedDoors, "ショートカットの扉は出口の階段を閉じる理由に数えない");
             Assert.IsTrue(builder.ShortcutDoor.IsLocked, "ボスを倒してもショートカットの扉は開かない");
-            Assert.IsNotNull(builder.GeneratedRoot.GetComponentInChildren<Door>(), "ドアがある");
-
-            // 道のりの無い層は、窓も左右で揃う（境界を軸で映した先も窓）。片側にしか無いショートカットの部屋と、その鏡像の所は除く。
-            if (layout.MirrorColumn.HasValue)
-            {
-                int axis = layout.MirrorColumn.Value;
-                var shortcutCell = layout.ShortcutCell.Value;
-                var hallWest = new GridPos(2 * axis - shortcutCell.X, shortcutCell.Y);
-                foreach (var (x, y, dir) in windows)
-                {
-                    var c = new GridPos(x, y);
-                    var n = c + dir.Offset();
-                    if (c == shortcutCell || n == shortcutCell || c == hallWest || n == hallWest) continue;
-                    var (mx, my, mdir) = Mirror(x, y, dir, axis);
-                    Assert.IsTrue(windows.Contains((mx, my, mdir)) || windows.Contains(Flip(mx, my, mdir)),
-                        $"窓 {x},{y},{dir} の鏡像 {mx},{my},{mdir} が窓でない");
-                }
-            }
 
             Assert.IsNotNull(builder.ShortcutMarker, "ショートカットの井戸がある");
-            var cell = builder.WorldToCell(builder.ShortcutMarker.transform.position);
-            Assert.AreEqual(layout.ShortcutCell.Value, cell);
+            Assert.AreEqual(layout.ShortcutCell.Value, builder.WorldToCell(builder.ShortcutMarker.transform.position));
             Assert.IsNotNull(builder.ShortcutWell, "井戸に調べる所（ShortcutPoint）がある");
             Assert.IsFalse(builder.ShortcutWell.IsOpen, "解放していない層の井戸は閉じている");
             Assert.IsFalse(builder.ShortcutWell.CanInteract(null), "閉じている井戸は扉の隙間から照準が届いても調べられない");
-            Assert.IsNotNull(builder.GeneratedRoot.Find("Features/ShortcutSpawn"), "地上から登ってきたパーティーが立つ所がある");
-            Assert.AreEqual(layout.ShortcutCell.Value, builder.WorldToCell(builder.GeneratedRoot.Find("Features/ShortcutSpawn").position), "ショートカットの部屋に立つ");
+            var spawn = builder.GeneratedRoot.Find("Features/ShortcutSpawn");
+            Assert.IsNotNull(spawn, "地上から登ってきたパーティーが立つ所がある");
+            Assert.AreEqual(layout.ShortcutCell.Value, builder.WorldToCell(spawn.position), "ショートカットの部屋に立つ");
+            // 扉の方を向く（井戸は部屋と一緒に回してある）。
+            var door = builder.ShortcutDoor.transform.position - spawn.position;
+            Assert.Greater(Vector3.Dot(spawn.forward, new Vector3(door.x, 0f, door.z).normalized), 0.7f, "扉の方を向いて立つ");
             Assert.IsNotNull(builder.EntranceStair);
             Assert.IsNotNull(builder.ExitStair);
             Assert.AreEqual(layout.RoomAt(layout.ExitRoom).FeatureCell, builder.WorldToCell(builder.ExitStair.transform.position));
-        }
-
-        private static (int, int, Direction) Parse(string name)
-        {
-            var parts = name.Split('_');
-            return (int.Parse(parts[1]), int.Parse(parts[2]), (Direction)System.Enum.Parse(typeof(Direction), parts[3]));
-        }
-
-        private static (int, int, Direction) Mirror(int x, int y, Direction dir, int axis)
-        {
-            var d = dir == Direction.East ? Direction.West : dir == Direction.West ? Direction.East : dir;
-            return (2 * axis - x, y, d);
-        }
-
-        /// <summary>同じ境界の、隣のセルから見た表し方（東の境界 = 東隣の西の境界）。</summary>
-        private static (int, int, Direction) Flip(int x, int y, Direction dir)
-        {
-            var o = dir.Offset();
-            return (x + o.X, y + o.Y, dir.Opposite());
         }
 
         [TestCase(1)]

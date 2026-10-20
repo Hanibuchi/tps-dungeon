@@ -15,9 +15,11 @@ MonoBehaviour:
   entries:
   - prefab: {fileID: 4155326717597408730, guid: d65267edab9f746b99dfd007586d50ab, type: 3}
     weightOverride: 0
-  - prefab: {fileID: 5431786777509405628, guid: 26f057f9b94334543888cf8a1fac9d2b, type: 3}
-    weightOverride: 0
   - prefab: {fileID: 1787704807701918744, guid: f48874a03e126433ba156767d1077f5d, type: 3}
     weightOverride: 0
   - prefab: {fileID: 9120059639076060978, guid: 2e4887ccfca344bf0a77a20b0ba39d76, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 2154036608878067195, guid: 2e5a924da62484d98b4095c18a9667d6, type: 3}
+    weightOverride: 0
+  - prefab: {fileID: 6899625123163714905, guid: 9551de507db0042c9b1af7ba8b34530f, type: 3}
     weightOverride: 0

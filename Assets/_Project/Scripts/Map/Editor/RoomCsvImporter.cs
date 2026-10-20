@@ -152,7 +152,7 @@ namespace TpsDungeon.Map.Editor
         /// <summary>その層の部屋の置き場所。階段の部屋のフォルダ（無ければカタログの先頭の部屋のフォルダ）。</summary>
         private static string RoomsFolder(RoomTemplateCatalog catalog)
         {
-            GameObject anchor = catalog.PrefabFor(FloorConfig.BossEntranceId);
+            GameObject anchor = catalog.PrefabFor(Generation.BossFloorLayout.StairId);
             if (anchor == null)
             {
                 foreach (RoomTemplateCatalog.Entry entry in catalog.Entries)

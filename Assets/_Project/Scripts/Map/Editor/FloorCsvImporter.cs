@@ -16,8 +16,6 @@ namespace TpsDungeon.Map.Editor
     ///   窓の外の景色と地上の塔は高さで置き方が変わるので、変わったら「階の外の景色を置く（全層）」と「地上のダンジョンの塔を建て直す」を回すよう知らせる。
     /// - 木箱の数（crates_per_cell）と宝箱の確率（chest_chance）は、その層のランダムな階の FloorConfig に入れる。
     /// - 壁の高さ（wall_height）は、その層のランダムな階とボス階の両方の FloorConfig.wallHeight に入れ、変わった層のテーマの壁・窓・ドア・階段を作り直す。
-    /// - ボス階の道のり（boss_layout_seed・boss_path_rooms・boss_side_rooms・boss_path_enemies）は、その層のボス階の FloorConfig に入れる。
-    ///   組んだ形がグリッドに収まらなければ、グリッドを広げる（まわりに 1 セルずつ余白を残す）。
     /// Floors.csv か Rooms.csv を保存すると自動で取り込む（部屋の大きさや重みを変えても平均面積が変わるので）。メニューからも呼べる。
     /// </summary>
     public sealed class FloorCsvImporter : AssetPostprocessor
@@ -118,7 +116,6 @@ namespace TpsDungeon.Map.Editor
                 if (ApplyElevation(route.Layers[i], row)) elevationChanged.Add(layer);
                 if (ApplyWallHeight(route.Layers[i], row, wallChanged)) wallChangedLayers.Add(layer);
                 bool propsChanged = ApplyProps(route.Layers[i], row);
-                propsChanged |= ApplyBossPath(route.Layers[i], row, summary, errors);
 
                 if (config.minRoomCount == min && config.maxRoomCount == max)
                 {
@@ -199,57 +196,6 @@ namespace TpsDungeon.Map.Editor
                 config.chestChance = row.ChestChance;
                 changed = true;
             }
-            if (changed) EditorUtility.SetDirty(config);
-            return changed;
-        }
-
-        /// <summary>
-        /// row にボス階の道のりの値があれば、層のボス階の設定に入れる。組んだ形がグリッドに収まらなければグリッドを広げる。変わったら真。
-        /// </summary>
-        private static bool ApplyBossPath(DungeonRoute.Layer layer, FloorLayerCsv.Row row, List<string> summary, List<string> errors)
-        {
-            FloorConfig config = layer.bossConfig;
-            if (config == null) return false;
-            bool changed = false;
-            if (row.HasBossLayoutSeed && config.bossLayoutSeed != row.BossLayoutSeed)
-            {
-                config.bossLayoutSeed = row.BossLayoutSeed;
-                changed = true;
-            }
-            if (row.HasBossPathRooms && config.bossPathRooms != row.BossPathRooms)
-            {
-                config.bossPathRooms = row.BossPathRooms;
-                changed = true;
-            }
-            if (row.HasBossSideRooms && config.bossSideRooms != row.BossSideRooms)
-            {
-                config.bossSideRooms = row.BossSideRooms;
-                changed = true;
-            }
-            if (row.HasBossPathEnemies && config.bossPathEnemies != (row.BossPathEnemies == 1))
-            {
-                config.bossPathEnemies = row.BossPathEnemies == 1;
-                changed = true;
-            }
-
-            try
-            {
-                var (width, height) = Generation.BossFloorLayout.RequiredSize(config.BuildBossParams());
-                int size = Mathf.Max(width, height) + 2;
-                if (config.widthInCells < size || config.heightInCells < size)
-                {
-                    config.widthInCells = Mathf.Max(config.widthInCells, size);
-                    config.heightInCells = Mathf.Max(config.heightInCells, size);
-                    changed = true;
-                }
-                summary.Add($"  ボス階: 道のり {config.bossPathRooms} 部屋・脇道 {config.bossSideRooms} 部屋（シード {config.bossLayoutSeed}）→ {width}x{height}" +
-                            (config.bossPathEnemies ? "、道のりに敵" : ""));
-            }
-            catch (Exception e) when (e is ArgumentException || e is InvalidOperationException)
-            {
-                errors.Add($"{row.Line} 行目: 層 {row.Layer} のボス階を組めない: {e.Message}");
-            }
-
             if (changed) EditorUtility.SetDirty(config);
             return changed;
         }

@@ -297,20 +297,15 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
-        public void ShippedRoute_BossFloorEnemiesFollowTheBossConfig()
+        public void ShippedRoute_BossFloorsUseTheLayerEnemyTable()
         {
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
-            bool any = false;
             for (int i = 0; i < route.Layers.Count; i++)
             {
                 var layer = route.Layers[i];
-                var boss = new DungeonFloor(i, layer.randomFloorCount);
-                var expected = layer.bossConfig.bossPathEnemies ? layer.enemySpawns : null;
-                Assert.AreEqual(expected, route.EnemySpawnsOf(boss), $"層 {i + 1} のボス階の敵の表");
-                any |= layer.bossConfig.bossPathEnemies;
+                // ボス階も、その層のランダムな階と同じ表で敵を出す（出す部屋は設計図で決める）。
+                Assert.AreEqual(layer.enemySpawns, route.EnemySpawnsOf(new DungeonFloor(i, layer.randomFloorCount)), $"層 {i + 1} のボス階の敵の表");
             }
-            Assert.IsTrue(any, "道のりに敵が出るボス階がある");
-            Assert.IsFalse(route.Layers[0].bossConfig.bossPathEnemies, "1 層のボス階には道のりが無い");
         }
 
         [Test]
