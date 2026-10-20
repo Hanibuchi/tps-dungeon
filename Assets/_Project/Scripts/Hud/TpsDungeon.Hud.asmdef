@@ -8,7 +8,8 @@
         "TpsDungeon.Items",
         "TpsDungeon.Progression",
         "TpsDungeon.Combat",
-        "TpsDungeon.Enemies"
+        "TpsDungeon.Enemies",
+        "TpsDungeon.Party"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

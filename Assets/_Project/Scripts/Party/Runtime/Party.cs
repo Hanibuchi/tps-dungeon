@@ -197,37 +197,6 @@ namespace TpsDungeon.Party
         }
 
         /// <summary>
-        /// 全員を決めた所へ跳ばす（モンスターハウスに閉じ込めるときなど）。先頭は leaderAt に facing の向きで、後ろの人は followerPoints に順に
-        /// （足りなければ先頭の所）。跡は先頭の真後ろへ trailLength だけ作り直す。Regroup と違い、真後ろの開けた所（ドアの外など）へは並べない。
-        /// </summary>
-        public void PlaceAllAt(Vector3 leaderAt, Quaternion facing, IReadOnlyList<Vector3> followerPoints, float trailLength)
-        {
-            PartyMember leader = Leader;
-            if (leader == null) return;
-
-            float yaw = facing.eulerAngles.y;
-            Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
-            leader.PlaceAt(leaderAt, rotation);
-            if (leader.Motor != null)
-            {
-                leader.Motor.CameraYaw = yaw;
-                leader.Motor.CameraPitch = 0f;
-            }
-
-            for (int i = 1; i < Order.Count; i++)
-            {
-                Vector3 at = followerPoints != null && i - 1 < followerPoints.Count ? followerPoints[i - 1] : leaderAt;
-                Order[i].PlaceAt(at, rotation);
-            }
-
-            // 跳んだのを LateUpdate が並べ直し（Regroup）と取り違えないよう、今の位置を覚えておく。
-            Transform t = leader.transform;
-            lastLeaderPosition = t.position;
-            Trail.Reset(t.position, rotation * Vector3.back, Mathf.Max(0f, trailLength));
-            Regrouped?.Invoke(this);
-        }
-
-        /// <summary>
         /// 先頭の後ろに跡をまっすぐ作り直し、後ろの全員をその列の位置へ跳ばす。始まりと、先頭が跳んだときに使う。
         /// 真後ろに少しでも余地があれば真後ろに並べる（階段の途中から始まるときなど、後ろが狭くても前に回り込ませない）。
         /// 全員が入りきらなければ、間隔を詰めて真後ろに収める。歩き出せば元の間隔に戻る。

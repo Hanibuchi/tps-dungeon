@@ -16,11 +16,13 @@ namespace TpsDungeon.Party
     /// 層の表（FloorBootstrap.EnemySpawns）から決めたグループ（RoomEnemyRoller）を出す。グループごとに部屋の中のランダムな 1 点の周りに出す。
     /// 中身は階のシードと部屋の番号から決まるので、開ける順に関係なく同じ部屋は同じになる。
     ///
-    /// モンスターハウス（普通の部屋が表の確率でなる）のドアを外から開けると、パーティー全員をその部屋の中へ跳ばし、
-    /// 部屋のドアを全部閉ざして閉める（ボス部屋の奥の扉と同じく「閉ざされている」）。中の敵を全部倒して releaseDelay 秒（既定 1 秒）経つと、閉ざしたドアを開けられるようにする。
+    /// モンスターハウス（普通の部屋が表の確率でなる）のドアを外から開けると、その部屋と、開けた側の部屋（先頭が居る部屋）の 2 部屋に閉じ込める。
+    /// 誰も跳ばさない（跳ばすと自分の居場所を見失う）。開けたドアは開いたまま 2 部屋をつなぎ、ほかのドアを全部閉ざして閉める
+    /// （ボス部屋の奥の扉と同じく「閉ざされている」）。2 部屋の外に残っていた仲間だけ、先頭の居る部屋へ移す。
+    /// 2 部屋の敵を全部倒して releaseDelay 秒（既定 1 秒）経つと、閉ざしたドアを開けられるようにする。
     /// 閉じ込めたとき・鍵が開いたときに、層の表の音を鳴らす。モンスターハウスの予算の上限は表の倍率を掛けたもの。
     /// 残りは倒れた知らせ（EnemyHealth.Died）では数えず、閉じ込めている間に毎フレーム数え直す。自爆する敵は Died を出さずに消え、
-    /// ドアが閉まりきる前に部屋の外へ出た敵は中から倒せないので、消えた・倒れた・部屋の外に居る敵は残りに入れない。
+    /// ドアが閉まりきる前に 2 部屋の外へ出た敵は中から倒せないので、消えた・倒れた・2 部屋の外に居る敵は残りに入れない。
     /// FloorBuilder と同じ GameObject に付ける（GameFlow が FloorNavMesh と一緒に付ける）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -33,9 +35,6 @@ namespace TpsDungeon.Party
 
         [SerializeField, Min(0f), Tooltip("モンスターハウスで、パーティーからこれより近い所には敵を出さない（m）。")]
         private float partyClearance = 3f;
-
-        [SerializeField, Min(0.5f), Tooltip("閉じ込めるとき、先頭をドアからこれだけ部屋の中に入った所に立たせる（m）。")]
-        private float trapDepth = 1.8f;
 
         [SerializeField, Min(0f), Tooltip("モンスターハウスの最後の敵が居なくなってから、ドアの鍵を開ける（音を鳴らす）までの間（秒）。倒した瞬間の音と重ねないように。")]
         private float releaseDelay = 1f;
@@ -51,10 +50,18 @@ namespace TpsDungeon.Party
         private HashSet<int> monsterHouses = new HashSet<int>();
         // 部屋ごとの、その部屋に出した敵。
         private readonly Dictionary<int, List<EnemyHealth>> spawnedEnemies = new Dictionary<int, List<EnemyHealth>>();
-        // 閉じ込めている部屋と、閉ざしたドア。
-        private readonly Dictionary<int, List<Door>> sealedDoors = new Dictionary<int, List<Door>>();
-        // 閉じ込めている部屋の、敵が居なくなった時刻。
-        private readonly Dictionary<int, float> clearedAt = new Dictionary<int, float>();
+        // 閉じ込めているモンスターハウスの部屋ごとの、閉じ込めの記録。
+        private readonly Dictionary<int, Trap> traps = new Dictionary<int, Trap>();
+
+        /// <summary>1 つの閉じ込め。モンスターハウスと開けた側の部屋、閉ざしたドア。</summary>
+        private sealed class Trap
+        {
+            public int House;
+            public int[] Rooms;
+            public List<Door> Doors;
+            // 敵が居なくなった時刻。居る間は null。
+            public float? ClearedAt;
+        }
 
         /// <summary>モンスターハウスに閉じ込めた（部屋の番号）。</summary>
         public event Action<int> Trapped;
@@ -65,39 +72,63 @@ namespace TpsDungeon.Party
         /// <summary>この階のモンスターハウスの部屋の番号。</summary>
         public IReadOnlyCollection<int> MonsterHouses => monsterHouses;
 
-        /// <summary>閉じ込められている部屋があるか。</summary>
-        public bool IsTrapped => sealedDoors.Count > 0;
+        /// <summary>閉じ込められているか。</summary>
+        public bool IsTrapped => traps.Count > 0;
 
-        /// <summary>その部屋に出した敵のうち、消えておらず、倒れておらず、まだ部屋の中に居る数。</summary>
-        public int AliveIn(int room)
+        /// <summary>閉じ込めている範囲に残っている敵の数。閉じ込めていなければ 0。</summary>
+        public int AliveInTrap
         {
-            if (layout == null || !spawnedEnemies.TryGetValue(room, out var enemies)) return 0;
-            var bounds = layout.RoomAt(room).Bounds;
-            int count = 0;
-            foreach (var enemy in enemies)
+            get
             {
-                if (enemy != null && !enemy.IsDead && bounds.Contains(builder.WorldToCell(enemy.transform.position))) count++;
+                int count = 0;
+                foreach (var trap in traps.Values) count += AliveIn(trap);
+                return count;
+            }
+        }
+
+        /// <summary>閉じ込めた部屋に出した敵のうち、消えておらず、倒れておらず、まだ閉じ込めた部屋のどれかに居る数。</summary>
+        private int AliveIn(Trap trap)
+        {
+            if (layout == null) return 0;
+            int count = 0;
+            foreach (int room in trap.Rooms)
+            {
+                if (!spawnedEnemies.TryGetValue(room, out var enemies)) continue;
+                foreach (var enemy in enemies)
+                {
+                    if (enemy != null && !enemy.IsDead && InAnyRoom(trap.Rooms, enemy.transform.position)) count++;
+                }
             }
             return count;
         }
 
-        /// <summary>閉じ込めている部屋の敵が居なくなったら、releaseDelay 秒待ってから鍵を開ける。</summary>
+        private bool InAnyRoom(int[] rooms, Vector3 world)
+        {
+            var cell = builder.WorldToCell(world);
+            foreach (int room in rooms)
+            {
+                if (layout.RoomAt(room).Bounds.Contains(cell)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>閉じ込めている範囲の敵が居なくなったら、releaseDelay 秒待ってから鍵を開ける。</summary>
         private void Update()
         {
-            if (sealedDoors.Count == 0) return;
+            if (traps.Count == 0) return;
             List<int> ready = null;
-            foreach (int room in sealedDoors.Keys)
+            foreach (var trap in traps.Values)
             {
-                if (AliveIn(room) > 0)
+                if (AliveIn(trap) > 0)
                 {
-                    clearedAt.Remove(room);
+                    trap.ClearedAt = null;
                     continue;
                 }
-                if (!clearedAt.TryGetValue(room, out float at)) clearedAt[room] = at = Time.time;
-                if (Time.time - at >= releaseDelay) (ready ??= new List<int>()).Add(room);
+                trap.ClearedAt ??= Time.time;
+                if (Time.time - trap.ClearedAt.Value >= releaseDelay) (ready ??= new List<int>()).Add(trap.House);
             }
             if (ready == null) return;
-            foreach (int room in ready) Release(room);
+            foreach (int house in ready) Release(house);
         }
 
         private void Awake()
@@ -128,8 +159,7 @@ namespace TpsDungeon.Party
             rules = table != null ? table.BuildRules() : null;
             spawnedRooms.Clear();
             spawnedEnemies.Clear();
-            sealedDoors.Clear();
-            clearedAt.Clear();
+            traps.Clear();
             enemyRoot = null;
             monsterHouses = RoomEnemyRoller.PickMonsterHouses(rules, layout);
             if (monsterHouses.Count > 0) Debug.Log($"[Dungeon] モンスターハウス: 部屋 {string.Join(", ", monsterHouses)}", this);
@@ -184,11 +214,13 @@ namespace TpsDungeon.Party
                 var groups = RoomEnemyRoller.RollRoom(rules, layout, room, monsterHouses.Contains(room));
                 if (groups.Count == 0) continue;
 
-                // 外から開けたモンスターハウスなら、先に全員を中へ入れてから（パーティーの近くを避けて）敵を出し、ドアを閉ざす。
+                // 外から開けたモンスターハウスなら、外に残った仲間を手前の部屋へ入れてから（パーティーの近くを避けて）敵を出し、
+                // 2 部屋のドアを開けたドアのほかは閉ざす。
                 bool trap = monsterHouses.Contains(room) && !LeaderInside(room);
-                if (trap) TrapParty(room, edge);
+                int[] trapRooms = trap ? new[] { room, room == edge.RoomA ? edge.RoomB : edge.RoomA } : null;
+                if (trap) GatherParty(trapRooms, edge);
                 Spawn(room, groups, trap);
-                if (trap) SealRoom(room);
+                if (trap) SealRooms(room, trapRooms, door);
             }
         }
 
@@ -294,27 +326,31 @@ namespace TpsDungeon.Party
         // ---- モンスターハウス ----
 
         /// <summary>
-        /// パーティー全員を部屋の中へ跳ばす。先頭は開けたドアから trapDepth だけ入った所に部屋の奥を向いて、
-        /// 仲間はその近くの同じ部屋の NavMesh の上へ。跡は先頭とドアの間だけにする（後ろの人がドアの外へ戻らないように）。
+        /// 閉じ込める部屋（rooms）の外に居る仲間を、手前の部屋（rooms[1]、先頭が居る側）の先頭の近くへ移す。先頭は動かさない。
+        /// 跡も、先頭から手前の部屋の奥へ向けて作り直す。前の跡は閉ざすドアの外を通っていて、仲間がそれを追うとドアの前に溜まってしまう。
         /// </summary>
-        private void TrapParty(int roomIndex, RoomEdge edge)
+        private void GatherParty(int[] rooms, RoomEdge edge)
         {
             var party = Party.Current;
             if (party == null || party.Leader == null) return;
 
-            var room = layout.RoomAt(roomIndex);
-            var socket = edge.RoomA == roomIndex ? edge.SocketA : edge.SocketB;
-            Vector3 doorway = builder.transform.TransformPoint(builder.BoundaryCenter(socket.Cell, socket.Facing));
+            int near = rooms[1];
+            Transform leader = party.Leader.transform;
+            var socket = edge.RoomA == near ? edge.SocketA : edge.SocketB;
             var step = socket.Facing.Offset();
-            Vector3 inward = builder.transform.TransformDirection(new Vector3(-step.X, 0f, -step.Y)).normalized;
+            Vector3 inward = builder.transform.TransformDirection(new Vector3(-step.X, 0f, -step.Y));
+            party.Trail.Reset(leader.position, inward, Mathf.Min(party.Spacing * party.Members.Count, builder.CellSize * 0.5f));
 
-            float depth = Mathf.Min(trapDepth, builder.CellSize * 0.5f);
-            Vector3 leaderAt = Party.OnNavMesh(doorway + inward * depth);
-            if (!InRoom(room, leaderAt)) leaderAt = Party.OnNavMesh(builder.transform.TransformPoint(builder.CellCenter(socket.Cell)));
+            var outside = new List<PartyMember>();
+            for (int i = 1; i < party.Members.Count; i++)
+            {
+                var member = party.Members[i];
+                if (member != null && !InAnyRoom(rooms, member.transform.position)) outside.Add(member);
+            }
+            if (outside.Count == 0) return;
 
-            var followers = FollowerPoints(room, leaderAt, party.Members.Count - 1);
-            party.PlaceAllAt(leaderAt, Quaternion.LookRotation(inward, Vector3.up), followers, depth - 0.6f);
-            Debug.Log($"[Dungeon] モンスターハウス（部屋 {roomIndex}）に閉じ込めた", this);
+            var points = FollowerPoints(layout.RoomAt(near), leader.position, outside.Count);
+            for (int i = 0; i < outside.Count; i++) outside[i].PlaceAt(points[i], leader.rotation);
         }
 
         /// <summary>先頭の近くから順に、同じ部屋の NavMesh の上の点を count 個。部屋に 1.2 m 間隔の点を並べ、先頭に近い順に使う。</summary>
@@ -341,19 +377,26 @@ namespace TpsDungeon.Party
             return points;
         }
 
-        /// <summary>部屋のドアを全部閉ざして閉める。もともと閉ざされていた扉（ボス部屋の奥など）は開けるときに触らないよう控えない。</summary>
-        private void SealRoom(int room)
+        /// <summary>
+        /// 閉じ込める部屋のドアを、開けたドア（opened）のほかは全部閉ざして閉める。
+        /// もともと閉ざされていた扉（ボス部屋の奥など）は開けるときに触らないよう控えない。
+        /// </summary>
+        private void SealRooms(int house, int[] rooms, Door opened)
         {
             var doors = new List<Door>();
-            foreach (var door in builder.DoorsOf(room))
+            foreach (int room in rooms)
             {
-                if (door.IsLocked) continue;
-                door.Seal();
-                doors.Add(door);
+                foreach (var door in builder.DoorsOf(room))
+                {
+                    if (door == opened || door.IsLocked || doors.Contains(door)) continue;
+                    door.Seal();
+                    doors.Add(door);
+                }
             }
-            sealedDoors[room] = doors;
+            traps[house] = new Trap { House = house, Rooms = rooms, Doors = doors };
             PlaySound(table.TrappedSound);
-            Trapped?.Invoke(room);
+            Debug.Log($"[Dungeon] モンスターハウス（部屋 {house}）に閉じ込めた（部屋 {string.Join(", ", rooms)}）", this);
+            Trapped?.Invoke(house);
         }
 
         /// <summary>閉じ込め・鍵が開く音。パーティーは部屋の中に居るので、位置を付けずに鳴らす。</summary>
@@ -364,10 +407,9 @@ namespace TpsDungeon.Party
 
         private void Release(int room)
         {
-            if (!sealedDoors.TryGetValue(room, out var doors)) return;
-            sealedDoors.Remove(room);
-            clearedAt.Remove(room);
-            foreach (var door in doors)
+            if (!traps.TryGetValue(room, out var trap)) return;
+            traps.Remove(room);
+            foreach (var door in trap.Doors)
             {
                 if (door != null) door.Unlock();
             }

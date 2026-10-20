@@ -2,6 +2,7 @@ using TpsDungeon.Combat;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
+using TpsDungeon.Party;
 using TpsDungeon.Player;
 using TpsDungeon.Progression;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace TpsDungeon.Hud
     /// 次に振れる・撃てるまでの待ち（武器種の待ち・持ち替えの待ち）は、選んでいる枠の暗幕で見せる。
     /// 遠距離の武器（弓など）を持っている間は、画面の中央に照準を出す。
     /// 経験値は数字を出さず、帯の伸びだけで見せる。
+    /// モンスターハウスに閉じ込められたら上中央に大きく知らせ、閉じ込められている間は残りの敵の数を出す（<see cref="RoomEnemySpawner"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -35,6 +37,16 @@ namespace TpsDungeon.Hud
 
         // フロアが無いシーンで毎フレーム探さないための間隔（秒）。
         private const float FloorSearchInterval = 1f;
+
+        // モンスターハウスの見出しを出しておく時間（ミリ秒）。閉じ込めたときと、鍵が開いたとき。
+        private const long TrappedBannerMs = 2600;
+        private const long ReleasedBannerMs = 1800;
+
+        // 残りの敵が 1 体減ったときに数を弾ませておく時間（ミリ秒）。
+        private const long RemainingPopMs = 100;
+
+        public const string TrappedTitle = "モンスターハウス！";
+        public const string ReleasedTitle = "扉が開いた";
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
@@ -96,6 +108,20 @@ namespace TpsDungeon.Hud
 
         private FloorBuilder floorBuilder;
         private FloorExploration exploration;
+        private RoomEnemySpawner enemySpawner;
+
+        private VisualElement monsterHouse;
+        private VisualElement monsterHouseBanner;
+        private Label monsterHouseTitle;
+        private Label monsterHouseNote;
+        private VisualElement monsterHouseCount;
+        private Label monsterHouseCountValue;
+
+        // 見出しを退かせる予約。続けて出したら前の予約は捨てる。
+        private IVisualElementScheduledItem bannerHide;
+
+        // 今出している残りの敵の数。出していなければ -1。
+        private int shownRemaining = -1;
         private float nextFloorSearchTime;
 
         private void Reset()
@@ -153,6 +179,15 @@ namespace TpsDungeon.Hud
             shownItemName = null;
             cooldownSlot = -1;
             shownCooldown = 0f;
+            monsterHouse = root.Q<VisualElement>("monster-house");
+            monsterHouseBanner = root.Q<VisualElement>("monster-house-banner");
+            monsterHouseTitle = root.Q<Label>("monster-house-title");
+            monsterHouseNote = root.Q<Label>("monster-house-note");
+            monsterHouseCount = root.Q<VisualElement>("monster-house-count");
+            monsterHouseCountValue = root.Q<Label>("monster-house-count-value");
+            UiTransitions.HideImmediately(monsterHouseBanner);
+            UiTransitions.HideImmediately(monsterHouseCount);
+            shownRemaining = -1;
 
             if (PartyRoster.Leader != null) TakeCharacter(PartyRoster.Leader);
             PartyRoster.LeaderChanged += OnLeaderChanged;
@@ -168,6 +203,8 @@ namespace TpsDungeon.Hud
             UnsubscribeCharacter();
             expRefill?.Pause();
             expRefill = null;
+            bannerHide?.Pause();
+            bannerHide = null;
             if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
             UnbindFloor();
         }
@@ -240,6 +277,7 @@ namespace TpsDungeon.Hud
             UpdateMinimap();
             RefreshCooldown();
             RefreshCrosshair();
+            RefreshMonsterHouseCount();
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)
@@ -461,12 +499,25 @@ namespace TpsDungeon.Hud
 
             floorBuilder.Built += OnFloorBuilt;
             if (floorBuilder.CurrentLayout != null) OnFloorBuilt(floorBuilder.CurrentLayout);
+
+            enemySpawner = bootstrap.GetComponent<RoomEnemySpawner>();
+            if (enemySpawner != null)
+            {
+                enemySpawner.Trapped += OnTrapped;
+                enemySpawner.Released += OnReleased;
+            }
         }
 
         private void UnbindFloor()
         {
             if (floorBuilder != null) floorBuilder.Built -= OnFloorBuilt;
             floorBuilder = null;
+            if (enemySpawner != null)
+            {
+                enemySpawner.Trapped -= OnTrapped;
+                enemySpawner.Released -= OnReleased;
+            }
+            enemySpawner = null;
             exploration = null;
             if (maps == null) return;
             foreach (var m in maps) m.SetExploration(null);
@@ -509,6 +560,57 @@ namespace TpsDungeon.Hud
             var cell = new Vector2(local.x / cellSize, local.z / cellSize);
             float yaw = player.eulerAngles.y - floorBuilder.transform.eulerAngles.y;
             foreach (var m in maps) m.SetPlayer(cell, yaw);
+        }
+
+        private void OnTrapped(int _) => ShowMonsterHouseBanner(released: false);
+
+        private void OnReleased(int _) => ShowMonsterHouseBanner(released: true);
+
+        /// <summary>
+        /// 上中央に見出しを出す。閉じ込めたときは赤い「モンスターハウス！」と添え書き、鍵が開いたときは金の「扉が開いた」だけ。
+        /// 出すたびに頭から現れ直し、しばらくしたら上へ抜けて消える。
+        /// </summary>
+        private void ShowMonsterHouseBanner(bool released)
+        {
+            if (monsterHouseBanner == null) return;
+
+            monsterHouse?.EnableInClassList("monster-house--released", released);
+            if (monsterHouseTitle != null) monsterHouseTitle.text = released ? ReleasedTitle : TrappedTitle;
+            if (monsterHouseNote != null) monsterHouseNote.style.display = released ? DisplayStyle.None : DisplayStyle.Flex;
+
+            monsterHouseBanner.RemoveFromClassList("monster-house__banner--leaving");
+            UiTransitions.HideImmediately(monsterHouseBanner);
+            UiTransitions.Show(monsterHouseBanner);
+
+            bannerHide?.Pause();
+            bannerHide = monsterHouseBanner.schedule.Execute(() =>
+            {
+                bannerHide = null;
+                monsterHouseBanner.AddToClassList("monster-house__banner--leaving");
+                UiTransitions.Hide(monsterHouseBanner);
+            }).StartingIn(released ? ReleasedBannerMs : TrappedBannerMs);
+        }
+
+        /// <summary>閉じ込められている間だけ、残りの敵の数を出す。減ったときだけ小さく弾ませる。</summary>
+        private void RefreshMonsterHouseCount()
+        {
+            if (monsterHouseCount == null) return;
+
+            if (enemySpawner == null || !enemySpawner.IsTrapped)
+            {
+                if (shownRemaining < 0) return;
+                shownRemaining = -1;
+                UiTransitions.Hide(monsterHouseCount);
+                return;
+            }
+
+            int remaining = enemySpawner.AliveInTrap;
+            if (remaining == shownRemaining) return;
+
+            if (shownRemaining < 0) UiTransitions.Show(monsterHouseCount);
+            else if (remaining < shownRemaining) UiTransitions.Flash(monsterHouseCount, "monster-house__count--pop", RemainingPopMs);
+            shownRemaining = remaining;
+            if (monsterHouseCountValue != null) monsterHouseCountValue.text = remaining.ToString();
         }
 
         public static string HpText(int current, int max) => $"{current} / {max}";

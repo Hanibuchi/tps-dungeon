@@ -38,6 +38,17 @@
             <ui:VisualElement class="crosshair__tick crosshair__tick--right" picking-mode="Ignore" />
             <ui:VisualElement class="crosshair__dot" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="monster-house" class="monster-house" picking-mode="Ignore">
+            <ui:VisualElement name="monster-house-banner" class="monster-house__banner" picking-mode="Ignore">
+                <ui:Label name="monster-house-title" text="モンスターハウス！" class="monster-house__title rpg-deco-bold" picking-mode="Ignore" />
+                <ui:Label name="monster-house-note" text="敵をすべて倒すまで扉は開かない" class="monster-house__note rpg-deco" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="monster-house-count" class="monster-house__count" picking-mode="Ignore">
+                <kit:OrnateFrame class="hud-frame" />
+                <ui:Label text="残り" class="monster-house__count-caption rpg-deco-bold" picking-mode="Ignore" />
+                <ui:Label name="monster-house-count-value" text="0" class="monster-house__count-value rpg-deco-bold" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="map-overlay" class="map-overlay" picking-mode="Ignore">
             <ui:VisualElement class="map-large" picking-mode="Ignore">
                 <ui:VisualElement class="map-large__clip" picking-mode="Ignore">
