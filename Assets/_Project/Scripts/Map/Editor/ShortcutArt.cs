@@ -31,7 +31,6 @@ namespace TpsDungeon.Map.Editor
 
         // 地上のロープ。
         public const float SkyRopeTop = 60f;          // 吊り元の高さ。見上げても端が見えにくいよう高くする
-        private const float ClosedRopeEnd = 4.3f;     // 閉じているとき、ロープの先がここまで巻き上がっている（見えるが手は届かない）
         private const float DaisRadius = 1.4f;
         private const float DaisHeight = 0.18f;
 
@@ -113,13 +112,15 @@ namespace TpsDungeon.Map.Editor
             float ropeTop = BeamHeight - 0.24f;
             float ropeBottom = -WellDepth + 0.6f;
             Cylinder(well.transform, "Rope", Rope(), new Vector3(0f, (ropeTop + ropeBottom) * 0.5f, 0f), RopeRadius, ropeTop - ropeBottom, 8);
-            // 照準が穴の中に向いても調べられるよう、穴の上に見えない当たりを置く（トリガー。歩くのは枠が止める）。
-            var reach = new GameObject("Reach");
-            reach.transform.SetParent(well.transform, false);
-            var trigger = reach.AddComponent<BoxCollider>();
-            trigger.isTrigger = true;
-            trigger.center = new Vector3(0f, 0.6f, 0f);
-            trigger.size = new Vector3(WellHole, 2.4f, WellHole);
+            // 穴は竪穴の底から枠の上の高さまで、見えない当たりで埋めておく。跳んでも、仲間が寄ってきても落ちない。
+            // ShortcutPoint と同じ子にあるので、照準が穴の中に向いても調べられる。
+            var plug = new GameObject("Plug");
+            plug.transform.SetParent(well.transform, false);
+            var block = plug.AddComponent<BoxCollider>();
+            float plugTop = BeamHeight;
+            float plugBottom = -WellDepth;
+            block.center = new Vector3(0f, (plugTop + plugBottom) * 0.5f, 0f);
+            block.size = new Vector3(WellHole, plugTop - plugBottom, WellHole);
 
             // 開いているときだけ出す光。枠の内側の縁の光る帯と、穴の上の冷たい灯り。
             var glow = new GameObject("OpenGlow");
@@ -155,12 +156,12 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// 地上のショートカットの目印を parent の下に作る（原点は地面）。layer は 0 始まり。ropeTop はロープの吊り元の高さ（真上に塔が張り出していればその下面）。
         /// 空の高い所から太いロープが垂れ、足元に丸い石の台座、その脇に層の番号（Ⅰ〜Ⅴ）を刻んだ石板と、層の色の旗。
-        /// 開いている（その層を解放してある）ときは、ロープの先が台座まで下りてランタンが灯る。閉じているときは、ロープの先が手の届かない高さまで
-        /// 巻き上がり、ランタンは消えている（調べると「ロープに手が届かない」）。調べると、その層のボス階のショートカットの部屋へ登る。
+        /// ロープは開いている（その層を解放してある）ときだけ垂れていて、台座の縁が淡く光る。閉じている間はロープが無く、調べても何も出ない。
+        /// 調べると、その層のボス階のショートカットの部屋へ登る。
         /// </summary>
         public static GameObject BuildSurfaceRope(Transform parent, string name, int layer, DungeonRoute route, float ropeTop = SkyRopeTop)
         {
-            ropeTop = Mathf.Max(ClosedRopeEnd + 2f, ropeTop);
+            ropeTop = Mathf.Max(DaisHeight + 3f, ropeTop);
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);
             Color color = LayerColors[Mathf.Clamp(layer, 0, LayerColors.Length - 1)];
@@ -189,43 +190,33 @@ namespace TpsDungeon.Map.Editor
             Box(flag.transform, "Cloth", Flag(layer, color), new Vector3(0.45f, 2.75f, 0f), new Vector3(0.8f, 0.6f, 0.03f), false);
             Box(flag.transform, "Tail", Flag(layer, color), new Vector3(0.62f, 2.32f, 0f), new Vector3(0.46f, 0.26f, 0.03f), false);
 
-            // ロープ。吊り元（空の高い所）を軸にゆっくり揺らす。下の端は開き閉めで切り替える。
+            // ロープ。吊り元（空の高い所）を軸にゆっくり揺らし、台座の上まで垂らす。開いているときだけ出す。
             var anchor = new GameObject("RopeAnchor");
             anchor.transform.SetParent(root.transform, false);
             anchor.transform.localPosition = new Vector3(0f, ropeTop, 0f);
             anchor.AddComponent<RopeSway>();
-            float upperLength = ropeTop - ClosedRopeEnd;
-            Cylinder(anchor.transform, "Rope", Rope(), new Vector3(0f, -upperLength * 0.5f, 0f), RopeRadius * 1.3f, upperLength, 8);
+            float ropeLength = ropeTop - DaisHeight - 0.15f;
+            Cylinder(anchor.transform, "Rope", Rope(), new Vector3(0f, -ropeLength * 0.5f, 0f), RopeRadius * 1.3f, ropeLength, 8);
+            Knot(anchor.transform, new Vector3(0f, -ropeTop + DaisHeight + 0.2f, 0f));
 
-            // 開いているとき：台座まで垂れたロープ、結び目、手の届く高さの灯ったランタン。
-            var lowered = new GameObject("Lowered");
-            lowered.transform.SetParent(anchor.transform, false);
-            float lowerLength = ClosedRopeEnd - DaisHeight - 0.15f;
-            Cylinder(lowered.transform, "Rope", Rope(), new Vector3(0f, -upperLength - lowerLength * 0.5f, 0f), RopeRadius * 1.3f, lowerLength, 8);
-            Knot(lowered.transform, new Vector3(0f, -ropeTop + DaisHeight + 0.2f, 0f));
-            Lantern(lowered.transform, new Vector3(0f, -ropeTop + 2.3f, 0f), lit: true);
-
-            // 閉じているとき：巻き上がったロープの先の結び目と、消えたランタン。
-            var raised = new GameObject("Raised");
-            raised.transform.SetParent(anchor.transform, false);
-            Knot(raised.transform, new Vector3(0f, -upperLength - 0.05f, 0f));
-            Lantern(raised.transform, new Vector3(0f, -upperLength + 0.5f, 0f), lit: false);
-
-            // 調べる所。台座の上、ロープの下の方（揺れない当たり）。
+            // 調べる所。台座の上、ロープの下の方（揺れない当たり）。当たりも開いているときだけ置き、閉じている間は照準を遮らない。
             var reach = new GameObject("Reach");
             reach.transform.SetParent(root.transform, false);
-            var trigger = reach.AddComponent<BoxCollider>();
+            var volume = new GameObject("Volume");
+            volume.transform.SetParent(reach.transform, false);
+            var trigger = volume.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
             trigger.center = new Vector3(0f, 1.6f, 0f);
             trigger.size = new Vector3(1.4f, 3.2f, 1.4f);
             var point = reach.AddComponent<ShortcutPoint>();
-            Configure(point, ShortcutDirection.ToBossFloor, route, "ロープを登る", "ロープに手が届かない",
+            Configure(point, ShortcutDirection.ToBossFloor, route, "ロープを登る", "",
                 "第 {0} 層への近道",
-                "空から垂れたロープ。登った先は、ダンジョンの第 {0} 層のボス階に通じている。永続アップグレードで解放すると、ロープが下りてくる。",
-                new[] { lowered, ring }, new[] { raised });
+                "空から垂れたロープ。登った先は、ダンジョンの第 {0} 層のボス階に通じている。",
+                new[] { anchor, ring, volume }, new GameObject[0]);
             // 置いたときは閉じた見た目にしておく（実行中は ShortcutPoint が解放状態に合わせる）。
-            lowered.SetActive(false);
+            anchor.SetActive(false);
             ring.SetActive(false);
+            volume.SetActive(false);
             var serialized = new SerializedObject(point);
             serialized.FindProperty("layer").intValue = layer;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -259,23 +250,6 @@ namespace TpsDungeon.Map.Editor
         {
             Cylinder(parent, "Knot", Rope(), at, RopeRadius * 2.4f, 0.16f, 8);
             Cylinder(parent, "KnotTail", Rope(), at + Vector3.down * 0.16f, RopeRadius * 1.6f, 0.14f, 8);
-        }
-
-        /// <summary>ロープに結んだランタン。鉄の枠・ガラス（灯っていれば光る）・取っ手。灯っていれば暖かい光を出す。</summary>
-        private static void Lantern(Transform parent, Vector3 at, bool lit)
-        {
-            var lantern = new GameObject(lit ? "Lantern" : "LanternDark");
-            lantern.transform.SetParent(parent, false);
-            lantern.transform.localPosition = at + new Vector3(0.12f, 0f, 0f);
-            Box(lantern.transform, "Top", Iron(), new Vector3(0f, 0.2f, 0f), new Vector3(0.26f, 0.05f, 0.26f), false);
-            Box(lantern.transform, "Bottom", Iron(), new Vector3(0f, -0.18f, 0f), new Vector3(0.26f, 0.05f, 0.26f), false);
-            Box(lantern.transform, "Glass", lit ? LanternLit() : LanternDark(), Vector3.zero, new Vector3(0.2f, 0.34f, 0.2f), false);
-            foreach (float x in new[] { -0.12f, 0.12f })
-            {
-                foreach (float z in new[] { -0.12f, 0.12f }) Box(lantern.transform, "Bar", Iron(), new Vector3(x, 0f, z), new Vector3(0.03f, 0.36f, 0.03f), false);
-            }
-            Box(lantern.transform, "Handle", Iron(), new Vector3(-0.06f, 0.27f, 0f), new Vector3(0.14f, 0.03f, 0.03f), false);
-            if (lit) AddLight(lantern.transform, "Light", Vector3.zero, new Color(1f, 0.72f, 0.4f), 2.6f, 7f, flicker: true);
         }
 
         /// <summary>ローマ数字（1〜5）を、太さのある棒で組む。center は字の真ん中、height は字の高さ。棒は -Z へ少し出す。</summary>
@@ -403,8 +377,6 @@ namespace TpsDungeon.Map.Editor
         private static Material Stone() => Lit("Shortcut_Stone", new Color(0.58f, 0.56f, 0.53f), 0.1f);
         private static Material StoneDark() => Lit("Shortcut_StoneDark", new Color(0.36f, 0.35f, 0.34f), 0.1f);
         private static Material Gold() => Lit("Shortcut_Gold", new Color(0.85f, 0.66f, 0.25f), 0.55f, metallic: 0.8f);
-        private static Material LanternDark() => Lit("Shortcut_LanternDark", new Color(0.18f, 0.16f, 0.13f), 0.6f);
-        private static Material LanternLit() => Emissive("Shortcut_LanternLit", new Color(1f, 0.8f, 0.45f), new Color(1f, 0.62f, 0.25f) * 2.2f);
         private static Material Glow() => Emissive("Shortcut_Glow", new Color(0.3f, 0.75f, 0.85f), new Color(0.25f, 0.7f, 0.9f) * 0.7f);
         private static Material Flag(int layer, Color color) => Lit($"Shortcut_Flag_L{layer + 1}", color, 0.05f);
 
