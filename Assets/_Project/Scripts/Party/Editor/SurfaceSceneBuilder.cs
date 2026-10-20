@@ -290,6 +290,8 @@ namespace TpsDungeon.Party.Editor
             surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));
             surface.buildHeightMesh = true;
+            // 歩ける範囲（村とショートカットのまわり）の見えない壁・森の当たり・焼く範囲を揃える。
+            SurfaceWalkArea.Apply(world);
 
             Physics.SyncTransforms();
             surface.BuildNavMesh();

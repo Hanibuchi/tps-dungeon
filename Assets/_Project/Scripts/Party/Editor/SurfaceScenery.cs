@@ -27,7 +27,7 @@ namespace TpsDungeon.Party.Editor
     /// - 地面は素材の草地のタイル（凹凸が 0.3 m ほどある）で、歩ける範囲のタイルにはそのまま MeshCollider を付けて床にする。
     ///   平らな [Surface]/Plaza/Ground（ProBuilder の板）は描画も当たりも止める（平らな当たりと凹凸のある見た目がずれて、物もキャラも浮いて見えたため）。
     /// - 物は置く所の真下の見た目の地面の高さに合わせる。足元（大きさに応じた円）の一番低い所に置くので、坂でも端が浮かない。城の箱も少し沈める。
-    /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧と塔のまわりのもや（[Mist]、<see cref="MistBuilder"/>）だけ。
+    /// 城（[Surface]/Castle）とパーティーには触らない。見えない壁（[Bounds]）は NavMesh を焼くときに歩ける範囲（SurfaceWalkArea）に合わせ直す。置き直すのは Village・[Scenery]・光と霧と塔のまわりのもや（[Mist]、<see cref="MistBuilder"/>）だけ。
     /// 階（L1_Random など）の窓の外にも、同じ草地・丘・山・空と光と霧、床より下のもやを置く（<see cref="BuildOutlook"/>）。
     /// </summary>
     public static class SurfaceScenery
@@ -1047,6 +1047,9 @@ namespace TpsDungeon.Party.Editor
         {
             var surface = surfaceRoot.GetComponent<NavMeshSurface>();
             if (surface == null) return;
+
+            // 歩ける範囲（ショートカットのまわりまで）を揃えてから焼く。
+            SurfaceWalkArea.Apply(surfaceRoot);
 
             // 味方と、すり抜けられる壊せる草花（Breakable）は焼かない。
             surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));
