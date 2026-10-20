@@ -6,7 +6,8 @@ namespace TpsDungeon.Map.Generation
 {
     /// <summary>
     /// 1 フロア分のレイアウトを生成する入口。
-    /// 成長パッキングで部屋と辺を同時に決め、そのあと階段とショップの役割を割り当てる。
+    /// 成長パッキングで部屋と辺を同時に決め、そのあと階段・ショップ・ショートカットの役割を割り当てる。
+    /// ショップとショートカットは、置くかどうかを最初に確率（ShopChance・ShortcutChance）で引く。
     /// UnityEngine には依存しないので、EditMode テストからそのまま呼べる。
     /// </summary>
     public static class FloorLayoutGenerator
@@ -15,6 +16,7 @@ namespace TpsDungeon.Map.Generation
         {
             if (parameters == null) throw new ArgumentNullException(nameof(parameters));
             parameters.Validate();
+            parameters = Resolve(parameters, seed);
 
             var rng = new Random(seed);
 
@@ -39,18 +41,25 @@ namespace TpsDungeon.Map.Generation
 
             var canHostStair = new bool[rooms.Count];
             var canHostShop = new bool[rooms.Count];
+            var canHostShortcut = new bool[rooms.Count];
             for (int i = 0; i < rooms.Count; i++)
             {
                 canHostStair[i] = (rooms[i].Template.Tags & RoomTag.Stair) != 0;
                 canHostShop[i] = (rooms[i].Template.Tags & RoomTag.Shop) != 0;
+                canHostShortcut[i] = (rooms[i].Template.Tags & RoomTag.Shortcut) != 0;
             }
 
             // 階段とショップのマーカーは FloorBuilder が部屋の中心に独立して置くので、
             // 専用テンプレートが足りなくても通常部屋で代用できる。足りないときは全部屋を候補に開放する。
             if (CountTrue(canHostStair) < 2) Fill(canHostStair);
             if (parameters.IncludeShop && CountTrue(canHostShop) < 1) Fill(canHostShop);
+            // ショートカットの部屋（井戸の専用の部屋）は階段に使わない。
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                if (canHostShortcut[i]) canHostStair[i] = false;
+            }
 
-            var assignment = SpecialRoomAssigner.Assign(rooms.Count, edges, canHostStair, canHostShop, parameters, rng);
+            var assignment = SpecialRoomAssigner.Assign(rooms.Count, edges, canHostStair, canHostShop, canHostShortcut, parameters, rng);
 
             var layout = new FloorLayout(seed, parameters.Width, parameters.Height, rooms, edges);
             layout.EntranceRoom = ResolveRole(rooms, assignment.EntranceRoom, RoomRole.Entrance);
@@ -58,10 +67,38 @@ namespace TpsDungeon.Map.Generation
             layout.ShopRoom = parameters.IncludeShop
                 ? ResolveRole(rooms, assignment.ShopRoom, RoomRole.Shop)
                 : -1;
+            int shortcut = parameters.IncludeShortcut ? ResolveRole(rooms, assignment.ShortcutRoom, RoomRole.Shortcut) : -1;
 
             foreach (var room in rooms) room.FeatureCell = PickFeatureCell(room);
+            // ショートカットの部屋の真ん中に井戸を置く（FloorBuilder）。
+            if (shortcut >= 0) layout.ShortcutCell = rooms[shortcut].FeatureCell;
 
             return layout;
+        }
+
+        // 置くかどうかを引く乱数の塩。部屋を詰める乱数とは別の流れにして、確率を変えても間取りの引き方が変わらないようにする。
+        private const int RollSalt = 0x5A17C0DE;
+
+        /// <summary>
+        /// ショップとショートカットを今回置くかを引き、その結果を入れた生成条件の写しを返す。
+        /// ショートカットを置かない回は、Shortcut タグの部屋を候補から外す（普通の部屋として紛れ込まないように）。
+        /// </summary>
+        private static FloorGenerationParams Resolve(FloorGenerationParams parameters, int seed)
+        {
+            var roll = new Random(seed ^ RollSalt);
+            var resolved = parameters.Clone();
+            resolved.IncludeShop = roll.NextDouble() < parameters.ShopChance;
+            resolved.IncludeShortcut = roll.NextDouble() < parameters.ShortcutChance;
+            if (!resolved.IncludeShortcut)
+            {
+                var templates = new List<RoomTemplateData>();
+                foreach (var template in parameters.Templates)
+                {
+                    if ((template.Tags & RoomTag.Shortcut) == 0) templates.Add(template);
+                }
+                resolved.Templates = templates;
+            }
+            return resolved;
         }
 
         private static int ResolveRole(IReadOnlyList<RoomInstance> rooms, int roomIndex, RoomRole role)

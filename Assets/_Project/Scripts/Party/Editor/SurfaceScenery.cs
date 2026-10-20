@@ -27,7 +27,7 @@ namespace TpsDungeon.Party.Editor
     /// - 地面は素材の草地のタイル（凹凸が 0.3 m ほどある）で、歩ける範囲のタイルにはそのまま MeshCollider を付けて床にする。
     ///   平らな [Surface]/Plaza/Ground（ProBuilder の板）は描画も当たりも止める（平らな当たりと凹凸のある見た目がずれて、物もキャラも浮いて見えたため）。
     /// - 物は置く所の真下の見た目の地面の高さに合わせる。足元（大きさに応じた円）の一番低い所に置くので、坂でも端が浮かない。城の箱も少し沈める。
-    /// 城（[Surface]/Castle）と見えない壁（[Bounds]）とパーティーには触らない。置き直すのは Village・[Scenery]・光と霧と塔のまわりのもや（[Mist]、<see cref="MistBuilder"/>）だけ。
+    /// 城（[Surface]/Castle）とパーティーには触らない。見えない壁（[Bounds]）は NavMesh を焼くときに歩ける範囲（SurfaceWalkArea）に合わせ直す。置き直すのは Village・[Scenery]・光と霧と塔のまわりのもや（[Mist]、<see cref="MistBuilder"/>）だけ。
     /// 階（L1_Random など）の窓の外にも、同じ草地・丘・山・空と光と霧、床より下のもやを置く（<see cref="BuildOutlook"/>）。
     /// </summary>
     public static class SurfaceScenery
@@ -340,9 +340,9 @@ namespace TpsDungeon.Party.Editor
         {
             // 向きは扉が向く方角で決める（90 で東、-90 で西）。
             GameObject shop = PlaceBuilding(p, "rpgpp_lt_building_02", parent, new Vector3(-25f, 0f, 6f), 90f);
-            AddDoorGate(shop, "武器屋", "武器を売り買いできる。（準備中）");
+            AddDoorGate(shop, "武器屋", "武器を売り買いできる。（準備中）", MapIcon.WeaponShop);
             GameObject bank = PlaceBuilding(p, "rpgpp_lt_building_04", parent, new Vector3(-25f, 0f, -13f), 90f);
-            AddDoorGate(bank, "銀行", "持ち物を預けられる。（準備中）");
+            AddDoorGate(bank, "銀行", "持ち物を預けられる。（準備中）", MapIcon.Bank);
 
             // 東の民家（入れない）。
             PlaceBuilding(p, "rpgpp_lt_building_01", parent, new Vector3(25f, 0f, -14f), -90f);
@@ -367,15 +367,19 @@ namespace TpsDungeon.Party.Editor
             return p.Place("Buildings/Bld_closed/" + prefabName, parent, at, doorYaw - DoorYaw(prefabName), Vector3.one, Collide.None, true);
         }
 
-        /// <summary>建物の扉の前に照準用のトリガーを張り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。</summary>
-        private static void AddDoorGate(GameObject building, string title, string body)
+        /// <summary>
+        /// 建物の扉の面に照準用の薄いトリガーを貼り、SceneGate（閉じている）を付ける。扉は <see cref="DoorYaw"/> の向きの面の真ん中。
+        /// トリガーは扉の面から <see cref="DoorTriggerDepth"/> だけ外へ出る薄い板にする。厚くして外へ張り出すと、扉に正面から擦り付いたときに
+        /// 照準の線の出どころ（胸の高さ）がトリガーの中に入り、中から出た線はトリガーに当たらないので調べられなくなる。
+        /// </summary>
+        private static void AddDoorGate(GameObject building, string title, string body, MapIcon icon)
         {
             var door = new GameObject("Door");
             door.transform.SetParent(building.transform, false);
             PlaceDoor(building, door.transform);
             var trigger = door.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = new Vector3(2.4f, 2.6f, 0.8f);
+            trigger.size = new Vector3(2.4f, 2.6f, DoorTriggerDepth);
 
             var gate = door.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -385,16 +389,20 @@ namespace TpsDungeon.Party.Editor
             serialized.FindProperty("closedLabel").stringValue = "準備中";
             serialized.FindProperty("title").stringValue = title;
             serialized.FindProperty("description").stringValue = body;
+            serialized.FindProperty("mapIcon").enumValueIndex = (int)icon;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>扉のトリガーを、建物の扉の面の真ん中の少し外に置き、その面に向ける。</summary>
+        /// <summary>扉のトリガーの厚み（m）。扉の面から外へこれだけ出る。</summary>
+        internal const float DoorTriggerDepth = 0.1f;
+
+        /// <summary>扉のトリガーを、建物の扉の面の真ん中に貼り付けるように置き（面から外へ厚みの半分）、その面に向ける。</summary>
         public static void PlaceDoor(GameObject building, Transform door)
         {
             Bounds local = LocalBounds(building);
             float yaw = DoorYaw(SourceName(building));
             Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
-            float reach = Mathf.Abs(dir.x) * local.extents.x + Mathf.Abs(dir.z) * local.extents.z + 0.3f;
+            float reach = Mathf.Abs(dir.x) * local.extents.x + Mathf.Abs(dir.z) * local.extents.z + DoorTriggerDepth * 0.5f;
             Vector3 at = local.center + dir * reach;
             door.localPosition = new Vector3(at.x, 1.3f, at.z);
             door.localRotation = Quaternion.Euler(0f, yaw, 0f);
@@ -1047,6 +1055,9 @@ namespace TpsDungeon.Party.Editor
         {
             var surface = surfaceRoot.GetComponent<NavMeshSurface>();
             if (surface == null) return;
+
+            // 歩ける範囲（ショートカットのまわりまで）を揃えてから焼く。
+            SurfaceWalkArea.Apply(surfaceRoot);
 
             // 味方と、すり抜けられる壊せる草花（Breakable）は焼かない。
             surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));

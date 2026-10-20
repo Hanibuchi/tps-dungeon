@@ -13,6 +13,8 @@ namespace TpsDungeon.Map.Editor
     /// 階を確かめるためのウィンドウ（Tools/TPS Dungeon/階のデバッグ）。Play 中の階で使う。
     /// 1 つ下・上の階へ移る、道順の好きな階へ移る、ボス部屋の閉ざされた扉を開けられるようにする。
     /// 「下り階段で降りられる」は道順（DungeonRoute）の設定そのもので、Play していなくても切り替えられる（アセットに保存される）。
+    /// 「ショートカットの解放」は層ごとのショートカット（ボス階の井戸と地上のロープ）の解放状態で、Play していなくても切り替えられる
+    /// （本物の保存 shortcuts.json に書く。永続アップグレードで解放する仕組みができるまでの代わり）。
     /// </summary>
     public sealed class FloorDebugWindow : EditorWindow
     {
@@ -23,6 +25,8 @@ namespace TpsDungeon.Map.Editor
         private PopupField<DungeonFloor> floorPopup;
         private Button jumpButton;
         private Toggle allowDownToggle;
+        private VisualElement shortcutToggles;
+        private readonly List<Toggle> shortcutLayerToggles = new List<Toggle>();
 
         [MenuItem("Tools/TPS Dungeon/階のデバッグ")]
         public static void Open()
@@ -66,6 +70,10 @@ namespace TpsDungeon.Map.Editor
             };
             allowDownToggle.RegisterValueChangedCallback(e => SetAllowGoingDown(e.newValue));
             root.Add(allowDownToggle);
+
+            root.Add(new Label("ショートカットの解放") { style = { marginTop = 10, unityFontStyleAndWeight = FontStyle.Bold } });
+            shortcutToggles = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap } };
+            root.Add(shortcutToggles);
 
             root.schedule.Execute(Refresh).Every(250);
             Refresh();
@@ -128,6 +136,39 @@ namespace TpsDungeon.Map.Editor
 
             allowDownToggle.SetEnabled(route != null);
             if (route != null) allowDownToggle.SetValueWithoutNotify(route.AllowGoingDown);
+
+            RefreshShortcutToggles(route);
+        }
+
+        /// <summary>道順の層ごとに、ショートカットの解放のトグルを並べる（層の数が変わったら並べ直す）。</summary>
+        private void RefreshShortcutToggles(DungeonRoute route)
+        {
+            int count = route != null ? route.Layers.Count : 0;
+            if (shortcutLayerToggles.Count != count)
+            {
+                shortcutToggles.Clear();
+                shortcutLayerToggles.Clear();
+                for (int i = 0; i < count; i++)
+                {
+                    int layer = i;
+                    var toggle = new Toggle($"{layer + 1} 層")
+                    {
+                        tooltip = $"第 {layer + 1} 層のショートカット（ボス階の井戸と地上のロープ）を解放する。本物の保存（shortcuts.json）に書く。",
+                        style = { marginRight = 8 },
+                    };
+                    toggle.labelElement.style.minWidth = 0;
+                    toggle.RegisterValueChangedCallback(e => SetShortcutUnlocked(layer, e.newValue));
+                    shortcutToggles.Add(toggle);
+                    shortcutLayerToggles.Add(toggle);
+                }
+            }
+            for (int i = 0; i < shortcutLayerToggles.Count; i++) shortcutLayerToggles[i].SetValueWithoutNotify(ShortcutUnlocks.IsUnlocked(i));
+        }
+
+        private static void SetShortcutUnlocked(int layer, bool unlocked)
+        {
+            ShortcutUnlocks.SetUnlocked(layer, unlocked);
+            Debug.Log($"[Dungeon] デバッグ: 第 {layer + 1} 層のショートカットを{(unlocked ? "解放した" : "閉じた")}");
         }
 
         private static bool SameChoices(List<DungeonFloor> a, List<DungeonFloor> b)

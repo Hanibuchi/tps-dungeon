@@ -31,8 +31,17 @@ namespace TpsDungeon.Map.Generation
         /// </summary>
         public int ExtraDoorCount = 2;
 
-        /// <summary>ショップ部屋を配置するか。</summary>
-        public bool IncludeShop = true;
+        /// <summary>ショップ部屋を置く確率（0〜1）。階を作るたびに引く。</summary>
+        public float ShopChance = 0.5f;
+
+        /// <summary>ショートカット（井戸）の部屋を置く確率（0〜1）。その層のショートカットを解放していなければ 0 にして渡す。</summary>
+        public float ShortcutChance;
+
+        /// <summary>今回ショップを置くか。FloorLayoutGenerator が ShopChance から引いて入れる（部屋を詰める・役割を割り当てるときに見る）。</summary>
+        internal bool IncludeShop = true;
+
+        /// <summary>今回ショートカットを置くか。FloorLayoutGenerator が ShortcutChance から引いて入れる。</summary>
+        internal bool IncludeShortcut;
 
         /// <summary>抽選対象の部屋テンプレート。</summary>
         public IReadOnlyList<RoomTemplateData> Templates = Array.Empty<RoomTemplateData>();
@@ -42,8 +51,8 @@ namespace TpsDungeon.Map.Generation
             if (Width < 16 || Height < 16)
                 throw new ArgumentException($"フロアサイズが小さすぎる: {Width}x{Height}");
 
-            // 入口・出口・ショップは別々の部屋に置きたいので、その分だけ下限が要る。
-            int floor = IncludeShop ? 4 : 3;
+            // 入口・出口・ショップ・ショートカットは別々の部屋に置きたいので、その分だけ下限が要る。
+            int floor = MinimumRoomCount(ShopChance, ShortcutChance);
             if (MinRoomCount < floor)
                 throw new ArgumentException($"MinRoomCount は {floor} 以上でなければならない: {MinRoomCount}");
             if (MaxRoomCount < MinRoomCount)
@@ -96,5 +105,9 @@ namespace TpsDungeon.Map.Generation
         }
 
         public FloorGenerationParams Clone() => (FloorGenerationParams)MemberwiseClone();
+
+        /// <summary>部屋数の下限（入口・出口と、出ることのあるショップ・ショートカットを別々の部屋に置ける数）。</summary>
+        public static int MinimumRoomCount(float shopChance, float shortcutChance) =>
+            3 + (shopChance > 0f ? 1 : 0) + (shortcutChance > 0f ? 1 : 0);
     }
 }

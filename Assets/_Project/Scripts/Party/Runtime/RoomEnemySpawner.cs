@@ -161,7 +161,9 @@ namespace TpsDungeon.Party
             spawnedEnemies.Clear();
             traps.Clear();
             enemyRoot = null;
-            monsterHouses = RoomEnemyRoller.PickMonsterHouses(rules, layout);
+            // ボス階ではモンスターハウスにしない（閉じ込めると大扉やショートカットの部屋の扉まで閉ざしてしまう）。
+            bool bossFloor = bootstrap != null && bootstrap.Config != null && bootstrap.Config.layoutShape == FloorLayoutShape.Boss;
+            monsterHouses = bossFloor ? new HashSet<int>() : RoomEnemyRoller.PickMonsterHouses(rules, layout);
             if (monsterHouses.Count > 0) Debug.Log($"[Dungeon] モンスターハウス: 部屋 {string.Join(", ", monsterHouses)}", this);
             PrepareBreakables();
         }

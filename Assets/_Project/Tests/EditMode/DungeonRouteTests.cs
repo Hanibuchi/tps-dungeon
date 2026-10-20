@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using TpsDungeon.Map.Authoring;
@@ -24,7 +25,11 @@ namespace TpsDungeon.Map.Tests
             created.Clear();
             DungeonProgress.Pending = null;
             DungeonProgress.Current = null;
+            ShortcutUnlocks.PathOverride = null;
+            if (System.IO.File.Exists(unlockPath)) System.IO.File.Delete(unlockPath);
         }
+
+        private string unlockPath => System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tps-dungeon-tests-shortcuts.json");
 
         private DungeonRoute Route(params int[] randomCounts)
         {
@@ -254,6 +259,101 @@ namespace TpsDungeon.Map.Tests
             Assert.IsFalse(builder.HasLockedDoors);
             Assert.IsTrue(up.IsOpen, "扉を開けられるようになったら上り階段も開く");
             Assert.AreEqual(route.SceneOf(route.Next(boss).Value), up.SceneName);
+        }
+
+        [TestCase(0)]
+        [TestCase(2)]
+        public void BossFloor_ShortcutRoomOpensOnlyOnceItsLayerIsUnlocked(int layer)
+        {
+            ShortcutUnlocks.PathOverride = unlockPath;
+            if (System.IO.File.Exists(unlockPath)) System.IO.File.Delete(unlockPath);
+
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            var boss = new DungeonFloor(layer, route.Layers[layer].randomFloorCount);
+            var host = new GameObject("DungeonRouteTests");
+            created.Add(host);
+            var bootstrap = MakeBootstrap(host, route);
+            bootstrap.ArriveAt(boss);
+            bootstrap.Generate(1);
+
+            var builder = host.GetComponent<FloorBuilder>();
+            Assert.IsTrue(builder.ShortcutDoor.IsLocked, "解放していない層のショートカットの部屋は閉ざされている");
+            Assert.AreEqual(layer, builder.ShortcutWell.Layer, "井戸に今の層が入る");
+            Assert.IsFalse(builder.ShortcutWell.IsOpen);
+            Assert.IsFalse(builder.ShortcutWell.CanInteract(null), "扉の隙間から照準が届いても、井戸の案内は出ない");
+
+            // ほかの層を解放しても開かない。
+            ShortcutUnlocks.SetUnlocked(layer + 1, true);
+            bootstrap.Generate(1);
+            Assert.IsTrue(builder.ShortcutDoor.IsLocked);
+
+            ShortcutUnlocks.SetUnlocked(layer, true);
+            ShortcutUnlocks.Reload();
+            Assert.IsTrue(ShortcutUnlocks.IsUnlocked(layer), "解放状態はファイルに残る");
+            bootstrap.Generate(1);
+            Assert.IsFalse(builder.ShortcutDoor.IsLocked, "解放した層ではショートカットの部屋の扉を開けられる");
+            Assert.IsTrue(builder.ShortcutWell.IsOpen);
+            Assert.AreEqual("ロープを伝って降りる", builder.ShortcutWell.PromptLabel);
+            Assert.IsTrue(builder.HasLockedDoors, "出口の扉はボスを倒すまで閉ざされたまま");
+        }
+
+        [Test]
+        public void RandomFloor_HasAShortcutWellOnlyWhenItsLayerIsUnlocked()
+        {
+            ShortcutUnlocks.PathOverride = unlockPath;
+            if (System.IO.File.Exists(unlockPath)) System.IO.File.Delete(unlockPath);
+
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            var floor = new DungeonFloor(0, 1);
+            var config = route.ConfigOf(floor);
+            float oldChance = config.shortcutChance;
+            config.shortcutChance = 1f;
+            try
+            {
+                var host = new GameObject("DungeonRouteTests");
+                created.Add(host);
+                var bootstrap = MakeBootstrap(host, route);
+                bootstrap.ArriveAt(floor);
+                var builder = host.GetComponent<FloorBuilder>();
+
+                for (int seed = 1; seed <= 5; seed++)
+                {
+                    bootstrap.Generate(seed);
+                    Assert.IsNull(builder.ShortcutMarker, $"シード {seed}: 解放していない層のランダムな階に井戸がある");
+                }
+
+                ShortcutUnlocks.SetUnlocked(0, true);
+                int wells = 0;
+                for (int seed = 1; seed <= 5; seed++)
+                {
+                    bootstrap.Generate(seed);
+                    if (builder.ShortcutMarker == null) continue;
+                    wells++;
+                    Assert.IsNotNull(builder.ShortcutWell);
+                    Assert.AreEqual(0, builder.ShortcutWell.Layer);
+                    Assert.IsTrue(builder.ShortcutWell.IsOpen, "解放した層の井戸は開いている");
+                    Assert.IsNull(builder.ShortcutDoor, "ランダムな階のショートカットの部屋の扉は閉ざさない");
+                    var room = builder.CurrentLayout.RoomAt(builder.CurrentLayout.Rooms.First(r => r.Role == RoomRole.Shortcut).Index);
+                    Assert.AreEqual(room.FeatureCell, builder.WorldToCell(builder.ShortcutMarker.transform.position));
+                }
+                Assert.Greater(wells, 3, "確率 1 なら（置き場が無かった回を除いて）井戸が出る");
+            }
+            finally
+            {
+                config.shortcutChance = oldChance;
+            }
+        }
+
+        [Test]
+        public void ShippedRoute_BossFloorsUseTheLayerEnemyTable()
+        {
+            var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
+            for (int i = 0; i < route.Layers.Count; i++)
+            {
+                var layer = route.Layers[i];
+                // ボス階も、その層のランダムな階と同じ表で敵を出す（出す部屋は設計図で決める）。
+                Assert.AreEqual(layer.enemySpawns, route.EnemySpawnsOf(new DungeonFloor(i, layer.randomFloorCount)), $"層 {i + 1} のボス階の敵の表");
+            }
         }
 
         [Test]

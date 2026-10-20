@@ -10,6 +10,7 @@
         "TpsDungeon.Combat",
         "TpsDungeon.Interaction",
         "TpsDungeon.Map",
+        "TpsDungeon.Map.Editor",
         "TpsDungeon.Hud",
         "TpsDungeon.Menu",
         "Unity.AI.Navigation",

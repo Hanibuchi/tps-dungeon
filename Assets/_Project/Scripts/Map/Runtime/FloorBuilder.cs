@@ -91,8 +91,14 @@ namespace TpsDungeon.Map.Runtime
             if (doorEdges.TryGetValue(door, out var edge)) DoorOpened?.Invoke(door, edge);
         }
 
-        /// <summary>ショートカット解放用の場所に置いた目印。その階に無ければ null。</summary>
+        /// <summary>ショートカットの部屋に置いた井戸。その階に無ければ null。</summary>
         public GameObject ShortcutMarker { get; private set; }
+
+        /// <summary>井戸の調べる所（地上へ降りる）。層と開き閉めは FloorBootstrap が入れる。その階に無ければ null。</summary>
+        public ShortcutPoint ShortcutWell { get; private set; }
+
+        /// <summary>ショートカットの部屋の扉。その層を解放するまで閉ざしておく（LockedDoors には入れない。ボスを倒しても開かない）。</summary>
+        public Door ShortcutDoor { get; private set; }
 
         private float cellSize = 3f;
         private float wallHeight = 5f;
@@ -103,7 +109,10 @@ namespace TpsDungeon.Map.Runtime
         // FeatureCell に置いた物のうち、床・天井・土台の組み方を頼んできたもの（FloorFeature）。
         private readonly Dictionary<GridPos, FloorFeature> featureAt = new Dictionary<GridPos, FloorFeature>();
 
-        public FloorLayout Build(FloorConfig config, int seed)
+        public FloorLayout Build(FloorConfig config, int seed) => Build(config, seed, false);
+
+        /// <param name="shortcutUnlocked">この層のショートカットを解放してあるか。解放してあれば、ランダムな階にも確率でショートカットの部屋（井戸）を置く。</param>
+        public FloorLayout Build(FloorConfig config, int seed, bool shortcutUnlocked)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
 
@@ -112,8 +121,8 @@ namespace TpsDungeon.Map.Runtime
             cellSize = config.cellSize;
             wallHeight = config.wallHeight;
             var layout = config.layoutShape == FloorLayoutShape.Boss
-                ? BossFloorLayout.Generate(config.BuildBossTemplates(), config.widthInCells, config.heightInCells, seed)
-                : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
+                ? config.GenerateBossLayout(seed)
+                : FloorLayoutGenerator.Generate(config.BuildParams(shortcutUnlocked), seed);
             var occupancy = new FloorOccupancy(layout);
 
             var root = new GameObject(GeneratedRootName).transform;
@@ -153,6 +162,8 @@ namespace TpsDungeon.Map.Runtime
             EntranceStair = null;
             ExitStair = null;
             ShortcutMarker = null;
+            ShortcutWell = null;
+            ShortcutDoor = null;
             lockedDoors.Clear();
             foreach (var door in doorEdges.Keys)
             {
@@ -190,10 +201,9 @@ namespace TpsDungeon.Map.Runtime
         private Dictionary<int, GameObject> BuildRooms(FloorLayout layout, FloorConfig config, Transform parent)
         {
             var placed = new Dictionary<int, GameObject>();
-            var catalog = config.roomCatalog;
             foreach (var room in layout.Rooms)
             {
-                var prefab = catalog != null ? catalog.PrefabFor(room.Template.Id) : null;
+                var prefab = config.RoomPrefabFor(room.Template.Id);
                 if (prefab == null)
                 {
                     Debug.LogWarning($"テンプレート '{room.Template.Id}' の Prefab がカタログに無いので部屋 {room.Index} を飛ばした", this);
@@ -237,6 +247,7 @@ namespace TpsDungeon.Map.Runtime
         /// 片側が空（外に面した壁）なら、windowChance の確率で窓付きの壁にする。左右対称の階では窓も左右で揃える。
         /// 大扉の辺（RoomEdge.IsGrandDoor）には、grandDoorPrefab があれば普通のドアの代わりにそれを置く。
         /// 閉ざされた辺（RoomEdge.IsLocked）のドアは閉ざしておき、LockedDoors に控える。
+        /// ショートカットの部屋の辺（RoomEdge.IsShortcutDoor）のドアも閉ざしておき、ShortcutDoor に控える（開けるのは FloorBootstrap）。
         /// ドアはどれも辺と一緒に控え、開けられたら DoorOpened で知らせる。
         /// </summary>
         private void BuildBoundaries(FloorLayout layout, FloorOccupancy occupancy, FloorConfig config, Transform parent, System.Random random)
@@ -294,6 +305,11 @@ namespace TpsDungeon.Map.Runtime
                             {
                                 door.IsLocked = true;
                                 lockedDoors.Add(door);
+                            }
+                            if (edge.IsShortcutDoor)
+                            {
+                                door.IsLocked = true;
+                                ShortcutDoor = door;
                             }
                         }
                         piece.transform.SetLocalPositionAndRotation(
@@ -468,7 +484,7 @@ namespace TpsDungeon.Map.Runtime
 
         /// <summary>
         /// 入口には下の階への下り階段、出口には上の階への上り階段、ショップには目印を、それぞれの部屋の FeatureCell に置く。
-        /// ショートカット解放用の場所があれば、そのセルに目印を置く。
+        /// ショートカットの部屋があれば、そのセルに井戸を置き、地上から登ってきたパーティーのスポーン地点（PlayerSpawnPoint.Shortcut）も置く。
         /// 置いた物が FloorFeature を持っていれば、そのセルの床・天井・土台をそれに合わせる。
         /// </summary>
         private void BuildFeatures(FloorLayout layout, FloorConfig config, Transform parent, Dictionary<int, GameObject> roomObjects)
@@ -478,10 +494,27 @@ namespace TpsDungeon.Map.Runtime
             Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop");
             if (layout.ShortcutCell.HasValue && config.shortcutMarkerPrefab != null)
             {
+                var cell = layout.ShortcutCell.Value;
+                var room = RoomAtCell(layout, cell);
                 var shortcut = Instantiate(config.shortcutMarkerPrefab, parent);
                 shortcut.name = "Shortcut";
-                shortcut.transform.SetLocalPositionAndRotation(CellCenter(layout.ShortcutCell.Value), Quaternion.identity);
+                // 部屋と同じだけ回す。井戸は部屋の Prefab のドアの向き（西）を前提に作ってある（地上から登ってきたパーティーはドアの側に立つ）。
+                shortcut.transform.SetLocalPositionAndRotation(CellCenter(cell), Quaternion.Euler(0f, 90f * (room != null ? room.Rotation : 0), 0f));
                 ShortcutMarker = shortcut;
+                ShortcutWell = shortcut.GetComponentInChildren<ShortcutPoint>(true);
+
+                if (shortcut.TryGetComponent(out FloorFeature feature))
+                {
+                    featureAt[cell] = feature;
+                    if (feature.replacesRoomFloor && room != null) RemoveRoomFloor(room, roomObjects);
+                }
+
+                var spawn = new GameObject("ShortcutSpawn");
+                spawn.transform.SetParent(parent, false);
+                var at = shortcut.transform.Find("SpawnPoint");
+                if (at != null) spawn.transform.SetPositionAndRotation(at.position, at.rotation);
+                else spawn.transform.localPosition = CellCenter(cell) + new Vector3(-cellSize * 0.35f, 0.05f, 0f);
+                spawn.AddComponent<PlayerSpawnPoint>().PointId = PlayerSpawnPoint.Shortcut;
             }
             PlaceSpawnPoint(layout, parent);
 
@@ -523,7 +556,7 @@ namespace TpsDungeon.Map.Runtime
                 CratesPerCell = config.cratesPerCell,
                 ChestChance = config.chestChance,
                 BossFloor = config.layoutShape == FloorLayoutShape.Boss,
-                BossArenaId = FloorConfig.BossArenaId,
+                BossArenaId = BossFloorLayout.ArenaId,
             };
             set.FillSizes(settings);
 
@@ -554,6 +587,15 @@ namespace TpsDungeon.Map.Runtime
                         prop.transform.localScale = Vector3.Scale(prop.transform.localScale, new Vector3(1f, wallHeight / set.pillarHeight, 1f));
                 }
             }
+        }
+
+        private static RoomInstance RoomAtCell(FloorLayout layout, GridPos cell)
+        {
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Bounds.Contains(cell)) return room;
+            }
+            return null;
         }
 
         /// <summary>

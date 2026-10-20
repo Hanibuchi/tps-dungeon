@@ -150,7 +150,8 @@ namespace TpsDungeon.Party.Editor
 
             // 1F の大門。扉の板そのものが門で、照準を合わせて入る。まわりの門構えは BuildGatehouse。
             GameObject gate = SurfaceSceneBuilder.Box(castle, "Gate_1F", m.DoorLeaf, new Vector3(0f, GateHeight * 0.5f, Front - 0.2f), new Vector3(GateWidth, GateHeight, 0.4f));
-            SurfaceSceneBuilder.AddGate(gate, FirstFloorScene, true, "城へ入る", "まだ開いていない", "城の大門", "第 1 層「玄関」へ入る。");
+            SurfaceSceneBuilder.AddGate(gate, FirstFloorScene, true, "城へ入る", "まだ開いていない", "城の大門", "第 1 層「玄関」へ入る。",
+                TpsDungeon.Map.Runtime.MapIcon.DungeonEntrance, "ダンジョン");
 
             // 土台の飾り（当たり無し）。正面の窓 2 列と、上の縁の帯。
             var detail = new MeshBuilder();
@@ -326,7 +327,7 @@ namespace TpsDungeon.Party.Editor
             try
             {
                 return boss
-                    ? BossFloorLayout.Generate(config.BuildBossTemplates(), config.widthInCells, config.heightInCells, seed)
+                    ? config.GenerateBossLayout(seed)
                     : FloorLayoutGenerator.Generate(config.BuildParams(), seed);
             }
             catch (Exception e)
@@ -337,7 +338,7 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>土台の上面の四角（x と z）。</summary>
-        private static Rect BaseFoot() => Rect.MinMaxRect(-BaseWidth * 0.5f, Front, BaseWidth * 0.5f, Front + BaseDepth);
+        internal static Rect BaseFoot() => Rect.MinMaxRect(-BaseWidth * 0.5f, Front, BaseWidth * 0.5f, Front + BaseDepth);
 
         /// <summary>index 階目（全 total 階のうち）の足元の四角。土台から一番上へ、上ほど急に広げる。</summary>
         private static Rect Foot(int index, int total) => FootAt((index + 1f) / total);

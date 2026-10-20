@@ -13,6 +13,8 @@ namespace TpsDungeon.Map.Data
     ///   crates_per_cell … 普通の部屋のセル 1 つあたりの木箱の数の平均（0 以上。FloorConfig.cratesPerCell）。列が無いか空なら設定を変えない
     ///   chest_chance    … 普通の部屋 1 つに宝箱を置く確率（0〜1。FloorConfig.chestChance）。列が無いか空なら設定を変えない
     ///   wall_height     … 部屋の壁の高さ（メートル、2 以上。FloorConfig.wallHeight。天井はこの高さ）。列が無いか空なら設定を変えない
+    ///   shop_chance     … ランダムな階にショップの部屋を置く確率（0〜1。FloorConfig.shopChance）。列が無いか空なら設定を変えない
+    ///   shortcut_chance … その層のショートカットを解放してあるとき、ランダムな階にショートカットの部屋を置く確率（0〜1。FloorConfig.shortcutChance）。同上
     /// 例: <c>1,27,20,0.5,0.2,5</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
@@ -24,6 +26,8 @@ namespace TpsDungeon.Map.Data
         public const string CratesPerCellColumn = "crates_per_cell";
         public const string ChestChanceColumn = "chest_chance";
         public const string WallHeightColumn = "wall_height";
+        public const string ShopChanceColumn = "shop_chance";
+        public const string ShortcutChanceColumn = "shortcut_chance";
 
         /// <summary>壁の高さの下限（FloorConfig.wallHeight の Min と同じ）。</summary>
         public const float MinWallHeight = 2f;
@@ -43,10 +47,15 @@ namespace TpsDungeon.Map.Data
             public readonly float ChestChance;
             /// <summary>部屋の壁の高さ（メートル）。書いていなければ NaN。</summary>
             public readonly float WallHeight;
+            /// <summary>ショップ・ショートカットの部屋を置く確率。書いていなければ NaN。</summary>
+            public readonly float ShopChance;
+            public readonly float ShortcutChance;
 
             public Row(int line, int layer, float area, float elevation = float.NaN, float cratesPerCell = float.NaN, float chestChance = float.NaN,
-                float wallHeight = float.NaN)
+                float wallHeight = float.NaN, float shopChance = float.NaN, float shortcutChance = float.NaN)
             {
+                ShopChance = shopChance;
+                ShortcutChance = shortcutChance;
                 Line = line;
                 Layer = layer;
                 Area = area;
@@ -60,6 +69,8 @@ namespace TpsDungeon.Map.Data
             public bool HasCratesPerCell => !float.IsNaN(CratesPerCell);
             public bool HasChestChance => !float.IsNaN(ChestChance);
             public bool HasWallHeight => !float.IsNaN(WallHeight);
+            public bool HasShopChance => !float.IsNaN(ShopChance);
+            public bool HasShortcutChance => !float.IsNaN(ShortcutChance);
         }
 
         public static List<Row> Parse(string text, List<string> errors)
@@ -115,6 +126,8 @@ namespace TpsDungeon.Map.Data
                 if (!TryOptional(CratesPerCellColumn, 0f, float.PositiveInfinity, out float cratesPerCell)) continue;
                 if (!TryOptional(ChestChanceColumn, 0f, 1f, out float chestChance)) continue;
                 if (!TryOptional(WallHeightColumn, MinWallHeight, float.PositiveInfinity, out float wallHeight)) continue;
+                if (!TryOptional(ShopChanceColumn, 0f, 1f, out float shopChance)) continue;
+                if (!TryOptional(ShortcutChanceColumn, 0f, 1f, out float shortcutChance)) continue;
 
                 if (!seen.Add(layer))
                 {
@@ -122,7 +135,7 @@ namespace TpsDungeon.Map.Data
                     continue;
                 }
 
-                rows.Add(new Row(line, layer, area, elevation, cratesPerCell, chestChance, wallHeight));
+                rows.Add(new Row(line, layer, area, elevation, cratesPerCell, chestChance, wallHeight, shopChance, shortcutChance));
 
                 // 空なら NaN（設定を変えない）。書いてあれば min〜max の数。
                 bool TryOptional(string column, float min, float max, out float value)
@@ -165,7 +178,7 @@ namespace TpsDungeon.Map.Data
         /// 部屋数は下限〜上限から一様に引くので平均は下限の 1.5 倍で、それが「特別な部屋 specialCount 個（面積の合計 specialArea）
         /// ＋残りの面積を普通の部屋 1 つあたり meanRoomArea で割った数」になるようにする。下限は minimum を割らない。
         /// </summary>
-        public static (int min, int max) RoomCountRange(float area, double meanRoomArea, int specialCount, float specialArea, int minimum)
+        public static (int min, int max) RoomCountRange(float area, double meanRoomArea, double specialCount, float specialArea, int minimum)
         {
             double rooms = specialCount + Math.Max(0d, area - specialArea) / meanRoomArea;
             int min = Math.Max(minimum, (int)Math.Round(rooms / 1.5d, MidpointRounding.AwayFromZero));

@@ -23,6 +23,9 @@ namespace TpsDungeon.Map.Data
         /// <summary>閉ざされた扉を置く辺か。ボスを倒すまで開かない出口の部屋の扉など。</summary>
         public bool IsLocked { get; internal set; }
 
+        /// <summary>ショートカットの部屋の扉を置く辺か。その層のショートカットを解放するまで閉ざしておく（ボスを倒しても開かない）。</summary>
+        public bool IsShortcutDoor { get; internal set; }
+
         public RoomEdge(int index, int roomA, int roomB)
         {
             Index = index;
@@ -55,7 +58,7 @@ namespace TpsDungeon.Map.Data
         public int ExitRoom { get; internal set; } = -1;
         public int ShopRoom { get; internal set; } = -1;
 
-        /// <summary>ショートカット解放用の場所（目印を置くセル）。無ければ null。</summary>
+        /// <summary>ショートカットの部屋のセル（井戸を置くセル）。無ければ null。</summary>
         public GridPos? ShortcutCell { get; internal set; }
 
         /// <summary>
@@ -102,7 +105,7 @@ namespace TpsDungeon.Map.Data
                 // B 側は A 側から一意に決まる（隣接セルで逆向き）ので A 側だけ出せば足りる。
                 sb.Append(edge.RoomA).Append('-').Append(edge.RoomB).Append('@')
                   .Append(edge.SocketA.Cell).Append('>').Append((int)edge.SocketA.Facing)
-                  .Append(edge.IsGrandDoor ? "!" : "").Append(edge.IsLocked ? "#" : "").Append(';');
+                  .Append(edge.IsGrandDoor ? "!" : "").Append(edge.IsLocked ? "#" : "").Append(edge.IsShortcutDoor ? "*" : "").Append(';');
             }
             sb.Append("|up=").Append(EntranceRoom).Append(",down=").Append(ExitRoom).Append(",shop=").Append(ShopRoom);
             if (ShortcutCell.HasValue) sb.Append(",shortcut=").Append(ShortcutCell.Value);

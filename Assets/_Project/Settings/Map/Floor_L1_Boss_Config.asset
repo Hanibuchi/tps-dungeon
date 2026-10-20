@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Floor_L1_Boss_Config
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.FloorConfig
   layoutShape: 1
+  bossBlueprint: "...X...\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n.AAAAA.\n..HHHS.\n...E...\n\u6249:
+    E-H\n\u6575: H"
   widthInCells: 16
   heightInCells: 16
   cellSize: 5
@@ -21,7 +23,8 @@ MonoBehaviour:
   maxRoomCount: 20
   maxPackAttempts: 6
   startJitter: 4
-  includeShop: 0
+  shopChance: 0
+  shortcutChance: 0
   extraDoorCount: 2
   wallHeight: 5
   elevation: 20
@@ -35,7 +38,7 @@ MonoBehaviour:
   stairDownPrefab: {fileID: 5910611291598227447, guid: bf72a56f8a78e4636a8b2b2522935ace, type: 3}
   shopMarkerPrefab: {fileID: 6782609638599713701, guid: b237fcf06190241e5b597e9659ea164b, type: 3}
   grandDoorPrefab: {fileID: 3953889627816380348, guid: d356050d9a6c14213ba1ffbed68e212c, type: 3}
-  shortcutMarkerPrefab: {fileID: 8426026503290470288, guid: 8176e97a16db34973b2b82d4e9071866, type: 3}
+  shortcutMarkerPrefab: {fileID: 4922013087437762158, guid: af70828034c204ae78d9031b3ab7911b, type: 3}
   propSet: {fileID: 11400000, guid: 2cc5d9843a50d4df9a2e71feabbdbd31, type: 2}
   cratesPerCell: 0.5
   chestChance: 0.2

@@ -103,18 +103,52 @@ namespace TpsDungeon.Map.Runtime
             if (builder == null) builder = GetComponent<FloorBuilder>();
 
             CurrentSeed = useSeed;
-            var layout = builder.Build(useConfig, useSeed);
+            var layout = builder.Build(useConfig, useSeed, ShortcutUnlocks.IsUnlocked(ShortcutLayer));
 
             builder.DoorsUnlocked -= ConnectStairs;
             builder.DoorsUnlocked += ConnectStairs;
             ConnectStairs();
+            ConnectShortcut();
 
             Generated?.Invoke(layout);
         }
 
+        private void OnEnable() => ShortcutUnlocks.Changed += OnShortcutUnlocksChanged;
+
+        private void OnDisable() => ShortcutUnlocks.Changed -= OnShortcutUnlocksChanged;
+
         private void OnDestroy()
         {
             if (builder != null) builder.DoorsUnlocked -= ConnectStairs;
+        }
+
+        /// <summary>今の層（道順が無ければ 0 層とみなす）。ショートカットの解放は層ごと。</summary>
+        private int ShortcutLayer => CurrentFloor.HasValue ? CurrentFloor.Value.Layer : 0;
+
+        private void OnShortcutUnlocksChanged(int layer)
+        {
+            if (layer == ShortcutLayer) ApplyShortcutUnlock();
+        }
+
+        /// <summary>ボス階のショートカットの井戸に層を入れ、解放してあれば扉を開けられるようにする。</summary>
+        private void ConnectShortcut()
+        {
+            if (builder == null || builder.ShortcutWell == null) return;
+            builder.ShortcutWell.Layer = ShortcutLayer;
+            ApplyShortcutUnlock();
+        }
+
+        /// <summary>
+        /// ショートカットの部屋の扉を、その層の解放状態に合わせる。解放してあれば開けられるようにし、解放を外したら閉ざして閉める。
+        /// 井戸の方は自分で解放状態を見る（閉じている間は案内も出さないので、扉の隙間から調べても降りられない）。
+        /// </summary>
+        private void ApplyShortcutUnlock()
+        {
+            var door = builder != null ? builder.ShortcutDoor : null;
+            if (door == null) return;
+            bool unlocked = ShortcutUnlocks.IsUnlocked(ShortcutLayer);
+            if (unlocked && door.IsLocked) door.Unlock();
+            else if (!unlocked && !door.IsLocked) door.Seal();
         }
 
         /// <summary>

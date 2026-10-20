@@ -70,7 +70,7 @@ namespace TpsDungeon.Map.Generation
         public float ChestChance = 0.2f;
         /// <summary>普通の部屋に机と椅子を置く確率。</summary>
         public float TableChance = 0.4f;
-        /// <summary>ボス階か（松明と柱だけにする）。</summary>
+        /// <summary>ボス階か。ボス階の部屋（Boss タグ）は松明と柱だけ、道のりの部屋は木箱・宝箱を置かない。</summary>
         public bool BossFloor;
         /// <summary>闘技場の部屋のテンプレート ID（ボス階で真ん中を空け、柱を立てる）。</summary>
         public string BossArenaId = "Room_BossArena";
@@ -169,10 +169,12 @@ namespace TpsDungeon.Map.Generation
 
             List<Side> sides = Sides(room, edgeAt);
             bool arena = settings.BossFloor && room.Template != null && room.Template.Id == settings.BossArenaId;
-            bool normal = !settings.BossFloor && room.Role == RoomRole.Normal;
+            bool bossRoom = room.Template != null && (room.Template.Tags & RoomTag.Boss) != 0;
+            bool normal = !bossRoom && room.Role == RoomRole.Normal;
 
             ReserveDoors(plan, sides, settings);
-            if (room.Role != RoomRole.Normal) plan.Reserved.Add(CellBox(room.FeatureCell, cell, 0f));
+            // 階段・ショップの目印や、ショートカットの部屋（1x1 のボス階の部屋）の井戸の所は空けておく。
+            if (room.Role != RoomRole.Normal || (bossRoom && bounds.Area == 1)) plan.Reserved.Add(CellBox(room.FeatureCell, cell, 0f));
             if (arena && bounds.Width >= 3 && bounds.Height >= 3)
             {
                 var center = bounds.Center;
@@ -182,10 +184,10 @@ namespace TpsDungeon.Map.Generation
             PlaceTorches(plan, room, sides, settings, random);
             if (arena) PlaceArenaPillars(plan, bounds, settings, random);
             else if (normal && bounds.Width >= 3 && bounds.Height >= 3 && random.NextDouble() < 0.5d) PlacePillars(plan, bounds, settings, random);
-            if (settings.BossFloor) return plan.Placements;
+            if (settings.BossFloor && !normal) return plan.Placements;
 
             if (normal && bounds.Width >= 2 && bounds.Height >= 2 && random.NextDouble() < settings.TableChance) PlaceTableSet(plan, bounds, settings, random);
-            if (normal)
+            if (normal && !settings.BossFloor)
             {
                 if (random.NextDouble() < settings.ChestChance) PlaceChest(plan, sides, settings, random);
                 PlaceCrates(plan, sides, bounds.Area, settings, random);

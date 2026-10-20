@@ -18,7 +18,7 @@ namespace TpsDungeon.Party.Editor
     /// 地上（城の前の広場）のシーンを作る。何度実行しても同じ形に作り直す。
     /// - 地形は ProBuilder の箱で組む（あとからシーンで ProBuilder の道具で手直しできる）。広場の北が城（ダンジョンの塔。<see cref="SurfaceTower"/>）で、上へ行くほど太い。
     /// - 歩けるのは地面の範囲だけ。塀は置かず、地面のまわりを見えない壁（[Bounds]）で囲む。
-    /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）を 1 つだけ付ける。ダンジョンの入口はここだけ（ショートカットはあとで別の場所に作る）。
+    /// - 城の正面に 1F へ入る大門（<see cref="SceneGate"/>）を 1 つ付ける。ほかに、解放した層のボス階へ登れるショートカット（空から垂れたロープ）を村のあちこちに置く（<see cref="SurfaceShortcuts"/>）。
     /// - 村（武器屋・銀行・民家・小物・木）とまわりの景色は <see cref="SurfaceScenery"/> が RPG Poly Pack Lite で置く。強化は死んだときに行く別の場所でするので、ここには置かない。
     /// - パーティー一式（操作台・仲間 4 人・カメラ）を [Party Rig] にまとめ、<see cref="GameFlow"/> で城の中へ持ち越す。
     /// - 床と壁から NavMesh を焼いてシーンと一緒に保存する（地上は毎回同じ形なので実行中には焼かない）。
@@ -79,6 +79,7 @@ namespace TpsDungeon.Party.Editor
 
                 PlaceParty(spawn, partyPrefab, characterPrefab, followCameraPrefab);
                 SurfaceScenery.Build(scene, world);
+                SurfaceShortcuts.Build(world);
 
                 // 保存してからでないと NavMesh のアセットの置き場（シーン名のフォルダ）を決められないので、先に 1 度保存する。
                 EditorSceneManager.SaveScene(scene, ScenePath);
@@ -188,7 +189,8 @@ namespace TpsDungeon.Party.Editor
             return spawn.transform;
         }
 
-        internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body)
+        internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body,
+            MapIcon icon = MapIcon.None, string mapLabel = null)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
@@ -198,6 +200,8 @@ namespace TpsDungeon.Party.Editor
             serialized.FindProperty("closedLabel").stringValue = closedLabel;
             serialized.FindProperty("title").stringValue = title;
             serialized.FindProperty("description").stringValue = body;
+            serialized.FindProperty("mapIcon").enumValueIndex = (int)icon;
+            serialized.FindProperty("mapLabel").stringValue = mapLabel ?? string.Empty;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -289,6 +293,8 @@ namespace TpsDungeon.Party.Editor
             surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(~0));
             surface.buildHeightMesh = true;
+            // 歩ける範囲（村とショートカットのまわり）の見えない壁・森の当たり・焼く範囲を揃える。
+            SurfaceWalkArea.Apply(world);
 
             Physics.SyncTransforms();
             surface.BuildNavMesh();

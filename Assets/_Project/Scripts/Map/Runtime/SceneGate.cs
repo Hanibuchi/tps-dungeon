@@ -4,6 +4,18 @@ using UnityEngine;
 
 namespace TpsDungeon.Map.Runtime
 {
+    /// <summary>地上の地図に出す印。None なら地図には出さない。</summary>
+    public enum MapIcon
+    {
+        None = 0,
+        /// <summary>ダンジョンの入口（城の大門）。</summary>
+        DungeonEntrance = 1,
+        /// <summary>武器屋。</summary>
+        WeaponShop = 2,
+        /// <summary>銀行。</summary>
+        Bank = 3,
+    }
+
     /// <summary>
     /// インタラクトで別のシーンへ移る入口（城の門・ショートカットの門・拠点の建物など）。
     /// 閉じている間も照準を合わせれば案内（closedLabel）と情報欄は出すが、押しても何も起きない。
@@ -31,6 +43,21 @@ namespace TpsDungeon.Map.Runtime
 
         [SerializeField, TextArea, Tooltip("情報欄の本文。")]
         private string description;
+
+        [SerializeField, Tooltip("地上の地図に出す印。None なら出さない。")]
+        private MapIcon mapIcon;
+
+        [SerializeField, Tooltip("地上の地図で印の下に出す名前。空なら情報欄の見出し。")]
+        private string mapLabel;
+
+        public MapIcon Icon
+        {
+            get => mapIcon;
+            set => mapIcon = value;
+        }
+
+        /// <summary>地上の地図で印の下に出す名前。</summary>
+        public string MapLabel => string.IsNullOrEmpty(mapLabel) ? title : mapLabel;
 
         /// <summary>行き先。生成した階段のように、置いてから決まるものはあとから入れる。</summary>
         public string SceneName

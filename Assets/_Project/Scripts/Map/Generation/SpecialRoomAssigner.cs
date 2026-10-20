@@ -4,7 +4,7 @@ using TpsDungeon.Map.Data;
 
 namespace TpsDungeon.Map.Generation
 {
-    /// <summary>入口・出口・ショップをどの部屋に置くかを決める。</summary>
+    /// <summary>入口・出口・ショップ・ショートカットをどの部屋に置くかを決める。</summary>
     public static class SpecialRoomAssigner
     {
         public sealed class Assignment
@@ -12,15 +12,18 @@ namespace TpsDungeon.Map.Generation
             public int EntranceRoom = -1;
             public int ExitRoom = -1;
             public int ShopRoom = -1;
+            public int ShortcutRoom = -1;
         }
 
         /// <param name="canHostStair">その部屋が階段を置けるテンプレートか。</param>
         /// <param name="canHostShop">その部屋がショップを置けるテンプレートか。</param>
+        /// <param name="canHostShortcut">その部屋がショートカット（井戸）を置けるテンプレートか。</param>
         public static Assignment Assign(
             int roomCount,
             IReadOnlyList<RoomEdge> edges,
             bool[] canHostStair,
             bool[] canHostShop,
+            bool[] canHostShortcut,
             FloorGenerationParams p,
             Random rng)
         {
@@ -70,16 +73,37 @@ namespace TpsDungeon.Map.Generation
                 result.ExitRoom = bestA;
             }
 
-            if (!p.IncludeShop) return result;
+            if (p.IncludeShop) result.ShopRoom = PickShop(roomCount, adjacency, distanceBuffer, canHostShop, canHostShortcut, bestDistance, result);
+            if (p.IncludeShortcut) result.ShortcutRoom = PickShortcut(roomCount, canHostShortcut, result, rng);
+            return result;
+        }
 
-            // ショップは入口と出口のちょうど中間あたりに置く。
+        /// <summary>
+        /// ショートカットは、井戸を置ける専用の部屋（1x1・扉 1 枚）のうち、入口・出口・ショップでない所を乱数で 1 つ。
+        /// 専用の部屋が無ければ置かない（-1）。ほかの部屋では井戸の穴が床と合わないので代用しない。
+        /// </summary>
+        private static int PickShortcut(int roomCount, bool[] canHostShortcut, Assignment taken, Random rng)
+        {
+            var candidates = new List<int>();
+            for (int i = 0; i < roomCount; i++)
+            {
+                if (!canHostShortcut[i] || i == taken.EntranceRoom || i == taken.ExitRoom || i == taken.ShopRoom) continue;
+                candidates.Add(i);
+            }
+            return candidates.Count > 0 ? candidates[rng.Next(candidates.Count)] : -1;
+        }
+
+        /// <summary>ショップは入口と出口のちょうど中間あたりに置く。ショートカットの部屋（井戸の専用の部屋）には置かない。</summary>
+        private static int PickShop(int roomCount, List<int>[] adjacency, int[] distanceBuffer, bool[] canHostShop, bool[] canHostShortcut,
+            int bestDistance, Assignment result)
+        {
             BreadthFirst(result.EntranceRoom, adjacency, distanceBuffer);
             double target = bestDistance / 2.0;
             int shop = -1;
             double shopScore = double.MaxValue;
             for (int i = 0; i < roomCount; i++)
             {
-                if (i == result.EntranceRoom || i == result.ExitRoom) continue;
+                if (i == result.EntranceRoom || i == result.ExitRoom || canHostShortcut[i]) continue;
                 if (!canHostShop[i]) continue;
                 if (distanceBuffer[i] < 0) continue;
                 double score = Math.Abs(distanceBuffer[i] - target);
@@ -96,15 +120,13 @@ namespace TpsDungeon.Map.Generation
             {
                 for (int i = 0; i < roomCount; i++)
                 {
-                    if (i == result.EntranceRoom || i == result.ExitRoom) continue;
+                    if (i == result.EntranceRoom || i == result.ExitRoom || canHostShortcut[i]) continue;
                     shop = i;
                     break;
                 }
             }
 
-            result.ShopRoom = shop;
-
-            return result;
+            return shop;
         }
 
         private static List<int>[] BuildAdjacency(int roomCount, IReadOnlyList<RoomEdge> edges)
