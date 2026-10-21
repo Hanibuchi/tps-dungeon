@@ -8,7 +8,7 @@
                 <kit:OrnateFrame crest="true" />
                 <ui:VisualElement class="rpg-heading">
                     <ui:Label text="— INVENTORY —" class="rpg-heading__caption rpg-deco" />
-                    <ui:Label text="持 ち 物" class="rpg-heading__title rpg-bold" />
+                    <ui:Label text="インベントリ" class="rpg-heading__title rpg-bold" />
                     <ui:VisualElement class="rpg-rule">
                         <ui:VisualElement class="rpg-rule__line" />
                         <ui:VisualElement class="rpg-rule__gem" />
@@ -23,7 +23,7 @@
                     </ui:VisualElement>
 
                     <ui:VisualElement class="inventory__slots">
-                        <ui:Label text="背 嚢" class="inventory__caption rpg-bold" />
+                        <ui:Label text="バッグ" class="inventory__caption rpg-bold" />
                         <ui:VisualElement name="bag" class="inventory__bag" />
                     </ui:VisualElement>
 

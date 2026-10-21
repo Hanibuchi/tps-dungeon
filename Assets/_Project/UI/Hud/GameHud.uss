@@ -33,7 +33,7 @@
     position: absolute;
     left: 28px;
     top: 28px;
-    padding: 6px 16px 7px 16px;
+    padding: 7px 16px;
     background-color: rgba(20, 17, 15, 0.84);
 }
 
@@ -612,7 +612,7 @@
     flex-direction: row;
     align-items: flex-end;
     margin-top: 10px;
-    padding: 6px 18px 7px 18px;
+    padding: 7px 18px;
     background-color: rgba(20, 17, 15, 0.84);
     opacity: 0;
     translate: 0 -6px;
