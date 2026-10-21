@@ -44,6 +44,7 @@ namespace TpsDungeon.Menu.UI
         private const string DetailsPortraitClass = "inventory__details-portrait";
         private const string CardClass = "party-card";
         private const string CardLeaderClass = "party-card--leader";
+        private const string CardDownClass = "party-card--down";
         private const string CardDragSourceClass = "party-card--drag-source";
         private const string CardDropTargetClass = "party-card--drop-target";
         private const string CardDeniedClass = "party-card--denied";
@@ -567,6 +568,7 @@ namespace TpsDungeon.Menu.UI
 
             if (member == null)
             {
+                element.EnableInClassList(CardDownClass, false);
                 element.Q<Label>("name").text = "手持ち";
                 element.Q<Label>("level").text = string.Empty;
                 SetCardHp(element, null);
@@ -574,6 +576,8 @@ namespace TpsDungeon.Menu.UI
             }
 
             element.Q<Label>("name").text = member.DisplayName;
+            element.EnableInClassList(CardDownClass, member.IsDown);
+            element.Q<Label>("badge").text = member.IsDown ? "戦闘不能" : "操作中";
             element.Q<Label>("level").text = member.Progression != null ? $"Lv {member.Progression.Level}" : string.Empty;
 
             var appearance = member.GetComponent<CharacterAppearance>();
@@ -608,6 +612,14 @@ namespace TpsDungeon.Menu.UI
             if (!IsOpen || e.button != 0 || dragFrom >= 0 || cardPressed >= 0) return;
             if (party == null || cards[index].Member == null) return;
             e.StopPropagation();
+
+            // 倒れた人（戦闘不能）は掴めない。並びの後ろに置いたまま。
+            if (cards[index].Member.IsDown)
+            {
+                UiTransitions.Flash(cards[index].Element, CardDeniedClass, 160);
+                Play(UiSound.Denied);
+                return;
+            }
 
             cardPressed = index;
             cardDragging = false;
@@ -679,6 +691,7 @@ namespace TpsDungeon.Menu.UI
         /// <summary>
         /// ポインタの位置で離したら掴んだ札が入る番号。札の一覧（の少し外まで）の上なら一番近い札の位置、外なら元の位置（並びは変えない）。
         /// 動いている札の見た目ではなく、ドラッグを始めたときの位置で決めるので、札が滑ってもぶれない。
+        /// 倒れた人の札の上なら、生きている人の最後の位置にする。
         /// </summary>
         private int PreviewTargetAt(Vector2 position)
         {
@@ -706,6 +719,8 @@ namespace TpsDungeon.Menu.UI
                 }
             }
 
+            // 倒れた人（並びの後ろ）の位置へは入れない。生きている人の最後で止める。
+            if (party != null) best = Mathf.Min(best, Mathf.Max(0, party.AliveCount - 1));
             return best;
         }
 

@@ -553,61 +553,16 @@ namespace TpsDungeon.Enemies.Editor
             var byName = new Dictionary<string, Rigidbody>();
             foreach (RagdollBone spec in group.Ragdoll)
             {
-                Transform bone = Bone(spec.Bone);
-                var body = bone.gameObject.AddComponent<Rigidbody>();
-                body.mass = spec.Mass;
-                body.isKinematic = true;
-                body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                Rigidbody parent = spec.Parent != null ? byName[spec.Parent] : null;
+                Rigidbody body = RagdollBaker.AddBone(Bone(spec.Bone), spec.End != null ? Bone(spec.End) : null, parent, spec.Radius, spec.Mass);
                 bodies.Add(body);
                 byName[spec.Bone] = body;
-
-                // 骨は大きく拡縮されている（FBX の 100 倍 × 背丈合わせ）ので、ワールドで決めてから骨の座標へ直す。
-                float scale = bone.lossyScale.x;
-                float radius = spec.Radius / scale;
-                var capsule = bone.gameObject.AddComponent<CapsuleCollider>();
-                capsule.radius = radius;
-                if (spec.End != null)
-                {
-                    Vector3 end = bone.InverseTransformPoint(Bone(spec.End).position);
-                    int axis = LongestAxis(end);
-                    capsule.direction = axis;
-                    capsule.center = end / 2f;
-                    capsule.height = Mathf.Max(Mathf.Abs(end[axis]) + radius, radius * 2f);
-                }
-                else
-                {
-                    capsule.direction = 1;
-                    capsule.center = bone.InverseTransformPoint(bone.position + Vector3.up * spec.Radius);
-                    capsule.height = radius * 2f;
-                }
-                capsule.enabled = false;
-
-                if (spec.Parent == null) continue;
-
-                var joint = bone.gameObject.AddComponent<CharacterJoint>();
-                joint.connectedBody = byName[spec.Parent];
-                int twist = spec.End != null ? LongestAxis(bone.InverseTransformPoint(Bone(spec.End).position)) : 1;
-                joint.axis = AxisVector(twist);
-                joint.swingAxis = AxisVector((twist + 1) % 3);
-                joint.lowTwistLimit = new SoftJointLimit { limit = -20f };
-                joint.highTwistLimit = new SoftJointLimit { limit = 20f };
-                joint.swing1Limit = new SoftJointLimit { limit = 40f };
-                joint.swing2Limit = new SoftJointLimit { limit = 30f };
-                joint.enableProjection = true;
             }
 
             var followers = group.Followers.Select(f => Bone(f.follower)).ToArray();
             var targets = group.Followers.Select(f => Bone(f.target)).ToArray();
             root.AddComponent<EnemyRagdoll>().Configure(animator, bodies.ToArray(), followers, targets);
         }
-
-        private static int LongestAxis(Vector3 v)
-        {
-            Vector3 a = new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
-            return a.x >= a.y && a.x >= a.z ? 0 : a.y >= a.z ? 1 : 2;
-        }
-
-        private static Vector3 AxisVector(int axis) => axis == 0 ? Vector3.right : axis == 1 ? Vector3.up : Vector3.forward;
 
         /// <summary>原点に置いてクリップの 0 秒のポーズを取らせたときの、見た目の外接箱（モデルのルートから見た座標）。</summary>
         private static Bounds MeasurePose(GameObject source, AnimationClip clip)

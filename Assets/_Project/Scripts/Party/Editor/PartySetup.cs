@@ -296,6 +296,7 @@ namespace TpsDungeon.Party.Editor
                 GetOrAdd<FollowerLocomotion>(root).enabled = false;
                 GetOrAdd<FollowerBrain>(root).enabled = false;
                 GetOrAdd<CharacterAppearance>(root).Catalog = catalog;
+                PartyRagdollSetup.Bake(root);
 
                 root.layer = ally;
                 PrefabUtility.SaveAsPrefabAsset(root, CharacterPrefabPath);

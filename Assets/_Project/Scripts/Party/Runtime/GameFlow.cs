@@ -16,6 +16,7 @@ namespace TpsDungeon.Party
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
     /// - 全員が倒れたら少し待って死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
+    /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
@@ -49,7 +50,6 @@ namespace TpsDungeon.Party
 
         private Action<string> travelHandler;
         private bool traveling;
-        private bool reviveOnArrival;
         private float wipedAt = -1f;
 
         /// <summary>今シーンをまたいで残っているもの。地上を通らずに始めたシーンでは null。</summary>
@@ -110,23 +110,30 @@ namespace TpsDungeon.Party
             if (Time.time - wipedAt >= wipeDelay) Travel(SceneTravel.AfterlifeScene, revive: true);
         }
 
-        /// <summary>sceneName へ移る。revive なら着いたときに全員を全快にする。移っている途中なら何もしない。</summary>
+        /// <summary>sceneName へ移る。revive なら読み込む前（暗転の間）に全員を全快にして起こす。移っている途中なら何もしない。</summary>
         public void Travel(string sceneName, bool revive = false)
         {
             if (traveling || string.IsNullOrEmpty(sceneName)) return;
 
             traveling = true;
             SceneTravel.Traveling = true;
-            reviveOnArrival = revive;
             wipedAt = -1f;
-            StartCoroutine(LeaveFor(sceneName));
+            StartCoroutine(LeaveFor(sceneName, revive));
         }
 
         /// <summary>音を鳴らして暗転してから読み込む。明転は着いたシーンで並べ終えてから（<see cref="Arrive"/>）。</summary>
-        private IEnumerator LeaveFor(string sceneName)
+        private IEnumerator LeaveFor(string sceneName, bool revive)
         {
             if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
             if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
+
+            // 起こすのは読み込む前（暗転の間）。着いたシーンの魂の姿（SoulForm）は読み込んだ時点で攻撃の部品を止めるので、
+            // そのあとに起こすと止めた部品がまた動いてしまう。
+            if (party != null)
+            {
+                if (revive) party.ReviveAll();
+                else party.LeaveDownedBehind();
+            }
             SceneTravel.Load(sceneName);
         }
 
@@ -181,14 +188,6 @@ namespace TpsDungeon.Party
 
             if (party != null)
             {
-                if (reviveOnArrival)
-                {
-                    foreach (PartyMember member in party.Members)
-                    {
-                        if (member != null && member.Health != null) member.Health.SetCurrent(member.Health.MaxHp);
-                    }
-                }
-
                 if (spawn != null) party.PlaceLeaderAt(spawn.transform);
 
                 // カメラが前のシーンの位置から滑ってこないように。
@@ -198,7 +197,6 @@ namespace TpsDungeon.Party
                 party.Regroup();
             }
 
-            reviveOnArrival = false;
             traveling = false;
             SceneTravel.Traveling = false;
             if (fade != null) yield return fade.FadeTo(0f, fadeInSeconds);

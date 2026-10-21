@@ -156,6 +156,17 @@
     color: var(--gold-bright);
 }
 
+/* 倒れた人（転生まで起きない）。札ごと薄くし、印を「戦闘不能」にして赤くする。 */
+.party-card.party-card--down {
+    opacity: 0.55;
+}
+
+.party-card.party-card--down .party-card__badge {
+    display: flex;
+    color: var(--ink);
+    background-color: var(--blood);
+}
+
 /* 名前の下の HP の棒。残りが少ないと明るい赤になる。 */
 .party-card__hp {
     height: 4px;
