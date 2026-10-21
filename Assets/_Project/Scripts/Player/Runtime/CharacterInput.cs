@@ -33,7 +33,11 @@ namespace TpsDungeon.Player
         [Tooltip("カメラの回転感度。")]
         public float lookSensitivity = 1f;
 
+        [Tooltip("ダッシュのアクション名。押している間かどうかを毎フレーム読む。")]
+        public string sprintActionName = "Sprint";
+
         private PlayerInput playerInput;
+        private InputAction sprintAction;
 
         /// <summary>今の操作がキーボードとマウスか。マウスの視点移動は deltaTime を掛けないので、CharacterMotor が見る。</summary>
         public bool IsCurrentDeviceMouse
@@ -54,7 +58,29 @@ namespace TpsDungeon.Player
 
         public void OnJump(InputValue value) => JumpInput(value.isPressed);
 
-        public void OnSprint(InputValue value) => SprintInput(value.isPressed);
+        // ダッシュは押した・離したの知らせで覚えておくと、離した知らせを取りこぼしたとき（メニューや演出でマップが止まっている間に
+        // 離したなど）に押していないのに走り、押すと歩く状態のまま残る。知らせは使わず、押しているかを毎フレーム読む。
+        private void Update()
+        {
+            InputAction action = SprintAction;
+            sprint = action != null && action.enabled && action.IsPressed();
+        }
+
+        // PlayerInput は OnEnable でアクションを用意し直すことがあるので、別のアセットのものになっていたら掴み直す。
+        private InputAction SprintAction
+        {
+            get
+            {
+                if (playerInput == null) playerInput = GetComponent<PlayerInput>();
+                InputActionAsset actions = playerInput != null ? playerInput.actions : null;
+                if (actions == null) return null;
+                if (sprintAction == null || sprintAction.actionMap?.asset != actions)
+                {
+                    sprintAction = actions.FindAction(sprintActionName);
+                }
+                return sprintAction;
+            }
+        }
 
         public void MoveInput(Vector2 newMoveDirection) => move = newMoveDirection;
 

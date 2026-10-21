@@ -217,14 +217,16 @@ namespace TpsDungeon.Party
             }
 
             Vector3 aimAt = chest;
-            if (type.IsHealField || type.TargetsAllies) aimAt = transform.position;
+            if (type.IsHealField) aimAt = HealFieldCenter(type);
+            else if (type.TargetsAllies) aimAt = transform.position;
             else if (type.AimsAtGround) aimAt = target.transform.position;
 
             Vector3 direction = aimAt - eye;
             if (direction.sqrMagnitude < 1e-4f) direction = transform.forward;
             ranged.Aim = new Ray(eye, direction.normalized);
 
-            bool inRange = distance <= FollowerWeaponOption.RangedReach(type) + 0.5f && (HeldReady() || ranged.IsBurning);
+            // 治癒の場は仲間の足元へ落とすので、敵との距離は見ない。
+            bool inRange = (type.IsHealField || distance <= FollowerWeaponOption.RangedReach(type) + 0.5f) && (HeldReady() || ranged.IsBurning);
             ranged.AttackHeld = inRange && type.RangedKind == RangedAttackKind.Flame;
             if (inRange) ranged.PressAttack();
         }
@@ -252,14 +254,55 @@ namespace TpsDungeon.Party
                    || Vector3.Distance(target.transform.position, party.Leader.transform.position) <= leashDistance;
         }
 
+        /// <summary>
+        /// 治癒の場を落とす所。届く所に居る傷ついた仲間（自分も含む）の足元のうち、場の広さに入る仲間の減っている体力の割合の合計が一番多い所。
+        /// 同じなら一番減っている人の所。届く所に誰も居なければ自分の足元。
+        /// </summary>
+        private Vector3 HealFieldCenter(WeaponTypeDefinition type)
+        {
+            Party party = member != null ? member.Party : null;
+            if (party == null) return transform.position;
+
+            float radius = type.HealRadius * (ranged != null && ranged.Stats != null ? ranged.Stats.SizeScale : 1f);
+            float reach = FollowerWeaponOption.RangedReach(type) + radius;
+            Vector3 best = transform.position;
+            float bestScore = 0f;
+            float bestFraction = float.MaxValue;
+            foreach (PartyMember candidate in party.Members)
+            {
+                PlayerHealth health = candidate != null ? candidate.Health : null;
+                if (!IsHurt(health)) continue;
+
+                Vector3 center = health.transform.position;
+                if (Flat(center - transform.position).magnitude > reach) continue;
+
+                float score = 0f;
+                foreach (PartyMember m in party.Members)
+                {
+                    PlayerHealth other = m != null ? m.Health : null;
+                    if (IsHurt(other) && Flat(other.transform.position - center).magnitude <= radius) score += 1f - other.Fraction;
+                }
+
+                if (score > bestScore + 1e-4f || (score > bestScore - 1e-4f && health.Fraction < bestFraction))
+                {
+                    best = center;
+                    bestScore = score;
+                    bestFraction = health.Fraction;
+                }
+            }
+
+            return best;
+        }
+
+        private bool IsHurt(PlayerHealth health) => health != null && !health.IsDead && health.Fraction < healBelow;
+
         private bool SomeoneHurt()
         {
             Party party = member != null ? member.Party : null;
             if (party == null) return false;
             foreach (PartyMember m in party.Members)
             {
-                PlayerHealth health = m != null ? m.Health : null;
-                if (health != null && !health.IsDead && health.Fraction < healBelow) return true;
+                if (IsHurt(m != null ? m.Health : null)) return true;
             }
 
             return false;
