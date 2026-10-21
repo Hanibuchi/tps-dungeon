@@ -14,5 +14,8 @@ namespace TpsDungeon.Audio.Data
 
         /// <summary>ポーズ中。ローパスで全体がこもる。</summary>
         Paused = 2,
+
+        /// <summary>全滅した後。SE だけこもり、BGM（死亡の曲）はそのまま。</summary>
+        Dead = 3,
     }
 }

@@ -17,6 +17,8 @@ namespace TpsDungeon.Party
     /// - 先頭が通った跡（<see cref="Trail"/>）を残し、i 番目の人には跡に沿って i × 間隔だけ後ろの点を歩かせる。
     /// - 先頭が替わったら、操作（CharacterMotor・攻撃・インタラクト・ホットバーの入力）と、カメラの追う先を新しい先頭へ移す。
     ///   カメラの向きは引き継ぐので、替えた瞬間に視点は跳ねない。
+    /// - 倒れた人（<see cref="PartyMember.IsDown"/>）は列の最後へ回す（倒れた順）。先頭が倒れれば、生きている一番前の人に操作が移る。
+    ///   全員が倒れたときだけは最後の人を先頭のままにする（全滅の後もカメラがその人を映すように）。生きている人は必ず倒れた人より前に並ぶ。
     /// パーティーの操作台（PlayerInput・CharacterInput・PartyProgression・UI と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -57,6 +59,9 @@ namespace TpsDungeon.Party
         public IReadOnlyList<PartyMember> Members => Order.Members;
 
         public PartyMember Leader => Order.Leader;
+
+        /// <summary>倒れていない人の数。並びの先頭からこの人数が生きている人。</summary>
+        public int AliveCount => Order.Members.Count(m => m != null && !m.IsDown);
 
         /// <summary>共有のバッグ。</summary>
         public Inventory Bag
@@ -136,15 +141,54 @@ namespace TpsDungeon.Party
 
         /// <summary>
         /// 並び替え（from 番目を to 番目へ）。to を 0 にすればその人が先頭になって操作が移る。動いたら true。
+        /// 倒れた人を生きている人より前へ、生きている人を倒れた人より後ろへは動かせない。
         /// </summary>
-        public bool Move(int from, int to) => Order.Move(from, to);
+        public bool Move(int from, int to)
+        {
+            PartyMember moving = Order[from];
+            if (moving == null) return false;
 
-        /// <summary>列の最後に加える。満員なら false。</summary>
+            int alive = AliveCount;
+            if (moving.IsDown ? to < alive : to >= alive) return false;
+            return Order.Move(from, to);
+        }
+
+        /// <summary>生きている人の最後（倒れた人の前）に加える。満員なら false。</summary>
         public bool Add(PartyMember member)
         {
             if (member == null || !Order.Add(member)) return false;
             if (!members.Contains(member)) members.Add(member);
+            if (!member.IsDown) Order.Move(Order.Count - 1, AliveCount - 1);
             return true;
+        }
+
+        /// <summary>倒れた・起きたと PartyMember から知らせが来た。倒れたなら列の最後へ回す（全員倒れたら動かさない）。</summary>
+        internal void OnMemberDownChanged(PartyMember member)
+        {
+            int index = Order.IndexOf(member);
+            if (index < 0 || !member.IsDown || AliveCount == 0) return;
+            Order.Move(index, Order.Count - 1);
+        }
+
+        /// <summary>倒れた人をこの階に置いていく（別のシーンへ移る直前に）。パーティーには残し、次のシーンには出さない。転生で <see cref="ReviveAll"/> が出す。</summary>
+        public void LeaveDownedBehind()
+        {
+            foreach (PartyMember member in Order.Members)
+            {
+                if (member != null && member.IsDown) member.gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>全員を全快にして起こす（転生のとき）。置いていった人も出し、役（先頭か）を当て直す。</summary>
+        public void ReviveAll()
+        {
+            foreach (PartyMember member in Order.Members)
+            {
+                if (member == null) continue;
+                if (!member.gameObject.activeSelf) member.gameObject.SetActive(true);
+                member.Revive();
+            }
+            ApplyAll();
         }
 
         /// <summary>パーティーから外す（キャラは消さない）。居なければ false。</summary>
@@ -212,8 +256,10 @@ namespace TpsDungeon.Party
             // NavMesh がまだ無い（フロアの生成と焼き上がりを待っている）間は並べない。焼けたら Baked でもう一度呼ばれる。
             if (!NavMesh.SamplePosition(t.position, out NavMeshHit _, 2f, NavMesh.AllAreas)) return;
 
-            float step = PackedSpacing(spacing, Trail.Length, Order.Count - 1);
-            for (int i = 1; i < Order.Count; i++)
+            // 倒れた人（列の後ろ）は倒れた所に置いたまま。
+            int alive = AliveCount;
+            float step = PackedSpacing(spacing, Trail.Length, alive - 1);
+            for (int i = 1; i < alive; i++)
             {
                 Vector3 at = step >= spacing ? FormationPoint(i) : BehindOnGround(t, step * i);
                 Order[i].PlaceAt(at, t.rotation);
@@ -275,7 +321,7 @@ namespace TpsDungeon.Party
         {
             Transform t = leader.transform;
             lastLeaderPosition = t.position;
-            float wanted = spacing * (Order.Count - 1) + spacing;
+            float wanted = spacing * (Mathf.Max(1, AliveCount) - 1) + spacing;
 
             Vector3 origin = OnNavMesh(t.position);
 

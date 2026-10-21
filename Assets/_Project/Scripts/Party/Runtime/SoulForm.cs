@@ -10,6 +10,8 @@ namespace TpsDungeon.Party
     /// - 体と小物（角・耳・しっぽ）の材質を魂の材質（TpsDungeon/Soul）に差し替え、手に持った武器は隠す（魂は武器を持たない）。
     /// - 攻撃と狙い（攻撃の入力・近接と遠距離の攻撃・肩越しのカメラ）も止める。遠距離武器を持ったままだと、狙いに合わせて体がカメラの向きへ回り続け、
     ///   着いたときに北（強化の台）を向かせても、すぐカメラの向きに戻ってしまう。
+    /// - 構えは素手にする（Animator の WeaponType を 0 に）。弓などを持ったまま倒れると、その構えのまま固まって見えるため。
+    ///   持ち替えると攻撃の部品が構えを入れ直すので毎フレーム 0 に戻し、出るときに持っている物の構えへ戻す。
     /// - 持ち替えや仲間の入れ替えで増えた物も拾えるよう、少しおきに見直す。
     /// - 一人ずつに弱い青白い光を付けて歩かせる。暗い死後の場所では、これが主な光になる。
     /// - パーティーは地上から持ち越されて次のシーンへも行くので、このシーンを出るとき（OnDestroy）に材質も武器も光も仲間も元へ戻す。
@@ -47,12 +49,17 @@ namespace TpsDungeon.Party
         private readonly List<Behaviour> behaviourScratch = new List<Behaviour>();
         private float nextScan;
 
+        private static readonly int WeaponTypeParam = Animator.StringToHash("WeaponType");
+        private static readonly int CastingParam = Animator.StringToHash("Casting");
+        private readonly Dictionary<Animator, (bool, bool)> parameterCache = new Dictionary<Animator, (bool, bool)>();
+
         // シーンを読み込んだとき（GameFlow が先頭を着地点へ置くより前）に 1 度済ませる。
         // 遅れると、着いたフレームに遠距離武器の狙いがまだ前の場所のカメラの向きへ体を回してしまい、北を向かせた向きが崩れる。
         private void Awake() => Scan();
 
         private void LateUpdate()
         {
+            ForceUnarmedPose();
             if (Time.unscaledTime < nextScan) return;
             nextScan = Time.unscaledTime + rescanInterval;
             Scan();
@@ -88,6 +95,53 @@ namespace TpsDungeon.Party
                 behaviour.enabled = false;
                 stopped.Add(behaviour);
             }
+        }
+
+        /// <summary>全員の構えを素手にする（杖を構えている途中なら構えも解く）。</summary>
+        private void ForceUnarmedPose()
+        {
+            Party party = Party.Current;
+            if (party == null) return;
+            foreach (PartyMember member in party.Members)
+            {
+                if (member == null || !member.isActiveAndEnabled) continue;
+                Animator animator = member.GetComponentInChildren<Animator>();
+                if (animator == null || animator.runtimeAnimatorController == null) continue;
+                (bool weaponType, bool casting) = ParametersOf(animator);
+                if (weaponType) animator.SetInteger(WeaponTypeParam, 0);
+                if (casting) animator.SetBool(CastingParam, false);
+            }
+        }
+
+        /// <summary>出るときに、持っている物の構えへ戻す。</summary>
+        private void RestorePose()
+        {
+            Party party = Party.Current;
+            if (party == null) return;
+            foreach (PartyMember member in party.Members)
+            {
+                if (member == null) continue;
+                Animator animator = member.GetComponentInChildren<Animator>(true);
+                var melee = member.GetComponent<MeleeAttacker>();
+                if (animator == null || melee == null || animator.runtimeAnimatorController == null) continue;
+                if (ParametersOf(animator).weaponType) animator.SetInteger(WeaponTypeParam, melee.AnimatorWeaponType);
+            }
+        }
+
+        /// <summary>animator に WeaponType（int）と Casting（bool）があるか。parameters は読むたびに配列を作るので、1 度だけ調べて覚える。</summary>
+        private (bool weaponType, bool casting) ParametersOf(Animator animator)
+        {
+            if (parameterCache.TryGetValue(animator, out (bool, bool) known)) return known;
+
+            bool weaponType = false;
+            bool casting = false;
+            foreach (AnimatorControllerParameter p in animator.parameters)
+            {
+                if (p.nameHash == WeaponTypeParam && p.type == AnimatorControllerParameterType.Int) weaponType = true;
+                else if (p.nameHash == CastingParam && p.type == AnimatorControllerParameterType.Bool) casting = true;
+            }
+            parameterCache[animator] = (weaponType, casting);
+            return (weaponType, casting);
         }
 
         private void ShowOnlyLeader(PartyMember member, bool isLeader)
@@ -149,6 +203,8 @@ namespace TpsDungeon.Party
 
         private void OnDestroy()
         {
+            RestorePose();
+
             foreach (KeyValuePair<Renderer, Material[]> pair in originals)
             {
                 if (pair.Key != null) pair.Key.sharedMaterials = pair.Value;

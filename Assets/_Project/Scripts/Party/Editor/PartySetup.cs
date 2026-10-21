@@ -37,7 +37,7 @@ namespace TpsDungeon.Party.Editor
         private const string AccessoryFolder = "Assets/ThirdParty/3D Model/URP GanzSe Free Character Accessories/Prefabs/";
         private const string PlayerInputActionsPath = "Assets/_Project/Settings/Input/PlayerControls.inputactions";
 
-        private static readonly string[] UiChildren = { "Interaction HUD", "Game HUD", "Pause Menu", "Inventory Screen" };
+        private static readonly string[] UiChildren = { "Interaction HUD", "Game HUD", "Pause Menu", "Inventory Screen", "Game Over" };
 
         [MenuItem("Tools/TPS Dungeon/Party/パーティーを組み込む")]
         public static void Setup()
@@ -60,6 +60,7 @@ namespace TpsDungeon.Party.Editor
             InventorySetup.Setup();
             PauseMenuSetup.Setup();
             PlayerHudSetup.Setup();
+            GameOverSetup.Setup();
             PlayerInteractionSetup.Setup();
             ProgressionSetup.Setup();
 
@@ -296,6 +297,7 @@ namespace TpsDungeon.Party.Editor
                 GetOrAdd<FollowerLocomotion>(root).enabled = false;
                 GetOrAdd<FollowerBrain>(root).enabled = false;
                 GetOrAdd<CharacterAppearance>(root).Catalog = catalog;
+                PartyRagdollSetup.Bake(root);
 
                 root.layer = ally;
                 PrefabUtility.SaveAsPrefabAsset(root, CharacterPrefabPath);

@@ -266,6 +266,9 @@ namespace TpsDungeon.Combat
             pressQueued = false;
         }
 
+        /// <summary>持っている物の構え（Animator の WeaponType に入れた値。0 で素手）。構えを一時的に替えた側（魂の姿など）が戻すときに使う。</summary>
+        public int AnimatorWeaponType { get; private set; }
+
         /// <summary>攻撃を 1 回押す。次の Update で使う（待ち中や振っている途中の押下の扱いは MeleeComboState に従う）。</summary>
         public void PressAttack() => pressQueued = true;
 
@@ -298,8 +301,8 @@ namespace TpsDungeon.Combat
             combo?.StartCooldown(cooldowns.Remaining(CooldownKey(item), Time.time), heldType.ComboCooldown);
 
             WeaponDefinition pose = isWeapon ? weapon : heldWeapon;
-            if (animator != null && hasWeaponTypeParam)
-                animator.SetInteger(WeaponTypeParam, pose != null ? pose.WeaponType.AnimatorWeaponType : 0);
+            AnimatorWeaponType = pose != null ? pose.WeaponType.AnimatorWeaponType : 0;
+            if (animator != null && hasWeaponTypeParam) animator.SetInteger(WeaponTypeParam, AnimatorWeaponType);
 
             AttachHeldModel(weapon);
         }

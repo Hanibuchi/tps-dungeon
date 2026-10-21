@@ -183268,7 +183268,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.GameFlow
   party: {fileID: 466638732}
-  wipeDelay: 2.5
+  deathBgm: {fileID: 8300000, guid: b2640994297419d49a33692783b5ab51, type: 3}
+  rebirthSound: {fileID: 8300000, guid: 0f120cb42c836491ead9a19d6feb0ad2, type: 3}
   spawnWaitTimeout: 5
   travelSound: {fileID: 8300000, guid: 18f5e01aff78f4500b6038755069fe46, type: 3}
   travelSoundVolume: 0.8

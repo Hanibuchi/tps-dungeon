@@ -6,7 +6,8 @@ namespace TpsDungeon.Player
 {
     /// <summary>
     /// プレイヤーの体力。値を持って増減させ、変わったら知らせるだけ。
-    /// 死亡やダメージ演出はまだ無く、HUD がこれを読んで表示する。
+    /// HUD がこれを読んで表示し、0 になったらパーティーの側（PartyMember）が倒れ込ませる。
+    /// 倒れている（HP 0）間は回復もレベルアップでも起きず、起こすのは <see cref="SetCurrent"/> だけ（転生のとき）。
     /// 最大 HP はレベルに応じて CharacterProgression が <see cref="SetMaxAndCurrent"/> で書き込む（Inspector の値は初期値）。
     /// 受けるダメージの倍率（盾）と毎秒の回復（自然回復）は装備（PlayerGear）が書き込む。加護（CharacterBuffs）が付いていれば、その軽減も掛け合わせる。
     /// プレイヤーのルートに付ける。
@@ -100,11 +101,11 @@ namespace TpsDungeon.Player
             Changed?.Invoke(this);
         }
 
-        /// <summary>最大と今の HP をまとめて変える。知らせるのは 1 回だけ（レベルアップで両方増やすとき用）。</summary>
+        /// <summary>最大と今の HP をまとめて変える。知らせるのは 1 回だけ（レベルアップで両方増やすとき用）。倒れていれば HP は 0 のまま。</summary>
         public void SetMaxAndCurrent(int max, int current)
         {
             max = Mathf.Max(1, max);
-            current = Mathf.Clamp(current, 0, max);
+            current = IsDead ? 0 : Mathf.Clamp(current, 0, max);
             if (max == maxHp && current == currentHp) return;
 
             maxHp = max;

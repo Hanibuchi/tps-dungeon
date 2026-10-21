@@ -143,6 +143,7 @@ namespace TpsDungeon.Audio.Editor
             serialized.FindProperty("defaultSnapshot").objectReferenceValue = mixer.FindSnapshot(GameAudioMixerSetup.DefaultSnapshotName);
             serialized.FindProperty("dungeonSnapshot").objectReferenceValue = mixer.FindSnapshot(GameAudioMixerSetup.DungeonSnapshotName);
             serialized.FindProperty("pausedSnapshot").objectReferenceValue = mixer.FindSnapshot(GameAudioMixerSetup.PausedSnapshotName);
+            serialized.FindProperty("deadSnapshot").objectReferenceValue = mixer.FindSnapshot(GameAudioMixerSetup.DeadSnapshotName);
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(config);

@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
+    <Style src="project://database/Assets/_Project/UI/Hud/GameOver.uss" />
+    <!-- 全員が倒れたときの「力尽きた」。GameOverView が出し入れする。クリックは受けない。 -->
+    <ui:VisualElement name="game-over" class="game-over" picking-mode="Ignore">
+        <ui:VisualElement name="band" class="game-over__band" picking-mode="Ignore">
+            <ui:Label text="— GAME OVER —" class="game-over__caption rpg-deco" picking-mode="Ignore" />
+            <ui:Label text="力尽きた" class="game-over__title rpg-bold" picking-mode="Ignore" />
+            <ui:VisualElement class="rpg-rule game-over__rule" picking-mode="Ignore">
+                <ui:VisualElement class="rpg-rule__line" picking-mode="Ignore" />
+                <ui:VisualElement class="rpg-rule__gem" picking-mode="Ignore" />
+                <ui:VisualElement class="rpg-rule__line" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="floor" text="10階 第2層" class="game-over__floor rpg-deco" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:Label name="hint" text="キーを押して進む" class="game-over__hint rpg-deco" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

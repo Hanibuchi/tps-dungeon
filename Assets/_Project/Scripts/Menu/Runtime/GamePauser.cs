@@ -1,5 +1,6 @@
 using TpsDungeon.Audio.Data;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.Party;
 using TpsDungeon.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -40,10 +41,15 @@ namespace TpsDungeon.Menu
         /// <summary>止めているか。</summary>
         public bool IsPaused { get; private set; }
 
-        /// <summary>ゲームを止める。既に止めていれば何もしない。</summary>
+        /// <summary>
+        /// 今止めてよいか。全滅の演出の間（スローや音の切り替えの途中）は止めない。開く側（ポーズメニュー・インベントリ）が見る。
+        /// </summary>
+        public static bool CanPause => GameFlow.Instance == null || !GameFlow.Instance.IsWiping;
+
+        /// <summary>ゲームを止める。既に止めていれば何もしない。止められないとき（<see cref="CanPause"/>）も何もしない。</summary>
         public void Pause()
         {
-            if (IsPaused) return;
+            if (IsPaused || !CanPause) return;
             IsPaused = true;
 
             timeScaleBeforePause = Time.timeScale;

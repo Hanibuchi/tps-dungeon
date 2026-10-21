@@ -171,7 +171,7 @@ namespace TpsDungeon.Menu.UI
         /// <summary>ポーズしてメニューを出す。</summary>
         public void Pause()
         {
-            if (IsPaused) return;
+            if (IsPaused || !GamePauser.CanPause) return;
 
             pausedFrame = Time.frameCount;
             Pauser.Pause();
