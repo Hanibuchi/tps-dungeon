@@ -10,8 +10,11 @@ namespace TpsDungeon.Map.Runtime
     /// </summary>
     public static class SceneTravel
     {
-        /// <summary>地上のシーン名。死んだときもここへ戻る。</summary>
+        /// <summary>地上のシーン名。死後の場所で転生するとここへ戻る。</summary>
         public const string SurfaceScene = "Surface";
+
+        /// <summary>死後の場所のシーン名。全員が倒れるとここへ行き、魂の姿で強化と転生をする。</summary>
+        public const string AfterlifeScene = "Afterlife";
 
         /// <summary>移ってほしいシーン名が届く。受け手は <see cref="Handler"/> に 1 つだけ入れる。</summary>
         public static Action<string> Handler { get; set; }
