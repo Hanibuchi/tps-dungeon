@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TpsDungeon.Combat;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Authoring;
@@ -169,6 +170,10 @@ namespace TpsDungeon.Hud
 
             // HUD はクリックを受けない。上に重なる設定画面などの操作を邪魔しないように。
             root.pickingMode = PickingMode.Ignore;
+            // 全滅の演出の間は HUD ごと消す（「力尽きた」と倒れた体だけを見せる）。
+            root.style.transitionProperty = new List<StylePropertyName> { "opacity" };
+            root.style.transitionDuration = new List<TimeValue> { new TimeValue(0.6f, TimeUnit.Second) };
+            root.style.opacity = 1f;
             hpRoot = root.Q<VisualElement>("hp");
             hpFill = root.Q<VisualElement>("hp-fill");
             hpTrail = root.Q<VisualElement>("hp-trail");
@@ -212,6 +217,8 @@ namespace TpsDungeon.Hud
             PartyRoster.LeaderChanged += OnLeaderChanged;
             SubscribeCharacter();
             if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
+            WipeSequence.Started += OnWipeStarted;
+            WipeSequence.Ended += OnWipeEnded;
             RefreshCharacter();
             RefreshMapOverlay();
         }
@@ -225,7 +232,19 @@ namespace TpsDungeon.Hud
             bannerHide?.Pause();
             bannerHide = null;
             if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
+            WipeSequence.Started -= OnWipeStarted;
+            WipeSequence.Ended -= OnWipeEnded;
             UnbindFloor();
+        }
+
+        private void OnWipeStarted()
+        {
+            if (document.rootVisualElement != null) document.rootVisualElement.style.opacity = 0f;
+        }
+
+        private void OnWipeEnded()
+        {
+            if (document.rootVisualElement != null) document.rootVisualElement.style.opacity = 1f;
         }
 
         /// <summary>写すキャラを leader に替える（パーティーの先頭が替わった）。</summary>

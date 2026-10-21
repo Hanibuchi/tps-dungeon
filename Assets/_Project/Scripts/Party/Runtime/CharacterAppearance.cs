@@ -114,6 +114,9 @@ namespace TpsDungeon.Party
             instance.name = AccessoryPrefix + label;
             foreach (Collider c in instance.GetComponentsInChildren<Collider>(true))
             {
+                // Destroy はフレームの終わりまで残るので、先に切る。同じフレームに倒れ込む（セーブで HP 0 のまま始まる）と、
+                // 骨の体（倒れ込みの Rigidbody）に凹んだ当たりが入ってエラーになる。
+                c.enabled = false;
                 if (Application.isPlaying) Destroy(c);
                 else DestroyImmediate(c);
             }

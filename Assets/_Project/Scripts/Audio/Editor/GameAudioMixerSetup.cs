@@ -22,7 +22,7 @@ namespace TpsDungeon.Audio.Editor
     ///   └─ UI      Attenuation   ※UI の操作音。ポーズ中もこもらせず、BGM も沈ませない
     ///
     /// 露出パラメータ(スライダー用): MasterVolume / BgmVolume / SeVolume / UiVolume（SE のスライダーに連動）
-    /// スナップショット: Default / Dungeon / Paused
+    /// スナップショット: Default / Dungeon / Paused / Dead（全滅の後。SE だけこもり、死亡の曲はこもらせない）
     ///
     /// 露出パラメータはスナップショットのブレンドを上書きするので、
     /// 「音量は露出パラメータ」「ローパスとリバーブ送りはスナップショット」と役割を分けてある。
@@ -45,12 +45,16 @@ namespace TpsDungeon.Audio.Editor
         public const string DefaultSnapshotName = "Default";
         public const string DungeonSnapshotName = "Dungeon";
         public const string PausedSnapshotName = "Paused";
+        public const string DeadSnapshotName = "Dead";
 
         /// <summary>ローパスを通過させるときのカットオフ。上限いっぱいで実質素通り。</summary>
         private const float OpenCutoff = 22000f;
 
         /// <summary>ポーズ中のカットオフ。ここまで落とすとはっきりこもる。</summary>
         private const float MuffledCutoff = 800f;
+
+        /// <summary>全滅の後の SE のカットオフ。ポーズより深く沈めて、周りの音が遠のいたように。</summary>
+        private const float DeadSeCutoff = 600f;
 
         /// <summary>リバーブへの送り量。-80dB は実質オフで、SFX Reverb の DSP 負荷も乗らない。</summary>
         private const float ReverbSendOff = -80f;
@@ -117,23 +121,28 @@ namespace TpsDungeon.Audio.Editor
             ExposeVolume(controller, se, SeVolumeParam);
             ExposeVolume(controller, ui, UiVolumeParam);
 
-            // 既定のスナップショットを Default に仕立ててから、それを複製して他の 2 つを作る。
+            // 既定のスナップショットを Default に仕立ててから、それを複製して他の 3 つを作る。
             object defaultSnapshot = FirstSnapshot(controller);
             ((UnityEngine.Object)defaultSnapshot).name = DefaultSnapshotName;
             TargetSnapshotProp.SetValue(controller, defaultSnapshot);
             ApplySnapshotValues(controller, defaultSnapshot,
                 bgmLowpass, seLowpass, reverbSend, duckSend, sfxReverb,
-                cutoff: OpenCutoff, sendLevel: ReverbSendOff);
+                bgmCutoff: OpenCutoff, seCutoff: OpenCutoff, sendLevel: ReverbSendOff);
 
             object dungeonSnapshot = CloneSnapshot(controller, DungeonSnapshotName);
             ApplySnapshotValues(controller, dungeonSnapshot,
                 bgmLowpass, seLowpass, reverbSend, duckSend, sfxReverb,
-                cutoff: OpenCutoff, sendLevel: ReverbSendDungeon);
+                bgmCutoff: OpenCutoff, seCutoff: OpenCutoff, sendLevel: ReverbSendDungeon);
 
             object pausedSnapshot = CloneSnapshot(controller, PausedSnapshotName);
             ApplySnapshotValues(controller, pausedSnapshot,
                 bgmLowpass, seLowpass, reverbSend, duckSend, sfxReverb,
-                cutoff: MuffledCutoff, sendLevel: ReverbSendOff);
+                bgmCutoff: MuffledCutoff, seCutoff: MuffledCutoff, sendLevel: ReverbSendOff);
+
+            object deadSnapshot = CloneSnapshot(controller, DeadSnapshotName);
+            ApplySnapshotValues(controller, deadSnapshot,
+                bgmLowpass, seLowpass, reverbSend, duckSend, sfxReverb,
+                bgmCutoff: OpenCutoff, seCutoff: DeadSeCutoff, sendLevel: ReverbSendOff);
 
             // 再生開始時とエディタ上の表示はどちらも Default に戻しておく。
             TargetSnapshotProp.SetValue(controller, defaultSnapshot);
@@ -172,7 +181,7 @@ namespace TpsDungeon.Audio.Editor
                 lines.Add("  param " + param + ": " + (mixer.GetFloat(param, out float value) ? value + "dB" : "露出していない"));
             }
 
-            foreach (string snapshot in new[] { DefaultSnapshotName, DungeonSnapshotName, PausedSnapshotName })
+            foreach (string snapshot in new[] { DefaultSnapshotName, DungeonSnapshotName, PausedSnapshotName, DeadSnapshotName })
             {
                 lines.Add("  snapshot " + snapshot + ": " + (mixer.FindSnapshot(snapshot) != null ? "あり" : "なし"));
             }
@@ -276,10 +285,10 @@ namespace TpsDungeon.Audio.Editor
         private static void ApplySnapshotValues(
             object controller, object snapshot,
             object bgmLowpass, object seLowpass, object reverbSend, object duckSend, object sfxReverb,
-            float cutoff, float sendLevel)
+            float bgmCutoff, float seCutoff, float sendLevel)
         {
-            SetParameter(bgmLowpass, controller, snapshot, "Cutoff freq", cutoff);
-            SetParameter(seLowpass, controller, snapshot, "Cutoff freq", cutoff);
+            SetParameter(bgmLowpass, controller, snapshot, "Cutoff freq", bgmCutoff);
+            SetParameter(seLowpass, controller, snapshot, "Cutoff freq", seCutoff);
             SetMixLevel(reverbSend, controller, snapshot, sendLevel);
             SetMixLevel(duckSend, controller, snapshot, DuckSendLevel);
 

@@ -1,0 +1,93 @@
+/* 全員が倒れたときの「力尽きた」。画面の色が抜けて暗くなったところへ、横の帯ごとゆっくり浮かべる。 */
+.game-over {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    /* 帯は下寄りに置き、真ん中に映る倒れた体を隠さない。 */
+    justify-content: flex-end;
+    padding-bottom: 7%;
+    display: none;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 1.2s;
+    transition-timing-function: ease-out-sine;
+}
+
+.game-over.is-shown {
+    opacity: 1;
+}
+
+/* 横いっぱいの暗い帯。文字を少し下から持ち上げる。 */
+.game-over__band {
+    width: 100%;
+    align-items: center;
+    padding: 22px 0 20px 0;
+    background-color: rgba(6, 4, 3, 0.72);
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-color: var(--brass-dim);
+    translate: 0 12px;
+    transition-property: translate;
+    transition-duration: 1.6s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.game-over.is-shown .game-over__band {
+    translate: 0 0;
+}
+
+.game-over__caption {
+    font-size: 12px;
+    letter-spacing: 8px;
+    color: var(--brass);
+    margin: 0 0 4px 0;
+    padding: 0 0 0 8px;
+}
+
+.game-over__title {
+    font-size: 54px;
+    letter-spacing: 18px;
+    color: var(--blood-bright);
+    margin: 0;
+    padding: 0 0 0 18px;
+    -unity-text-align: middle-center;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.game-over.is-shown .game-over__rule .rpg-rule__line {
+    width: 140px;
+}
+
+.game-over__floor {
+    font-size: 15px;
+    letter-spacing: 4px;
+    color: var(--ink-dim);
+    margin: 10px 0 0 0;
+    padding: 0;
+}
+
+/* 飛ばせるようになったら出す。ゆっくり明滅させる。 */
+.game-over__hint {
+    position: absolute;
+    bottom: 2.5%;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--ink-dim);
+    margin: 0;
+    padding: 0;
+    display: none;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.6s;
+}
+
+.game-over__hint.is-shown {
+    opacity: 1;
+}
+
+.game-over__hint.game-over__hint--dim {
+    opacity: 0.35;
+}

@@ -15,7 +15,7 @@ namespace TpsDungeon.Party
     /// - 読み込んだシーンにあるカメラは止め（こちらのカメラで見る）、階なら NavMesh を焼く役（<see cref="FloorNavMesh"/>）を付け、スポーン地点（<see cref="PlayerSpawnPoint"/>）ができたら先頭をそこへ移して並び直す。
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
-    /// - 全員が倒れたら少し待って死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
+    /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
     /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
@@ -27,8 +27,8 @@ namespace TpsDungeon.Party
         [SerializeField, Tooltip("抱えるパーティー。未設定なら子から探す。")]
         private Party party;
 
-        [SerializeField, Min(0f), Tooltip("全員が倒れてから死後の場所へ送るまでの秒数。")]
-        private float wipeDelay = 2.5f;
+        [SerializeField, Tooltip("全員が倒れたときに流す曲。")]
+        private AudioClip deathBgm;
 
         [SerializeField, Min(0f), Tooltip("読み込んだシーンにスポーン地点ができるのを待つ秒数。過ぎたらその場のまま並び直す。")]
         private float spawnWaitTimeout = 5f;
@@ -50,13 +50,20 @@ namespace TpsDungeon.Party
 
         private Action<string> travelHandler;
         private bool traveling;
-        private float wipedAt = -1f;
+        private WipeSequence wipe;
+        private bool wiping;
 
         /// <summary>今シーンをまたいで残っているもの。地上を通らずに始めたシーンでは null。</summary>
         public static GameFlow Instance { get; private set; }
 
         /// <summary>シーンを移っている途中か（読み込みからスポーン地点へ並べ終えるまで）。</summary>
         public bool IsTraveling => traveling;
+
+        /// <summary>全滅の演出の途中か（全員が倒れてから、死後の場所へ移る暗転まで）。この間はポーズやメニューを開かせない。</summary>
+        public bool IsWiping => wiping || (wipe != null && wipe.IsPlaying);
+
+        /// <summary>全滅の演出。</summary>
+        public WipeSequence Wipe => wipe;
 
         private void Awake()
         {
@@ -72,6 +79,8 @@ namespace TpsDungeon.Party
             if (party == null) party = GetComponentInChildren<Party>(true);
             travelHandler = sceneName => Travel(sceneName);
             fade = ScreenFade.Create(transform);
+            wipe = WipeSequence.Create(transform);
+            wipe.DeathBgm = deathBgm;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -100,14 +109,17 @@ namespace TpsDungeon.Party
         {
             if (traveling || party == null) return;
 
-            if (!IsWiped())
-            {
-                wipedAt = -1f;
-                return;
-            }
+            if (wiping || !IsWiped()) return;
+            StartCoroutine(PlayWipe());
+        }
 
-            if (wipedAt < 0f) wipedAt = Time.time;
-            if (Time.time - wipedAt >= wipeDelay) Travel(SceneTravel.AfterlifeScene, revive: true);
+        /// <summary>全滅の演出を回してから死後の場所へ送る。演出は暗転し終えたところで元へ戻す（<see cref="LeaveFor"/>）。</summary>
+        private IEnumerator PlayWipe()
+        {
+            wiping = true;
+            if (wipe != null) yield return wipe.Play(party.Leader);
+            wiping = false;
+            Travel(SceneTravel.AfterlifeScene, revive: true);
         }
 
         /// <summary>sceneName へ移る。revive なら読み込む前（暗転の間）に全員を全快にして起こす。移っている途中なら何もしない。</summary>
@@ -117,7 +129,6 @@ namespace TpsDungeon.Party
 
             traveling = true;
             SceneTravel.Traveling = true;
-            wipedAt = -1f;
             StartCoroutine(LeaveFor(sceneName, revive));
         }
 
@@ -126,6 +137,7 @@ namespace TpsDungeon.Party
         {
             if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
             if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
+            if (wipe != null) wipe.Restore();
 
             // 起こすのは読み込む前（暗転の間）。着いたシーンの魂の姿（SoulForm）は読み込んだ時点で攻撃の部品を止めるので、
             // そのあとに起こすと止めた部品がまた動いてしまう。

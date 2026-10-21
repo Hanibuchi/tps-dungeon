@@ -287,7 +287,7 @@ namespace TpsDungeon.Menu.UI
         public void Open()
         {
             Rebind();
-            if (IsOpen || Bag == null) return;
+            if (IsOpen || Bag == null || !GamePauser.CanPause) return;
 
             openedFrame = Time.frameCount;
             Pauser.Pause();

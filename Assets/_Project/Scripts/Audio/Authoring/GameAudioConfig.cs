@@ -48,6 +48,9 @@ namespace TpsDungeon.Audio.Authoring
         [SerializeField, Tooltip("ポーズ中。全体がこもる。")]
         private AudioMixerSnapshot pausedSnapshot;
 
+        [SerializeField, Tooltip("全滅した後。SE だけこもる。")]
+        private AudioMixerSnapshot deadSnapshot;
+
         [Header("UI の操作音")]
         [SerializeField, Tooltip("操作音ごとのクリップと音量。")]
         private UiSoundSet uiSounds;
@@ -109,6 +112,7 @@ namespace TpsDungeon.Audio.Authoring
             {
                 case AudioSnapshotId.Dungeon: return dungeonSnapshot;
                 case AudioSnapshotId.Paused: return pausedSnapshot;
+                case AudioSnapshotId.Dead: return deadSnapshot != null ? deadSnapshot : pausedSnapshot;
                 default: return defaultSnapshot;
             }
         }
