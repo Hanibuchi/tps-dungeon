@@ -1,4 +1,4 @@
-/* 常時表示の HUD。左下 レベル・HP・経験値、下中央ホットバー、右下マップ。色・書体・飾り枠は Theme.uss。 */
+/* 常時表示の HUD。左上 階層、左下 レベル・HP・経験値、下中央ホットバー、右下マップ。色・書体・飾り枠は Theme.uss。 */
 
 /* 画面いっぱいに広げ、子は四隅・下辺に絶対配置する。 */
 .game-hud {
@@ -26,6 +26,26 @@
 .hud-frame .ornate-frame__corner--tr { right: 0; top: 0; }
 .hud-frame .ornate-frame__corner--bl { left: 0; bottom: 0; }
 .hud-frame .ornate-frame__corner--br { right: 0; bottom: 0; }
+
+/* ---- 左上: 今いる階層（「L2 F8」、地上では「地上」） ---- */
+
+.floor {
+    position: absolute;
+    left: 28px;
+    top: 28px;
+    padding: 6px 16px 7px 16px;
+    background-color: rgba(20, 17, 15, 0.84);
+}
+
+.floor__value {
+    padding: 0;
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    -unity-text-align: middle-center;
+}
 
 /* ---- 左下: HP ---- */
 

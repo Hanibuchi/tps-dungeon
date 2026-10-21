@@ -12,7 +12,8 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Hud
 {
     /// <summary>
-    /// 常時表示の HUD（左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
+    /// 常時表示の HUD（左上 今いる階層、左下 レベル・HP・経験値、下中央ホットバーと選んでいるアイテムの名前、右下マップ）と、マップキーで開く大きな地図。
+    /// 階層は「L2 F8」（層・階とも 1 始まり。ボス階も通し番号）、地上では「地上」と出し、どちらでもないシーンでは隠す。
     /// GameHud.uxml を UIDocument に差して、パーティーの操作台（かプレイヤー）の子に置いて使う。
     /// パーティーが居れば、キャラの分（HP・レベル・ホットバー・待ち）は先頭のキャラを写し、先頭が替われば結び直す（<see cref="PartyRoster"/>）。
     /// 表示は PlayerHealth / CharacterProgression / PlayerHotbar / PlayerInventory / MeleeAttacker / RangedAttacker / PlayerMapToggle / 生成済みフロアの状態を写すだけで、入力は扱わない。
@@ -47,6 +48,7 @@ namespace TpsDungeon.Hud
 
         public const string TrappedTitle = "モンスターハウス！";
         public const string ReleasedTitle = "扉が開いた";
+        public const string SurfaceText = "地上";
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
@@ -106,6 +108,7 @@ namespace TpsDungeon.Hud
         // 右下の小さい地図と、開いたときの大きな地図。同じ内容を縮尺（USS の --map-pixels-per-cell）だけ変えて描く。
         private MinimapElement[] maps;
 
+        private FloorBootstrap floorBootstrap;
         private FloorBuilder floorBuilder;
         private FloorExploration exploration;
         private RoomEnemySpawner enemySpawner;
@@ -123,6 +126,12 @@ namespace TpsDungeon.Hud
         // 今出している残りの敵の数。出していなければ -1。
         private int shownRemaining = -1;
         private float nextFloorSearchTime;
+
+        // 左上の階層の札。今出している文字（隠していれば null）。
+        private VisualElement floorRoot;
+        private Label floorValue;
+        private string shownFloorText;
+        private int? shownLayer;
 
         // 地上の地図の元（地上にいる間だけ）。印（解放したショートカットなど）はときどき拾い直す。
         private SurfaceMapSource surfaceMap;
@@ -193,6 +202,11 @@ namespace TpsDungeon.Hud
             UiTransitions.HideImmediately(monsterHouseBanner);
             UiTransitions.HideImmediately(monsterHouseCount);
             shownRemaining = -1;
+            floorRoot = root.Q<VisualElement>("floor");
+            floorValue = root.Q<Label>("floor-value");
+            if (floorRoot != null) floorRoot.style.display = DisplayStyle.None;
+            shownFloorText = null;
+            shownLayer = null;
 
             if (PartyRoster.Leader != null) TakeCharacter(PartyRoster.Leader);
             PartyRoster.LeaderChanged += OnLeaderChanged;
@@ -280,6 +294,7 @@ namespace TpsDungeon.Hud
                 BindFloor(FindAnyObjectByType<FloorBootstrap>());
             }
             BindSurfaceMap();
+            RefreshFloor();
             UpdateMinimap();
             RefreshCooldown();
             RefreshCrosshair();
@@ -502,6 +517,7 @@ namespace TpsDungeon.Hud
 
             floorBuilder = bootstrap.GetComponent<FloorBuilder>();
             if (floorBuilder == null) return;
+            floorBootstrap = bootstrap;
 
             floorBuilder.Built += OnFloorBuilt;
             if (floorBuilder.CurrentLayout != null) OnFloorBuilt(floorBuilder.CurrentLayout);
@@ -518,6 +534,7 @@ namespace TpsDungeon.Hud
         {
             if (floorBuilder != null) floorBuilder.Built -= OnFloorBuilt;
             floorBuilder = null;
+            floorBootstrap = null;
             if (enemySpawner != null)
             {
                 enemySpawner.Trapped -= OnTrapped;
@@ -556,6 +573,28 @@ namespace TpsDungeon.Hud
             nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
             var markers = surfaceMap.Markers();
             foreach (var m in maps) m.SetMarkers(markers);
+        }
+
+        /// <summary>
+        /// 左上の階層の札と、地図に渡す層（井戸の印のローマ数字）。階の番号は生成のときに決まるので、毎フレーム比べて追いつく。
+        /// </summary>
+        private void RefreshFloor()
+        {
+            DungeonFloor? floor = floorBuilder != null && floorBootstrap != null ? floorBootstrap.CurrentFloor : null;
+            int? layer = floor?.Layer;
+            if (layer != shownLayer && maps != null)
+            {
+                shownLayer = layer;
+                foreach (var m in maps) m.SetLayer(layer);
+            }
+
+            if (floorRoot == null) return;
+            string text = floor.HasValue ? FloorText(floor.Value) : floorBuilder == null && surfaceMap != null ? SurfaceText : null;
+            if (text == shownFloorText) return;
+
+            shownFloorText = text;
+            floorRoot.style.display = text != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (floorValue != null && text != null) floorValue.text = text;
         }
 
         private void UpdateMinimap()
@@ -646,6 +685,9 @@ namespace TpsDungeon.Hud
         public static string HpText(int current, int max) => $"{current} / {max}";
 
         public static string LevelText(int level) => level.ToString();
+
+        /// <summary>左上の階層（例:「L2 F8」）。層・階とも 1 始まりで、ボス階も通し番号。</summary>
+        public static string FloorText(DungeonFloor floor) => $"L{floor.Layer + 1} F{floor.Floor + 1}";
 
         /// <summary>経験値の帯の伸び（0〜1）。次までが 0（最大レベル）なら満タン。</summary>
         public static float ExpFraction(int exp, int expToNext) => expToNext > 0 ? Mathf.Clamp01((float)exp / expToNext) : 1f;

@@ -2,6 +2,10 @@
     <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Hud/GameHud.uss" />
     <ui:VisualElement name="game-hud" class="game-hud" picking-mode="Ignore">
+        <ui:VisualElement name="floor" class="floor" picking-mode="Ignore">
+            <kit:OrnateFrame class="hud-frame" />
+            <ui:Label name="floor-value" text="L1 F1" class="floor__value rpg-deco-bold" picking-mode="Ignore" />
+        </ui:VisualElement>
         <ui:VisualElement name="hp" class="hp" picking-mode="Ignore">
             <kit:OrnateFrame class="hud-frame" />
             <ui:VisualElement name="level" class="level" picking-mode="Ignore">
