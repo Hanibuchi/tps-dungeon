@@ -295,21 +295,24 @@ namespace TpsDungeon.Hud
             return kind == SurfaceMapSource.MarkerKind.DungeonEntrance ? r * 1.25f : r;
         }
 
-        /// <summary>城の土台と、ダンジョンの入口・武器屋・銀行・解放したショートカットの印。</summary>
+        /// <summary>城の土台と、ダンジョンの入口・武器屋・銀行・解放したショートカット・強化の台・転生の渦の印。</summary>
         private void DrawSurface(Painter2D painter, Vector2 center)
         {
-            // 城の土台。石の色の四角に、内側の縁取り。
-            var castle = ToScreenRect(center, WorldToCell(surface.Castle));
-            painter.fillColor = castleColor;
-            painter.strokeColor = markerRimColor;
-            painter.lineWidth = 2f;
-            RectPath(painter, castle);
-            painter.Fill();
-            painter.Stroke();
-            painter.strokeColor = new Color(markerRimColor.r, markerRimColor.g, markerRimColor.b, 0.35f);
-            painter.lineWidth = 1f;
-            RectPath(painter, Inset(castle, 4f));
-            painter.Stroke();
+            // 城の土台。石の色の四角に、内側の縁取り。死後の場所には無い（大きさ 0）。
+            if (surface.Castle.width > 0f && surface.Castle.height > 0f)
+            {
+                var castle = ToScreenRect(center, WorldToCell(surface.Castle));
+                painter.fillColor = castleColor;
+                painter.strokeColor = markerRimColor;
+                painter.lineWidth = 2f;
+                RectPath(painter, castle);
+                painter.Fill();
+                painter.Stroke();
+                painter.strokeColor = new Color(markerRimColor.r, markerRimColor.g, markerRimColor.b, 0.35f);
+                painter.lineWidth = 1f;
+                RectPath(painter, Inset(castle, 4f));
+                painter.Stroke();
+            }
 
             foreach (var marker in markers)
             {
@@ -321,6 +324,8 @@ namespace TpsDungeon.Hud
                     case SurfaceMapSource.MarkerKind.DungeonEntrance: DrawArch(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.WeaponShop: DrawSwords(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.Bank: DrawCoin(painter, p, r); break;
+                    case SurfaceMapSource.MarkerKind.Upgrade: DrawFlame(painter, p, r); break;
+                    case SurfaceMapSource.MarkerKind.Rebirth: DrawVortex(painter, p, r); break;
                     // ショートカットは番号（labels）だけ。
                 }
             }
@@ -331,6 +336,8 @@ namespace TpsDungeon.Hud
             SurfaceMapSource.MarkerKind.DungeonEntrance => new Color32(92, 34, 28, 255),
             SurfaceMapSource.MarkerKind.WeaponShop => new Color32(44, 50, 62, 255),
             SurfaceMapSource.MarkerKind.Bank => new Color32(38, 62, 42, 255),
+            SurfaceMapSource.MarkerKind.Upgrade => new Color32(30, 52, 66, 255),
+            SurfaceMapSource.MarkerKind.Rebirth => new Color32(26, 64, 80, 255),
             _ => shortcutColor,
         };
 
@@ -410,6 +417,46 @@ namespace TpsDungeon.Hud
                 Circle(painter, c, r * 0.28f);
                 painter.Stroke();
             }
+        }
+
+        /// <summary>強化の台。燭台の火（下が丸く上がとがった炎）。</summary>
+        private void DrawFlame(Painter2D painter, Vector2 p, float r)
+        {
+            var bottom = p + new Vector2(0f, r * 0.2f);
+            float w = r * 0.36f;
+            painter.fillColor = markerGlyphColor;
+            painter.BeginPath();
+            painter.MoveTo(p + new Vector2(0f, -r * 0.65f));
+            painter.BezierCurveTo(p + new Vector2(w * 0.4f, -r * 0.3f), bottom + new Vector2(w * 1.3f, -w * 0.6f), bottom + new Vector2(w, 0f));
+            painter.Arc(bottom, w, 0f, 180f);
+            painter.BezierCurveTo(bottom + new Vector2(-w * 1.3f, -w * 0.6f), p + new Vector2(-w * 0.4f, -r * 0.3f), p + new Vector2(0f, -r * 0.65f));
+            painter.ClosePath();
+            painter.Fill();
+            // 燭台の皿。
+            painter.strokeColor = markerGlyphColor;
+            painter.lineWidth = Mathf.Max(1.2f, r * 0.12f);
+            painter.BeginPath();
+            painter.MoveTo(p + new Vector2(-r * 0.45f, r * 0.68f));
+            painter.LineTo(p + new Vector2(r * 0.45f, r * 0.68f));
+            painter.Stroke();
+        }
+
+        /// <summary>転生の渦。外の輪と、中の点。</summary>
+        private void DrawVortex(Painter2D painter, Vector2 p, float r)
+        {
+            painter.strokeColor = markerGlyphColor;
+            painter.lineWidth = Mathf.Max(1.2f, r * 0.12f);
+            painter.lineCap = LineCap.Round;
+            painter.BeginPath();
+            painter.Arc(p, r * 0.55f, 200f, 470f);
+            painter.Stroke();
+            painter.BeginPath();
+            painter.Arc(p, r * 0.3f, 20f, 290f);
+            painter.Stroke();
+            painter.lineCap = LineCap.Butt;
+            painter.fillColor = markerGlyphColor;
+            Circle(painter, p, r * 0.1f);
+            painter.Fill();
         }
 
         private static void Circle(Painter2D painter, Vector2 center, float radius)

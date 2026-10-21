@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TpsDungeon.Map.Runtime
 {
-    /// <summary>地上の地図に出す印。None なら地図には出さない。</summary>
+    /// <summary>地上（と死後の場所）の地図に出す印。None なら地図には出さない。</summary>
     public enum MapIcon
     {
         None = 0,
@@ -14,6 +14,10 @@ namespace TpsDungeon.Map.Runtime
         WeaponShop = 2,
         /// <summary>銀行。</summary>
         Bank = 3,
+        /// <summary>死後の場所の強化の台。</summary>
+        Upgrade = 4,
+        /// <summary>死後の場所の転生の渦。</summary>
+        Rebirth = 5,
     }
 
     /// <summary>

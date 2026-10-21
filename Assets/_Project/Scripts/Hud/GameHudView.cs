@@ -48,7 +48,6 @@ namespace TpsDungeon.Hud
 
         public const string TrappedTitle = "モンスターハウス！";
         public const string ReleasedTitle = "扉が開いた";
-        public const string SurfaceText = "地上";
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
@@ -589,7 +588,7 @@ namespace TpsDungeon.Hud
             }
 
             if (floorRoot == null) return;
-            string text = floor.HasValue ? FloorText(floor.Value) : floorBuilder == null && surfaceMap != null ? SurfaceText : null;
+            string text = floor.HasValue ? FloorText(floor.Value) : floorBuilder == null && surfaceMap != null ? surfaceMap.PlaceName : null;
             if (text == shownFloorText) return;
 
             shownFloorText = text;

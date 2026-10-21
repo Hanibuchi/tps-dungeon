@@ -4,11 +4,13 @@ using UnityEngine;
 namespace TpsDungeon.Party
 {
     /// <summary>
-    /// 死後の場所（Afterlife）にいる間だけ、パーティーの全員を魂の姿にする。Afterlife のシーンに 1 つ置く。
+    /// 死後の場所（Afterlife）にいる間だけ、パーティーの先頭を魂の姿にする。Afterlife のシーンに 1 つ置く。
+    /// - 死後の場所に来るのは操作しているキャラ（先頭）だけで、仲間は消しておく（GameObject を止める）。先頭が替わったら、新しい先頭を出して前の先頭を消す。
     /// - 体と小物（角・耳・しっぽ）の材質を魂の材質（TpsDungeon/Soul）に差し替え、手に持った武器は隠す（魂は武器を持たない）。
     /// - 持ち替えや仲間の入れ替えで増えた物も拾えるよう、少しおきに見直す。
     /// - 一人ずつに弱い青白い光を付けて歩かせる。暗い死後の場所では、これが主な光になる。
-    /// - パーティーは地上から持ち越されて次のシーンへも行くので、このシーンを出るとき（OnDestroy）に材質も武器も光も元へ戻す。
+    /// - パーティーは地上から持ち越されて次のシーンへも行くので、このシーンを出るとき（OnDestroy）に材質も武器も光も仲間も元へ戻す。
+    ///   仲間は止めていた所に出るが、着いたシーンで GameFlow が先頭の後ろへ並べ直す。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Soul Form")]
@@ -37,6 +39,7 @@ namespace TpsDungeon.Party
         private readonly HashSet<Renderer> hidden = new HashSet<Renderer>();
         private readonly Dictionary<PartyMember, Light> lights = new Dictionary<PartyMember, Light>();
         private readonly List<Renderer> scratch = new List<Renderer>();
+        private readonly HashSet<PartyMember> away = new HashSet<PartyMember>();
         private float nextScan;
 
         private void LateUpdate()
@@ -47,11 +50,26 @@ namespace TpsDungeon.Party
             Party party = Party.Current;
             if (party == null || soulMaterial == null) return;
 
+            PartyMember leader = party.Leader;
             foreach (PartyMember member in party.Members)
             {
                 if (member == null) continue;
                 Apply(member);
                 EnsureLight(member);
+                ShowOnlyLeader(member, member == leader);
+            }
+        }
+
+        private void ShowOnlyLeader(PartyMember member, bool isLeader)
+        {
+            if (isLeader)
+            {
+                if (away.Remove(member)) member.gameObject.SetActive(true);
+            }
+            else if (member.gameObject.activeSelf)
+            {
+                away.Add(member);
+                member.gameObject.SetActive(false);
             }
         }
 
@@ -118,6 +136,12 @@ namespace TpsDungeon.Party
                 if (light != null) Destroy(light.gameObject);
             }
             lights.Clear();
+
+            foreach (PartyMember member in away)
+            {
+                if (member != null) member.gameObject.SetActive(true);
+            }
+            away.Clear();
         }
     }
 }

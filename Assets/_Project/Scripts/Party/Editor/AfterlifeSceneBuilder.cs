@@ -15,11 +15,14 @@ namespace TpsDungeon.Party.Editor
     /// <summary>
     /// 死後の場所（水鏡の底）のシーンを作る。何度実行しても同じ形に作り直す。
     /// - 全員が倒れると GameFlow がここへ送る。パーティーは魂の姿（<see cref="SoulForm"/>）になり、強化の台（<see cref="UpgradeAltar"/>）と転生の渦（地上への <see cref="SceneGate"/>）がある。
-    /// - どこまでも続く黒く浅い水面に、平たい石の足場。着地点 → 燭台の輪（強化）→ 転生の渦 を +Z へ一直線に並べ、端から端まで走って 5 秒ほど。
+    /// - どこまでも続く黒い水面に、平たい石の足場（<see cref="Platforms"/>）。南の着地点から北へ渡ると燭台の輪（強化）、そこから東へ渡ると転生の渦。
+    ///   歩けるのは足場の上だけで、縁に淡い光の線を引き、縁の外に見えない壁を立てる。
+    /// - 足場には道しるべの淡い光の粒を並べ、光の波を行き先へ流す。強化の台から渦までの後半は、台に近づくまで隠す（<see cref="AfterlifeGuide"/>）。
+    /// - 地図（<see cref="SurfaceMapSource"/>）を真上から撮って持たせ、強化の台と転生の渦を印で出す。左上の札は「死後の世界」。
     /// - 頭上の遠くに、地上の城の塔のメッシュ（Tower_*）を上下逆さにして垂らす。上ほど太い城が、ここでは下ほど太い。
     /// - 寒色・低い彩度で暗く、主な光は魂（SoulForm が一人ずつに付ける光）と燭台の青白い火。光の粒がゆっくり沈んでいく。
     /// - 材質と Volume の profile は無いときだけ作る（手で調節した値を上書きしない）。
-    /// - 直接 Play して確かめられるよう、地上と同じパーティー一式（[Party Rig]）も置く。地上から来たときは GameFlow がこちらを消す。
+    /// - 直接 Play して確かめられるよう、地上と同じパーティー一式（[Party Rig]）も置く。地上から来たときは GameFlow がこちらを消す。仲間は SoulForm が消す。
     /// </summary>
     public static class AfterlifeSceneBuilder
     {
@@ -29,24 +32,42 @@ namespace TpsDungeon.Party.Editor
         private const string MaterialsFolder = "Assets/_Project/Materials/Afterlife";
         private const string VolumeProfilePath = "Assets/_Project/Materials/Afterlife/Afterlife_VolumeProfile.asset";
         private const string TowerMeshFolder = "Assets/_Project/Scenes/Surface";
+        private const string MapImagePath = "Assets/_Project/UI/Hud/AfterlifeMap.png";
+        private const string PlaceName = "死後の世界";
         private const string StoneSourcePath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_JaggedSquare.mat";
 
-        // 歩ける範囲（メートル）。+Z が転生の渦。まわりを見えない壁で囲む。
-        private const float AreaMinX = -14f;
-        private const float AreaMaxX = 14f;
-        private const float AreaMinZ = -8f;
-        private const float AreaMaxZ = 32f;
-        private const float BoundsHeight = 20f;
-        private const float BoundsThickness = 2f;
+        // 足場（x・z の最小と最大、メートル）。+Z が北。歩けるのはこの上だけ。どれも GridStep の倍数に揃える（縁を升目で探すので）。
+        private static readonly Rect[] Platforms =
+        {
+            Rect.MinMaxRect(-3f, -3f, 3f, 3f),     // 着地点（南）
+            Rect.MinMaxRect(-1.5f, 3f, 1.5f, 6f),  // 北への渡り
+            Rect.MinMaxRect(-5f, 6f, 5f, 16f),     // 強化の台
+            Rect.MinMaxRect(5f, 9.5f, 10f, 12.5f), // 東への渡り
+            Rect.MinMaxRect(10f, 7f, 18f, 15f),    // 転生の渦
+        };
+        private const float GridStep = 0.5f;
+        private const float WallHeight = 6f;
+        private const float WallThickness = 1f;
+        private const float EdgeGlowWidth = 0.2f;
 
         // 3 か所の足場の真ん中。
         private static readonly Vector3 Landing = new Vector3(0f, 0f, 0f);
-        private static readonly Vector3 AltarCenter = new Vector3(-4.5f, 0f, 11f);
-        private static readonly Vector3 PortalCenter = new Vector3(0f, 0f, 22f);
+        private static readonly Vector3 AltarCenter = new Vector3(0f, 0f, 11f);
+        private static readonly Vector3 PortalCenter = new Vector3(14f, 0f, 11f);
+
+        // 道しるべ。前半は着地点から強化の台の手前まで北へ、後半は台の脇から渦の手前まで東へ。
+        private static readonly Vector3 PathToAltarStart = new Vector3(0f, 0f, -0.5f);
+        private static readonly Vector3 PathToAltarEnd = new Vector3(0f, 0f, 9f);
+        private static readonly Vector3 PathToPortalStart = new Vector3(1.5f, 0f, 11f);
+        private static readonly Vector3 PathToPortalEnd = new Vector3(11.6f, 0f, 11f);
+        private const float PathSpacing = 1.1f;
+        private const float PathDotSize = 0.34f;
+
+        // 燭台の向き（度。0 が東、90 が北）。南（着地点から来る道）と東（渦へ出る道）を空ける。
+        private static readonly float[] CandleAngles = { 45f, 90f, 135f, 180f, 225f, 315f };
 
         // 足場は水面（y = 0）から少しだけ出る。
         private const float StoneTop = 0.12f;
-        private const int Candles = 6;
         private const float CandleRadius = 3.2f;
 
         // 逆さの城。いちばん低い所（地上の城のてっぺん）をこの高さに、この奥に置く。
@@ -54,6 +75,7 @@ namespace TpsDungeon.Party.Editor
         private const float InvertedCastleDistance = 110f;
         private const float InvertedCastleScale = 0.7f;
 
+        private static readonly Color WaterMapColor = new Color(0.02f, 0.04f, 0.05f);
         private static readonly Color FogColor = new Color(0.06f, 0.11f, 0.14f);
 
         [MenuItem("Tools/TPS Dungeon/死後の場所のシーンを作る")]
@@ -88,15 +110,17 @@ namespace TpsDungeon.Party.Editor
 
                 Transform world = new GameObject("[Afterlife]").transform;
                 Transform walkable = Group(world, "Walkable");
-                BuildWater(walkable, m);
+                BuildWater(world, m);
                 BuildStones(walkable, m);
-                BuildAltar(world, walkable, m);
+                BuildEdges(world, m);
+                Transform altar = BuildAltar(world, walkable, m);
+                BuildPath(world, altar, m);
                 BuildPortal(world, m);
                 castle = BuildInvertedCastle(world, m);
                 BuildReflection(world);
                 BuildMotes(world, m);
-                BuildBounds();
                 Transform spawn = CreateSpawn(world);
+                CaptureMap(world.gameObject);
 
                 var soulForm = new SerializedObject(new GameObject("Soul Form").AddComponent<SoulForm>());
                 soulForm.FindProperty("soulMaterial").objectReferenceValue = m.Soul;
@@ -119,7 +143,7 @@ namespace TpsDungeon.Party.Editor
             }
 
             if (alone) EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            return $"{ScenePath} を作った（着地点 → 燭台 {Candles} 本の強化の台 → 転生の渦（地上へ）、{castle}）。";
+            return $"{ScenePath} を作った（南の着地点 → 北の強化の台 → その東の転生の渦（地上へ）、{castle}）。";
         }
 
         /// <summary>Afterlife が開いていれば閉じる。それしか開いていなければ空のシーンに替えて true（そこへ作る）。名前の無い空のシーンだけが開いているときも true。</summary>
@@ -157,6 +181,10 @@ namespace TpsDungeon.Party.Editor
             public readonly Material Flame;
             public readonly Material Portal;
             public readonly Material Sky;
+            public readonly Material Edge;
+            public readonly Material PathToAltar;
+            public readonly Material PathToPortal;
+            public readonly Material Beam;
 
             public Materials()
             {
@@ -169,6 +197,30 @@ namespace TpsDungeon.Party.Editor
                 });
                 Portal = ShaderMaterial("Portal", "TpsDungeon/Afterlife Portal", null);
                 Sky = ShaderMaterial("Sky", "TpsDungeon/Afterlife Sky", mat => mat.SetColor("_HorizonColor", FogColor));
+                Edge = ShaderMaterial("EdgeGlow", "TpsDungeon/Afterlife Edge Glow", null);
+
+                // 道しるべは区間ごとに、道の向きと、前の区間から続く距離を入れる（光の波が折れ目でつながるように）。
+                PathToAltar = ShaderMaterial("PathToAltar", "TpsDungeon/Afterlife Path Glow", mat =>
+                {
+                    mat.SetVector("_Axis", new Vector4(0f, 0f, 1f, 0f));
+                    mat.SetFloat("_Offset", -PathToAltarStart.z);
+                });
+                float firstLength = Vector3.Distance(PathToAltarStart, PathToAltarEnd) + Vector3.Distance(PathToAltarEnd, PathToPortalStart);
+                PathToPortal = ShaderMaterial("PathToPortal", "TpsDungeon/Afterlife Path Glow", mat =>
+                {
+                    mat.SetVector("_Axis", new Vector4(1f, 0f, 0f, 0f));
+                    mat.SetFloat("_Offset", firstLength - PathToPortalStart.x);
+                });
+
+                // 転生の渦の真ん中に立つ光の柱。魂と同じシェーダーで、もっと薄く速く流れる。
+                Beam = ShaderMaterial("PortalBeam", "TpsDungeon/Soul", mat =>
+                {
+                    mat.SetColor("_RimColor", new Color(0.4f, 0.95f, 1.4f, 1f));
+                    mat.SetColor("_BodyColor", new Color(0.2f, 0.5f, 0.7f, 0.08f));
+                    mat.SetFloat("_RimPower", 2f);
+                    mat.SetFloat("_FlowSpeed", 0.9f);
+                    mat.SetFloat("_NoiseStrength", 0.7f);
+                });
 
                 // 黒い鏡のような水。光沢を強くして、魂や火の光が水面ににじむように。
                 Water = LitMaterial("Water", mat =>
@@ -287,74 +339,193 @@ namespace TpsDungeon.Party.Editor
 
         // --- 地形 ---
 
-        /// <summary>浅い水。見た目は大きな平面で、当たりはその少し下の床（水の中も歩ける）。</summary>
-        private static void BuildWater(Transform walkable, Materials m)
+        /// <summary>水。見た目だけの大きな平面で、当たりは無い（足場の外へは縁の見えない壁で出られない）。</summary>
+        private static void BuildWater(Transform world, Materials m)
         {
             var water = GameObject.CreatePrimitive(PrimitiveType.Plane);
             water.name = "Water";
             Object.DestroyImmediate(water.GetComponent<Collider>());
-            water.transform.SetParent(walkable.parent, false);
-            // 霧の向こうまで続いて見えるよう、歩ける範囲よりずっと広く。Plane は 1 倍で 10 m。
-            water.transform.localPosition = new Vector3(0f, 0f, 12f);
+            water.transform.SetParent(world, false);
+            // 霧の向こうまで続いて見えるよう、足場よりずっと広く。Plane は 1 倍で 10 m。
+            water.transform.localPosition = new Vector3(7f, 0f, 8f);
             water.transform.localScale = new Vector3(60f, 1f, 60f);
             water.GetComponent<MeshRenderer>().sharedMaterial = m.Water;
             water.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
-
-            var floor = new GameObject("WaterFloor");
-            floor.transform.SetParent(walkable, false);
-            floor.transform.localPosition = new Vector3((AreaMinX + AreaMaxX) * 0.5f, -0.25f, (AreaMinZ + AreaMaxZ) * 0.5f);
-            floor.AddComponent<BoxCollider>().size = new Vector3(AreaMaxX - AreaMinX, 0.5f, AreaMaxZ - AreaMinZ);
-            GameObjectUtility.SetStaticEditorFlags(floor, StaticEditorFlags.BatchingStatic);
         }
 
-        /// <summary>3 か所の広い足場と、そのあいだの飛び石。</summary>
+        /// <summary>足場（<see cref="Platforms"/>）を 1 つずつ石の板にする。上面は水面から少しだけ出る。</summary>
         private static void BuildStones(Transform walkable, Materials m)
         {
+            const float thickness = 0.6f;
             Transform group = Group(walkable, "Stones");
-            Stone(group, "Landing", m, Landing, new Vector2(6f, 6f), 0f);
-            Stone(group, "AltarFloor", m, AltarCenter, new Vector2(9f, 9f), 0f);
-            Stone(group, "PortalFloor", m, PortalCenter, new Vector2(7.5f, 7.5f), 45f);
-
-            // 飛び石。少しずつ向きと大きさをずらして、並べた感じを消す。
-            var random = new System.Random(20261021);
-            Vector3[] path =
+            string[] names = { "Landing", "NorthCauseway", "AltarFloor", "EastCauseway", "PortalFloor" };
+            for (int i = 0; i < Platforms.Length; i++)
             {
-                new Vector3(-0.6f, 0f, 4.2f), new Vector3(-1.6f, 0f, 6.0f),
-                new Vector3(-0.8f, 0f, 15.9f), new Vector3(0.3f, 0f, 17.6f),
-                new Vector3(2.4f, 0f, 9.5f), new Vector3(3.2f, 0f, 12.8f), new Vector3(2.2f, 0f, 15.8f),
-            };
-            for (int i = 0; i < path.Length; i++)
-            {
-                float size = 1.1f + (float)random.NextDouble() * 0.6f;
-                Stone(group, $"Step_{i}", m, path[i], new Vector2(size, size * (0.8f + (float)random.NextDouble() * 0.3f)), (float)random.NextDouble() * 90f);
+                Rect r = Platforms[i];
+                var center = new Vector3(r.center.x, StoneTop - thickness * 0.5f, r.center.y);
+                SurfaceSceneBuilder.Box(group, i < names.Length ? names[i] : $"Platform_{i}", m.Stone, center, new Vector3(r.width, thickness, r.height));
             }
         }
 
-        private static GameObject Stone(Transform parent, string name, Materials m, Vector3 center, Vector2 size, float yaw)
+        private static bool OnPlatform(float x, float z)
         {
-            const float thickness = 0.6f;
-            GameObject stone = SurfaceSceneBuilder.Box(parent, name, m.Stone, center + Vector3.up * (StoneTop - thickness * 0.5f), new Vector3(size.x, thickness, size.y));
-            stone.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            return stone;
+            foreach (Rect r in Platforms)
+            {
+                if (x > r.xMin && x < r.xMax && z > r.yMin && z < r.yMax) return true;
+            }
+            return false;
         }
 
-        /// <summary>燭台の輪と、真ん中の強化の台。火は粒子と弱い光で、魂と同じ青白い色。</summary>
-        private static void BuildAltar(Transform world, Transform walkable, Materials m)
+        /// <summary>
+        /// 足場をひとつながりの形として見たときの縁（水との境目）に、淡い光の線と見えない壁を置く。
+        /// 縁は GridStep の升目で探し、まっすぐ続く所は 1 本にまとめる。足場どうしがつながる所には置かない。
+        /// 壁は Ignore Raycast で [Bounds] に置く（照準やカメラの壁よけに掛からず、NavMesh も焼かない）。
+        /// </summary>
+        private static void BuildEdges(Transform world, Materials m)
+        {
+            Transform glow = Group(world, "EdgeGlow");
+            Transform walls = new GameObject("[Bounds]").transform;
+
+            float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
+            foreach (Rect r in Platforms)
+            {
+                minX = Mathf.Min(minX, r.xMin); minZ = Mathf.Min(minZ, r.yMin);
+                maxX = Mathf.Max(maxX, r.xMax); maxZ = Mathf.Max(maxZ, r.yMax);
+            }
+            int columns = Mathf.RoundToInt((maxX - minX) / GridStep);
+            int rows = Mathf.RoundToInt((maxZ - minZ) / GridStep);
+            bool Inside(int i, int j) => i >= 0 && j >= 0 && i < columns && j < rows
+                && OnPlatform(minX + (i + 0.5f) * GridStep, minZ + (j + 0.5f) * GridStep);
+
+            int count = 0;
+            // 東西に走る縁（升目の行の境目 j）。外側が南（-1）か北（+1）か。
+            for (int j = 0; j <= rows; j++)
+            {
+                foreach (int side in new[] { -1, 1 })
+                {
+                    int start = -1;
+                    for (int i = 0; i <= columns; i++)
+                    {
+                        // 内側の升目と外側の升目。side = -1 なら外が南（j - 1）で内が北（j）。
+                        bool edge = i < columns && (side < 0 ? Inside(i, j) && !Inside(i, j - 1) : Inside(i, j - 1) && !Inside(i, j));
+                        if (edge && start < 0) start = i;
+                        if (!edge && start >= 0)
+                        {
+                            float z = minZ + j * GridStep;
+                            Edge(glow, walls, m, new Vector3(minX + start * GridStep, 0f, z), new Vector3(minX + i * GridStep, 0f, z), new Vector3(0f, 0f, side), count++);
+                            start = -1;
+                        }
+                    }
+                }
+            }
+            // 南北に走る縁（升目の列の境目 i）。外側が西（-1）か東（+1）か。
+            for (int i = 0; i <= columns; i++)
+            {
+                foreach (int side in new[] { -1, 1 })
+                {
+                    int start = -1;
+                    for (int j = 0; j <= rows; j++)
+                    {
+                        bool edge = j < rows && (side < 0 ? Inside(i, j) && !Inside(i - 1, j) : Inside(i - 1, j) && !Inside(i, j));
+                        if (edge && start < 0) start = j;
+                        if (!edge && start >= 0)
+                        {
+                            float x = minX + i * GridStep;
+                            Edge(glow, walls, m, new Vector3(x, 0f, minZ + start * GridStep), new Vector3(x, 0f, minZ + j * GridStep), new Vector3(side, 0f, 0f), count++);
+                            start = -1;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>from から to までのまっすぐな縁。outward は水の側。足場の上に光の線、水の側に見えない壁。</summary>
+        private static void Edge(Transform glow, Transform walls, Materials m, Vector3 from, Vector3 to, Vector3 outward, int index)
+        {
+            Vector3 mid = (from + to) * 0.5f;
+            float length = Vector3.Distance(from, to);
+            bool alongX = Mathf.Abs(to.x - from.x) > Mathf.Abs(to.z - from.z);
+
+            var line = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            line.name = $"Edge_{index}";
+            Object.DestroyImmediate(line.GetComponent<Collider>());
+            line.transform.SetParent(glow, false);
+            line.transform.localPosition = mid - outward * (EdgeGlowWidth * 0.5f) + Vector3.up * (StoneTop + 0.005f);
+            // Quad の X が線の向き、Y が幅の向き。寝かせて上を向ける。
+            line.transform.localRotation = Quaternion.Euler(90f, alongX ? 0f : 90f, 0f);
+            line.transform.localScale = new Vector3(length, EdgeGlowWidth, 1f);
+            var renderer = line.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = m.Edge;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            var wall = new GameObject($"Wall_{index}") { layer = 2 };
+            wall.transform.SetParent(walls, false);
+            wall.transform.localPosition = mid + outward * (WallThickness * 0.5f) + Vector3.up * (WallHeight * 0.5f);
+            wall.AddComponent<BoxCollider>().size = alongX ? new Vector3(length, WallHeight, WallThickness) : new Vector3(WallThickness, WallHeight, length);
+            GameObjectUtility.SetStaticEditorFlags(wall, StaticEditorFlags.BatchingStatic);
+        }
+
+        /// <summary>
+        /// 道しるべ。足場に淡い光の粒を並べ、光の波を行き先へ流す（TpsDungeon/Afterlife Path Glow）。
+        /// 前半（着地点 → 強化の台）はいつも見え、後半（強化の台 → 転生の渦）は台に近づくまで隠す（<see cref="AfterlifeGuide"/>）。
+        /// 粒は物体の原点で波の位置を測るので、静的なまとめ描き（Static Batching）にしない。
+        /// </summary>
+        private static void BuildPath(Transform world, Transform altar, Materials m)
+        {
+            Transform group = Group(world, "PathGuide");
+            Transform toAltar = Group(group, "ToAltar");
+            Transform toPortal = Group(group, "ToPortal");
+            Dots(toAltar, m.PathToAltar, PathToAltarStart, PathToAltarEnd);
+            Dots(toPortal, m.PathToPortal, PathToPortalStart, PathToPortalEnd);
+
+            var guide = new SerializedObject(group.gameObject.AddComponent<AfterlifeGuide>());
+            guide.FindProperty("altar").objectReferenceValue = altar;
+            guide.FindProperty("laterPath").objectReferenceValue = toPortal.gameObject;
+            guide.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void Dots(Transform parent, Material material, Vector3 from, Vector3 to)
+        {
+            int count = Mathf.Max(1, Mathf.FloorToInt(Vector3.Distance(from, to) / PathSpacing) + 1);
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 at = count == 1 ? from : Vector3.Lerp(from, to, i / (float)(count - 1));
+                var dot = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                dot.name = $"Dot_{i}";
+                Object.DestroyImmediate(dot.GetComponent<Collider>());
+                dot.transform.SetParent(parent, false);
+                dot.transform.localPosition = at + Vector3.up * (StoneTop + 0.01f);
+                dot.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                dot.transform.localScale = new Vector3(PathDotSize, PathDotSize, 1f);
+                var renderer = dot.GetComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+        }
+
+        /// <summary>燭台の輪と、真ん中の強化の台（地図に印を出す）。火は粒子と弱い光で、魂と同じ青白い色。台を返す。</summary>
+        private static Transform BuildAltar(Transform world, Transform walkable, Materials m)
         {
             Transform group = Group(world, "UpgradeAltar");
 
             GameObject altar = SurfaceSceneBuilder.Box(walkable, "Altar", m.Stone, AltarCenter + Vector3.up * (StoneTop + 0.5f), new Vector3(1.4f, 1f, 1.4f));
             altar.AddComponent<UpgradeAltar>();
+            var marker = altar.AddComponent<MapMarker>();
+            marker.Icon = MapIcon.Upgrade;
+            marker.Label = "魂の燭台";
             Flame(group, "AltarFlame", m, AltarCenter + Vector3.up * (StoneTop + 1.15f), 1.6f, 0.35f);
 
-            for (int i = 0; i < Candles; i++)
+            for (int i = 0; i < CandleAngles.Length; i++)
             {
-                float angle = (i + 0.5f) / Candles * Mathf.PI * 2f;
+                float angle = CandleAngles[i] * Mathf.Deg2Rad;
                 Vector3 at = AltarCenter + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * CandleRadius;
                 float height = 1.0f + (i % 3) * 0.25f;
                 SurfaceSceneBuilder.Box(walkable, $"Candle_{i}", m.Stone, at + Vector3.up * (StoneTop + height * 0.5f), new Vector3(0.3f, height, 0.3f));
                 Flame(group, $"CandleFlame_{i}", m, at + Vector3.up * (StoneTop + height + 0.12f), 0.8f, 0.18f);
             }
+            return altar.transform;
         }
 
         private static void Flame(Transform parent, string name, Materials m, Vector3 at, float lightIntensity, float size)
@@ -388,7 +559,10 @@ namespace TpsDungeon.Party.Editor
             shrink.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.2f));
         }
 
-        /// <summary>水面の転生の渦。入る（インタラクトする）と地上へ戻る。</summary>
+        /// <summary>
+        /// 足場の上の転生の渦と、その真ん中に立つ光の柱。柱をインタラクトすると地上へ戻る。
+        /// 柱は細く当たりのある円柱にして、渦のどこに立っても柱に照準を合わせられるようにする（中に入れる大きな判定だと、入った所で照準が当たらない）。
+        /// </summary>
         private static void BuildPortal(Transform world, Materials m)
         {
             Transform group = Group(world, "RebirthPortal");
@@ -426,14 +600,19 @@ namespace TpsDungeon.Party.Editor
             shape.rotation = new Vector3(-90f, 0f, 0f);
             FadeOverLifetime(particles);
 
-            // 渦に照準を合わせやすいよう、渦の上に背の高いトリガーの箱を置く（足場の NavMesh には入れない）。
-            var trigger = group.gameObject.AddComponent<BoxCollider>();
-            trigger.isTrigger = true;
-            trigger.center = new Vector3(0f, 1f, 0f);
-            trigger.size = new Vector3(3.2f, 2f, 3.2f);
+            // 光の柱（半径 0.45 m・高さ 3.2 m）。円柱の当たり（CapsuleCollider）はそのまま使う。
+            var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            beam.name = "Beam";
+            beam.transform.SetParent(group, false);
+            beam.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            beam.transform.localScale = new Vector3(0.9f, 1.6f, 0.9f);
+            var beamRenderer = beam.GetComponent<MeshRenderer>();
+            beamRenderer.sharedMaterial = m.Beam;
+            beamRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            beamRenderer.receiveShadows = false;
 
-            SurfaceSceneBuilder.AddGate(group.gameObject, SceneTravel.SurfaceScene, true, "転生する", "", "転生の渦",
-                "ここへ沈むと、城の前で新しい体に目覚める。");
+            SurfaceSceneBuilder.AddGate(beam, SceneTravel.SurfaceScene, true, "転生する", "", "転生の渦",
+                "ここへ沈むと、城の前で新しい体に目覚める。", MapIcon.Rebirth, "転生の渦");
         }
 
         /// <summary>
@@ -485,7 +664,7 @@ namespace TpsDungeon.Party.Editor
         {
             var holder = new GameObject("Reflection Probe");
             holder.transform.SetParent(world, false);
-            holder.transform.localPosition = new Vector3(0f, 1.5f, 12f);
+            holder.transform.localPosition = new Vector3(7f, 1.5f, 8f);
 
             var probe = holder.AddComponent<ReflectionProbe>();
             probe.mode = ReflectionProbeMode.Custom;
@@ -506,7 +685,7 @@ namespace TpsDungeon.Party.Editor
         {
             var holder = new GameObject("SinkingMotes");
             holder.transform.SetParent(world, false);
-            holder.transform.localPosition = new Vector3(0f, 14f, 12f);
+            holder.transform.localPosition = new Vector3(7f, 14f, 8f);
 
             ParticleSystem particles = Particles(holder, m.Mote);
             var main = particles.main;
@@ -553,45 +732,34 @@ namespace TpsDungeon.Party.Editor
             color.color = gradient;
         }
 
-        /// <summary>歩ける範囲の 4 辺のすぐ外に見えない壁（SurfaceSceneBuilder.BuildBounds と同じ作り。Ignore Raycast で、NavMesh を焼く範囲の外）。</summary>
-        private static void BuildBounds()
-        {
-            var root = new GameObject("[Bounds]").transform;
-            float width = AreaMaxX - AreaMinX + BoundsThickness * 2f;
-            float depth = AreaMaxZ - AreaMinZ;
-            float centerX = (AreaMinX + AreaMaxX) * 0.5f;
-            float centerZ = (AreaMinZ + AreaMaxZ) * 0.5f;
-            float y = BoundsHeight * 0.5f;
-            float half = BoundsThickness * 0.5f;
-
-            InvisibleWall(root, "Bound_S", new Vector3(centerX, y, AreaMinZ - half), new Vector3(width, BoundsHeight, BoundsThickness));
-            InvisibleWall(root, "Bound_N", new Vector3(centerX, y, AreaMaxZ + half), new Vector3(width, BoundsHeight, BoundsThickness));
-            InvisibleWall(root, "Bound_W", new Vector3(AreaMinX - half, y, centerZ), new Vector3(BoundsThickness, BoundsHeight, depth));
-            InvisibleWall(root, "Bound_E", new Vector3(AreaMaxX + half, y, centerZ), new Vector3(BoundsThickness, BoundsHeight, depth));
-        }
-
-        private static void InvisibleWall(Transform parent, string name, Vector3 center, Vector3 size)
-        {
-            var wall = new GameObject(name) { layer = 2 };
-            wall.transform.SetParent(parent, false);
-            wall.transform.localPosition = center;
-            wall.AddComponent<BoxCollider>().size = size;
-            GameObjectUtility.SetStaticEditorFlags(wall, StaticEditorFlags.BatchingStatic);
-        }
-
-        /// <summary>着地点。転生の渦を向いて立つ。</summary>
+        /// <summary>着地点。北（強化の台）を向いて立つ。</summary>
         private static Transform CreateSpawn(Transform world)
         {
             var spawn = new GameObject("PlayerSpawn");
             spawn.transform.SetParent(world, false);
-            spawn.transform.SetLocalPositionAndRotation(Landing + new Vector3(0f, StoneTop + 0.05f, -1f), Quaternion.identity);
+            spawn.transform.SetLocalPositionAndRotation(Landing + new Vector3(0f, StoneTop + 0.05f, -1.5f), Quaternion.identity);
             spawn.AddComponent<PlayerSpawnPoint>();
             return spawn.transform;
         }
 
+        /// <summary>
+        /// 足場のまわりを真上から撮って地図の絵にし、[Afterlife] の地図の元（SurfaceMapSource）に差す。
+        /// 頭上の逆さの城・沈む光の粒・パーティーは撮る間だけ隠す。城の土台の四角は無い。
+        /// </summary>
+        private static void CaptureMap(GameObject world)
+        {
+            const float margin = 4f;
+            Rect area = Platforms[0];
+            foreach (Rect r in Platforms) area = Rect.MinMaxRect(Mathf.Min(area.xMin, r.xMin), Mathf.Min(area.yMin, r.yMin), Mathf.Max(area.xMax, r.xMax), Mathf.Max(area.yMax, r.yMax));
+            area = Rect.MinMaxRect(area.xMin - margin, area.yMin - margin, area.xMax + margin, area.yMax + margin);
+
+            SurfaceMapCapture.Capture(world, area, MapImagePath, Rect.zero, PlaceName, WaterMapColor,
+                new[] { "InvertedCastle", "SinkingMotes" }, new[] { "[Party Rig]" });
+        }
+
         // --- NavMesh・Build Settings ---
 
-        /// <summary>水の床・足場・台と燭台（Walkable の下）の当たりから NavMesh を焼き、アセットに書き出してシーンから参照させる。</summary>
+        /// <summary>足場・台と燭台（Walkable の下）の当たりから NavMesh を焼き、アセットに書き出してシーンから参照させる。</summary>
         private static void BakeNavMesh(GameObject walkable)
         {
             var surface = walkable.AddComponent<NavMeshSurface>();
