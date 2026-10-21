@@ -18,7 +18,7 @@ namespace TpsDungeon.Party.Editor
     /// - どこまでも続く黒い水面に、平たい石の足場（<see cref="Platforms"/>）。南の着地点から北へ渡ると燭台の輪（強化）、そこから東へ渡ると転生の渦。
     ///   歩けるのは足場の上だけで、縁に淡い光の線を引き、縁の外に見えない壁を立てる。
     /// - 足場には道しるべの淡い光の粒を並べ、光の波を行き先へ流す。強化の台から渦までの後半は、台に近づくまで隠す（<see cref="AfterlifeGuide"/>）。
-    /// - 地図（<see cref="SurfaceMapSource"/>）を真上から撮って持たせ、強化の台と転生の渦を印で出す。左上の札は「死後の世界」。
+    /// - 地図（<see cref="SurfaceMapSource"/>）を真上から撮って持たせ、強化の台と転生の渦を印で出す。左上の札は「？？？」（どこなのか分からない場所として名前を伏せる）。
     /// - 頭上の遠くに、地上の城の塔のメッシュ（Tower_*）を上下逆さにして垂らす。上ほど太い城が、ここでは下ほど太い。
     /// - 寒色・低い彩度で暗く、主な光は魂（SoulForm が一人ずつに付ける光）と燭台の青白い火。光の粒がゆっくり沈んでいく。
     /// - 材質と Volume の profile は無いときだけ作る（手で調節した値を上書きしない）。
@@ -33,7 +33,7 @@ namespace TpsDungeon.Party.Editor
         private const string VolumeProfilePath = "Assets/_Project/Materials/Afterlife/Afterlife_VolumeProfile.asset";
         private const string TowerMeshFolder = "Assets/_Project/Scenes/Surface";
         private const string MapImagePath = "Assets/_Project/UI/Hud/AfterlifeMap.png";
-        private const string PlaceName = "死後の世界";
+        private const string PlaceName = "？？？";
         private const string StoneSourcePath = "Assets/ThirdParty/Material/YughuesFreePavementsMaterials/Materials/M_YFPM_JaggedSquare.mat";
 
         // 足場（x・z の最小と最大、メートル）。+Z が北。歩けるのはこの上だけ。どれも GridStep の倍数に揃える（縁を升目で探すので）。
@@ -69,6 +69,8 @@ namespace TpsDungeon.Party.Editor
         // 足場は水面（y = 0）から少しだけ出る。
         private const float StoneTop = 0.12f;
         private const float CandleRadius = 3.2f;
+        // 転生の渦の光の柱の高さ（m）。跳んでも見上げても上の端（円柱のふた）が見えないよう、空まで届かせる。
+        private const float BeamHeight = 120f;
         // 強化の台のまわりの明るさ。台と燭台の形が見分けられるくらい。
         private const float AltarFlameIntensity = 2.4f;
         private const float CandleFlameIntensity = 1.5f;
@@ -618,12 +620,12 @@ namespace TpsDungeon.Party.Editor
             shape.rotation = new Vector3(-90f, 0f, 0f);
             FadeOverLifetime(particles);
 
-            // 光の柱（半径 0.45 m・高さ 3.2 m）。円柱の当たり（CapsuleCollider）はそのまま使う。
+            // 光の柱（半径 0.45 m・高さ BeamHeight）。円柱の当たり（CapsuleCollider）はそのまま使う。
             var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             beam.name = "Beam";
             beam.transform.SetParent(group, false);
-            beam.transform.localPosition = new Vector3(0f, 1.6f, 0f);
-            beam.transform.localScale = new Vector3(0.9f, 1.6f, 0.9f);
+            beam.transform.localPosition = new Vector3(0f, BeamHeight * 0.5f, 0f);
+            beam.transform.localScale = new Vector3(0.9f, BeamHeight * 0.5f, 0.9f);
             var beamRenderer = beam.GetComponent<MeshRenderer>();
             beamRenderer.sharedMaterial = m.Beam;
             beamRenderer.shadowCastingMode = ShadowCastingMode.Off;
