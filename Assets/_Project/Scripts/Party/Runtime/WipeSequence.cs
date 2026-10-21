@@ -17,7 +17,7 @@ namespace TpsDungeon.Party
     /// - 画面の色を抜いて周りから暗くする（自前の Global Volume の重みを上げる。共通の Volume のアセットには触らない）。
     ///   地上ではカメラの post-processing が切れているので、演出の間だけ入れる。
     /// - 死亡用のカメラに切り替え、最後に倒れた人の上へゆっくり回りながら引き上げる。
-    /// - 「力尽きた」を出す知らせを送り、少ししたらキーで飛ばせるようにする。放っておいても <see cref="autoAdvanceSeconds"/> で終わる。
+    /// - 「力尽きた」を出す知らせを送り、少ししたらキーで進めるようにする。自動では進まず、キー・クリック・パッドのボタンを押すまで待つ。
     /// 時間はすべて実時間（スローに左右されない）。元へ戻すのは <see cref="Restore"/>（死後の場所へ移る暗転の間に GameFlow が呼ぶ）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -77,11 +77,8 @@ namespace TpsDungeon.Party
         [SerializeField, Min(0f), Tooltip("「力尽きた」を出すまでの秒数。")]
         private float gameOverDelay = 1.8f;
 
-        [SerializeField, Min(0f), Tooltip("キーで飛ばせるようになるまでの秒数。")]
+        [SerializeField, Min(0f), Tooltip("キーで進めるようになるまでの秒数。")]
         private float skippableAfter = 3f;
-
-        [SerializeField, Min(0f), Tooltip("放っておいたとき、死後の場所へ送るまでの秒数。")]
-        private float autoAdvanceSeconds = 7f;
 
         // 死亡用のカメラは、パーティーのカメラより優先して映す。
         private const int CameraPriority = 100;
@@ -112,7 +109,7 @@ namespace TpsDungeon.Party
         /// <summary>「力尽きた」を出すころ合い。</summary>
         public static event Action GameOverShown;
 
-        /// <summary>キーで飛ばせるようになった。</summary>
+        /// <summary>キーで進めるようになった。</summary>
         public static event Action SkipReady;
 
         /// <summary>演出を終えて元へ戻した（死後の場所へ移る暗転の間）。</summary>
@@ -158,7 +155,7 @@ namespace TpsDungeon.Party
         }
 
         /// <summary>
-        /// 演出を回す。fallen は最後に倒れた人（カメラが映す）。飛ばされるか時間が来たら終わる（元へは戻さない。<see cref="Restore"/> で戻す）。
+        /// 演出を回す。fallen は最後に倒れた人（カメラが映す）。キーで進められたら終わる（元へは戻さない。<see cref="Restore"/> で戻す）。
         /// </summary>
         public IEnumerator Play(PartyMember fallen)
         {
@@ -213,12 +210,11 @@ namespace TpsDungeon.Party
                 }
 
                 if (skippable && (skipRequested || AnyPressed())) break;
-                if (t >= autoAdvanceSeconds) break;
                 yield return null;
             }
         }
 
-        /// <summary>演出を飛ばす。飛ばせるようになっていれば次のフレームで終わる。それより前に呼んでも覚えておかない（キーと同じ）。</summary>
+        /// <summary>演出を終えて先へ進む（キーを押したのと同じ）。進めるようになっていれば次のフレームで終わる。それより前に呼んでも覚えておかない。</summary>
         public void Skip()
         {
             if (skippable) skipRequested = true;
