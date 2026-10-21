@@ -217,9 +217,11 @@
 
 /* ---- キー設定 ---- */
 
+/* 行の高さから伸び縮みさせると縮みきらず、下のボタンがページからはみ出す。残りの高さだけを使う。 */
 .key-list {
     flex-grow: 1;
     flex-shrink: 1;
+    flex-basis: 0;
 }
 
 .key-list .unity-scroller--vertical {
