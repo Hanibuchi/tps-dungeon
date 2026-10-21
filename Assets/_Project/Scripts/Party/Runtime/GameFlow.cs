@@ -16,6 +16,7 @@ namespace TpsDungeon.Party
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
     /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
+    /// - 全滅から死後の場所に着いたときは、明転の代わりに目を覚ます演出（<see cref="WakeSequence"/>。瞬きしながら視界がはっきりしてくる）を回す。
     /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
@@ -52,6 +53,8 @@ namespace TpsDungeon.Party
         private bool traveling;
         private WipeSequence wipe;
         private bool wiping;
+        private WakeSequence wake;
+        private bool wakeOnArrival;
 
         /// <summary>今シーンをまたいで残っているもの。地上を通らずに始めたシーンでは null。</summary>
         public static GameFlow Instance { get; private set; }
@@ -81,6 +84,7 @@ namespace TpsDungeon.Party
             fade = ScreenFade.Create(transform);
             wipe = WipeSequence.Create(transform);
             wipe.DeathBgm = deathBgm;
+            wake = WakeSequence.Create(transform);
             DontDestroyOnLoad(gameObject);
         }
 
@@ -129,6 +133,7 @@ namespace TpsDungeon.Party
 
             traveling = true;
             SceneTravel.Traveling = true;
+            wakeOnArrival = revive;
             StartCoroutine(LeaveFor(sceneName, revive));
         }
 
@@ -138,6 +143,7 @@ namespace TpsDungeon.Party
             if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
             if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
             if (wipe != null) wipe.Restore();
+            if (wake != null && wake.IsPlaying) wake.Finish();
 
             // 起こすのは読み込む前（暗転の間）。着いたシーンの魂の姿（SoulForm）は読み込んだ時点で攻撃の部品を止めるので、
             // そのあとに起こすと止めた部品がまた動いてしまう。
@@ -211,6 +217,17 @@ namespace TpsDungeon.Party
 
             traveling = false;
             SceneTravel.Traveling = false;
+
+            if (wakeOnArrival && wake != null)
+            {
+                // まぶたを閉じた姿にしてから暗転を外し、瞬きしながら目を開ける。
+                wakeOnArrival = false;
+                wake.Close();
+                if (fade != null) yield return fade.FadeTo(0f, 0f);
+                yield return wake.Play();
+                yield break;
+            }
+
             if (fade != null) yield return fade.FadeTo(0f, fadeInSeconds);
         }
     }
