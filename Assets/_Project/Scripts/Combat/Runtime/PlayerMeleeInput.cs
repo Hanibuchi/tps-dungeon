@@ -38,7 +38,7 @@ namespace TpsDungeon.Combat
         private PlayerInventory inventory;
         private InputAction attackAction;
         private Transform cameraTransform;
-        private bool holding;
+        private bool armed;
 
         private PlayerLocomotionSpeed locomotion;
         private int framesSinceLunge = int.MaxValue;
@@ -82,7 +82,7 @@ namespace TpsDungeon.Combat
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             attackAction = null;
-            holding = false;
+            armed = false;
             SetLocomotionLocked(false);
         }
 
@@ -109,10 +109,13 @@ namespace TpsDungeon.Combat
             if (ranged != null) ranged.AttackHeld = listening && attackAction.IsPressed();
 
             // 長押しの間は毎フレーム押したことにする（近接は先行入力でコンボが続き、遠距離は待ちが明けるたびに撃つ）。
-            // メニューを閉じたときに押しっぱなしだったボタンで撃ち出さないよう、ゲーム中に押し始めたときだけ続ける。
-            if (!listening || !attackAction.IsPressed()) holding = false;
-            else if (attackAction.WasPressedThisFrame()) holding = true;
-            if (!holding) return;
+            // メニューを閉じたときに押しっぱなしだったボタンで撃ち出さないよう、ゲーム中に一度離れているのを見てから押したときだけ続ける。
+            // 押した瞬間（WasPressedThisFrame）で始めると、その知らせを取りこぼしたとき（操作の機器の切り替えなどでアクションが
+            // 押し直しを数え直したとき）に押しっぱなしでも 1 発も続かなくなるので、押しているかどうかだけを見る。
+            bool pressed = listening && attackAction.IsPressed();
+            if (!listening) armed = false;
+            else if (!pressed) armed = true;
+            if (!pressed || !armed) return;
 
             attacker.PressAttack();
             if (ranged != null) ranged.PressAttack();

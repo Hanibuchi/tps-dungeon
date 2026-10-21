@@ -11,7 +11,7 @@
                 <kit:OrnateFrame crest="true" />
                 <ui:VisualElement class="rpg-heading">
                     <ui:Label text="— PAUSE —" class="rpg-heading__caption rpg-deco" />
-                    <ui:Label text="休 息" class="rpg-heading__title rpg-bold" />
+                    <ui:Label text="一時停止" class="rpg-heading__title rpg-bold" />
                     <ui:VisualElement class="rpg-rule">
                         <ui:VisualElement class="rpg-rule__line" />
                         <ui:VisualElement class="rpg-rule__gem" />
