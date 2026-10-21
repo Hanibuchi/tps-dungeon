@@ -34,23 +34,23 @@
     --frame-corner-gap: 9;
 }
 
-/* ---- 書体 ---- */
+/* ---- 書体（すべて IBM Plex Sans JP。本文 Regular、太字 Bold、飾りの見出し・数字 Medium / Bold。UiFontAssetBuilder で作る） ---- */
 
 .unity-text-element {
-    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Regular%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-Regular%20SDF.asset");
     color: var(--ink);
 }
 
 .rpg-bold {
-    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/ShipporiMinchoB1-Bold%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-Bold%20SDF.asset");
 }
 
 .rpg-deco {
-    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Regular%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-Medium%20SDF.asset");
 }
 
 .rpg-deco-bold {
-    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/CinzelDecorative-Bold%20SDF.asset");
+    -unity-font-definition: url("project://database/Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-Bold%20SDF.asset");
 }
 
 /* ---- 飾り枠（OrnateFrame） ---- */
