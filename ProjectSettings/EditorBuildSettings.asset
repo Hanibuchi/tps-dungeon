@@ -44,6 +44,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/L5_Random.unity
     guid: 5daa4af01d17741de821835dfeeacaeb
+  - enabled: 1
+    path: Assets/_Project/Scenes/Afterlife.unity
+    guid: dc831b9e5abac41c8a1b0b23bce76c00
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
   m_UseUCBPForAssetBundles: 0

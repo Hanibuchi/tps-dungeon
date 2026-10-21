@@ -1,5 +1,6 @@
 using TpsDungeon.Combat;
 using TpsDungeon.Items;
+using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Party;
@@ -48,7 +49,6 @@ namespace TpsDungeon.Hud
 
         public const string TrappedTitle = "モンスターハウス！";
         public const string ReleasedTitle = "扉が開いた";
-        public const string SurfaceText = "地上";
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
@@ -589,7 +589,7 @@ namespace TpsDungeon.Hud
             }
 
             if (floorRoot == null) return;
-            string text = floor.HasValue ? FloorText(floor.Value) : floorBuilder == null && surfaceMap != null ? SurfaceText : null;
+            string text = floor.HasValue ? FloorText(floor.Value, floorBootstrap.Route) : floorBuilder == null && surfaceMap != null ? surfaceMap.PlaceName : null;
             if (text == shownFloorText) return;
 
             shownFloorText = text;
@@ -687,7 +687,9 @@ namespace TpsDungeon.Hud
         public static string LevelText(int level) => level.ToString();
 
         /// <summary>左上の階層（例:「L2 F8」）。層・階とも 1 始まりで、ボス階も通し番号。</summary>
-        public static string FloorText(DungeonFloor floor) => $"L{floor.Layer + 1} F{floor.Floor + 1}";
+        /// <summary>左上の階の札（例:「10階 第2層」）。階は 1 層 1 階から数えた通しの番号（道順が無ければその層の中の番号）。</summary>
+        public static string FloorText(DungeonFloor floor, DungeonRoute route) =>
+            $"{(route != null ? route.FloorNumber(floor) : floor.Floor + 1)}階 第{floor.Layer + 1}層";
 
         /// <summary>経験値の帯の伸び（0〜1）。次までが 0（最大レベル）なら満タン。</summary>
         public static float ExpFraction(int exp, int expToNext) => expToNext > 0 ? Mathf.Clamp01((float)exp / expToNext) : 1f;

@@ -29,7 +29,7 @@ namespace TpsDungeon.Party.Editor
         public const string ScenePath = "Assets/_Project/Scenes/Surface.unity";
         private const string NavMeshPath = "Assets/_Project/Scenes/Surface/NavMesh-Surface.asset";
         private const string MaterialsFolder = "Assets/_Project/Materials/Placeholder";
-        private const string FollowCameraPrefabPath = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Prefabs/PlayerFollowCamera.prefab";
+        internal const string FollowCameraPrefabPath = "Assets/ThirdParty/3D Model/Starter Assets/Runtime/ThirdPersonController/Prefabs/PlayerFollowCamera.prefab";
         private const string FirstFloorScene = "L1_Random";
         private const int Followers = 4;
 
@@ -190,10 +190,11 @@ namespace TpsDungeon.Party.Editor
         }
 
         internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body,
-            MapIcon icon = MapIcon.None, string mapLabel = null)
+            MapIcon icon = MapIcon.None, string mapLabel = null, string textId = null)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
+            serialized.FindProperty("textId").stringValue = textId ?? string.Empty;
             serialized.FindProperty("sceneName").stringValue = sceneName;
             serialized.FindProperty("open").boolValue = open;
             serialized.FindProperty("openLabel").stringValue = openLabel;
@@ -234,7 +235,7 @@ namespace TpsDungeon.Party.Editor
         /// <summary>
         /// [Party Rig] の下に、カメラ・操作台・先頭・仲間を置く。GameFlow がこの親ごと次のシーンへ持ち越す。
         /// </summary>
-        private static void PlaceParty(Transform spawn, GameObject partyPrefab, GameObject characterPrefab, GameObject followCameraPrefab)
+        internal static void PlaceParty(Transform spawn, GameObject partyPrefab, GameObject characterPrefab, GameObject followCameraPrefab)
         {
             var rig = new GameObject("[Party Rig]");
             var flow = rig.AddComponent<GameFlow>();

@@ -46,18 +46,27 @@ namespace TpsDungeon.Party.Editor
         }
 
         /// <summary>area（x・z、メートル）を真上から撮って地図の元に差す（シーンの保存はしない）。</summary>
-        public static void Capture(GameObject surfaceRoot, Rect area)
+        public static void Capture(GameObject surfaceRoot, Rect area) =>
+            Capture(surfaceRoot, area, ImagePath, SurfaceTower.BaseFoot(), null, new Color(0.08f, 0.07f, 0.06f),
+                new[] { "Castle", "Shortcuts" }, new[] { "[Party Rig]", MistBuilder.RootName });
+
+        /// <summary>
+        /// area（x・z、メートル）を真上から撮って imagePath に書き、mapRoot の地図の元（SurfaceMapSource）に差す（シーンの保存はしない）。
+        /// hiddenChildren（mapRoot の直下の名前）と hiddenRoots（シーンの一番上の名前）は撮る間だけ隠す。castle は地図に四角で描く城の土台（大きさ 0 なら描かない）。
+        /// </summary>
+        public static void Capture(GameObject mapRoot, Rect area, string imagePath, Rect castle, string placeName, Color background,
+            IEnumerable<string> hiddenChildren, IEnumerable<string> hiddenRoots)
         {
-            Scene scene = surfaceRoot.scene;
+            Scene scene = mapRoot.scene;
             int width = Mathf.Clamp(Mathf.RoundToInt(area.width * PixelsPerMeter), 16, MaxSize);
             int height = Mathf.Clamp(Mathf.RoundToInt(area.height * PixelsPerMeter), 16, MaxSize);
 
             var hidden = new List<GameObject>();
-            Hide(surfaceRoot.transform.Find("Castle")?.gameObject);
-            Hide(surfaceRoot.transform.Find("Shortcuts")?.gameObject);
+            foreach (string child in hiddenChildren) Hide(mapRoot.transform.Find(child)?.gameObject);
+            var rootNames = new HashSet<string>(hiddenRoots);
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == "[Party Rig]" || root.name == MistBuilder.RootName) Hide(root);
+                if (rootNames.Contains(root.name)) Hide(root);
             }
 
             var holder = new GameObject("[Map Camera]");
@@ -69,7 +78,7 @@ namespace TpsDungeon.Party.Editor
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = CameraHeight + 20f;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.08f, 0.07f, 0.06f);
+            camera.backgroundColor = background;
             holder.transform.SetPositionAndRotation(new Vector3(area.center.x, CameraHeight, area.center.y), Quaternion.Euler(90f, 0f, 0f));
 
             var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { antiAliasing = 4 };
@@ -82,7 +91,7 @@ namespace TpsDungeon.Party.Editor
                 var texture = new Texture2D(width, height, TextureFormat.RGB24, false);
                 texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 texture.Apply();
-                System.IO.File.WriteAllBytes(ImagePath, texture.EncodeToPNG());
+                System.IO.File.WriteAllBytes(imagePath, texture.EncodeToPNG());
                 Object.DestroyImmediate(texture);
             }
             finally
@@ -94,8 +103,8 @@ namespace TpsDungeon.Party.Editor
                 foreach (var go in hidden) go.SetActive(true);
             }
 
-            AssetDatabase.ImportAsset(ImagePath, ImportAssetOptions.ForceSynchronousImport);
-            if (AssetImporter.GetAtPath(ImagePath) is TextureImporter importer)
+            AssetDatabase.ImportAsset(imagePath, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetImporter.GetAtPath(imagePath) is TextureImporter importer)
             {
                 importer.textureType = TextureImporterType.Default;
                 importer.wrapMode = TextureWrapMode.Clamp;
@@ -105,9 +114,9 @@ namespace TpsDungeon.Party.Editor
                 importer.SaveAndReimport();
             }
 
-            var image = AssetDatabase.LoadAssetAtPath<Texture2D>(ImagePath);
-            var source = surfaceRoot.GetComponent<SurfaceMapSource>() ?? surfaceRoot.AddComponent<SurfaceMapSource>();
-            source.Configure(image, area, SurfaceTower.BaseFoot());
+            var image = AssetDatabase.LoadAssetAtPath<Texture2D>(imagePath);
+            var source = mapRoot.GetComponent<SurfaceMapSource>() ?? mapRoot.AddComponent<SurfaceMapSource>();
+            source.Configure(image, area, castle, placeName);
             EditorUtility.SetDirty(source);
 
             void Hide(GameObject go)

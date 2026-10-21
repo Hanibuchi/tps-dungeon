@@ -20,6 +20,7 @@ namespace TpsDungeon.Map.Runtime
     /// 閉じているときの案内（closedLabel）が空なら、閉じている間は触れない物として扱う。ボス階の井戸はそうしておき、
     /// 閉ざされた扉の隙間から照準が届いても調べられないようにする。
     /// 開いたとき・閉じたときの見た目は、子の GameObject を切り替えて出す（ロープの長さ・ランタンの火・井戸の底の光など）。
+    /// 案内・見出し・本文は、文字の ID（textId）の行がインタラクトの文字の表（Settings/Tables/InteractionTexts.csv）にあればそちらを使い、無ければ自分のフィールドを使う。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Shortcut Point")]
@@ -27,6 +28,9 @@ namespace TpsDungeon.Map.Runtime
     {
         /// <summary>地上のロープの所のスポーン地点の名前（層は 0 始まり）。ボス階の井戸から降りるとそこに立つ。</summary>
         public static string SurfaceArrivalPoint(int layer) => $"Shortcut_L{layer + 1}";
+
+        [SerializeField, Tooltip("インタラクトの文字の表（InteractionTexts.csv）の ID。行があれば案内・見出し・本文はそちらを使う。")]
+        private string textId;
 
         [SerializeField, Tooltip("どの層のショートカットか（0 始まり。第 1 層が 0）。ボス階の井戸には FloorBootstrap が入れる。")]
         private int layer = -1;
@@ -126,9 +130,20 @@ namespace TpsDungeon.Map.Runtime
             return route.IsBoss(floor) ? floor : (DungeonFloor?)null;
         }
 
-        public string PromptLabel => open ? openLabel : closedLabel;
+        /// <summary>インタラクトの文字の表の ID。</summary>
+        public string TextId
+        {
+            get => textId;
+            set => textId = value;
+        }
 
-        public bool CanInteract(GameObject interactor) => open || !string.IsNullOrEmpty(closedLabel);
+        private bool TryText(out InteractionTextTable.Entry entry) => InteractionTexts.TryGet(textId, out entry);
+
+        public string PromptLabel => open ? (TryText(out var entry) ? entry.prompt : openLabel) : ClosedLabel;
+
+        private string ClosedLabel => TryText(out var entry) ? entry.closedPrompt : closedLabel;
+
+        public bool CanInteract(GameObject interactor) => open || !string.IsNullOrEmpty(ClosedLabel);
 
         public void Interact(GameObject interactor)
         {
@@ -146,9 +161,11 @@ namespace TpsDungeon.Map.Runtime
             SceneTravel.Go(route.SceneOf(floor.Value), PlayerSpawnPoint.Shortcut);
         }
 
-        public string DetailTitle => string.IsNullOrEmpty(title) ? null : string.Format(title, layer + 1);
+        public string DetailTitle => Format(TryText(out var entry) ? entry.title : title);
 
-        public string DetailBody => string.IsNullOrEmpty(description) ? null : string.Format(description, layer + 1);
+        public string DetailBody => Format(TryText(out var entry) ? entry.description : description);
+
+        private string Format(string text) => string.IsNullOrEmpty(text) ? null : string.Format(text, layer + 1);
 
         public Texture2D DetailIcon => null;
 

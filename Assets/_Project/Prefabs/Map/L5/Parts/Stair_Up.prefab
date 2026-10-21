@@ -6467,12 +6467,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
+  textId: stairs_up
   sceneName: 
   open: 1
   openLabel: "\u4E0A\u306E\u968E\u3078"
   closedLabel: "\u4E0A\u3078\u306F\u884C\u3051\u306A\u3044"
   title: "\u4E0A\u308A\u968E\u6BB5"
   description: "\u4E0A\u306E\u968E\u3078\u7D9A\u304F\u968E\u6BB5\u3002"
+  mapIcon: 0
+  mapLabel: 
 --- !u!1 &5657427046286278759
 GameObject:
   m_ObjectHideFlags: 0

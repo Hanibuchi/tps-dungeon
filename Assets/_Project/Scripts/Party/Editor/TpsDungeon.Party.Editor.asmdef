@@ -22,7 +22,9 @@
         "TpsDungeon.Player.Editor",
         "Unity.ProBuilder",
         "TpsDungeon.Enemies",
-        "TpsDungeon.Enemies.Editor"
+        "TpsDungeon.Enemies.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
         "Editor"

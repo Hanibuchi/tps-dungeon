@@ -15,7 +15,7 @@ namespace TpsDungeon.Party
     /// - 読み込んだシーンにあるカメラは止め（こちらのカメラで見る）、階なら NavMesh を焼く役（<see cref="FloorNavMesh"/>）を付け、スポーン地点（<see cref="PlayerSpawnPoint"/>）ができたら先頭をそこへ移して並び直す。
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
-    /// - 全員が倒れたら少し待って地上へ戻し、全快にする（レベルや持ち物を戻す死に戻りの処理はまだ無い）。
+    /// - 全員が倒れたら少し待って死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
@@ -26,7 +26,7 @@ namespace TpsDungeon.Party
         [SerializeField, Tooltip("抱えるパーティー。未設定なら子から探す。")]
         private Party party;
 
-        [SerializeField, Min(0f), Tooltip("全員が倒れてから地上へ戻すまでの秒数。")]
+        [SerializeField, Min(0f), Tooltip("全員が倒れてから死後の場所へ送るまでの秒数。")]
         private float wipeDelay = 2.5f;
 
         [SerializeField, Min(0f), Tooltip("読み込んだシーンにスポーン地点ができるのを待つ秒数。過ぎたらその場のまま並び直す。")]
@@ -107,7 +107,7 @@ namespace TpsDungeon.Party
             }
 
             if (wipedAt < 0f) wipedAt = Time.time;
-            if (Time.time - wipedAt >= wipeDelay) Travel(SceneTravel.SurfaceScene, revive: true);
+            if (Time.time - wipedAt >= wipeDelay) Travel(SceneTravel.AfterlifeScene, revive: true);
         }
 
         /// <summary>sceneName へ移る。revive なら着いたときに全員を全快にする。移っている途中なら何もしない。</summary>
