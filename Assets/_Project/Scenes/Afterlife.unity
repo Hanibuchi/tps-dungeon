@@ -16130,6 +16130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.GameFlow
   party: {fileID: 840944836}
   deathBgm: {fileID: 8300000, guid: b2640994297419d49a33692783b5ab51, type: 3}
+  rebirthSound: {fileID: 8300000, guid: 0f120cb42c836491ead9a19d6feb0ad2, type: 3}
   spawnWaitTimeout: 5
   travelSound: {fileID: 8300000, guid: 18f5e01aff78f4500b6038755069fe46, type: 3}
   travelSoundVolume: 0.8
@@ -43277,6 +43278,53 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1384712810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1384712812}
+  - component: {fileID: 1384712811}
+  m_Layer: 0
+  m_Name: BGM
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1384712811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1384712810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eae9897b9c544250a897a60b4038b75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Audio::TpsDungeon.Audio.Runtime.SceneBgm
+  clip: {fileID: 8300000, guid: d3663ae976dc2994b93bae402e0f64ad, type: 3}
+  fadeInSeconds: 3
+  fadeOutSeconds: 1
+--- !u!4 &1384712812
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1384712810}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1425157873
 GameObject:
   m_ObjectHideFlags: 0
@@ -58013,3 +58061,4 @@ SceneRoots:
   - {fileID: 1494944199}
   - {fileID: 363771494}
   - {fileID: 343789670}
+  - {fileID: 1384712812}

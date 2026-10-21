@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
@@ -31,6 +32,7 @@ namespace TpsDungeon.Party.Editor
         private const string ReflectionPath = "Assets/_Project/Scenes/Afterlife/ReflectionProbe-Afterlife.exr";
         private const string MaterialsFolder = "Assets/_Project/Materials/Afterlife";
         private const string VolumeProfilePath = "Assets/_Project/Materials/Afterlife/Afterlife_VolumeProfile.asset";
+        public const string BgmPath = "Assets/ThirdParty/Sound/Horror Ambient Album - 082318/08. Temple.wav";
         private const string TowerMeshFolder = "Assets/_Project/Scenes/Surface";
         private const string MapImagePath = "Assets/_Project/UI/Hud/AfterlifeMap.png";
         private const string PlaceName = "？？？";
@@ -113,6 +115,7 @@ namespace TpsDungeon.Party.Editor
             {
                 CreateLighting(m);
                 CreateVolume();
+                CreateBgm();
 
                 Transform world = new GameObject("[Afterlife]").transform;
                 Transform walkable = Group(world, "Walkable");
@@ -299,6 +302,13 @@ namespace TpsDungeon.Party.Editor
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogColor = FogColor;
             RenderSettings.fogDensity = 0.011f;
+        }
+
+        /// <summary>死後の場所にいる間だけ流す曲（<see cref="SceneBgm"/>）。</summary>
+        public static void CreateBgm()
+        {
+            var holder = new GameObject("BGM");
+            holder.AddComponent<SceneBgm>().Clip = AssetDatabase.LoadAssetAtPath<AudioClip>(BgmPath);
         }
 
         /// <summary>寒色・低い彩度・周りを暗く・光をにじませる。カメラの post-processing は FloorPostProcessing がこのシーンにいる間だけ入れる。</summary>

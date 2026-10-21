@@ -17,6 +17,7 @@ namespace TpsDungeon.Party
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
     /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
     /// - 全滅から死後の場所に着いたときは、明転の代わりに目を覚ます演出（<see cref="WakeSequence"/>。瞬きしながら視界がはっきりしてくる）を回す。
+    /// - 死後の場所から地上へ戻る（転生する）ときは、暗転の代わりに転生の演出（<see cref="RebirthSequence"/>。渦に吸い込まれて白く飛び、白い光の中で目覚める）を回す。
     /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
     /// </summary>
@@ -30,6 +31,9 @@ namespace TpsDungeon.Party
 
         [SerializeField, Tooltip("全員が倒れたときに流す曲。")]
         private AudioClip deathBgm;
+
+        [SerializeField, Tooltip("転生の渦に入ったときに鳴らす音。")]
+        private AudioClip rebirthSound;
 
         [SerializeField, Min(0f), Tooltip("読み込んだシーンにスポーン地点ができるのを待つ秒数。過ぎたらその場のまま並び直す。")]
         private float spawnWaitTimeout = 5f;
@@ -55,6 +59,8 @@ namespace TpsDungeon.Party
         private bool wiping;
         private WakeSequence wake;
         private bool wakeOnArrival;
+        private RebirthSequence rebirth;
+        private bool rebirthOnArrival;
 
         /// <summary>今シーンをまたいで残っているもの。地上を通らずに始めたシーンでは null。</summary>
         public static GameFlow Instance { get; private set; }
@@ -85,6 +91,8 @@ namespace TpsDungeon.Party
             wipe = WipeSequence.Create(transform);
             wipe.DeathBgm = deathBgm;
             wake = WakeSequence.Create(transform);
+            rebirth = RebirthSequence.Create(transform);
+            rebirth.DiveSound = rebirthSound;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -134,14 +142,27 @@ namespace TpsDungeon.Party
             traveling = true;
             SceneTravel.Traveling = true;
             wakeOnArrival = revive;
+            rebirthOnArrival = IsRebirth(sceneName);
             StartCoroutine(LeaveFor(sceneName, revive));
         }
 
-        /// <summary>音を鳴らして暗転してから読み込む。明転は着いたシーンで並べ終えてから（<see cref="Arrive"/>）。</summary>
+        /// <summary>死後の場所から地上へ戻る（転生の渦に入った）か。</summary>
+        private static bool IsRebirth(string sceneName) =>
+            sceneName == SceneTravel.SurfaceScene && SceneManager.GetActiveScene().name == SceneTravel.AfterlifeScene;
+
+        /// <summary>音を鳴らして暗転してから読み込む。明転は着いたシーンで並べ終えてから（<see cref="Arrive"/>）。転生のときは白く飛ばしてから、その裏で暗転する。</summary>
         private IEnumerator LeaveFor(string sceneName, bool revive)
         {
-            if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
-            if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
+            if (rebirthOnArrival && rebirth != null)
+            {
+                yield return rebirth.Leave();
+                if (fade != null) yield return fade.FadeTo(1f, 0f);
+            }
+            else
+            {
+                if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
+                if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
+            }
             if (wipe != null) wipe.Restore();
             if (wake != null && wake.IsPlaying) wake.Finish();
 
@@ -217,6 +238,15 @@ namespace TpsDungeon.Party
 
             traveling = false;
             SceneTravel.Traveling = false;
+
+            if (rebirthOnArrival && rebirth != null)
+            {
+                // 白で覆ったまま裏の暗転を外し、白い光の中から地上を見せる。
+                rebirthOnArrival = false;
+                if (fade != null) yield return fade.FadeTo(0f, 0f);
+                yield return rebirth.Arrive();
+                yield break;
+            }
 
             if (wakeOnArrival && wake != null)
             {
