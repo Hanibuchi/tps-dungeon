@@ -216,6 +216,59 @@ namespace TpsDungeon.Party
             return new CharacterAccessoryCatalog.Placement(current.bone, bind.MultiplyPoint3x4(localPosition), euler, current.scale);
         }
 
+        /// <summary>
+        /// 顔の今の位置（頭の骨）と向き（ワールド）。頭はアニメーションで体と別の向きを向くので、モデルの基準の姿勢（Avatar の骨組み）で
+        /// ルートの前・上だった向きを、今の頭の姿勢で回して出す。起動したときの姿勢はシーンに置いたときの姿勢でキャラごとに違うので使わない
+        /// （骨組みが読めないときだけ使う）。骨が無ければ false。
+        /// </summary>
+        public bool TryGetFace(out Vector3 position, out Vector3 forward, out Vector3 up)
+        {
+            position = default;
+            forward = transform.forward;
+            up = transform.up;
+            Transform head = Bone(HumanBodyBones.Head);
+            if (head == null) return false;
+
+            Quaternion rootToHead = TryRestRotation(head, out Quaternion rest) ? rest : BindPose(HumanBodyBones.Head, head).rotation;
+            Quaternion headToRoot = Quaternion.Inverse(rootToHead);
+            position = head.position;
+            forward = head.rotation * (headToRoot * Vector3.forward);
+            up = head.rotation * (headToRoot * Vector3.up);
+            return true;
+        }
+
+        private Dictionary<string, Quaternion> restRotations;
+
+        /// <summary>
+        /// モデルの基準の姿勢で、ルートから見た bone の向き。骨組みに無い親（モデルの入れ物。骨組みでは別の名前になっている）まで来たら、
+        /// そこから上は今の向きを使う（アニメーションでは動かない）。bone 自体が骨組みに無ければ false。
+        /// </summary>
+        private bool TryRestRotation(Transform bone, out Quaternion rotation)
+        {
+            rotation = Quaternion.identity;
+            if (animator == null) animator = GetComponent<Animator>();
+            Avatar avatar = animator != null ? animator.avatar : null;
+            if (avatar == null || !avatar.isHuman) return false;
+
+            if (restRotations == null)
+            {
+                restRotations = new Dictionary<string, Quaternion>();
+                foreach (SkeletonBone b in avatar.humanDescription.skeleton) restRotations[b.name] = b.rotation;
+            }
+
+            if (!restRotations.ContainsKey(bone.name)) return false;
+            for (Transform t = bone; t != null && t != transform; t = t.parent)
+            {
+                if (!restRotations.TryGetValue(t.name, out Quaternion local))
+                {
+                    rotation = Quaternion.Inverse(transform.rotation) * t.rotation * rotation;
+                    break;
+                }
+                rotation = local * rotation;
+            }
+            return true;
+        }
+
         private void BoneLocal(CharacterAccessoryCatalog.Placement placement, Transform bone, out Vector3 localPosition, out Quaternion localRotation)
         {
             Matrix4x4 rootToBone = BindPose(placement.bone, bone).inverse;
