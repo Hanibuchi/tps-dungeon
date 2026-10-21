@@ -2,7 +2,7 @@
  * 迷宮の石と真鍮。すべての画面（ポーズ・設定・HUD・操作案内）が最初に読み込む共通の見た目。
  *
  * - 色: 暗い石板の上に、くすんだ真鍮の線と、明るい金の飾り。文字は古い紙の色。
- * - 書体: 和文は明朝体（Shippori Mincho B1）、欧文の飾り見出しと数字は Cinzel Decorative。
+ * - 書体: すべて IBM Plex Sans JP（本文 Regular、太字 Bold、飾りの見出し・数字 Medium / Bold）。
  *   フォントは Assets/ThirdParty/Fonts（リポジトリ管理外）。置き方は UiFontAssetBuilder のコメント。
  * - 動き: 開閉は UiTransitions が付け外しする .is-shown を境に、ここに書いたトランジションで動く。
  */
