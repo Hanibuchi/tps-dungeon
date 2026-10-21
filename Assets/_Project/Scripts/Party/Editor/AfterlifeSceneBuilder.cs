@@ -69,6 +69,10 @@ namespace TpsDungeon.Party.Editor
         // 足場は水面（y = 0）から少しだけ出る。
         private const float StoneTop = 0.12f;
         private const float CandleRadius = 3.2f;
+        // 強化の台のまわりの明るさ。台と燭台の形が見分けられるくらい。
+        private const float AltarFlameIntensity = 2.4f;
+        private const float CandleFlameIntensity = 1.5f;
+        private const float AltarOverheadIntensity = 3.5f;
 
         // 逆さの城。いちばん低い所（地上の城のてっぺん）をこの高さに、この奥に置く。
         private const float InvertedCastleLowest = 6f;
@@ -505,7 +509,10 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        /// <summary>燭台の輪と、真ん中の強化の台（地図に印を出す）。火は粒子と弱い光で、魂と同じ青白い色。台を返す。</summary>
+        /// <summary>
+        /// 燭台の輪と、真ん中の強化の台（地図に印を出す）。火は粒子と光で、魂と同じ青白い色。台を返す。
+        /// 暗い中でも台と燭台の形が分かるよう、輪の真上から足場を広く照らす光も置く。
+        /// </summary>
         private static Transform BuildAltar(Transform world, Transform walkable, Materials m)
         {
             Transform group = Group(world, "UpgradeAltar");
@@ -515,7 +522,18 @@ namespace TpsDungeon.Party.Editor
             var marker = altar.AddComponent<MapMarker>();
             marker.Icon = MapIcon.Upgrade;
             marker.Label = "魂の燭台";
-            Flame(group, "AltarFlame", m, AltarCenter + Vector3.up * (StoneTop + 1.15f), 1.6f, 0.35f);
+            Flame(group, "AltarFlame", m, AltarCenter + Vector3.up * (StoneTop + 1.15f), AltarFlameIntensity, 0.35f);
+
+            // 輪の真上の光。燭台の火だけでは柱の根元と台の側面が闇に沈むので、輪全体を淡く照らす。
+            var overhead = new GameObject("AltarOverheadLight");
+            overhead.transform.SetParent(group, false);
+            overhead.transform.localPosition = AltarCenter + Vector3.up * 4.5f;
+            var light = overhead.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.55f, 0.82f, 1f);
+            light.intensity = AltarOverheadIntensity;
+            light.range = 10f;
+            light.shadows = LightShadows.Soft;
 
             for (int i = 0; i < CandleAngles.Length; i++)
             {
@@ -523,7 +541,7 @@ namespace TpsDungeon.Party.Editor
                 Vector3 at = AltarCenter + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * CandleRadius;
                 float height = 1.0f + (i % 3) * 0.25f;
                 SurfaceSceneBuilder.Box(walkable, $"Candle_{i}", m.Stone, at + Vector3.up * (StoneTop + height * 0.5f), new Vector3(0.3f, height, 0.3f));
-                Flame(group, $"CandleFlame_{i}", m, at + Vector3.up * (StoneTop + height + 0.12f), 0.8f, 0.18f);
+                Flame(group, $"CandleFlame_{i}", m, at + Vector3.up * (StoneTop + height + 0.12f), CandleFlameIntensity, 0.18f);
             }
             return altar.transform;
         }
@@ -538,7 +556,7 @@ namespace TpsDungeon.Party.Editor
             light.type = LightType.Point;
             light.color = new Color(0.5f, 0.85f, 1f);
             light.intensity = lightIntensity;
-            light.range = 4.5f;
+            light.range = 5.5f;
             light.shadows = LightShadows.None;
 
             ParticleSystem particles = Particles(flame, m.Flame);
