@@ -745,7 +745,7 @@ namespace TpsDungeon.Map.Editor
             int steps = Mathf.FloorToInt(holeSize.y / StairDownRun + 0.001f);
             Flight(well.transform, theme.stair, holeMin.y, holeMin.x, holeMax.x, steps, StairDownRun, -StairDownRise, -StairwellDepth);
 
-            AddStairGate(well, "下の階へ", "下へは降りられない", "下り階段", "下の階へ続く階段。");
+            AddStairGate(well, "stairs_down", "下の階へ", "下へは降りられない", "下り階段", "下の階へ続く階段。");
 
             // 床の高さから竪穴の底まで。暗さは床から下へ測った距離で決める。
             float darkBottom = -StairwellDepth - CeilingThickness;
@@ -807,7 +807,7 @@ namespace TpsDungeon.Map.Editor
             Flight(way.transform, theme.stair, footMin.y, footMin.x, footMax.x, steps, footSize.y / steps, StairUpRise, 0f);
             AddStairRamp(way.transform, footMin, footSize, steps);
 
-            AddStairGate(way, "上の階へ", "上へは行けない", "上り階段", "上の階へ続く階段。");
+            AddStairGate(way, "stairs_up", "上の階へ", "上へは行けない", "上り階段", "上の階へ続く階段。");
 
             // 上の階から降りてきたパーティーが立つ所。段の途中（見えない坂の面の上）で、降りる向き（ドアの方）を向く。
             float spawnZ = footMin.y + footSize.y * StairSpawnAlong;
@@ -828,11 +828,15 @@ namespace TpsDungeon.Map.Editor
             return SavePrefab(root, path);
         }
 
-        /// <summary>階段の門（SceneGate）。行き先は置いたあとに FloorBootstrap が入れる。</summary>
-        private static void AddStairGate(GameObject target, string openLabel, string closedLabel, string title, string description)
+        /// <summary>
+        /// 階段の門（SceneGate）。行き先は置いたあとに FloorBootstrap が入れる。
+        /// 文字は textId の行がインタラクトの文字の表（InteractionTexts.csv）にあればそちらが出る。ここで入れる文字は表に行が無いときの控え。
+        /// </summary>
+        private static void AddStairGate(GameObject target, string textId, string openLabel, string closedLabel, string title, string description)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
+            serialized.FindProperty("textId").stringValue = textId;
             serialized.FindProperty("openLabel").stringValue = openLabel;
             serialized.FindProperty("closedLabel").stringValue = closedLabel;
             serialized.FindProperty("title").stringValue = title;

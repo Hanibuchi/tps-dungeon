@@ -5856,6 +5856,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_well
   layer: -1
   direction: 0
   route: {fileID: 0}

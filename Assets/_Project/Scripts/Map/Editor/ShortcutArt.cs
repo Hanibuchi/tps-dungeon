@@ -135,7 +135,7 @@ namespace TpsDungeon.Map.Editor
             foreach (var renderer in glow.GetComponentsInChildren<MeshRenderer>()) renderer.shadowCastingMode = ShadowCastingMode.Off;
 
             var point = well.AddComponent<ShortcutPoint>();
-            Configure(point, ShortcutDirection.ToSurface, null, "ロープを伝って降りる", "",
+            Configure(point, "shortcut_well", ShortcutDirection.ToSurface, null, "ロープを伝って降りる", "",
                 "第 {0} 層の井戸",
                 "底の見えない井戸。垂れたロープを伝って降りれば、地上へ戻れる。",
                 new[] { glow }, new GameObject[0]);
@@ -211,7 +211,7 @@ namespace TpsDungeon.Map.Editor
             trigger.radius = 0.9f;
             trigger.height = 4f;
             var point = root.AddComponent<ShortcutPoint>();
-            Configure(point, ShortcutDirection.ToBossFloor, route, "ロープを登る", "",
+            Configure(point, "shortcut_rope", ShortcutDirection.ToBossFloor, route, "ロープを登る", "",
                 "第 {0} 層への近道",
                 "登った先は第 {0} 層に通じている。",
                 new[] { anchor, ring, volume }, new GameObject[0]);
@@ -226,10 +226,12 @@ namespace TpsDungeon.Map.Editor
             return root;
         }
 
-        private static void Configure(ShortcutPoint point, ShortcutDirection direction, DungeonRoute route, string openLabel, string closedLabel,
+        /// <summary>文字は textId の行がインタラクトの文字の表（InteractionTexts.csv）にあればそちらが出る。ここで入れる文字は表に行が無いときの控え。</summary>
+        private static void Configure(ShortcutPoint point, string textId, ShortcutDirection direction, DungeonRoute route, string openLabel, string closedLabel,
             string title, string description, GameObject[] openVisuals, GameObject[] closedVisuals)
         {
             var serialized = new SerializedObject(point);
+            serialized.FindProperty("textId").stringValue = textId;
             serialized.FindProperty("direction").enumValueIndex = (int)direction;
             serialized.FindProperty("route").objectReferenceValue = route;
             serialized.FindProperty("openLabel").stringValue = openLabel;

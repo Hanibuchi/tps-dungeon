@@ -16966,6 +16966,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
+  textId: weapon_shop
   sceneName: 
   open: 0
   openLabel: "\u5165\u308B"
@@ -34091,6 +34092,7 @@ MonoBehaviour:
     y: 30
     width: 62
     height: 30
+  placeName: 
 --- !u!1001 &269297376
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39369,6 +39371,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
+  textId: castle_gate
   sceneName: L1_Random
   open: 1
   openLabel: "\u57CE\u3078\u5165\u308B"
@@ -144288,6 +144291,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_rope
   layer: 4
   direction: 1
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}
@@ -181595,6 +181599,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c09e41f704174dc2a124bf4a354fd49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.SceneGate
+  textId: bank
   sceneName: 
   open: 0
   openLabel: "\u5165\u308B"
@@ -216145,6 +216150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_rope
   layer: 0
   direction: 1
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}
@@ -221640,6 +221646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_rope
   layer: 3
   direction: 1
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}
@@ -242587,6 +242594,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_rope
   layer: 2
   direction: 1
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}
@@ -261932,6 +261940,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d10c1b8d75ee44819b1ce50ca641124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Runtime.ShortcutPoint
+  textId: shortcut_rope
   layer: 1
   direction: 1
   route: {fileID: 11400000, guid: 909ee73d93ecf478bbfbc0d6285a6099, type: 2}

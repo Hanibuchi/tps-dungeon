@@ -632,7 +632,7 @@ namespace TpsDungeon.Party.Editor
             beamRenderer.receiveShadows = false;
 
             SurfaceSceneBuilder.AddGate(beam, SceneTravel.SurfaceScene, true, "転生する", "", "転生の渦",
-                "ここへ沈むと、城の前で新しい体に目覚める。", MapIcon.Rebirth, "転生の渦");
+                "ここに入ると転生して城の前で目覚める", MapIcon.Rebirth, "転生の渦", "rebirth");
         }
 
         /// <summary>

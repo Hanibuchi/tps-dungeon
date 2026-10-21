@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7402308994c54e5e87b173b52887697, type: 3}
+  m_Name: InteractionTexts
+  m_EditorClassIdentifier: TpsDungeon.Interaction::TpsDungeon.Interaction.InteractionTextTable
+  entries:
+  - id: castle_gate
+    prompt: "\u57CE\u3078\u5165\u308B"
+    closedPrompt: "\u307E\u3060\u958B\u3044\u3066\u3044\u306A\u3044"
+    title: "\u57CE\u306E\u5927\u9580"
+    description: "\u7B2C 1 \u5C64\u300C\u7384\u95A2\u300D\u3078\u5165\u308B\u3002"
+  - id: weapon_shop
+    prompt: "\u5165\u308B"
+    closedPrompt: "\u6E96\u5099\u4E2D"
+    title: "\u6B66\u5668\u5C4B"
+    description: "\u6B66\u5668\u3092\u58F2\u308A\u8CB7\u3044\u3067\u304D\u308B\u3002\uFF08\u6E96\u5099\u4E2D\uFF09"
+  - id: bank
+    prompt: "\u5165\u308B"
+    closedPrompt: "\u6E96\u5099\u4E2D"
+    title: "\u9280\u884C"
+    description: "\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B\u3002\uFF08\u6E96\u5099\u4E2D\uFF09"
+  - id: shortcut_rope
+    prompt: "\u30ED\u30FC\u30D7\u3092\u767B\u308B"
+    closedPrompt: 
+    title: "\u7B2C {0} \u5C64\u3078\u306E\u8FD1\u9053"
+    description: "\u767B\u3063\u305F\u5148\u306F\u7B2C {0} \u5C64\u306B\u901A\u3058\u3066\u3044\u308B\u3002"
+  - id: shortcut_well
+    prompt: "\u30ED\u30FC\u30D7\u3092\u4F1D\u3063\u3066\u964D\u308A\u308B"
+    closedPrompt: 
+    title: "\u7B2C {0} \u5C64\u306E\u4E95\u6238"
+    description: "\u5E95\u306E\u898B\u3048\u306A\u3044\u4E95\u6238\u3002\u5782\u308C\u305F\u30ED\u30FC\u30D7\u3092\u4F1D\u3063\u3066\u964D\u308A\u308C\u3070\u3001\u5730\u4E0A\u3078\u623B\u308C\u308B\u3002"
+  - id: stairs_down
+    prompt: "\u4E0B\u306E\u968E\u3078"
+    closedPrompt: "\u4E0B\u3078\u306F\u964D\u308A\u3089\u308C\u306A\u3044"
+    title: "\u4E0B\u308A\u968E\u6BB5"
+    description: "\u4E0B\u306E\u968E\u3078\u7D9A\u304F\u968E\u6BB5\u3002"
+  - id: stairs_up
+    prompt: "\u4E0A\u306E\u968E\u3078"
+    closedPrompt: "\u4E0A\u3078\u306F\u884C\u3051\u306A\u3044"
+    title: "\u4E0A\u308A\u968E\u6BB5"
+    description: "\u4E0A\u306E\u968E\u3078\u7D9A\u304F\u968E\u6BB5\u3002"
+  - id: upgrade_altar
+    prompt: "\u5F37\u5316\u3059\u308B"
+    closedPrompt: 
+    title: "\u9B42\u306E\u71ED\u53F0"
+    description: "\u6B7B\u3093\u3067\u5F97\u305F\u9B42\u306E\u6B20\u7247\u3067\u3001\u6B21\u306E\u751F\u3092\u5F37\u304F\u3059\u308B\u3002\uFF08\u6E96\u5099\u4E2D\uFF09"
+  - id: rebirth
+    prompt: "\u8EE2\u751F\u3059\u308B"
+    closedPrompt: 
+    title: "\u8EE2\u751F\u306E\u6E26"
+    description: "\u3053\u3053\u306B\u5165\u308B\u3068\u8EE2\u751F\u3057\u3066\u57CE\u306E\u524D\u3067\u76EE\u899A\u3081\u308B"

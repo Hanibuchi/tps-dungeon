@@ -190,10 +190,11 @@ namespace TpsDungeon.Party.Editor
         }
 
         internal static void AddGate(GameObject target, string sceneName, bool open, string openLabel, string closedLabel, string title, string body,
-            MapIcon icon = MapIcon.None, string mapLabel = null)
+            MapIcon icon = MapIcon.None, string mapLabel = null, string textId = null)
         {
             var gate = target.AddComponent<SceneGate>();
             var serialized = new SerializedObject(gate);
+            serialized.FindProperty("textId").stringValue = textId ?? string.Empty;
             serialized.FindProperty("sceneName").stringValue = sceneName;
             serialized.FindProperty("open").boolValue = open;
             serialized.FindProperty("openLabel").stringValue = openLabel;
