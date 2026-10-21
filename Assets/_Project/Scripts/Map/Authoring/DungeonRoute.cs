@@ -125,6 +125,18 @@ namespace TpsDungeon.Map.Authoring
             return null;
         }
 
+        /// <summary>
+        /// 1 層 1 階から数えた通しの階の番号（1 始まり）。下の層の階の数（ボス階も 1 階に数える）を足していく。
+        /// 1 層が 5 階なら、第 2 層の 5 階目（ボス階）は 10。道順に無い階は、その層の中の番号をそのまま返す。
+        /// </summary>
+        public int FloorNumber(DungeonFloor floor)
+        {
+            if (!Contains(floor)) return floor.Floor + 1;
+            int below = 0;
+            for (int i = 0; i < floor.Layer; i++) below += layers[i].FloorCount;
+            return below + floor.Floor + 1;
+        }
+
         /// <summary>表示名（例:「第 2 層 3 階」「第 2 層 ボス」）。</summary>
         public string Label(DungeonFloor floor)
         {

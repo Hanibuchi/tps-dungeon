@@ -73,6 +73,17 @@ namespace TpsDungeon.Map.Tests
         }
 
         [Test]
+        public void FloorNumber_CountsFloorsFromTheFirstLayer()
+        {
+            var route = Route(4, 4);
+            Assert.AreEqual(1, route.FloorNumber(new DungeonFloor(0, 0)));
+            Assert.AreEqual(5, route.FloorNumber(new DungeonFloor(0, 4)), "ボス階も 1 階に数える");
+            Assert.AreEqual(6, route.FloorNumber(new DungeonFloor(1, 0)));
+            Assert.AreEqual(10, route.FloorNumber(new DungeonFloor(1, 4)));
+            Assert.AreEqual(3, route.FloorNumber(new DungeonFloor(5, 2)), "道順に無い階はその層の中の番号");
+        }
+
+        [Test]
         public void Previous_IsTheReverseOfNext()
         {
             var route = Route(4, 4, 4);
