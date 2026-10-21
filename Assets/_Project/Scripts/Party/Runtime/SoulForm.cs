@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TpsDungeon.Combat;
 using UnityEngine;
 
 namespace TpsDungeon.Party
@@ -7,6 +8,8 @@ namespace TpsDungeon.Party
     /// 死後の場所（Afterlife）にいる間だけ、パーティーの先頭を魂の姿にする。Afterlife のシーンに 1 つ置く。
     /// - 死後の場所に来るのは操作しているキャラ（先頭）だけで、仲間は消しておく（GameObject を止める）。先頭が替わったら、新しい先頭を出して前の先頭を消す。
     /// - 体と小物（角・耳・しっぽ）の材質を魂の材質（TpsDungeon/Soul）に差し替え、手に持った武器は隠す（魂は武器を持たない）。
+    /// - 攻撃と狙い（攻撃の入力・近接と遠距離の攻撃・肩越しのカメラ）も止める。遠距離武器を持ったままだと、狙いに合わせて体がカメラの向きへ回り続け、
+    ///   着いたときに北（強化の台）を向かせても、すぐカメラの向きに戻ってしまう。
     /// - 持ち替えや仲間の入れ替えで増えた物も拾えるよう、少しおきに見直す。
     /// - 一人ずつに弱い青白い光を付けて歩かせる。暗い死後の場所では、これが主な光になる。
     /// - パーティーは地上から持ち越されて次のシーンへも行くので、このシーンを出るとき（OnDestroy）に材質も武器も光も仲間も元へ戻す。
@@ -40,13 +43,23 @@ namespace TpsDungeon.Party
         private readonly Dictionary<PartyMember, Light> lights = new Dictionary<PartyMember, Light>();
         private readonly List<Renderer> scratch = new List<Renderer>();
         private readonly HashSet<PartyMember> away = new HashSet<PartyMember>();
+        private readonly HashSet<Behaviour> stopped = new HashSet<Behaviour>();
+        private readonly List<Behaviour> behaviourScratch = new List<Behaviour>();
         private float nextScan;
+
+        // シーンを読み込んだとき（GameFlow が先頭を着地点へ置くより前）に 1 度済ませる。
+        // 遅れると、着いたフレームに遠距離武器の狙いがまだ前の場所のカメラの向きへ体を回してしまい、北を向かせた向きが崩れる。
+        private void Awake() => Scan();
 
         private void LateUpdate()
         {
             if (Time.unscaledTime < nextScan) return;
             nextScan = Time.unscaledTime + rescanInterval;
+            Scan();
+        }
 
+        private void Scan()
+        {
             Party party = Party.Current;
             if (party == null || soulMaterial == null) return;
 
@@ -55,8 +68,25 @@ namespace TpsDungeon.Party
             {
                 if (member == null) continue;
                 Apply(member);
+                StopCombat(member);
                 EnsureLight(member);
                 ShowOnlyLeader(member, member == leader);
+            }
+        }
+
+        /// <summary>攻撃と狙いの部品を止める。先頭が替わると入力が付け直されるので、見直すたびに止め直す。</summary>
+        private void StopCombat(PartyMember member)
+        {
+            behaviourScratch.Clear();
+            behaviourScratch.Add(member.GetComponent<PlayerMeleeInput>());
+            behaviourScratch.Add(member.GetComponent<MeleeAttacker>());
+            behaviourScratch.Add(member.GetComponent<RangedAttacker>());
+            behaviourScratch.Add(member.GetComponent<RangedShoulderCamera>());
+            foreach (Behaviour behaviour in behaviourScratch)
+            {
+                if (behaviour == null || !behaviour.enabled) continue;
+                behaviour.enabled = false;
+                stopped.Add(behaviour);
             }
         }
 
@@ -136,6 +166,15 @@ namespace TpsDungeon.Party
                 if (light != null) Destroy(light.gameObject);
             }
             lights.Clear();
+
+            // 攻撃の入力は先頭だけが持つ（死後の場所で先頭を替えていたら、前の先頭の入力は戻さない）。
+            PartyMember leader = Party.Current != null ? Party.Current.Leader : null;
+            foreach (Behaviour behaviour in stopped)
+            {
+                if (behaviour == null) continue;
+                behaviour.enabled = !(behaviour is PlayerMeleeInput) || (leader != null && behaviour.gameObject == leader.gameObject);
+            }
+            stopped.Clear();
 
             foreach (PartyMember member in away)
             {
