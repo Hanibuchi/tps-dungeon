@@ -60,15 +60,22 @@ namespace TpsDungeon.Interaction
         /// <summary>表が書き換わった。次に引くときに読み直す。</summary>
         public static void Invalidate() => byId = null;
 
+        /// <summary>
+        /// 表を読んで辞書を作る。エディタでは初めて読み込んだときに表の OnValidate が呼ばれて <see cref="Invalidate"/> が走るので、
+        /// 手元で作り終えてから入れる（先に byId へ入れておくと、読み込みの途中で null に戻されて落ちる）。
+        /// </summary>
         private static void Build()
         {
-            byId = new Dictionary<string, InteractionTextTable.Entry>(StringComparer.Ordinal);
+            var built = new Dictionary<string, InteractionTextTable.Entry>(StringComparer.Ordinal);
             var table = Resources.Load<InteractionTextTable>(ResourcePath);
-            if (table == null) return;
-            foreach (var entry in table.Entries)
+            if (table != null)
             {
-                if (!string.IsNullOrEmpty(entry.id)) byId[entry.id] = entry;
+                foreach (var entry in table.Entries)
+                {
+                    if (!string.IsNullOrEmpty(entry.id)) built[entry.id] = entry;
+                }
             }
+            byId = built;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
