@@ -41,6 +41,7 @@ namespace TpsDungeon.Menu.UI
         private const string DropTargetClass = "slot--drop-target";
         private const string DeniedClass = "slot--denied";
         private const string DetailsEmptyClass = "inventory__details--empty";
+        private const string DetailsPortraitClass = "inventory__details-portrait";
         private const string CardClass = "party-card";
         private const string CardLeaderClass = "party-card--leader";
         private const string CardDragSourceClass = "party-card--drag-source";
@@ -135,6 +136,7 @@ namespace TpsDungeon.Menu.UI
         private readonly List<Card> cards = new List<Card>();
 
         private GamePauser pauser;
+        private readonly MemberPortrait portrait = new MemberPortrait();
 
         // 再生中にスクリプトを再コンパイルすると、シリアライズされないこのフィールドだけ消えて Awake も呼ばれ直さない。
         // そのときも止まらないよう、使うときに作る。
@@ -232,6 +234,8 @@ namespace TpsDungeon.Menu.UI
             }
         }
 
+        private void OnDestroy() => portrait.Dispose();
+
         // PlayerInput は OnEnable でアクションを用意し直すことがあるので、掴むのは全員の OnEnable の後。
         private void Start()
         {
@@ -293,6 +297,7 @@ namespace TpsDungeon.Menu.UI
 
             Rebuild();
             RefreshHint(force: true);
+            portrait.Invalidate();
             hoverIndex = -1;
             hoverCard = -1;
             RefreshDetails();
@@ -463,6 +468,10 @@ namespace TpsDungeon.Menu.UI
             {
                 VisualElement slot = CreateSlot(new SlotRef(items, k), (k + 1).ToString());
                 slot.AddToClassList("party-card__slot");
+                // 枠の間の隙間で札の上に出て仲間の説明が一瞬開かないよう、見えない当たりで判定だけ左右へ広げる。
+                var hit = new VisualElement { name = "slot-hit" };
+                hit.AddToClassList("party-card__slot-hit");
+                slot.Add(hit);
                 hand.Add(slot);
             }
 
@@ -1022,10 +1031,17 @@ namespace TpsDungeon.Menu.UI
         {
             for (int i = 0; i < slots.Count; i++)
             {
-                if (slots[i].worldBound.Contains(position)) return i;
+                if (SlotBounds(slots[i]).Contains(position)) return i;
             }
 
             return -1;
+        }
+
+        /// <summary>枠の当たりの範囲。仲間の札の枠は、見えない当たり（slot-hit）で左右へ広げた分も含める。</summary>
+        private static Rect SlotBounds(VisualElement slot)
+        {
+            VisualElement hit = slot.Q<VisualElement>("slot-hit");
+            return hit != null ? hit.worldBound : slot.worldBound;
         }
 
         private static bool IsHeld(InputAction action) => action != null && action.IsPressed();
@@ -1086,14 +1102,19 @@ namespace TpsDungeon.Menu.UI
             details.EnableInClassList(DetailsEmptyClass, false);
             if (detailsTitle != null) detailsTitle.text = member.DisplayName;
             if (detailsBody != null) detailsBody.text = MemberDetailText(member, index);
-            SetDetailsIcon(null, null);
+            SetDetailsIcon(null, null, portrait.Capture(member));
+            // 主カメラに映っていなかった仲間は体の形が古いまま写るので、次のフレームで撮り直す。
+            if (portrait.RetakePending) root.schedule.Execute(RefreshDetails).ExecuteLater(1);
         }
 
-        private void SetDetailsIcon(Texture2D icon, Color? rank)
+        /// <summary>説明欄の絵。仲間のときは icon の代わりに顔（face）を窪み一杯に出す。</summary>
+        private void SetDetailsIcon(Texture2D icon, Color? rank, RenderTexture face = null)
         {
             if (detailsIcon == null) return;
 
-            detailsIcon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
+            detailsIcon.EnableInClassList(DetailsPortraitClass, face != null);
+            if (face != null) detailsIcon.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(face));
+            else detailsIcon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
             // 絵を収める窪みに、ランクの色の光を敷く。
             ItemSlot.SetRankGlow(detailsIcon.parent, rank);
         }

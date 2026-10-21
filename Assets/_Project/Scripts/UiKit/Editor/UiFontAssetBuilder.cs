@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TextCore;
 using UnityEngine.TextCore.LowLevel;
 using UnityEngine.TextCore.Text;
 
@@ -9,23 +10,21 @@ namespace TpsDungeon.UiKit.Editor
     /// <summary>
     /// UI Toolkit 用のフォントアセット（TextCore の FontAsset）を TTF から作り直す。
     /// どれも Dynamic なので、必要な文字は実行時にアトラスへ足される。保存時にアトラスは空に戻す。
-    /// 欧文の飾り書体（Cinzel Decorative）には、和文が来たときのフォールバックとして明朝体を付ける。
+    /// 書体は IBM Plex Sans JP（和文・欧文とも入っているのでフォールバックは要らない）。本文は Regular、太字は Bold、飾りの見出し・数字は Medium と Bold。
+    /// Plex は上の余白（ascent）が下より広く、枠の中で文字が上に寄るので、行の高さは変えずに ascent / descent を字形の中心で上下対称にする（<see cref="CenterLine"/>）。
     ///
     /// フォントは外部素材なので Assets/ThirdParty/Fonts に置き、リポジトリには入れていない（ThirdParty は管理外）。
-    /// 新しい環境では、次の TTF と OFL.txt を google/fonts（ofl/shipporiminchob1、ofl/cinzeldecorative）から取ってきて置き、
-    /// このメニューを実行する。どちらも SIL Open Font License。
-    /// - ShipporiMinchoB1-Regular.ttf / ShipporiMinchoB1-Bold.ttf
-    ///   （そのままだと 1 ウェイト 15MB あるので、ASCII・かな・記号・JIS X 0208 の漢字に絞って使っている。fonttools の pyftsubset で絞れる）
-    /// - CinzelDecorative-Regular.ttf / CinzelDecorative-Bold.ttf
+    /// 新しい環境では、google/fonts の ofl/ibmplexsansjp から次の TTF と OFL.txt を取ってきて Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP に置き、
+    /// このメニューを実行する。SIL Open Font License。
+    /// - IBMPlexSansJP-Regular.ttf / IBMPlexSansJP-Medium.ttf / IBMPlexSansJP-Bold.ttf
     /// </summary>
     public static class UiFontAssetBuilder
     {
-        private const string Folder = "Assets/ThirdParty/Fonts/";
+        private const string Folder = "Assets/ThirdParty/Fonts/IBM_Plex_Sans_JP/";
 
-        public const string MinchoRegular = Folder + "ShipporiMinchoB1-Regular SDF.asset";
-        public const string MinchoBold = Folder + "ShipporiMinchoB1-Bold SDF.asset";
-        public const string DecoRegular = Folder + "CinzelDecorative-Regular SDF.asset";
-        public const string DecoBold = Folder + "CinzelDecorative-Bold SDF.asset";
+        public const string Regular = Folder + "IBMPlexSansJP-Regular SDF.asset";
+        public const string Medium = Folder + "IBMPlexSansJP-Medium SDF.asset";
+        public const string Bold = Folder + "IBMPlexSansJP-Bold SDF.asset";
 
         private const int SamplingPointSize = 64;
         private const int Padding = 8;
@@ -34,10 +33,9 @@ namespace TpsDungeon.UiKit.Editor
         [MenuItem("Tools/TPS Dungeon/UI/フォントアセットを作る")]
         public static void Build()
         {
-            FontAsset minchoRegular = Create(Folder + "ShipporiMinchoB1-Regular.ttf", MinchoRegular, null);
-            FontAsset minchoBold = Create(Folder + "ShipporiMinchoB1-Bold.ttf", MinchoBold, null);
-            Create(Folder + "CinzelDecorative-Regular.ttf", DecoRegular, minchoRegular);
-            Create(Folder + "CinzelDecorative-Bold.ttf", DecoBold, minchoBold);
+            Create(Folder + "IBMPlexSansJP-Regular.ttf", Regular, null);
+            Create(Folder + "IBMPlexSansJP-Medium.ttf", Medium, null);
+            Create(Folder + "IBMPlexSansJP-Bold.ttf", Bold, null);
 
             AssetDatabase.SaveAssets();
             Debug.Log("UI のフォントアセットを作った: " + Folder);
@@ -84,8 +82,23 @@ namespace TpsDungeon.UiKit.Editor
 
             // 生成中に拾った字形は捨て、空のアトラスで保存する。リポジトリに無駄な画像を積まないため。
             asset.ClearFontAssetData(true);
+            CenterLine(asset);
             EditorUtility.SetDirty(asset);
             return asset;
+        }
+
+        /// <summary>
+        /// 行の上下（ascent / descent）を、大文字の高さの半分（数字・大文字・漢字のおおよその真ん中）を中心に上下対称にする。
+        /// 行の高さ（ascent − descent）は変えないので、枠の大きさはそのままで文字が真ん中に来る。
+        /// </summary>
+        private static void CenterLine(FontAsset asset)
+        {
+            FaceInfo face = asset.faceInfo;
+            float half = (face.ascentLine - face.descentLine) * 0.5f;
+            float center = face.capLine * 0.5f;
+            face.ascentLine = center + half;
+            face.descentLine = center - half;
+            asset.faceInfo = face;
         }
     }
 }

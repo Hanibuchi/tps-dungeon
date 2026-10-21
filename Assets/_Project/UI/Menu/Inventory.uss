@@ -191,6 +191,16 @@
     margin: 0 4px 0 0;
 }
 
+/* 枠の当たりだけを左右へ広げる見えない板。枠の間（4px）を両側から埋め、隙間で札の上に出ないようにする。
+ * 絶対配置の基準は枠の線（1px）の内側なので、-4px で枠の外へ 3px 出て、隣の板と少し重なる。 */
+.party-card__slot-hit {
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    top: 0;
+    bottom: 0;
+}
+
 /* 手に持っている枠は縁だけ灯す（小さい枠では浮かせたり大きくしたりしない）。 */
 .inventory .party-card .slot.party-card__slot.slot--selected {
     translate: 0 0;
@@ -285,6 +295,12 @@
 
 .inventory__details.inventory__details--empty .item-details__title {
     color: var(--ink-faint);
+}
+
+/* 仲間の顔（MemberPortrait）は窪み一杯に出す。 */
+.inventory__details .item-details__icon.inventory__details-portrait {
+    width: 100%;
+    height: 100%;
 }
 
 /* ポインタに付いてくる、掴んでいるアイテムの絵。 */

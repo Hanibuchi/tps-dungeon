@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TpsDungeon.Map.Data;
+using TpsDungeon.Map.Generation;
 using TpsDungeon.Map.Runtime;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,7 +9,7 @@ namespace TpsDungeon.Hud
 {
     /// <summary>
     /// 入った部屋だけを俯瞰で描く小さな地図。北（ワールド +Z）が常に上で、プレイヤーを中心に据える。
-    /// 部屋・ドア・階段/ショップの印・プレイヤーの向きを Painter2D で描く。
+    /// 部屋・ドア・プレイヤーの向きを Painter2D で描く。階の印（上り・下り階段・ショップ・ボス部屋・ショートカットの井戸）は、地上の印と同じ金縁の丸い札に記号を描く（井戸は層のローマ数字）。
     /// 地上では、真上から撮った地上の絵（<see cref="SurfaceMapSource"/>）を下に敷き、城の土台と、ダンジョンの入口・武器屋・銀行・解放したショートカット（層のローマ数字）の印を重ねる。
     /// 色と縮尺は USS のカスタムプロパティ（--map-*）で変えられる。--map-fit-surface を 1 にすると、地上では地上全体を収めて描く。--map-show-names を 1 にすると、建物・入口の印の下に名前を出す（どちらも大きな地図）。
     /// 描くのは子の要素（下から 絵・図形・番号）。この要素自身は何も描かない。
@@ -56,6 +57,7 @@ namespace TpsDungeon.Hud
         private readonly List<SurfaceMapSource.Marker> markers = new List<SurfaceMapSource.Marker>();
 
         private FloorExploration exploration;
+        private int? layer;
         private Vector2 playerCell;
         private float playerYaw;
         private bool hasPlayer;
@@ -93,7 +95,7 @@ namespace TpsDungeon.Hud
         public void Repaint()
         {
             canvas.MarkDirtyRepaint();
-            LayoutSurface();
+            LayoutLabels();
         }
 
         /// <summary>地上の地図の元。null なら地上の絵を敷かない（階では null）。</summary>
@@ -120,6 +122,14 @@ namespace TpsDungeon.Hud
         {
             if (exploration == value) return;
             exploration = value;
+            Repaint();
+        }
+
+        /// <summary>今いる階の層（0 始まり）。階のショートカットの井戸の印に、層のローマ数字を出すのに使う。</summary>
+        public void SetLayer(int? value)
+        {
+            if (layer == value) return;
+            layer = value;
             Repaint();
         }
 
@@ -194,14 +204,25 @@ namespace TpsDungeon.Hud
             return Rect.MinMaxRect(min.x, max.y, max.x, min.y);
         }
 
-        /// <summary>地上の絵を写す範囲に合わせて置き、ショートカットの印にローマ数字、建物・入口の印の下に名前を並べる。</summary>
-        private void LayoutSurface()
+        /// <summary>
+        /// 地上の絵を写す範囲に合わせて置き、ショートカットの印にローマ数字、建物・入口の印の下に名前を並べる。
+        /// 階では、入ったショートカットの部屋の井戸の印にローマ数字を出す。
+        /// </summary>
+        private void LayoutLabels()
         {
             var rect = contentRect;
             bool show = surface != null && surface.Image != null && rect.width > 0f;
             backdrop.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
 
             int used = 0;
+            if (exploration != null && layer.HasValue && rect.width > 0f && TryVisibleShortcut(out var well))
+            {
+                var p = ToScreen(rect.center, well);
+                float r = BadgeRadius();
+                var numeral = NextLabel(ref used, "minimap__marker-numeral");
+                numeral.text = Roman(layer.Value + 1);
+                Place(numeral, new Rect(p.x - r, p.y - r, r * 2f, r * 2f));
+            }
             if (show)
             {
                 var screen = ToScreenRect(rect.center, WorldToCell(surface.Area));
@@ -264,10 +285,13 @@ namespace TpsDungeon.Hud
             _ => value.ToString(),
         };
 
-        /// <summary>地上の印の半径（画面の画素）。縮尺で変えすぎず、記号と番号が読める大きさにする。ダンジョンの入口は一回り大きい。</summary>
+        /// <summary>印の丸い札の半径（画面の画素）。縮尺で変えすぎず、記号と番号が読める大きさにする。</summary>
+        private float BadgeRadius() => Mathf.Clamp(Scale() * 0.32f, 8.5f, 11f);
+
+        /// <summary>地上の印の半径。ダンジョンの入口は一回り大きい。</summary>
         private float BadgeRadius(SurfaceMapSource.MarkerKind kind)
         {
-            float r = Mathf.Clamp(Scale() * 0.32f, 8.5f, 11f);
+            float r = BadgeRadius();
             return kind == SurfaceMapSource.MarkerKind.DungeonEntrance ? r * 1.25f : r;
         }
 
@@ -425,6 +449,9 @@ namespace TpsDungeon.Hud
                 foreach (var socket in room.UsedSockets()) DrawDoor(painter, center, socket);
                 DrawFeature(painter, center, room);
             }
+
+            // ショートカットの井戸。地上の地図と同じ水色の札に、層のローマ数字（labels）。
+            if (TryVisibleShortcut(out var well)) DrawBadge(painter, ToScreen(center, well), BadgeRadius(), shortcutColor);
         }
 
         /// <summary>ドアは部屋の境目を跨ぐ短い太線で描く。先の部屋が未探索でも、そこに扉があることは分かる。</summary>
@@ -444,46 +471,167 @@ namespace TpsDungeon.Hud
             painter.Stroke();
         }
 
+        /// <summary>階の印の種類。</summary>
+        private enum FloorMark
+        {
+            StairUp,
+            StairDown,
+            Shop,
+            Boss,
+        }
+
+        private static Color FloorMarkFill(FloorMark mark) => mark switch
+        {
+            FloorMark.StairUp => new Color32(104, 74, 24, 255),
+            FloorMark.StairDown => new Color32(58, 54, 50, 255),
+            FloorMark.Shop => new Color32(66, 40, 76, 255),
+            _ => new Color32(92, 34, 28, 255),
+        };
+
+        /// <summary>階段・ショップ・ボス部屋の印。地上の印と同じ丸い札に記号。</summary>
         private void DrawFeature(Painter2D painter, Vector2 center, RoomInstance room)
         {
-            if (room.Role == RoomRole.Normal) return;
-
-            var p = ToScreen(center, new Vector2(room.FeatureCell.X + 0.5f, room.FeatureCell.Y + 0.5f));
-            float s = pixelsPerCell * 0.22f;
-
-            if (room.Role == RoomRole.Shortcut)
-            {
-                // ショートカットの井戸。地上の地図と同じ水色の丸に金の縁。
-                DrawBadge(painter, p, s * 1.1f, shortcutColor);
-                return;
-            }
-
-            painter.fillColor = featureColor;
-            painter.BeginPath();
+            FloorMark mark;
             switch (room.Role)
             {
-                case RoomRole.Exit:
-                    // 出口は上の階への上り階段。上向きの三角。
-                    painter.MoveTo(p + new Vector2(0f, -s));
-                    painter.LineTo(p + new Vector2(s, s));
-                    painter.LineTo(p + new Vector2(-s, s));
-                    break;
-                case RoomRole.Entrance:
-                    // 入口は下の階への下り階段。下向きの三角。
-                    painter.MoveTo(p + new Vector2(0f, s));
-                    painter.LineTo(p + new Vector2(-s, -s));
-                    painter.LineTo(p + new Vector2(s, -s));
-                    break;
+                // 出口は上の階への上り階段、入口は下の階への下り階段。
+                case RoomRole.Exit: mark = FloorMark.StairUp; break;
+                case RoomRole.Entrance: mark = FloorMark.StairDown; break;
+                case RoomRole.Shop: mark = FloorMark.Shop; break;
                 default:
-                    // ショップなど。菱形。
-                    painter.MoveTo(p + new Vector2(0f, -s));
-                    painter.LineTo(p + new Vector2(s, 0f));
-                    painter.LineTo(p + new Vector2(0f, s));
-                    painter.LineTo(p + new Vector2(-s, 0f));
-                    break;
+                    // ボス階の大部屋。部屋の真ん中に出す。
+                    if (room.Template == null || room.Template.Id != BossFloorLayout.ArenaId) return;
+                    var b = room.Bounds;
+                    DrawFloorMark(painter, ToScreen(center, new Vector2(b.X + b.Width * 0.5f, b.Y + b.Height * 0.5f)), FloorMark.Boss);
+                    return;
             }
+            var cell = new Vector2(room.FeatureCell.X + 0.5f, room.FeatureCell.Y + 0.5f);
+            DrawFloorMark(painter, ToScreen(center, cell), mark);
+        }
+
+        private void DrawFloorMark(Painter2D painter, Vector2 p, FloorMark mark)
+        {
+            float r = BadgeRadius();
+            var fill = FloorMarkFill(mark);
+            DrawBadge(painter, p, r, fill);
+            switch (mark)
+            {
+                case FloorMark.StairUp: DrawStairs(painter, p, r, fill, up: true); break;
+                case FloorMark.StairDown: DrawStairs(painter, p, r, fill, up: false); break;
+                case FloorMark.Shop: DrawPouch(painter, p, r, fill); break;
+                case FloorMark.Boss: DrawSkull(painter, p, r, fill); break;
+            }
+        }
+
+        /// <summary>
+        /// ショートカットの井戸のセル（の中心）。その部屋に入っていれば true。
+        /// ランダム階は井戸の部屋の FeatureCell、ボス階はショートカットの部屋の真ん中（FloorLayout.ShortcutCell）。
+        /// </summary>
+        private bool TryVisibleShortcut(out Vector2 cell)
+        {
+            cell = default;
+            var at = exploration.Layout.ShortcutCell;
+            if (!at.HasValue || !exploration.IsVisited(exploration.RoomAt(at.Value))) return false;
+            cell = new Vector2(at.Value.X + 0.5f, at.Value.Y + 0.5f);
+            return true;
+        }
+
+        /// <summary>
+        /// 3 段の階段と矢印。上りは右へ上がる段の左上に上向きの矢印、下りは左右を返して、低い側に下向きの矢印。
+        /// </summary>
+        private void DrawStairs(Painter2D painter, Vector2 p, float r, Color fill, bool up)
+        {
+            float u = r * 0.85f;
+            // 上りの形で組み、下りは x を返す。
+            float flip = up ? 1f : -1f;
+            Vector2 At(float x, float y) => p + new Vector2(x * flip * u, y * u);
+
+            painter.fillColor = markerGlyphColor;
+            painter.BeginPath();
+            painter.MoveTo(At(-0.62f, 0.56f));
+            painter.LineTo(At(-0.62f, 0.24f));
+            painter.LineTo(At(-0.2f, 0.24f));
+            painter.LineTo(At(-0.2f, -0.1f));
+            painter.LineTo(At(0.2f, -0.1f));
+            painter.LineTo(At(0.2f, -0.44f));
+            painter.LineTo(At(0.62f, -0.44f));
+            painter.LineTo(At(0.62f, 0.56f));
             painter.ClosePath();
             painter.Fill();
+
+            // 矢印は低い側の段の上の空き。上りは先が上、下りは先が下。
+            float tipY = up ? -0.7f : 0.1f;
+            float baseY = up ? -0.38f : -0.22f;
+            float tailY = up ? 0.08f : -0.7f;
+            painter.BeginPath();
+            painter.MoveTo(At(-0.41f, tipY));
+            painter.LineTo(At(-0.66f, baseY));
+            painter.LineTo(At(-0.16f, baseY));
+            painter.ClosePath();
+            painter.Fill();
+            painter.strokeColor = markerGlyphColor;
+            painter.lineWidth = Mathf.Max(1.2f, u * 0.14f);
+            painter.BeginPath();
+            painter.MoveTo(At(-0.41f, baseY));
+            painter.LineTo(At(-0.41f, tailY));
+            painter.Stroke();
+        }
+
+        /// <summary>ショップ。口を縛った金袋。</summary>
+        private void DrawPouch(Painter2D painter, Vector2 p, float r, Color fill)
+        {
+            painter.fillColor = markerGlyphColor;
+            Circle(painter, p + new Vector2(0f, r * 0.2f), r * 0.44f);
+            painter.Fill();
+            // 首と、広がった口。
+            painter.BeginPath();
+            painter.MoveTo(p + new Vector2(-r * 0.2f, -r * 0.12f));
+            painter.LineTo(p + new Vector2(-r * 0.12f, -r * 0.34f));
+            painter.LineTo(p + new Vector2(-r * 0.34f, -r * 0.6f));
+            painter.LineTo(p + new Vector2(r * 0.34f, -r * 0.6f));
+            painter.LineTo(p + new Vector2(r * 0.12f, -r * 0.34f));
+            painter.LineTo(p + new Vector2(r * 0.2f, -r * 0.12f));
+            painter.ClosePath();
+            painter.Fill();
+            // 縛った紐。
+            painter.strokeColor = fill;
+            painter.lineWidth = Mathf.Max(1f, r * 0.1f);
+            painter.BeginPath();
+            painter.MoveTo(p + new Vector2(-r * 0.2f, -r * 0.3f));
+            painter.LineTo(p + new Vector2(r * 0.2f, -r * 0.3f));
+            painter.Stroke();
+        }
+
+        /// <summary>ボス部屋。髑髏。</summary>
+        private void DrawSkull(Painter2D painter, Vector2 p, float r, Color fill)
+        {
+            painter.fillColor = markerGlyphColor;
+            Circle(painter, p + new Vector2(0f, -r * 0.12f), r * 0.48f);
+            painter.Fill();
+            RectPath(painter, Rect.MinMaxRect(p.x - r * 0.26f, p.y + r * 0.16f, p.x + r * 0.26f, p.y + r * 0.56f));
+            painter.Fill();
+            // 目と鼻。
+            painter.fillColor = fill;
+            Circle(painter, p + new Vector2(-r * 0.2f, -r * 0.08f), r * 0.14f);
+            painter.Fill();
+            Circle(painter, p + new Vector2(r * 0.2f, -r * 0.08f), r * 0.14f);
+            painter.Fill();
+            painter.BeginPath();
+            painter.MoveTo(p + new Vector2(0f, r * 0.08f));
+            painter.LineTo(p + new Vector2(r * 0.08f, r * 0.22f));
+            painter.LineTo(p + new Vector2(-r * 0.08f, r * 0.22f));
+            painter.ClosePath();
+            painter.Fill();
+            // 歯の隙間。
+            painter.strokeColor = fill;
+            painter.lineWidth = Mathf.Max(1f, r * 0.07f);
+            foreach (float x in new[] { -0.09f, 0.09f })
+            {
+                painter.BeginPath();
+                painter.MoveTo(p + new Vector2(r * x, r * 0.36f));
+                painter.LineTo(p + new Vector2(r * x, r * 0.56f));
+                painter.Stroke();
+            }
         }
 
         /// <summary>向きの分かる三角形。ワールドの Y 回転は上から見て時計回りなので、画面でもそのまま時計回りに回す。</summary>
