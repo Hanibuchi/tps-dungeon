@@ -42,6 +42,8 @@ Transform:
   - {fileID: 8930264587008948327}
   - {fileID: 5751377657669506191}
   - {fileID: 2887159340042714215}
+  - {fileID: 6145268539189470826}
+  - {fileID: 8206061187360401505}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7837789953205096307
@@ -162,6 +164,7 @@ MonoBehaviour:
   cursorLocked: 1
   cursorInputForLook: 1
   lookSensitivity: 10
+  sprintActionName: Sprint
 --- !u!114 &3621653398012686975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -194,6 +197,9 @@ MonoBehaviour:
   levelUpKey: 99
   resetKey: 100
   deleteSaveKey: 101
+  soulAmount: 100
+  grantSoulsKey: 102
+  resetUpgradesKey: 103
 --- !u!114 &4674577409488637709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -323,6 +329,80 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Interaction::TpsDungeon.Interaction.InteractionPromptView
   interactor: {fileID: 0}
+--- !u!1 &1280685300533163307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6145268539189470826}
+  - component: {fileID: 6448368464878595165}
+  - component: {fileID: 2863201140382639663}
+  m_Layer: 0
+  m_Name: Soul Upgrade Screen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6145268539189470826
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280685300533163307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3306196353158250918}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6448368464878595165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280685300533163307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 69afec5ce92b745a69abfc5fe6145e7f, type: 3}
+  m_SortingOrder: 8
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &2863201140382639663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280685300533163307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c268540dfa8fd44a7b13ce3a2c4058d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.UI.SoulUpgradeScreen
+  playerInput: {fileID: 7837789953205096307}
+  controls: {fileID: 4674577409488637709}
+  mapToggle: {fileID: 1450598811782462755}
+  cancelActionName: UI/Cancel
+  gameplayMapName: Player
+  menuMapName: UI
 --- !u!1 &3291651058888741965
 GameObject:
   m_ObjectHideFlags: 0
@@ -491,6 +571,79 @@ MonoBehaviour:
   attacker: {fileID: 0}
   ranged: {fileID: 0}
   viewCamera: {fileID: 0}
+--- !u!1 &6731304673309455259
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8206061187360401505}
+  - component: {fileID: 1402857146766221178}
+  - component: {fileID: 1173560492808867524}
+  m_Layer: 0
+  m_Name: Carry Over Screen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8206061187360401505
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6731304673309455259}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3306196353158250918}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1402857146766221178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6731304673309455259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 4c4798ce4f6ea473ea3e6398d6286e11, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: fb9cc53ab038243f3a6ba2fa2e3011e5, type: 3}
+  m_SortingOrder: 40
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &1173560492808867524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6731304673309455259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63f93cb475334a9a8430cccf2467fdc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Menu::TpsDungeon.Menu.UI.CarryOverScreen
+  playerInput: {fileID: 7837789953205096307}
+  controls: {fileID: 4674577409488637709}
+  mapToggle: {fileID: 1450598811782462755}
+  gameplayMapName: Player
+  menuMapName: UI
 --- !u!1 &7201923794678058576
 GameObject:
   m_ObjectHideFlags: 0

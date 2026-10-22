@@ -50,7 +50,7 @@ namespace TpsDungeon.Party.Editor
             "Plants/rpgpp_lt_plant_02",
         };
 
-        [MenuItem("Tools/TPS Dungeon/置き物のプレハブを作る（草花・木箱・宝箱・部屋の飾り）")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/置き物のプレハブを作る（草花・木箱・宝箱・部屋の飾り）", false, 508)]
         public static void BuildFromMenu() => Debug.Log(BuildAll());
 
         public static string BuildAll()

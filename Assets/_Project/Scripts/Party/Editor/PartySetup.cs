@@ -21,7 +21,7 @@ namespace TpsDungeon.Party.Editor
     /// 1. レイヤー「Ally」を用意し、Ally どうしは物理で当たらないようにする。
     /// 2. 角・耳・しっぽの置き方のアセット（CharacterAccessoryCatalog）を用意し、GanzSe の小物を差し込む。
     /// 3. パーティーの操作台のプレハブ（Party.prefab）を作る。PlayerInput・移動の入力（CharacterInput）・Party・
-    ///    PartyProgression・操作の設定・地図の開け閉め・デバッグ入力を持たせ、HUD・ポーズ・インベントリ・照準の案内を子に組み込む。
+    ///    PartyProgression・操作の設定・地図の開け閉め・デバッグ入力を持たせ、HUD・ポーズ・インベントリ・魂の強化・照準の案内を子に組み込む。
     /// 4. キャラのプレハブ（Character Variant）から、操作台へ移した物（入力・UI・パーティーの経験値）と Starter Assets の操作を外し、
     ///    CharacterMotor（Starter Assets の操作の写し）・NavMeshAgent・PartyMember・仲間の歩きと戦い・見た目を付ける。レイヤーは Ally にする。
     /// </summary>
@@ -39,7 +39,7 @@ namespace TpsDungeon.Party.Editor
 
         private static readonly string[] UiChildren = { "Interaction HUD", "Game HUD", "Pause Menu", "Inventory Screen", "Game Over" };
 
-        [MenuItem("Tools/TPS Dungeon/Party/パーティーを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）", false, 300)]
         public static void Setup()
         {
             int ally = EnsureAllyLayer();
@@ -59,6 +59,7 @@ namespace TpsDungeon.Party.Editor
             // 画面は操作台へ（各画面の組み込みは操作台を相手にする）。
             InventorySetup.Setup();
             PauseMenuSetup.Setup();
+            SoulUpgradeSetup.Setup();
             PlayerHudSetup.Setup();
             GameOverSetup.Setup();
             PlayerInteractionSetup.Setup();

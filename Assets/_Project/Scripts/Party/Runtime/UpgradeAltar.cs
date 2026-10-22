@@ -1,11 +1,12 @@
+using System;
 using TpsDungeon.Interaction;
 using UnityEngine;
 
 namespace TpsDungeon.Party
 {
     /// <summary>
-    /// 死後の場所（Afterlife）の、燭台の輪の真ん中の台。死んで得たメタ通貨で永続強化をする所。
-    /// メタ通貨と永続強化はまだ無いので、今はインタラクトできて情報欄が出るところまで。強化の画面はここから開くようにつなぐ。
+    /// 死後の場所（Afterlife）の、燭台の輪の真ん中の台。死んで得たソウルで魂の強化をする所。
+    /// 調べると <see cref="Opened"/> を飛ばし、強化の画面（Menu の SoulUpgradeScreen）が開く。
     /// 案内・見出し・本文は、文字の ID（textId）の行がインタラクトの文字の表（Settings/Tables/InteractionTexts.csv）にあればそちらを使う。
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,7 +23,10 @@ namespace TpsDungeon.Party
         private string title = "魂の燭台";
 
         [SerializeField, TextArea, Tooltip("情報欄の本文。")]
-        private string description = "死んで得た魂の欠片で、次の生を強くする。（準備中）";
+        private string description = "死んで得たソウルで、次の生を強くする。";
+
+        /// <summary>調べられた。強化の画面が受けて開く。</summary>
+        public static event Action<UpgradeAltar> Opened;
 
         public string PromptLabel => InteractionTexts.TryGet(textId, out var entry) ? entry.prompt : promptLabel;
 
@@ -30,7 +34,8 @@ namespace TpsDungeon.Party
 
         public void Interact(GameObject interactor)
         {
-            Debug.Log("強化の画面はまだ無い（UpgradeAltar）", this);
+            if (Opened != null) Opened.Invoke(this);
+            else Debug.LogWarning("強化の画面（SoulUpgradeScreen）が無いので開けない", this);
         }
 
         public string DetailTitle => InteractionTexts.TryGet(textId, out var entry) ? entry.title : title;
@@ -40,5 +45,8 @@ namespace TpsDungeon.Party
         public Texture2D DetailIcon => null;
 
         public Color? DetailBackground => null;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Opened = null;
     }
 }

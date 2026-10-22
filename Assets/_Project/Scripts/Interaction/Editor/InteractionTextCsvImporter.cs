@@ -16,7 +16,7 @@ namespace TpsDungeon.Interaction.Editor
         public const string CsvPath = "Assets/_Project/Settings/Tables/InteractionTexts.csv";
         public const string TablePath = "Assets/_Project/Resources/Interaction/InteractionTexts.asset";
 
-        [MenuItem("Tools/TPS Dungeon/インタラクトの文字の CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/インタラクトの文字", false, 100)]
         public static void Import()
         {
             if (!File.Exists(CsvPath))

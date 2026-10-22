@@ -18,7 +18,7 @@ namespace TpsDungeon.Hud.Editor
         // HUD（-10）・インベントリ（5）・ポーズ（10）より手前。
         private const float SortingOrder = 20f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/全滅の画面を組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/全滅の画面", false, 312)]
         public static void Setup()
         {
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);

@@ -37,7 +37,7 @@ namespace TpsDungeon.Items.Editor
             public (Color color, Func<Vector2, float> shape)[] IconLayers;
         }
 
-        [MenuItem("Tools/TPS Dungeon/プレースホルダのアイテムを生成")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/プレースホルダのアイテムを生成", false, 520)]
         public static void Generate()
         {
             EnsureFolder(ItemsFolder);

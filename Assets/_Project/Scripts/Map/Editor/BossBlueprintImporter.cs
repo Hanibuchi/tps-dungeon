@@ -21,7 +21,7 @@ namespace TpsDungeon.Map.Editor
     {
         public const string BlueprintPath = "Assets/_Project/Settings/Tables/BossFloors.md";
 
-        [MenuItem("Tools/TPS Dungeon/ボス階の設計図を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/ボス階の設計図", false, 106)]
         public static void Import()
         {
             if (!File.Exists(BlueprintPath))

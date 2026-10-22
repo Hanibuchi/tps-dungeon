@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using TpsDungeon.Audio.Runtime;
+using TpsDungeon.Items;
 using TpsDungeon.Map.Runtime;
+using TpsDungeon.Progression;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,7 +18,10 @@ namespace TpsDungeon.Party
     /// - 読み込んだシーンにあるカメラは止め（こちらのカメラで見る）、階なら NavMesh を焼く役（<see cref="FloorNavMesh"/>）を付け、スポーン地点（<see cref="PlayerSpawnPoint"/>）ができたら先頭をそこへ移して並び直す。
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
-    /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る。レベルや持ち物を戻す死に戻りの処理はまだ無い）。
+    /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る）。
+    ///   送る暗転の間に、全員のレベルをソウルに変えて Lv1 に戻す（<see cref="SoulUpgradeWorld.Harvest"/>）。
+    /// - 転生の渦に入って白く飛んだら、持ち越せる数（魂の強化）があれば持ち越す武器を選ばせ（<see cref="CarryOverPicker"/>）、ほかの持ち物を手放す。
+    /// - 魂の強化をゲームに当てるのは <see cref="SoulUpgradeWorld"/>（自分の GameObject に付ける）。
     /// - 全滅から死後の場所に着いたときは、明転の代わりに目を覚ます演出（<see cref="WakeSequence"/>。瞬きしながら視界がはっきりしてくる）を回す。
     /// - 死後の場所から地上へ戻る（転生する）ときは、暗転の代わりに転生の演出（<see cref="RebirthSequence"/>。渦に吸い込まれて白く飛び、白い光の中で目覚める）を回す。
     /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
@@ -61,6 +67,10 @@ namespace TpsDungeon.Party
         private bool wakeOnArrival;
         private RebirthSequence rebirth;
         private bool rebirthOnArrival;
+        private SoulUpgradeWorld soulUpgrades;
+
+        /// <summary>転生で持ち越す武器を選ばせる画面。画面の側が自分を入れる。無ければ選ばせずに全部手放す。</summary>
+        public static ICarryOverPicker CarryOverPicker { get; set; }
 
         /// <summary>今シーンをまたいで残っているもの。地上を通らずに始めたシーンでは null。</summary>
         public static GameFlow Instance { get; private set; }
@@ -93,6 +103,8 @@ namespace TpsDungeon.Party
             wake = WakeSequence.Create(transform);
             rebirth = RebirthSequence.Create(transform);
             rebirth.DiveSound = rebirthSound;
+            soulUpgrades = gameObject.AddComponent<SoulUpgradeWorld>();
+            soulUpgrades.Party = party;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -114,6 +126,7 @@ namespace TpsDungeon.Party
         {
             if (Instance != this) return;
             Instance = null;
+            CarryOverPicker = null;
             SceneTravel.Traveling = false;
         }
 
@@ -156,6 +169,7 @@ namespace TpsDungeon.Party
             if (rebirthOnArrival && rebirth != null)
             {
                 yield return rebirth.Leave();
+                yield return LeaveItemsBehind();
                 if (fade != null) yield return fade.FadeTo(1f, 0f);
             }
             else
@@ -170,10 +184,50 @@ namespace TpsDungeon.Party
             // そのあとに起こすと止めた部品がまた動いてしまう。
             if (party != null)
             {
+                // 全滅して死後の場所へ。レベルをソウルに変えて Lv1 に戻す（起こす前に。戻すと HP も満タンになる）。
+                if (revive && sceneName == SceneTravel.AfterlifeScene) SoulUpgradeWorld.Harvest(party);
                 if (revive) party.ReviveAll();
                 else party.LeaveDownedBehind();
             }
             SceneTravel.Load(sceneName);
+        }
+
+        /// <summary>
+        /// 転生で持ち物を手放す。持ち越せる数があって持ち物があれば、選ぶ画面を出して決めるのを待つ。
+        /// 選ぶ画面は UI Toolkit なので、その間は白い幕（uGUI）を隠し、画面が自分の白から出て白へ戻す。
+        /// </summary>
+        private IEnumerator LeaveItemsBehind()
+        {
+            var keep = new HashSet<ItemInstance>();
+            int limit = MetaUpgrades.CarryOverLimit;
+            if (limit > 0 && CarryOverPicker != null && HasAnyItem())
+            {
+                rebirth.WhiteVisible = false;
+                yield return CarryOverPicker.Pick(party, limit, keep);
+                rebirth.WhiteVisible = true;
+            }
+            if (soulUpgrades != null) soulUpgrades.DiscardItems(keep);
+        }
+
+        private bool HasAnyItem()
+        {
+            if (party == null) return false;
+            if (HasItem(party.Bag)) return true;
+            foreach (PartyMember member in party.Members)
+            {
+                if (member != null && member.Inventory != null && HasItem(member.Inventory.Inventory)) return true;
+            }
+            return false;
+        }
+
+        private static bool HasItem(Inventory items)
+        {
+            if (items == null) return false;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] != null) return true;
+            }
+            return false;
         }
 
         private bool IsWiped()
@@ -228,6 +282,9 @@ namespace TpsDungeon.Party
             if (party != null)
             {
                 if (spawn != null) party.PlaceLeaderAt(spawn.transform);
+
+                // 転生なら連れて行ける人数に合わせてから並べる。
+                if (soulUpgrades != null) soulUpgrades.OnArrived(rebirthOnArrival);
 
                 // カメラが前のシーンの位置から滑ってこないように。
                 foreach (CinemachineCamera camera in GetComponentsInChildren<CinemachineCamera>(true)) camera.PreviousStateIsValid = false;

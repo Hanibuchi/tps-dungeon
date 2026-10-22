@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
@@ -10,11 +11,12 @@ using TpsDungeon.Map.Runtime;
 namespace TpsDungeon.Map.Editor
 {
     /// <summary>
-    /// 階を確かめるためのウィンドウ（Tools/TPS Dungeon/階のデバッグ）。Play 中の階で使う。
-    /// 1 つ下・上の階へ移る、道順の好きな階へ移る、ボス部屋の閉ざされた扉を開けられるようにする。
+    /// 階を確かめるためのウィンドウ（Tools/TPS Dungeon/デバッグ/階のデバッグ）。移る操作は Play 中に使う。
+    /// - 道順の好きな階・地上・死後の場所へ移る。階の中だけでなく、地上や死後の場所からでも移れる。
+    /// - 階の中では、1 つ下・上の階へ移る、ボス部屋の閉ざされた扉を開けられるようにする。
     /// 「下り階段で降りられる」は道順（DungeonRoute）の設定そのもので、Play していなくても切り替えられる（アセットに保存される）。
     /// 「ショートカットの解放」は層ごとのショートカット（ボス階の井戸と地上のロープ）の解放状態で、Play していなくても切り替えられる
-    /// （本物の保存 shortcuts.json に書く。永続アップグレードで解放する仕組みができるまでの代わり）。
+    /// （本物の保存 shortcuts.json に書く。ゲームでは魂の強化で解放する）。
     /// </summary>
     public sealed class FloorDebugWindow : EditorWindow
     {
@@ -24,11 +26,13 @@ namespace TpsDungeon.Map.Editor
         private Button unlockButton;
         private PopupField<DungeonFloor> floorPopup;
         private Button jumpButton;
+        private Button surfaceButton;
+        private Button afterlifeButton;
         private Toggle allowDownToggle;
         private VisualElement shortcutToggles;
         private readonly List<Toggle> shortcutLayerToggles = new List<Toggle>();
 
-        [MenuItem("Tools/TPS Dungeon/階のデバッグ")]
+        [MenuItem("Tools/TPS Dungeon/デバッグ/階のデバッグ", false, 0)]
         public static void Open()
         {
             var window = GetWindow<FloorDebugWindow>();
@@ -62,6 +66,18 @@ namespace TpsDungeon.Map.Editor
             jumpRow.Add(floorPopup);
             jumpRow.Add(jumpButton);
             root.Add(jumpRow);
+
+            var placeRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            surfaceButton = new Button(GoSurface) { text = "地上へ（城の門の前）", style = { flexGrow = 1 } };
+            afterlifeButton = new Button(GoAfterlife)
+            {
+                text = "死後の場所へ",
+                tooltip = "ただ移るだけ（レベルはソウルに変わらない）。全滅と同じに送るのは「魂の燭台のデバッグ」から。",
+                style = { flexGrow = 1 },
+            };
+            placeRow.Add(surfaceButton);
+            placeRow.Add(afterlifeButton);
+            root.Add(placeRow);
 
             allowDownToggle = new Toggle("下り階段で降りられる")
             {
@@ -111,12 +127,16 @@ namespace TpsDungeon.Map.Editor
                 }
             }
 
-            status.text = !EditorApplication.isPlaying ? "Play 中の階で使える。"
-                : bootstrap == null ? "このシーンに階（FloorBootstrap）が無い。"
+            string scene = SceneManager.GetActiveScene().name;
+            status.text = !EditorApplication.isPlaying ? "移る操作は Play 中に使える。"
+                : bootstrap == null ? (scene == SceneTravel.SurfaceScene ? "今いる所: 地上"
+                    : scene == SceneTravel.AfterlifeScene ? "今いる所: 死後の場所"
+                    : $"今いる所: {scene}（階ではない）")
                 : floor.HasValue ? $"今いる階: {route.Label(floor.Value)}（{floor.Value}）\n閉ざされた扉: {locked} 枚"
                 : $"道順に載っていない階（{bootstrap.gameObject.scene.name}）。";
 
             bool onRoute = floor.HasValue && route != null;
+            bool canTravel = EditorApplication.isPlaying && !SceneTravel.Traveling;
             downButton.SetEnabled(onRoute);
             upButton.SetEnabled(onRoute && route.Next(floor.Value).HasValue);
             unlockButton.SetEnabled(locked > 0);
@@ -131,8 +151,10 @@ namespace TpsDungeon.Map.Editor
                 floorPopup.choices = choices;
                 if (!choices.Contains(floorPopup.value)) floorPopup.SetValueWithoutNotify(choices[0]);
             }
-            floorPopup.SetEnabled(onRoute);
-            jumpButton.SetEnabled(onRoute && choices.Count > 0);
+            floorPopup.SetEnabled(route != null && choices.Count > 0);
+            jumpButton.SetEnabled(canTravel && choices.Count > 0);
+            surfaceButton.SetEnabled(canTravel && scene != SceneTravel.SurfaceScene);
+            afterlifeButton.SetEnabled(canTravel && scene != SceneTravel.AfterlifeScene);
 
             allowDownToggle.SetEnabled(route != null);
             if (route != null) allowDownToggle.SetValueWithoutNotify(route.AllowGoingDown);
@@ -210,12 +232,38 @@ namespace TpsDungeon.Map.Editor
             bootstrap.GoToFloor(next.Value);
         }
 
+        /// <summary>選んだ階へ移る。階の中なら階から（下りか上りかで立つ所が変わる）、地上や死後の場所からは、その階の始まりに立つ。</summary>
         private void Jump()
         {
+            if (!EditorApplication.isPlaying || SceneTravel.Traveling) return;
+            var route = Route();
+            DungeonFloor target = floorPopup.value;
+            if (route == null || !route.Contains(target)) return;
+
+            Debug.Log($"[Dungeon] デバッグ: {route.Label(target)} へ移る");
             var bootstrap = Bootstrap();
-            if (bootstrap == null || !bootstrap.CurrentFloor.HasValue) return;
-            Debug.Log($"[Dungeon] デバッグ: {bootstrap.Route.Label(floorPopup.value)} へ移る");
-            bootstrap.GoToFloor(floorPopup.value);
+            if (bootstrap != null && bootstrap.CurrentFloor.HasValue)
+            {
+                bootstrap.GoToFloor(target);
+                return;
+            }
+            DungeonProgress.Pending = target;
+            DungeonProgress.PendingFromAbove = false;
+            SceneTravel.Go(route.SceneOf(target));
+        }
+
+        private void GoSurface()
+        {
+            if (!EditorApplication.isPlaying || SceneTravel.Traveling) return;
+            Debug.Log("[Dungeon] デバッグ: 地上へ移る（城の門の前に立つ）");
+            FloorBootstrap.GoDownToSurface();
+        }
+
+        private void GoAfterlife()
+        {
+            if (!EditorApplication.isPlaying || SceneTravel.Traveling) return;
+            Debug.Log("[Dungeon] デバッグ: 死後の場所へ移る");
+            SceneTravel.Go(SceneTravel.AfterlifeScene);
         }
 
         private void Unlock()

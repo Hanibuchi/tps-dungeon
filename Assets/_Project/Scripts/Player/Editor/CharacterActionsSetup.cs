@@ -11,7 +11,7 @@ namespace TpsDungeon.Player.Editor
     {
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
 
-        [MenuItem("Tools/TPS Dungeon/Player/全身の動きを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/全身の動き", false, 318)]
         public static void Setup()
         {
             var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);

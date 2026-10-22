@@ -51,4 +51,16 @@ MonoBehaviour:
   toBag:
     clip: {fileID: 8300000, guid: 628768f10f8fc4e909d6ee9ccef18fe2, type: 3}
     volume: 0.8
+  soulGain:
+    clip: {fileID: 8300000, guid: 52dccb56012da494f8cf2568019416be, type: 3}
+    volume: 0.35
+  soulBank:
+    clip: {fileID: 8300000, guid: d46a6165baf4e43ceb877650da7b9074, type: 3}
+    volume: 0.8
+  unlock:
+    clip: {fileID: 8300000, guid: db7548372070e448caeb5aacf1f14f8f, type: 3}
+    volume: 0.8
+  reveal:
+    clip: {fileID: 8300000, guid: d462363b2df47455d9dcb59a7868ba94, type: 3}
+    volume: 0.6
   minInterval: 0.04

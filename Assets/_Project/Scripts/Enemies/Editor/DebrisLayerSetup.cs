@@ -8,7 +8,7 @@ namespace TpsDungeon.Enemies.Editor
     {
         public const int LayerIndex = 10;
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/死体・落とし物のレイヤーを用意する")]
+        [MenuItem("Tools/TPS Dungeon/敵/死体・落とし物のレイヤーを用意する", false, 406)]
         public static void EnsureLayer()
         {
             var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);

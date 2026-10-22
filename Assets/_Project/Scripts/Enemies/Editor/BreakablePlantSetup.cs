@@ -37,7 +37,7 @@ namespace TpsDungeon.Enemies.Editor
         // 壊せる草花（素材のプレハブ名にこれを含む物）。茂み（bush）は大きいので含めない。
         private static readonly string[] PlantNames = { "grass_small", "flower_", "plant_" };
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/壊せる草花の素材をそろえる")]
+        [MenuItem("Tools/TPS Dungeon/敵/壊せる草花の素材をそろえる", false, 407)]
         public static void EnsureAssetsFromMenu()
         {
             EnsureAssets();

@@ -235,6 +235,26 @@
     border-color: var(--gold);
 }
 
+/* レベルが上がってからしばらくの経験値ブースト（魂の強化）。残り時間を経験値の棒の下に出し、終わると消える。 */
+.exp-boost {
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgb(150, 222, 255);
+    display: none;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.4s;
+}
+
+.exp-boost.is-shown {
+    opacity: 1;
+}
+
+/* 残りが少ないと明滅する。 */
+.exp-boost--ending {
+    color: rgb(214, 244, 255);
+}
+
 /* ---- 下中央: ホットバー ---- */
 
 /* 左右 0 で横いっぱいに広げ、中身を中央に寄せる。 */

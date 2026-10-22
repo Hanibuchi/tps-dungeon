@@ -16,7 +16,7 @@ namespace TpsDungeon.Items.Editor
     {
         public const string CsvPath = "Assets/_Project/Settings/Tables/EnchantmentRanks.csv";
 
-        [MenuItem("Tools/TPS Dungeon/Items/エンチャントのランク表を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/エンチャントのランク表", false, 110)]
         public static void Import()
         {
             if (!File.Exists(CsvPath))

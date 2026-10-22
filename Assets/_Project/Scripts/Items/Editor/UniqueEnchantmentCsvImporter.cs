@@ -17,7 +17,7 @@ namespace TpsDungeon.Items.Editor
     {
         public const string CsvPath = "Assets/_Project/Settings/Tables/UniqueEnchantments.csv";
 
-        [MenuItem("Tools/TPS Dungeon/Items/ユニークのエンチャント表を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/ユニークのエンチャント表", false, 111)]
         public static void Import()
         {
             if (!File.Exists(CsvPath))

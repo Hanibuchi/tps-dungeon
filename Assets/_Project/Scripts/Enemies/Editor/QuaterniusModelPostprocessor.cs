@@ -51,7 +51,7 @@ namespace TpsDungeon.Enemies.Editor
             }).ToArray();
         }
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/Quaternius のモデルを取り込み直す")]
+        [MenuItem("Tools/TPS Dungeon/敵/Quaternius のモデルを取り込み直す", false, 402)]
         public static void ReimportAll()
         {
             // .blend や .obj も Model として引っかかる（.blend は Blender を起こすので重い）。ここで扱う FBX だけに絞る。

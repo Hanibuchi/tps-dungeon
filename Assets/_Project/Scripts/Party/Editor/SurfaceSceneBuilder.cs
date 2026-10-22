@@ -49,7 +49,7 @@ namespace TpsDungeon.Party.Editor
         // 門の前のどれだけ手前に立つか（メートル）。
         private const float GateSpawnDistance = 3f;
 
-        [MenuItem("Tools/TPS Dungeon/地上シーンを作る")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上シーンを作る", false, 200)]
         public static void GenerateFromMenu() => Debug.Log(Generate());
 
         /// <summary>地上のシーンを作り直して保存し、何をしたかを返す。</summary>
@@ -58,7 +58,7 @@ namespace TpsDungeon.Party.Editor
             var partyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.PartyPrefabPath);
             var characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.CharacterPrefabPath);
             var followCameraPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FollowCameraPrefabPath);
-            if (partyPrefab == null || characterPrefab == null) return "先に Tools/TPS Dungeon/Party/パーティーを組み込む を実行すること。";
+            if (partyPrefab == null || characterPrefab == null) return "先に Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部） を実行すること。";
             if (followCameraPrefab == null) return $"追従カメラのプレハブが無い: {FollowCameraPrefabPath}";
 
             var materials = LoadMaterials();

@@ -11,7 +11,7 @@ namespace TpsDungeon.Menu.Editor
     /// パーティーの操作台のプレハブ（PlayerInput を持つ）に、Tab で開くインベントリ画面を組み込む。
     /// 持ち物（PlayerInventory）はキャラごとに持つので、画面はパーティーの先頭と共有のバッグを出す。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
-    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
+    /// 操作台は「Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）」が作る。
     /// </summary>
     public static class InventorySetup
     {
@@ -23,7 +23,7 @@ namespace TpsDungeon.Menu.Editor
         // HUD（-10）より上、ポーズメニュー（10）より下に描く。
         private const float ScreenSortingOrder = 5f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/インベントリを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/インベントリ", false, 314)]
         public static void Setup()
         {
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(ScreenUxmlPath);

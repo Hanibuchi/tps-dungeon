@@ -58,7 +58,7 @@ namespace TpsDungeon.Menu.UI
         private const int CardsPerColumn = 6;
 
         /// <summary>札 1 列の幅（札の幅 186px ＋ 左右の余白 3px ずつ。Inventory.uss の .party-card と揃える）。</summary>
-        private const float CardColumnWidth = 192f;
+        internal const float CardColumnWidth = 192f;
 
         /// <summary>札の HP の棒を赤く灯す残りの割合（HUD の HP 欄と揃える）。</summary>
         private const float LowHpFraction = 0.3f;
@@ -489,7 +489,7 @@ namespace TpsDungeon.Menu.UI
         }
 
         /// <summary>札の外形（色見本・番号・名前・Lv・操作中の印・HP の棒）を作る。手持ちの枠は hand に足す。</summary>
-        private static VisualElement CreateCardElement(string elementName, out VisualElement hand)
+        internal static VisualElement CreateCardElement(string elementName, out VisualElement hand)
         {
             var element = new VisualElement { name = elementName };
             element.AddToClassList(CardClass);
@@ -562,7 +562,7 @@ namespace TpsDungeon.Menu.UI
         }
 
         /// <summary>札に、place 番目に居る member の名前・Lv・色・HP と、番号・操作中の印を出す。</summary>
-        private static void FillCard(VisualElement element, PartyMember member, int place)
+        internal static void FillCard(VisualElement element, PartyMember member, int place)
         {
             SetCardPlace(element, member, place);
 
@@ -1143,7 +1143,7 @@ namespace TpsDungeon.Menu.UI
             return string.Join("\n", lines);
         }
 
-        private static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
+        internal static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
 
         /// <summary>
         /// 操作の案内。クイック移動キーを押している間は「クリックで移動」だけにする。

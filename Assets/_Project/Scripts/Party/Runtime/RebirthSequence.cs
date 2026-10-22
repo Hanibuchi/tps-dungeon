@@ -181,6 +181,16 @@ namespace TpsDungeon.Party
             Finish();
         }
 
+        /// <summary>
+        /// 白い幕を出すか（歪みはそのまま）。白く飛ばしたあとに UI Toolkit の画面（持ち越しの選択）を出す間だけ隠す。
+        /// 幕は uGUI のキャンバスで、UI Toolkit の画面より上に描かれることがあるため。
+        /// </summary>
+        public bool WhiteVisible
+        {
+            get => canvas.enabled;
+            set => canvas.enabled = value;
+        }
+
         /// <summary>途中でも全部外す。</summary>
         public void Finish()
         {

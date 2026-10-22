@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies.Editor
     {
         private const string PrefabFolder = EnemyIdentitySetup.PrefabFolder;
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/敵に武器のドロップを付ける")]
+        [MenuItem("Tools/TPS Dungeon/敵/敵に武器のドロップを付ける", false, 405)]
         public static void SetupFromMenu()
         {
             Debug.Log(Setup());

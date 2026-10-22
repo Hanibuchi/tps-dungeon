@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TpsDungeon.Enemies;
 using TpsDungeon.Player;
+using TpsDungeon.Progression;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -9,7 +10,7 @@ namespace TpsDungeon.Items
     /// 倒れた敵が武器を落とす。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
     /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の、敵の id（<see cref="EnemyIdentity"/>）の行で決める（<see cref="WeaponDropRoller"/>）。
     /// 表に行が無い敵は何も落とさない。
-    /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）が掛かる。
+    /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）と、魂の強化のドロップ率（ユニークはユニークの分も）が掛かる。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
     /// 落とした物は敵の居た所（浮く敵なら宙）に出し、床まで落とす（<see cref="ItemDropper"/>）。
     /// </summary>
@@ -78,7 +79,8 @@ namespace TpsDungeon.Items
                 misses[i] = u.weapon != null ? UniqueDropPityStore.Misses(enemyId, u.weapon.Id) : 0;
             }
 
-            WeaponDropRoller.Result result = WeaponDropRoller.Roll(entry.rankChances, uniques, misses, 1f + LeaderDropBonus(), Rng);
+            float multiplier = DropMultiplier();
+            WeaponDropRoller.Result result = WeaponDropRoller.Roll(entry.rankChances, uniques, misses, multiplier, multiplier * UniqueDropMultiplier(), Rng);
 
             bool changed = false;
             for (int i = 0; i < entry.uniques.Count; i++)
@@ -101,6 +103,21 @@ namespace TpsDungeon.Items
             }
 
             return dropped != null ? ItemInstance.Create(dropped, Rng) : null;
+        }
+
+        /// <summary>ドロップの確率に掛ける倍率。先頭のドロップ増加（エンチャント）と、魂の強化のドロップ率。</summary>
+        public static float DropMultiplier()
+        {
+            float multiplier = 1f + LeaderDropBonus();
+            PartyProgression progression = PartyProgression.Current;
+            return progression != null ? (float)progression.Modifiers.DropRate.Apply(multiplier) : multiplier;
+        }
+
+        /// <summary>ユニークにだけ掛け足す倍率（魂の強化のユニークのドロップ率）。</summary>
+        public static float UniqueDropMultiplier()
+        {
+            PartyProgression progression = PartyProgression.Current;
+            return progression != null ? (float)progression.Modifiers.UniqueDropRate.Apply(1.0) : 1f;
         }
 
         /// <summary>

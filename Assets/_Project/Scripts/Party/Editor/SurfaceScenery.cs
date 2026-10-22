@@ -59,7 +59,7 @@ namespace TpsDungeon.Party.Editor
         // 階では景色ごと、階の高さ（FloorConfig.elevation）に加えてこれだけ下げる。地上と同じく草地の上面が地面の高さ（土台の底より少し上）に来るように。
         private const float OutlookSink = -0.6f;
 
-        [MenuItem("Tools/TPS Dungeon/地上の景色を置き直す")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上の景色を置き直す", false, 213)]
         public static void RebuildFromMenu() => Debug.Log(Rebuild());
 
         /// <summary>開いている地上のシーンに景色を置き直し、NavMesh を焼き直して保存する。</summary>
@@ -133,7 +133,7 @@ namespace TpsDungeon.Party.Editor
         /// 景色は各シーンの階の高さ（elevation）の分だけ下に置くので、高さを変えたら回し直す。
         /// 各シーンは追加で開いて置き、保存して閉じる（いま開いているシーンの未保存の変更を巻き込まない）。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/階の外の景色を置く（全層）")]
+        [MenuItem("Tools/TPS Dungeon/シーン/階の外の景色を置く（全層）", false, 219)]
         public static void BuildOutlookFromMenu()
         {
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
@@ -884,7 +884,7 @@ namespace TpsDungeon.Party.Editor
             }
         }
 
-        [MenuItem("Tools/TPS Dungeon/地上の草花を壊せる草花のプレハブに差し替える")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上の草花を壊せる草花のプレハブに差し替える", false, 214)]
         public static void MakePlantsBreakableFromMenu()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -944,7 +944,7 @@ namespace TpsDungeon.Party.Editor
         // 草花・茂みは通り抜ける。
         private static readonly string[] Passable = { "grass", "flower", "plant", "bush" };
 
-        [MenuItem("Tools/TPS Dungeon/地上の当たり判定を付け直す")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上の当たり判定を付け直す", false, 215)]
         public static void RefitFromMenu()
         {
             Scene scene = SceneManager.GetActiveScene();

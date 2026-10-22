@@ -28,7 +28,7 @@ namespace TpsDungeon.Enemies.Editor
 
         private static readonly string[] CsvPaths = { EnemiesCsvPath, LayersCsvPath, CompositionsCsvPath };
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/敵の CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/敵", false, 107)]
         public static void Import()
         {
             var errors = new List<string>();
@@ -231,7 +231,7 @@ namespace TpsDungeon.Enemies.Editor
                 else prefabs[identity.Id] = prefab;
             }
 
-            if (prefabs.Count == 0) warnings.Add("id（EnemyIdentity）の付いた敵のプレハブが無い。メニュー「Tools/TPS Dungeon/Enemies/敵に id を付ける」を先に実行すること。");
+            if (prefabs.Count == 0) warnings.Add("id（EnemyIdentity）の付いた敵のプレハブが無い。メニュー「Tools/TPS Dungeon/敵/敵に id を付ける」を先に実行すること。");
             return prefabs;
         }
 

@@ -16,7 +16,7 @@ namespace TpsDungeon.Map.Editor
     {
         public const string CsvPath = "Assets/_Project/Settings/Tables/FloorMoods.csv";
 
-        [MenuItem("Tools/TPS Dungeon/階の光と色の CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/階の光と色", false, 103)]
         public static void Import()
         {
             if (!File.Exists(CsvPath))

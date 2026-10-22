@@ -46,9 +46,14 @@ namespace TpsDungeon.Audio.Editor
             ("reorder", "カーソル移動8.mp3"),
             ("toHand", "決定ボタンを押す14.mp3"),
             ("toBag", "決定ボタンを押す32.mp3"),
+            // 魂の強化の画面。UI のフォルダの外の素材は、効果音ラボのフォルダからの道（../）で書く。
+            ("soulGain", "カーソル移動8.mp3"),
+            ("soulBank", "../Character/ひらめく2.mp3"),
+            ("unlock", "../Arms/パワーアップ.mp3"),
+            ("reveal", "../きらーん2.mp3"),
         };
 
-        [MenuItem("Tools/TPS Dungeon/Audio/Generate Game Audio Config And Prefab")]
+        [MenuItem("Tools/TPS Dungeon/音/音の設定とプレハブを作る", false, 601)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());
@@ -108,7 +113,7 @@ namespace TpsDungeon.Audio.Editor
                 SerializedProperty clip = serialized.FindProperty(field).FindPropertyRelative("clip");
                 if (clip.objectReferenceValue != null) continue;
 
-                var loaded = AssetDatabase.LoadAssetAtPath<AudioClip>(UiSoundFolder + file);
+                var loaded = AssetDatabase.LoadAssetAtPath<AudioClip>(ResolveUiSound(file));
                 if (loaded == null)
                 {
                     missing.Add(file);
@@ -123,6 +128,16 @@ namespace TpsDungeon.Audio.Editor
             EditorUtility.SetDirty(set);
             log = filled + " 個のクリップを差した" + (missing.Count > 0 ? "。素材が無い: " + string.Join(", ", missing) : "");
             return set;
+        }
+
+        /// <summary>UI の音の素材の道。../ で始まれば効果音ラボのフォルダから。</summary>
+        private static string ResolveUiSound(string file)
+        {
+            const string up = "../";
+            if (!file.StartsWith(up, System.StringComparison.Ordinal)) return UiSoundFolder + file;
+            string parent = UiSoundFolder.TrimEnd('/');
+            parent = parent.Substring(0, parent.LastIndexOf('/') + 1);
+            return parent + file.Substring(up.Length);
         }
 
         /// <summary>ミキサーのグループとスナップショットを名前で引いて設定に差す。</summary>

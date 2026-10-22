@@ -17,7 +17,7 @@ namespace TpsDungeon.Combat.Editor
     {
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Character/Character Variant.prefab";
 
-        [MenuItem("Tools/TPS Dungeon/Player/攻撃（近接・遠距離）を組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/攻撃（近接・遠距離）", false, 317)]
         public static void Setup()
         {
             var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);

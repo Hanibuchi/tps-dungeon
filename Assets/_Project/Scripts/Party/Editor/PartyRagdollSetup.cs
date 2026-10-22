@@ -29,7 +29,7 @@ namespace TpsDungeon.Party.Editor
             (HumanBodyBones.RightLowerLeg, HumanBodyBones.RightUpperLeg, HumanBodyBones.RightFoot, 0.06f, 1f),
         };
 
-        [MenuItem("Tools/TPS Dungeon/Party/倒れ込みの骨を焼く")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/倒れ込みの骨を焼く", false, 321)]
         public static void Setup()
         {
             var root = PrefabUtility.LoadPrefabContents(PartySetup.CharacterPrefabPath);

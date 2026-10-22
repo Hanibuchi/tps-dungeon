@@ -8,7 +8,7 @@ namespace TpsDungeon.Interaction.Editor
     /// インタラクトの仕組みを組み込む。PlayerInteractor はキャラのプレハブに（先頭のキャラだけで有効になる）、
     /// 照準・プロンプトの HUD はパーティーの操作台のプレハブに置く（今有効な PlayerInteractor を写す）。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
-    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
+    /// 操作台は「Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）」が作る。
     /// </summary>
     public static class PlayerInteractionSetup
     {
@@ -21,7 +21,7 @@ namespace TpsDungeon.Interaction.Editor
         // 設定画面（GameAudio の Settings Panel、sortingOrder 0）より下に描く。
         private const float HudSortingOrder = -10f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/インタラクトを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/インタラクト", false, 313)]
         public static void Setup()
         {
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(HudUxmlPath);

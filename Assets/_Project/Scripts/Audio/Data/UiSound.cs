@@ -44,5 +44,17 @@ namespace TpsDungeon.Audio.Data
 
         /// <summary>物を背嚢へ入れた。</summary>
         ToBag = 12,
+
+        /// <summary>魂の強化の画面で、レベルから生まれたソウルが 1 粒届いた。何度も続けて鳴るので控えめに。</summary>
+        SoulGain = 13,
+
+        /// <summary>死んで得たソウルが、まとめて手持ちのソウルに入った。</summary>
+        SoulBank = 14,
+
+        /// <summary>魂の強化を解放した。</summary>
+        Unlock = 15,
+
+        /// <summary>解放した強化の先に、新しい強化が現れた。</summary>
+        Reveal = 16,
     }
 }

@@ -170,7 +170,7 @@ namespace TpsDungeon.Map.Editor
             new RoomSpec("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f, "Stair", Direction.South),
         };
 
-        [MenuItem("Tools/TPS Dungeon/プレースホルダのマップ一式を生成")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/プレースホルダのマップ一式を生成", false, 500)]
         public static void Generate()
         {
             EnsureFolder(RoomsFolder);
@@ -236,7 +236,7 @@ namespace TpsDungeon.Map.Editor
         /// 寸法やテーマの素材を変えたらこれを回す。同じテーマの階が複数あれば、パーツは最初の階の寸法で 1 組だけ作って共有する。
         /// 一式の生成と違い、部屋の並びやカタログ・FloorConfig の他の値には触らない。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/壁・床・天井のパーツを生成")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/壁・床・天井のパーツを生成", false, 501)]
         public static void GenerateStructureParts()
         {
             var built = new Dictionary<FloorTheme, (FloorConfig owner, Dictionary<string, GameObject> parts)>();
@@ -367,7 +367,7 @@ namespace TpsDungeon.Map.Editor
         /// 新しく作った設定には「壁・床・天井のパーツを生成」を回して大扉・井戸などを差す。
         /// 既にある部屋・設定は作り直さない（手で変えた値を残す）。既にあるカタログには、足りない部屋だけを足す。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/ボス階の一式を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/ボス階の一式を作る", false, 503)]
         public static void GenerateBossFloors()
         {
             int made = 0;
@@ -447,7 +447,7 @@ namespace TpsDungeon.Map.Editor
         /// 階の設定ごとに、そのテーマの素材でショートカットの井戸（Shortcut_Well）を作り直して差す。同じテーマは 1 つを共有する。
         /// ランダムな階のカタログには、井戸を置く専用の部屋（Room_Shortcut）が無ければ作って足す。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/ショートカットの井戸と部屋を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/ショートカットの井戸と部屋を作る", false, 504)]
         public static void BuildShortcutWells()
         {
             var built = new Dictionary<FloorTheme, GameObject>();
@@ -478,7 +478,7 @@ namespace TpsDungeon.Map.Editor
         /// 初回は各層の設定の高さ（elevation）を LayerElevations にし、「壁・床・天井のパーツを生成」で土台を作り直す。
         /// 既に道順があれば何もしない（手で変えた層の数・階の数・高さを残す）。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/ダンジョンの道順を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/ダンジョンの道順を作る", false, 505)]
         public static void GenerateDungeonRoute()
         {
             if (AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath) != null)
@@ -536,7 +536,7 @@ namespace TpsDungeon.Map.Editor
         /// 作るのは空の表と音だけ。敵・コスト・予算・モンスターハウスの確率と倍率・編成タイプは
         /// 「敵の CSV を取り込む」（EnemySpawnCsvImporter）で入る。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/部屋の敵の表を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/部屋の敵の表を作る", false, 506)]
         public static void GenerateEnemySpawnTables()
         {
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);
@@ -577,7 +577,7 @@ namespace TpsDungeon.Map.Editor
             if (assigned > 0) EditorUtility.SetDirty(route);
             AssetDatabase.SaveAssets();
             Debug.Log($"部屋の敵の表を {created} 個作り、道順の {assigned} 層に差し、{sounded} 個の表にモンスターハウスの音を入れた（既にある値は触っていない）。" +
-                      (created > 0 ? "中身はメニュー「Tools/TPS Dungeon/Enemies/敵の CSV を取り込む」で入れる。" : ""));
+                      (created > 0 ? "中身はメニュー「Tools/TPS Dungeon/CSV の取り込み/敵」で入れる。" : ""));
         }
 
         /// <summary>その層の部屋の床の素材（カタログの先頭の部屋の Floor）。手で差し替えた素材をボス階の部屋にも使う。</summary>
