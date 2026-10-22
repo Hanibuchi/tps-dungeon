@@ -325,7 +325,7 @@ namespace TpsDungeon.Hud
             RefreshExpBoost();
         }
 
-        /// <summary>転生後の経験値ボーナス（魂の強化）の残り時間。秒が変わったときだけ書き直す。</summary>
+        /// <summary>レベルアップ後の経験値ブースト（魂の強化）の残り時間。秒が変わったときだけ書き直す。</summary>
         private void RefreshExpBoost()
         {
             if (expBoost == null) return;

@@ -22,7 +22,9 @@ namespace TpsDungeon.Progression
     /// 魂の強化の木。UnityEngine に依存しない。根（parent が空の行）が 1 つあり、ほかはどれも前の強化（parent）を辿ると根に着く。
     /// - 見えるのは、根と、前の強化を解放してある強化だけ（<see cref="IsVisible"/>）。まだ見えない強化は画面に出さない。
     /// - 買えるのは、見えていて、まだ解放しておらず、ソウルが足りる強化（<see cref="Check"/>）。
-    /// - 効果の量は、解放した強化のうち同じ効果の値を足したもの（<see cref="Total"/>）。
+    /// - value はその段まで解放したときの量（差分ではない）。前の強化が同じ効果なら、続きの段として前の段の値を引いた分だけ足す
+    ///   （体力増加 0.1 → 0.2 → 0.3 と書けば、3 段解放して +30%）。根は先の段とつながらない（根と同じ効果の枝も 0 から数える）。
+    ///   効果の量は、解放した強化のそれぞれの上乗せ分の合計（<see cref="Total"/>）。
     /// 表がおかしいとき（根が無い・2 つ以上・前の強化が無い・輪になっている）は、根まで辿れない行を捨ててエラーに積む。
     /// </summary>
     public sealed class SoulUpgradeTree
@@ -31,6 +33,7 @@ namespace TpsDungeon.Progression
         private readonly Dictionary<string, int> indexById = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Dictionary<string, List<string>> children = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private readonly Dictionary<string, int> depth = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> increments = new Dictionary<string, float>(StringComparer.Ordinal);
 
         private static readonly List<string> NoChildren = new List<string>();
 
@@ -97,6 +100,18 @@ namespace TpsDungeon.Progression
             }
 
             Root = root;
+
+            // 前の段（同じ効果の前の強化。根は除く）からの上乗せ分。
+            foreach (SoulUpgradeNode node in nodes)
+            {
+                float increment = node.value;
+                if (!string.IsNullOrEmpty(node.parent) && node.parent != root && indexById.TryGetValue(node.parent, out int at)
+                    && nodes[at].effect == node.effect)
+                {
+                    increment -= nodes[at].value;
+                }
+                increments[node.id] = increment;
+            }
         }
 
         /// <summary>根（真ん中の強化）の id。表が空なら null。</summary>
@@ -138,19 +153,22 @@ namespace TpsDungeon.Progression
             return souls >= node.cost ? SoulUpgradeCheck.Ok : SoulUpgradeCheck.NotEnough;
         }
 
-        /// <summary>解放した強化のうち、effect の値の合計。</summary>
+        /// <summary>その強化を解放すると、前の段からいくつ上乗せされるか。表に無ければ 0。</summary>
+        public float Increment(string id) => id != null && increments.TryGetValue(id, out float value) ? value : 0f;
+
+        /// <summary>解放した強化のうち、effect の量（上乗せ分の合計。続きの段は一番先の段の値になる）。</summary>
         public float Total(SoulUpgradeEffect effect, ICollection<string> purchased)
         {
             if (purchased == null) return 0f;
             float total = 0f;
             foreach (SoulUpgradeNode node in nodes)
             {
-                if (node.effect == effect && purchased.Contains(node.id)) total += node.value;
+                if (node.effect == effect && purchased.Contains(node.id)) total += Increment(node.id);
             }
             return total;
         }
 
-        /// <summary>解放した強化のうち、effect のものの値を 1 つずつ（ショートカットの層の番号など）。</summary>
+        /// <summary>解放した強化のうち、effect のものの値をそのまま 1 つずつ（ショートカットの層の番号など）。</summary>
         public List<float> Values(SoulUpgradeEffect effect, ICollection<string> purchased)
         {
             var values = new List<float>();

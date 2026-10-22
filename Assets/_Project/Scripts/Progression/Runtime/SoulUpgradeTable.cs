@@ -5,7 +5,7 @@ namespace TpsDungeon.Progression
 {
     /// <summary>
     /// 魂の強化の表。強化の木（ノード）は Settings/Tables/SoulUpgrades.csv をエディタが取り込んで入れる（SoulUpgradeCsvImporter）。
-    /// レベルからソウルへの式と、転生後の経験値ボーナスの倍率はこのアセットで調整する（取り込みでは書き換えない）。
+    /// レベルからソウルへの式と、レベルアップ後の経験値ブーストの倍率はこのアセットで調整する（取り込みでは書き換えない）。
     /// Resources に置き、実行中は <see cref="MetaUpgrades"/> が読む。
     /// </summary>
     [CreateAssetMenu(menuName = "TPS Dungeon/Soul Upgrade Table", fileName = "SoulUpgrades")]
@@ -22,8 +22,8 @@ namespace TpsDungeon.Progression
         [SerializeField, Min(0f), Tooltip("レベルが高いほど多くもらえるようにする指数。1 でレベルに比例。")]
         private float soulExponent = SoulConversion.DefaultExponent;
 
-        [Header("転生後の経験値ボーナス")]
-        [SerializeField, Min(1f), Tooltip("ボーナスの間、経験値に掛ける倍率。時間は強化（exp_boost）の値の合計。")]
+        [Header("レベルアップ後の経験値ブースト")]
+        [SerializeField, Min(1f), Tooltip("ブーストの間、経験値に掛ける倍率。時間は強化（exp_boost）の値。")]
         private float expBoostMultiplier = 2f;
 
         public IReadOnlyList<SoulUpgradeNode> Nodes => nodes;

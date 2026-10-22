@@ -42,7 +42,7 @@ namespace TpsDungeon.Progression
         EnemyCodex,
         /// <summary>最大体力の上乗せ（0.1 で +10%）。</summary>
         MaxHp,
-        /// <summary>転生してからしばらく経験値が増える時間（秒）。</summary>
+        /// <summary>レベルが上がってからしばらく経験値が増える時間（秒）。</summary>
         ExpBoost,
     }
 
@@ -101,7 +101,7 @@ namespace TpsDungeon.Progression
                 case SoulUpgradeEffect.WeaponCodex: return "武器図鑑";
                 case SoulUpgradeEffect.EnemyCodex: return "敵図鑑";
                 case SoulUpgradeEffect.MaxHp: return $"最大体力 +{Percent(value)}";
-                case SoulUpgradeEffect.ExpBoost: return $"転生後の経験値ボーナス +{Duration(value)}";
+                case SoulUpgradeEffect.ExpBoost: return $"レベルアップ後 {Duration(value)} 経験値が増える";
                 default: return string.Empty;
             }
         }

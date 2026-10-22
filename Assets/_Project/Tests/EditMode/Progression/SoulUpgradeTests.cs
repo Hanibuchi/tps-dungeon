@@ -15,7 +15,10 @@ namespace TpsDungeon.Progression.Tests
             "hp_1,体力 I,root,10,max_hp,0.1,\"丈夫に, なる\"\n" +
             "hp_2,体力 II,hp_1,30,max_hp,0.2,\n" +
             "ally,仲間,root,15,party_size,1,\n" +
-            "path_2,近道,ally,20,shortcut,2,\n";
+            "path_2,近道,ally,20,shortcut,2,\n" +
+            "exp_1,経験 I,root,5,exp_rate,0.1,\n" +
+            "exp_2,経験 II,exp_1,5,exp_rate,0.3,\n" +
+            "boost,ブースト,root,5,exp_boost,30,\n";
 
         private string path;
         private SoulUpgradeTable table;
@@ -47,7 +50,7 @@ namespace TpsDungeon.Progression.Tests
             var errors = new List<string>();
             List<SoulUpgradeNode> rows = SoulUpgradeCsv.Parse(Csv, errors);
             CollectionAssert.IsEmpty(errors);
-            Assert.AreEqual(5, rows.Count);
+            Assert.AreEqual(8, rows.Count);
             Assert.AreEqual("丈夫に, なる", rows[1].description);
             Assert.AreEqual(SoulUpgradeEffect.MaxHp, rows[1].effect);
             Assert.AreEqual(0.1f, rows[1].value, 1e-5f);
@@ -103,13 +106,47 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
-        public void Tree_SumsEffects()
+        public void Tree_ValueIsTheAmountUpToThatStep()
         {
             var tree = new SoulUpgradeTree(SoulUpgradeCsv.Parse(Csv, null));
             var purchased = new HashSet<string> { "root", "hp_1", "hp_2", "ally", "path_2" };
-            Assert.AreEqual(0.3f, tree.Total(SoulUpgradeEffect.MaxHp, purchased), 1e-5f);
+            Assert.AreEqual(0.2f, tree.Total(SoulUpgradeEffect.MaxHp, purchased), 1e-5f, "体力 0.1 → 0.2 の 2 段で +20%");
+            Assert.AreEqual(0.1f, tree.Increment("hp_2"), 1e-5f);
             Assert.IsTrue(tree.Has(SoulUpgradeEffect.PartySize, purchased));
             CollectionAssert.AreEqual(new[] { 2f }, tree.Values(SoulUpgradeEffect.Shortcut, purchased));
+        }
+
+        [Test]
+        public void Tree_RootDoesNotChainIntoTheSameEffect()
+        {
+            var tree = new SoulUpgradeTree(SoulUpgradeCsv.Parse(Csv, null));
+            Assert.AreEqual(0.1f, tree.Total(SoulUpgradeEffect.ExpRate, new HashSet<string> { "root" }), 1e-5f);
+            Assert.AreEqual(0.2f, tree.Total(SoulUpgradeEffect.ExpRate, new HashSet<string> { "root", "exp_1" }), 1e-5f,
+                "根の +10% と、枝の 1 段目の +10%");
+            Assert.AreEqual(0.4f, tree.Total(SoulUpgradeEffect.ExpRate, new HashSet<string> { "root", "exp_1", "exp_2" }), 1e-5f,
+                "枝は 2 段目で +30%（差分ではない）");
+        }
+
+        [Test]
+        public void MetaUpgrades_ExpBoostStartsOnLevelUpAndRefreshes()
+        {
+            MetaUpgrades.AddSouls(100);
+            MetaUpgrades.TryBuy("root");
+            MetaUpgrades.TryBuy("boost");
+
+            MetaUpgrades.StartExpBoost();
+            Assert.AreEqual(30f, MetaUpgrades.ExpBoostRemaining, 1e-4f);
+            MetaUpgrades.TickExpBoost(20f);
+            MetaUpgrades.StartExpBoost();
+            Assert.AreEqual(30f, MetaUpgrades.ExpBoostRemaining, 1e-4f, "途中でまた上がれば満タンに戻る");
+
+            var modifiers = new ProgressionModifiers();
+            MetaUpgrades.ApplyTo(modifiers);
+            Assert.AreEqual(1.1f * MetaUpgrades.ExpBoostMultiplier, modifiers.ExpMultiplier, 1e-4f);
+
+            MetaUpgrades.TickExpBoost(31f);
+            Assert.IsFalse(MetaUpgrades.IsExpBoostActive);
+            MetaUpgrades.ResetAll();
         }
 
         [Test]

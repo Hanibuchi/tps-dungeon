@@ -9,13 +9,13 @@ namespace TpsDungeon.Party
 {
     /// <summary>
     /// 魂の強化（<see cref="MetaUpgrades"/>）をゲームに当てる。<see cref="GameFlow"/> が自分の GameObject に付ける。
-    /// - パーティーの補正（経験値・体力・クリティカル・ドロップ）は、起きたときと、強化を買うたび・経験値ボーナスが始まる・終わるたびに入れ直す。
+    /// - パーティーの補正（経験値・体力・クリティカル・ドロップ）は、起きたときと、強化を買うたび・経験値ブーストが始まる・終わるたびに入れ直す。
     /// - 共有のバッグは、強化の分だけ枠を足す（増やした分を覚えておき、何度当てても増えすぎない）。
     /// - ショートカットは、解放した層を開ける（閉じるのは「階のデバッグ」ウィンドウに任せる）。
     /// - 地上の武器屋・銀行の扉（SceneGate の textId が weapon_shop / bank）は、解放してあれば開ける。中の画面はまだ無い。
     /// - 仲間の人数は、地上で始めたときと、転生して地上に着いたときに合わせる。連れて行けない仲間はパーティーから外して隠す。
     ///   転生で加わった仲間は Lv1 から。
-    /// - 転生して地上に着いたら、経験値ボーナスを始める。時間は死後の場所の外でだけ進む（ポーズ中は止まる）。
+    /// - 経験値を得て誰かのレベルが上がったら、経験値ブーストを始める（途中なら長さを戻す）。時間は死後の場所の外でだけ進む（ポーズ中は止まる）。
     /// 死んだときにレベルをソウルに変えるのは <see cref="Harvest"/>、持ち物を手放すのは <see cref="DiscardItems"/>（どちらも GameFlow が呼ぶ）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,6 +29,7 @@ namespace TpsDungeon.Party
         private Party party;
         private readonly List<PartyMember> roster = new List<PartyMember>();
         private int addedBagSlots;
+        private PartyProgression watched;
 
         public Party Party
         {
@@ -49,7 +50,19 @@ namespace TpsDungeon.Party
         {
             MetaUpgrades.Changed -= OnUpgradesChanged;
             MetaUpgrades.ExpBoostChanged -= ApplyModifiers;
+            Watch(null);
         }
+
+        /// <summary>経験値でのレベルアップを見る相手を替える。</summary>
+        private void Watch(PartyProgression progression)
+        {
+            if (watched == progression) return;
+            if (watched != null) watched.LeveledUpByExp -= OnLeveledUpByExp;
+            watched = progression;
+            if (watched != null) watched.LeveledUpByExp += OnLeveledUpByExp;
+        }
+
+        private static void OnLeveledUpByExp(PartyProgression _, CharacterProgression __) => MetaUpgrades.StartExpBoost();
 
         private void Start()
         {
@@ -60,6 +73,7 @@ namespace TpsDungeon.Party
 
         private void Update()
         {
+            Watch(PartyProgression.Current);
             if (SceneManager.GetActiveScene().name == SceneTravel.AfterlifeScene) return;
             MetaUpgrades.TickExpBoost(Time.deltaTime);
         }
@@ -72,13 +86,11 @@ namespace TpsDungeon.Party
             ApplyGates();
         }
 
-        /// <summary>シーンに着いて先頭を並べる直前（GameFlow.Arrive から）。転生なら人数を合わせ、ボーナスを始める。</summary>
+        /// <summary>シーンに着いて先頭を並べる直前（GameFlow.Arrive から）。転生なら人数を合わせる。</summary>
         public void OnArrived(bool rebirth)
         {
             ApplyGates();
-            if (!rebirth) return;
-            ApplyPartySize(resetAdded: true);
-            MetaUpgrades.StartExpBoost();
+            if (rebirth) ApplyPartySize(resetAdded: true);
         }
 
         private void ApplyModifiers()

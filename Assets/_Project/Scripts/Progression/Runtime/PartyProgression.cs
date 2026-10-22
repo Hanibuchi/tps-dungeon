@@ -65,6 +65,9 @@ namespace TpsDungeon.Progression
         /// <summary>(自分, 倍率を掛けた後の量)。</summary>
         public event Action<PartyProgression, int> ExpGranted;
 
+        /// <summary>経験値を得て（GrantExp で）誰かのレベルが上がった。保存の読み込みやデバッグで上げたときは飛ばない。</summary>
+        public event Action<PartyProgression, CharacterProgression> LeveledUpByExp;
+
         /// <summary>ResetForNewRun で全員が Lv1 に戻った。</summary>
         public event Action<PartyProgression> RunReset;
 
@@ -237,7 +240,11 @@ namespace TpsDungeon.Progression
 
         private void OnMemberLeveledUp(CharacterProgression member, int from, int to)
         {
-            if (granting) leveledWhileGranting = true;
+            if (granting)
+            {
+                leveledWhileGranting = true;
+                LeveledUpByExp?.Invoke(this, member);
+            }
             else if (autoSave) Save();
         }
     }

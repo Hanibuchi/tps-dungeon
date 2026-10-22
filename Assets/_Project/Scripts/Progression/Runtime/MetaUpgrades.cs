@@ -11,7 +11,7 @@ namespace TpsDungeon.Progression
     /// - 死んだときは <see cref="Harvest"/> でレベルをソウルに変えて足し、内訳を「まだ見せていない」として残す。
     ///   死後の場所で強化の画面を初めて開いたときに演出で見せ、<see cref="ClearHarvest"/> で消す。
     /// - 効果の量は <see cref="Total"/> で引く。パーティーの補正（経験値・体力・クリティカル・ドロップ）は <see cref="ApplyTo"/> で入れる。
-    /// - 転生してからしばらく経験値が増えるボーナスは、ここで残り時間を持つ（<see cref="StartExpBoost"/> / <see cref="TickExpBoost"/>。保存はしない）。
+    /// - レベルが上がってからしばらく経験値が増えるブーストは、ここで残り時間を持つ（<see cref="StartExpBoost"/> / <see cref="TickExpBoost"/>。保存はしない）。
     /// 変わったら <see cref="Changed"/> で知らせる。
     /// </summary>
     public static class MetaUpgrades
@@ -31,7 +31,7 @@ namespace TpsDungeon.Progression
         /// <summary>ソウル・解放した強化・まだ見せていない内訳のどれかが変わった。</summary>
         public static event Action Changed;
 
-        /// <summary>経験値ボーナスが始まった・終わった。</summary>
+        /// <summary>経験値ブーストが始まった・終わった。</summary>
         public static event Action ExpBoostChanged;
 
         /// <summary>保存先を差し替える（テスト用）。null か空なら既定の場所に戻す。読み込んだ状態も捨てる。</summary>
@@ -222,7 +222,7 @@ namespace TpsDungeon.Progression
 
         // ---- 補正 ------------------------------------------------------------
 
-        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。ボーナスの間は経験値にボーナスの倍率も掛ける。</summary>
+        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。ブーストの間は経験値にブーストの倍率も掛ける。</summary>
         public static void ApplyTo(ProgressionModifiers modifiers)
         {
             if (modifiers == null) return;
@@ -236,29 +236,30 @@ namespace TpsDungeon.Progression
             modifiers.SetUniqueDropRate(new StatModifier(0f, Total(SoulUpgradeEffect.UniqueDropRate)));
         }
 
-        // ---- 転生後の経験値ボーナス -------------------------------------------
+        // ---- レベルアップ後の経験値ブースト -------------------------------------
 
-        /// <summary>ボーナスの残り（秒）。</summary>
+        /// <summary>ブーストの残り（秒）。</summary>
         public static float ExpBoostRemaining => expBoostRemaining;
 
-        /// <summary>ボーナスの長さ（秒。強化の合計）。</summary>
+        /// <summary>ブーストの長さ（秒。解放した一番先の段の値）。</summary>
         public static float ExpBoostDuration => Mathf.Max(0f, Total(SoulUpgradeEffect.ExpBoost));
 
         public static bool IsExpBoostActive => expBoostRemaining > 0f;
 
-        /// <summary>ボーナスの倍率。</summary>
+        /// <summary>ブーストの間、経験値に掛ける倍率。</summary>
         public static float ExpBoostMultiplier => Table != null ? Table.ExpBoostMultiplier : 2f;
 
-        /// <summary>転生した。ボーナスを強化の長さで始める（強化が無ければ何もしない）。</summary>
+        /// <summary>レベルが上がった。ブーストを強化の長さで始める（途中なら長さを満タンに戻す。強化が無ければ何もしない）。</summary>
         public static void StartExpBoost()
         {
             float duration = ExpBoostDuration;
             if (duration <= 0f) return;
+            bool started = expBoostRemaining <= 0f;
             expBoostRemaining = duration;
-            ExpBoostChanged?.Invoke();
+            if (started) ExpBoostChanged?.Invoke();
         }
 
-        /// <summary>ボーナスの時間を進める。終わったら知らせる。</summary>
+        /// <summary>ブーストの時間を進める。終わったら知らせる。</summary>
         public static void TickExpBoost(float deltaTime)
         {
             if (expBoostRemaining <= 0f || deltaTime <= 0f) return;
