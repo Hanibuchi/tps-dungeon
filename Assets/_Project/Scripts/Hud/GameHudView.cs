@@ -342,7 +342,7 @@ namespace TpsDungeon.Hud
                 return;
             }
 
-            expBoost.text = $"経験値 ×{MetaUpgrades.ExpBoostMultiplier:0.#}　残り {seconds / 60}:{seconds % 60:00}";
+            expBoost.text = $"経験値ブースト ×{MetaUpgrades.ExpBoostMultiplier:0.#} 残り{seconds / 60}:{seconds % 60:00}";
             expBoost.EnableInClassList("exp-boost--ending", seconds <= 10 && seconds % 2 == 0);
             if (!wasShown) UiTransitions.Show(expBoost);
         }
