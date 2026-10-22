@@ -21,47 +21,61 @@ MonoBehaviour:
     value: 0.1
     description: "\u6B7B\u3092\u77E5\u3063\u305F\u9B42\u306F\u3001\u751F\u304D\u3066\u3044\u308B\u9593\u306B\u591A\u304F\u3092\u5B66\u3076\u3002"
   - id: vigor_1
-    name: "\u9811\u5065 I"
+    name: "\u4F53\u529B\u5897\u52A0 I"
     parent: awaken
     cost: 10
     effect: 16
     value: 0.1
-    description: "\u4F53\u304C\u308F\u305A\u304B\u306B\u4E08\u592B\u306B\u306A\u308B\u3002"
+    description: "\u6700\u5927\u4F53\u529B\u304C\u5897\u3048\u308B\u3002"
   - id: vigor_2
-    name: "\u9811\u5065 II"
+    name: "\u4F53\u529B\u5897\u52A0 \u2161"
     parent: vigor_1
     cost: 30
     effect: 16
-    value: 0.1
-    description: "\u3055\u3089\u306B\u4E08\u592B\u306B\u306A\u308B\u3002"
+    value: 0.2
+    description: "\u6700\u5927\u4F53\u529B\u304C\u3088\u308A\u5897\u3048\u308B\u3002"
   - id: vigor_3
-    name: "\u9811\u5065 III"
+    name: "\u4F53\u529B\u5897\u52A0 \u2162"
     parent: vigor_2
     cost: 80
     effect: 16
-    value: 0.15
-    description: "\u5012\u308C\u306B\u304F\u3044\u4F53\u306B\u306A\u308B\u3002"
+    value: 0.3
+    description: "\u6700\u5927\u4F53\u529B\u304C\u3082\u3063\u3068\u5897\u3048\u308B\u3002"
+  - id: vigor_4
+    name: "\u4F53\u529B\u5897\u52A0 \u2163"
+    parent: vigor_3
+    cost: 100
+    effect: 16
+    value: 0.4
+    description: "\u6700\u5927\u4F53\u529B\u304C\u3055\u3089\u306B\u5897\u3048\u308B\u3002"
   - id: boost_1
-    name: "\u76EE\u899A\u3081\u306E\u9AD8\u63DA I"
+    name: "\u7D4C\u9A13\u5024\u5897\u52A0 I"
     parent: vigor_1
     cost: 25
     effect: 17
     value: 180
-    description: "\u8EE2\u751F\u3057\u305F\u3066\u306E\u9B42\u306F\u3001\u3057\u3070\u3089\u304F\u7D4C\u9A13\u5024\u3092\u591A\u304F\u5F97\u308B\u3002"
+    description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u5897\u3048\u308B\u3002"
   - id: boost_2
-    name: "\u76EE\u899A\u3081\u306E\u9AD8\u63DA II"
+    name: "\u7D4C\u9A13\u5024\u5897\u52A0 II"
     parent: boost_1
     cost: 60
     effect: 17
     value: 120
-    description: "\u9AD8\u63DA\u304C\u9577\u304F\u7D9A\u304F\u3002"
+    description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3088\u308A\u5897\u3048\u308B\u3002"
   - id: boost_3
-    name: "\u76EE\u899A\u3081\u306E\u9AD8\u63DA III"
+    name: "\u7D4C\u9A13\u5024\u5897\u52A0 III"
     parent: boost_2
     cost: 150
     effect: 17
     value: 180
-    description: "\u9AD8\u63DA\u304C\u3055\u3089\u306B\u9577\u304F\u7D9A\u304F\u3002"
+    description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3082\u3063\u3068\u5897\u3048\u308B\u3002"
+  - id: boost_4
+    name: "\u7D4C\u9A13\u5024\u5897\u52A0 I\u2164"
+    parent: boost_3
+    cost: 200
+    effect: 17
+    value: 180
+    description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3055\u3089\u306B\u5897\u3048\u308B\u3002"
   - id: keen_1
     name: "\u92ED\u3044\u773C I"
     parent: awaken
@@ -205,7 +219,7 @@ MonoBehaviour:
     description: "\u30D0\u30C3\u30B0\u306E\u67A0\u304C\u305A\u3063\u3068\u5897\u3048\u308B\u3002"
   - id: keep_1
     name: "\u5F62\u898B I"
-    parent: pack_1
+    parent: awaken
     cost: 30
     effect: 3
     value: 1
@@ -227,7 +241,7 @@ MonoBehaviour:
     description: "\u6301\u3061\u8D8A\u305B\u308B\u6B66\u5668\u304C\u3055\u3089\u306B
       1 \u672C\u5897\u3048\u308B\u3002"
   - id: shop
-    name: "\u6B66\u5668\u5C4B\u306E\u518D\u958B"
+    name: "\u6B66\u5668\u5C4B\u306E\u958B\u653E"
     parent: awaken
     cost: 20
     effect: 9
@@ -262,12 +276,12 @@ MonoBehaviour:
     value: 0.3
     description: "\u6B66\u5668\u3092\u3055\u3089\u306B\u9AD8\u304F\u58F2\u308C\u308B\u3002"
   - id: bank
-    name: "\u9280\u884C\u306E\u518D\u958B"
+    name: "\u5009\u5EAB\u306E\u958B\u653E"
     parent: shop
     cost: 50
     effect: 10
     value: 1
-    description: "\u5730\u4E0A\u306E\u9280\u884C\u304C\u958B\u304D\u3001\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B\u3002"
+    description: "\u5730\u4E0A\u306E\u5009\u5EAB\u304C\u958B\u304D\u3001\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B\u3002"
   - id: codex_weapon
     name: "\u6B66\u5668\u306E\u8A18\u61B6"
     parent: awaken
@@ -283,35 +297,35 @@ MonoBehaviour:
     value: 1
     description: "\u51FA\u4F1A\u3063\u305F\u6575\u3092\u66F8\u304D\u7559\u3081\u308B\u6575\u56F3\u9451\u3002"
   - id: path_1
-    name: "\u7B2C 1 \u5C64\u3078\u306E\u8FD1\u9053"
+    name: "\u7B2C\uFF11\u5C64\u3078\u306E\u8FD1\u9053"
     parent: awaken
     cost: 30
     effect: 11
     value: 1
     description: "\u5730\u4E0A\u306E\u30ED\u30FC\u30D7\u304B\u3089\u7B2C 1 \u5C64\u306E\u30DC\u30B9\u968E\u3078\u884C\u3051\u308B\u3002"
   - id: path_2
-    name: "\u7B2C 2 \u5C64\u3078\u306E\u8FD1\u9053"
+    name: "\u7B2C\uFF12\u5C64\u3078\u306E\u8FD1\u9053"
     parent: path_1
     cost: 60
     effect: 11
     value: 2
     description: "\u5730\u4E0A\u306E\u30ED\u30FC\u30D7\u304B\u3089\u7B2C 2 \u5C64\u306E\u30DC\u30B9\u968E\u3078\u884C\u3051\u308B\u3002"
   - id: path_3
-    name: "\u7B2C 3 \u5C64\u3078\u306E\u8FD1\u9053"
+    name: "\u7B2C\uFF13\u5C64\u3078\u306E\u8FD1\u9053"
     parent: path_2
     cost: 110
     effect: 11
     value: 3
     description: "\u5730\u4E0A\u306E\u30ED\u30FC\u30D7\u304B\u3089\u7B2C 3 \u5C64\u306E\u30DC\u30B9\u968E\u3078\u884C\u3051\u308B\u3002"
   - id: path_4
-    name: "\u7B2C 4 \u5C64\u3078\u306E\u8FD1\u9053"
+    name: "\u7B2C\uFF14\u5C64\u3078\u306E\u8FD1\u9053"
     parent: path_3
     cost: 180
     effect: 11
     value: 4
     description: "\u5730\u4E0A\u306E\u30ED\u30FC\u30D7\u304B\u3089\u7B2C 4 \u5C64\u306E\u30DC\u30B9\u968E\u3078\u884C\u3051\u308B\u3002"
   - id: path_5
-    name: "\u7B2C 5 \u5C64\u3078\u306E\u8FD1\u9053"
+    name: "\u7B2C\uFF15\u5C64\u3078\u306E\u8FD1\u9053"
     parent: path_4
     cost: 260
     effect: 11
