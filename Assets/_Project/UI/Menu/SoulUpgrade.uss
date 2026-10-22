@@ -1,0 +1,663 @@
+/*
+ * 魂の強化の画面（SoulUpgradeScreen）。
+ * 死後の場所に合わせて、深い青紫の闇に淡い水色の魂の光。解放した強化は燭台の金。
+ * 動きは .is-shown を境にしたトランジションと、SoulUpgradeScreen が付け外しするクラスで出す。
+ * リニア色空間なので、半透明の色は見た目より強く出る。光は薄めに置く。
+ */
+
+:root {
+    --soul: rgb(150, 222, 255);
+    --soul-bright: rgb(214, 244, 255);
+    --soul-dim: rgb(70, 104, 128);
+    --soul-deep: rgb(9, 10, 20);
+    --soul-gold: rgb(250, 212, 128);
+}
+
+/* ---- 画面 ---- */
+
+.soul-screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.45s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-screen.is-shown {
+    opacity: 1;
+}
+
+.soul-screen__backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--soul-deep);
+    align-items: center;
+    justify-content: center;
+}
+
+/* 真ん中の淡い光だまり。開くとゆっくり広がる。 */
+.soul-screen__glow {
+    width: 900px;
+    height: 900px;
+    border-radius: 450px;
+    background-color: rgb(18, 22, 40);
+    scale: 0.6 0.6;
+    transition-property: scale;
+    transition-duration: 1.6s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-screen.is-shown .soul-screen__glow {
+    scale: 1 1;
+}
+
+.soul-motes {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.soul-screen__vignette {
+    --vignette-color: rgba(0, 0, 0, 0.85);
+    --vignette-depth: 0.26;
+    opacity: 1;
+}
+
+/* ---- 木の面 ---- */
+
+.soul-viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    cursor: move-arrow;
+}
+
+.soul-world {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+}
+
+/* ---- 強化（ノード） ---- */
+
+.soul-node {
+    position: absolute;
+    opacity: 0;
+    scale: 0.2 0.2;
+    transition-property: opacity, scale;
+    transition-duration: 0.35s, 0.55s;
+    transition-timing-function: ease-out-cubic, ease-out-back;
+}
+
+.soul-node.is-shown {
+    opacity: 1;
+    scale: 1 1;
+}
+
+.soul-node__body {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    transition-property: scale;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out-back;
+}
+
+.soul-node--hover .soul-node__body {
+    scale: 1.14 1.14;
+}
+
+.soul-node--poke .soul-node__body {
+    scale: 0.92 0.92;
+}
+
+/* 外の淡い光。買えるときは明滅する（--glow を付け外し）。 */
+.soul-node__halo {
+    position: absolute;
+    left: -14px;
+    top: -14px;
+    right: -14px;
+    bottom: -14px;
+    border-radius: 60px;
+    background-color: rgba(120, 200, 255, 0.0);
+    transition-property: background-color, scale;
+    transition-duration: 0.9s;
+    transition-timing-function: ease-in-out-sine;
+}
+
+.soul-node__ring {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50px;
+    border-width: 2px;
+    border-color: var(--soul-dim);
+    background-color: rgb(14, 17, 30);
+    align-items: center;
+    justify-content: center;
+    transition-property: border-color, background-color;
+    transition-duration: 0.3s, 0.7s;
+}
+
+.soul-node__glyph {
+    width: 62%;
+    height: 62%;
+    color: var(--soul-dim);
+    transition-property: color;
+    transition-duration: 0.3s;
+}
+
+/* 解放したときに広がって消える輪。--burst を付けた瞬間に小さく明るくなり、外すと広がりながら消える。 */
+.soul-node__burst {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 60px;
+    border-width: 3px;
+    border-color: rgba(255, 230, 160, 0);
+    background-color: rgba(255, 240, 200, 0);
+    scale: 2.1 2.1;
+    transition-property: scale, border-color, background-color;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-node--burst .soul-node__burst {
+    scale: 1 1;
+    border-color: rgba(255, 230, 160, 0.95);
+    background-color: rgba(255, 240, 200, 0.2);
+    transition-duration: 0s;
+}
+
+/* 輪の中も一瞬白く光り、金へ戻る。 */
+.soul-node--burst .soul-node__ring {
+    background-color: rgb(255, 236, 190);
+    transition-duration: 0s;
+}
+
+.soul-node__cost {
+    position: absolute;
+    left: -30px;
+    right: -30px;
+    bottom: -24px;
+    font-size: 13px;
+    color: var(--soul);
+    -unity-text-align: middle-center;
+    transition-property: opacity, color;
+    transition-duration: 0.3s;
+}
+
+/* まだ買えない（ソウルが足りない）。 */
+.soul-node--locked .soul-node__ring {
+    border-color: rgb(52, 64, 82);
+    background-color: rgb(12, 14, 22);
+}
+
+.soul-node--locked .soul-node__glyph {
+    color: rgb(72, 86, 104);
+}
+
+.soul-node--locked .soul-node__cost {
+    color: rgb(150, 92, 92);
+}
+
+/* 買える。 */
+.soul-node--available .soul-node__ring {
+    border-color: var(--soul);
+    background-color: rgb(18, 30, 48);
+}
+
+.soul-node--available .soul-node__glyph {
+    color: var(--soul-bright);
+}
+
+.soul-node--available.soul-node--glow .soul-node__halo {
+    background-color: rgba(120, 200, 255, 0.07);
+    scale: 1.12 1.12;
+}
+
+.soul-node--available.soul-node--hover .soul-node__ring {
+    border-color: var(--soul-bright);
+    background-color: rgb(30, 52, 78);
+}
+
+/* 解放した。 */
+.soul-node--owned .soul-node__ring {
+    border-color: var(--soul-gold);
+    background-color: rgb(56, 40, 20);
+}
+
+.soul-node--owned .soul-node__glyph {
+    color: var(--soul-gold);
+}
+
+.soul-node--owned .soul-node__halo {
+    background-color: rgba(255, 190, 90, 0.05);
+}
+
+.soul-node--owned.soul-node--hover .soul-node__ring {
+    background-color: rgb(78, 56, 28);
+}
+
+/* 真ん中の強化は大きく、輪を二重に見せる。 */
+.soul-node--root .soul-node__ring {
+    border-width: 3px;
+}
+
+.soul-node--root .soul-node__halo {
+    left: -22px;
+    top: -22px;
+    right: -22px;
+    bottom: -22px;
+}
+
+/* ---- 説明 ---- */
+
+.soul-tooltip {
+    position: absolute;
+    width: 280px;
+    padding: 18px 20px 14px 20px;
+    background-color: rgb(14, 16, 26);
+    border-width: 1px;
+    border-color: rgb(6, 6, 10);
+    opacity: 0;
+    translate: -10px 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.18s, 0.25s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-tooltip--left {
+    translate: 10px 0;
+}
+
+.soul-tooltip.is-shown {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.soul-tooltip__title {
+    font-size: 17px;
+    color: var(--soul-bright);
+    letter-spacing: 1px;
+}
+
+.soul-tooltip--owned .soul-tooltip__title {
+    color: var(--soul-gold);
+}
+
+.soul-tooltip__effect {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--soul);
+}
+
+.soul-tooltip__rule {
+    height: 1px;
+    margin: 10px 0 8px 0;
+    background-color: var(--brass-dim);
+}
+
+.soul-tooltip__body {
+    font-size: 12px;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+.soul-tooltip__footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.soul-tooltip__state {
+    font-size: 12px;
+    color: var(--soul);
+}
+
+.soul-tooltip--owned .soul-tooltip__state {
+    color: var(--soul-gold);
+}
+
+.soul-tooltip--short .soul-tooltip__state {
+    color: rgb(214, 120, 110);
+}
+
+.soul-tooltip__price {
+    flex-direction: row;
+    align-items: center;
+}
+
+.soul-tooltip__price-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+    color: var(--soul);
+}
+
+.soul-tooltip__cost {
+    font-size: 16px;
+    color: var(--soul-bright);
+}
+
+.soul-tooltip--short .soul-tooltip__cost {
+    color: rgb(214, 120, 110);
+}
+
+/* ---- 見出し・ソウルの数・下の案内 ---- */
+
+.soul-header {
+    position: absolute;
+    left: 36px;
+    top: 26px;
+}
+
+.soul-header__title {
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: var(--soul-bright);
+}
+
+.soul-header__note {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--soul-dim);
+}
+
+.soul-counter {
+    position: absolute;
+    right: 36px;
+    top: 26px;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 18px 8px 12px;
+    background-color: rgb(12, 15, 26);
+    border-width: 1px;
+    border-color: rgb(40, 60, 80);
+    border-radius: 26px;
+    transition-property: border-color, background-color, scale;
+    transition-duration: 0.3s, 0.3s, 0.2s;
+    transition-timing-function: ease-out-cubic, ease-out-cubic, ease-out-back;
+}
+
+.soul-counter--short {
+    border-color: rgb(200, 90, 80);
+    background-color: rgb(40, 14, 14);
+    scale: 1.06 1.06;
+    transition-duration: 0.05s;
+}
+
+.soul-counter__icon {
+    width: 34px;
+    height: 34px;
+    color: var(--soul);
+}
+
+.soul-counter__text {
+    margin-left: 8px;
+}
+
+.soul-counter__value {
+    font-size: 24px;
+    color: var(--soul-bright);
+    -unity-text-align: middle-right;
+}
+
+.soul-counter__unit {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--soul-dim);
+    -unity-text-align: middle-right;
+}
+
+.soul-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 22px;
+    align-items: center;
+}
+
+.soul-footer__hint {
+    color: var(--soul-dim);
+}
+
+.soul-footer__buttons {
+    position: absolute;
+    right: 36px;
+    bottom: 0;
+    flex-direction: row;
+}
+
+/* ---- 飛ぶ光 ---- */
+
+.soul-fx {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.soul-orb {
+    position: absolute;
+    border-radius: 20px;
+    background-color: var(--soul-bright);
+    border-width: 3px;
+    border-color: rgba(120, 200, 255, 0.35);
+}
+
+.soul-ring {
+    position: absolute;
+    border-radius: 200px;
+    border-width: 3px;
+    border-color: var(--soul);
+}
+
+.soul-ring--gold {
+    border-color: var(--soul-gold);
+}
+
+/* ---- 死んで得たソウルの演出 ---- */
+
+.soul-harvest {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 5, 10, 0);
+    opacity: 0;
+    transition-property: opacity, background-color;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-harvest.is-shown {
+    opacity: 1;
+    background-color: rgba(4, 5, 10, 0.55);
+}
+
+.soul-harvest__heading {
+    align-items: center;
+    opacity: 0;
+    translate: 0 -12px;
+    transition-property: opacity, translate;
+    transition-duration: 0.6s;
+    transition-delay: 0.1s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.soul-harvest.is-shown .soul-harvest__heading {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.soul-harvest__title {
+    font-size: 26px;
+    letter-spacing: 6px;
+    color: var(--soul-bright);
+}
+
+.soul-harvest__cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1100px;
+    margin-top: 36px;
+}
+
+.soul-harvest-card {
+    width: 168px;
+    margin: 0 10px 18px 10px;
+    padding: 18px 10px 14px 10px;
+    align-items: center;
+    background-color: rgb(14, 16, 26);
+    border-width: 1px;
+    border-color: rgb(40, 52, 70);
+    opacity: 0;
+    translate: 0 26px;
+    transition-property: opacity, translate, border-color, background-color;
+    transition-duration: 0.45s, 0.55s, 0.3s, 0.3s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-cubic, ease-out-cubic;
+}
+
+.soul-harvest.is-shown .soul-harvest-card {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.soul-harvest-card--burning {
+    border-color: var(--soul);
+    background-color: rgb(18, 28, 44);
+}
+
+.soul-harvest-card--spent {
+    border-color: rgb(34, 40, 52);
+    background-color: rgb(11, 12, 18);
+}
+
+.soul-harvest-card__medal {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    border-width: 2px;
+    border-color: var(--soul-dim);
+    background-color: rgb(10, 12, 20);
+    align-items: center;
+    justify-content: center;
+}
+
+.soul-harvest-card__flame {
+    width: 70%;
+    height: 70%;
+    color: var(--soul);
+}
+
+.soul-harvest-card--spent .soul-harvest-card__flame {
+    opacity: 0.45;
+}
+
+.soul-harvest-card__name {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.soul-harvest-card__level {
+    margin-top: 6px;
+    font-size: 26px;
+    color: var(--ink);
+    transition-property: color, scale;
+    transition-duration: 0.12s;
+}
+
+.soul-harvest-card__level--tick {
+    color: var(--soul-bright);
+    scale: 1.08 1.08;
+    transition-duration: 0s;
+}
+
+.soul-harvest-card--spent .soul-harvest-card__level {
+    color: var(--ink-faint);
+}
+
+.soul-harvest-card__souls {
+    margin-top: 2px;
+    font-size: 16px;
+    color: var(--soul);
+}
+
+.soul-harvest__total {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+    padding: 10px 26px 10px 18px;
+    border-width: 1px;
+    border-color: rgb(50, 80, 110);
+    border-radius: 34px;
+    background-color: rgb(12, 18, 30);
+    opacity: 0;
+    scale: 0.8 0.8;
+    transition-property: opacity, scale, border-color;
+    transition-duration: 0.5s, 0.5s, 0.12s;
+    transition-delay: 0.5s, 0.5s, 0s;
+    transition-timing-function: ease-out-cubic, ease-out-back, ease-out-cubic;
+}
+
+.soul-harvest.is-shown .soul-harvest__total {
+    opacity: 1;
+    scale: 1 1;
+}
+
+.soul-harvest__total--bump {
+    border-color: var(--soul-bright);
+}
+
+/* 飛ぶ間はコードが動かすので、トランジションを外す。 */
+.soul-harvest__total--fly {
+    transition-duration: 0s;
+    transition-delay: 0s;
+}
+
+.soul-harvest__total-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--soul);
+}
+
+.soul-harvest__total-value {
+    margin-left: 10px;
+    font-size: 36px;
+    color: var(--soul-bright);
+}
+
+.soul-harvest__skip {
+    position: absolute;
+    bottom: 26px;
+    color: var(--soul-dim);
+}

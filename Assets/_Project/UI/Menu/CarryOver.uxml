@@ -1,0 +1,52 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/Inventory.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/CarryOver.uss" />
+    <ui:VisualElement name="carry-screen" class="carry-screen">
+        <ui:VisualElement name="white" class="carry-white" picking-mode="Ignore" />
+        <ui:VisualElement name="scrim" class="carry-scrim" picking-mode="Ignore" />
+        <ui:VisualElement class="rpg-stage" picking-mode="Ignore">
+            <ui:VisualElement name="carry-panel" class="rpg-panel inventory carry">
+                <kit:OrnateFrame crest="true" />
+                <ui:VisualElement class="rpg-heading">
+                    <ui:Label text="— KEEPSAKES —" class="rpg-heading__caption rpg-deco" />
+                    <ui:Label text="持ち越す武器を選ぶ" class="rpg-heading__title rpg-bold" />
+                    <ui:VisualElement class="rpg-rule">
+                        <ui:VisualElement class="rpg-rule__line" />
+                        <ui:VisualElement class="rpg-rule__gem" />
+                        <ui:VisualElement class="rpg-rule__line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="転生すると、選ばなかった物は失われる" class="carry__note" />
+
+                <ui:VisualElement class="inventory__body carry__body">
+                    <ui:VisualElement class="inventory__party">
+                        <ui:Label text="仲 間" class="inventory__caption rpg-bold" />
+                        <ui:VisualElement name="party-list" class="party-list" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="inventory__slots">
+                        <ui:Label text="バッグ" class="inventory__caption rpg-bold" />
+                        <ui:VisualElement name="bag" class="inventory__bag" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="details" class="item-details inventory__details">
+                        <kit:OrnateFrame />
+                        <ui:VisualElement class="item-details__well" picking-mode="Ignore">
+                            <ui:VisualElement name="details-icon" class="item-details__icon" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                        <ui:Label name="details-title" text="" class="item-details__title rpg-bold" picking-mode="Ignore" />
+                        <ui:VisualElement class="item-details__rule" picking-mode="Ignore" />
+                        <ui:Label name="details-body" text="" class="item-details__body" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="carry__footer">
+                    <ui:Label name="count" text="残す 0 / 1" class="carry__count rpg-deco-bold" />
+                    <ui:Button name="confirm-button" text="これを持って転生する" class="rpg-button rpg-button--primary" />
+                </ui:VisualElement>
+                <ui:Label text="クリックで選ぶ・外す" class="rpg-hint" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

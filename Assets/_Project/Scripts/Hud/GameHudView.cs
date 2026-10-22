@@ -86,6 +86,8 @@ namespace TpsDungeon.Hud
         private Label levelValue;
         private VisualElement expRoot;
         private VisualElement expFill;
+        private Label expBoost;
+        private int expBoostShownSeconds = -1;
 
         // 獲得でレベルが上がった（LeveledUp は ExpChanged より先に来る）。保存の読み込みで上がったときは演出しない。
         private bool levelUpPending;
@@ -182,6 +184,8 @@ namespace TpsDungeon.Hud
             levelValue = root.Q<Label>("level-value");
             expRoot = root.Q<VisualElement>("exp");
             expFill = root.Q<VisualElement>("exp-fill");
+            expBoost = root.Q<Label>("exp-boost");
+            UiTransitions.HideImmediately(expBoost);
             levelUpPending = false;
             minimapFrame = root.Q<VisualElement>("minimap");
             mapOverlay = root.Q<VisualElement>("map-overlay");
@@ -318,6 +322,29 @@ namespace TpsDungeon.Hud
             RefreshCooldown();
             RefreshCrosshair();
             RefreshMonsterHouseCount();
+            RefreshExpBoost();
+        }
+
+        /// <summary>転生後の経験値ボーナス（魂の強化）の残り時間。秒が変わったときだけ書き直す。</summary>
+        private void RefreshExpBoost()
+        {
+            if (expBoost == null) return;
+
+            float remaining = MetaUpgrades.ExpBoostRemaining;
+            int seconds = Mathf.CeilToInt(remaining);
+            if (seconds == expBoostShownSeconds) return;
+            bool wasShown = expBoostShownSeconds > 0;
+            expBoostShownSeconds = seconds;
+
+            if (seconds <= 0)
+            {
+                if (wasShown) UiTransitions.Hide(expBoost);
+                return;
+            }
+
+            expBoost.text = $"経験値 ×{MetaUpgrades.ExpBoostMultiplier:0.#}　残り {seconds / 60}:{seconds % 60:00}";
+            expBoost.EnableInClassList("exp-boost--ending", seconds <= 10 && seconds % 2 == 0);
+            if (!wasShown) UiTransitions.Show(expBoost);
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)

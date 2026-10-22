@@ -1,0 +1,53 @@
+id,name,parent,cost,effect,value,description
+# 魂の強化の木。parent が空の行が真ん中（最初に獲得する強化）。parent の強化を解放するまで、その先は見えない。
+# value: 割合は 0.1 で 10%、exp_boost は秒、shortcut は層の番号（1 始まり）。同じ effect を何段も買えば足し合わさる。
+awaken,魂の目覚め,,5,exp_rate,0.1,死を知った魂は、生きている間に多くを学ぶ。
+# --- 生命 ---
+vigor_1,頑健 I,awaken,10,max_hp,0.1,体がわずかに丈夫になる。
+vigor_2,頑健 II,vigor_1,30,max_hp,0.1,さらに丈夫になる。
+vigor_3,頑健 III,vigor_2,80,max_hp,0.15,倒れにくい体になる。
+boost_1,目覚めの高揚 I,vigor_1,25,exp_boost,180,転生したての魂は、しばらく経験値を多く得る。
+boost_2,目覚めの高揚 II,boost_1,60,exp_boost,120,高揚が長く続く。
+boost_3,目覚めの高揚 III,boost_2,150,exp_boost,180,高揚がさらに長く続く。
+# --- 戦い ---
+keen_1,鋭い眼 I,awaken,10,crit_chance,0.03,急所を見抜きやすくなる。
+keen_2,鋭い眼 II,keen_1,35,crit_chance,0.04,さらに急所を見抜く。
+keen_3,鋭い眼 III,keen_2,90,crit_chance,0.05,狙った所を外さない。
+fury_1,会心 I,keen_1,20,crit_multiplier,0.25,急所への一撃が重くなる。
+fury_2,会心 II,fury_1,60,crit_multiplier,0.25,急所への一撃がさらに重くなる。
+fury_3,会心 III,fury_2,140,crit_multiplier,0.5,急所への一撃が敵を砕く。
+# --- 絆 ---
+ally_1,呼び声 I,awaken,15,party_size,1,魂の呼び声に応え、仲間が 1 人ついてくる。
+ally_2,呼び声 II,ally_1,50,party_size,1,もう 1 人の仲間がついてくる。
+ally_3,呼び声 III,ally_2,120,party_size,1,もう 1 人の仲間がついてくる。
+ally_4,呼び声 IV,ally_3,250,party_size,1,もう 1 人の仲間がついてくる。
+lore_1,学び I,ally_1,30,exp_rate,0.15,仲間と共に学び、経験値が増える。
+lore_2,学び II,lore_1,90,exp_rate,0.25,経験値がさらに増える。
+# --- 宝 ---
+fortune_1,幸運 I,awaken,12,drop_rate,0.1,敵が武器を落としやすくなる。
+fortune_2,幸運 II,fortune_1,40,drop_rate,0.15,さらに落としやすくなる。
+fortune_3,幸運 III,fortune_2,100,drop_rate,0.25,ずっと落としやすくなる。
+relic_1,宿命 I,fortune_2,60,unique_drop_rate,0.5,ユニーク武器に出会いやすくなる。
+relic_2,宿命 II,relic_1,160,unique_drop_rate,1,ユニーク武器にずっと出会いやすくなる。
+pack_1,大きな鞄 I,fortune_1,20,bag_size,4,バッグの枠が増える。
+pack_2,大きな鞄 II,pack_1,50,bag_size,4,バッグの枠がさらに増える。
+pack_3,大きな鞄 III,pack_2,110,bag_size,4,バッグの枠がずっと増える。
+keep_1,形見 I,pack_1,30,carry_over,1,転生するとき、武器を 1 本持ち越せる。
+keep_2,形見 II,keep_1,80,carry_over,1,持ち越せる武器が 1 本増える。
+keep_3,形見 III,keep_2,180,carry_over,1,持ち越せる武器がさらに 1 本増える。
+# --- 街 ---
+shop,武器屋の再開,awaken,20,weapon_shop,1,地上の武器屋が店を開ける。
+stock_1,品揃え I,shop,40,shop_stock,2,武器屋に並ぶ武器が増える。
+stock_2,品揃え II,stock_1,100,shop_stock,2,武器屋に並ぶ武器がさらに増える。
+haggle_1,目利き I,shop,35,sell_price,0.2,武器を高く売れる。
+haggle_2,目利き II,haggle_1,90,sell_price,0.3,武器をさらに高く売れる。
+bank,銀行の再開,shop,50,bank,1,地上の銀行が開き、持ち物を預けられる。
+# --- 記憶 ---
+codex_weapon,武器の記憶,awaken,25,weapon_codex,1,手にした武器を書き留める武器図鑑。
+codex_enemy,魔物の記憶,codex_weapon,25,enemy_codex,1,出会った敵を書き留める敵図鑑。
+# --- 道 ---
+path_1,第 1 層への近道,awaken,30,shortcut,1,地上のロープから第 1 層のボス階へ行ける。
+path_2,第 2 層への近道,path_1,60,shortcut,2,地上のロープから第 2 層のボス階へ行ける。
+path_3,第 3 層への近道,path_2,110,shortcut,3,地上のロープから第 3 層のボス階へ行ける。
+path_4,第 4 層への近道,path_3,180,shortcut,4,地上のロープから第 4 層のボス階へ行ける。
+path_5,第 5 層への近道,path_4,260,shortcut,5,地上のロープから第 5 層のボス階へ行ける。

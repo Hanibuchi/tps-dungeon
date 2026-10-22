@@ -489,7 +489,7 @@ namespace TpsDungeon.Menu.UI
         }
 
         /// <summary>札の外形（色見本・番号・名前・Lv・操作中の印・HP の棒）を作る。手持ちの枠は hand に足す。</summary>
-        private static VisualElement CreateCardElement(string elementName, out VisualElement hand)
+        internal static VisualElement CreateCardElement(string elementName, out VisualElement hand)
         {
             var element = new VisualElement { name = elementName };
             element.AddToClassList(CardClass);
@@ -562,7 +562,7 @@ namespace TpsDungeon.Menu.UI
         }
 
         /// <summary>札に、place 番目に居る member の名前・Lv・色・HP と、番号・操作中の印を出す。</summary>
-        private static void FillCard(VisualElement element, PartyMember member, int place)
+        internal static void FillCard(VisualElement element, PartyMember member, int place)
         {
             SetCardPlace(element, member, place);
 
@@ -1143,7 +1143,7 @@ namespace TpsDungeon.Menu.UI
             return string.Join("\n", lines);
         }
 
-        private static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
+        internal static Color? RankColor(ItemInstance item) => item != null && item.TryGetRankColor(out Color c) ? c : (Color?)null;
 
         /// <summary>
         /// 操作の案内。クイック移動キーを押している間は「クリックで移動」だけにする。

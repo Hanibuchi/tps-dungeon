@@ -1,0 +1,136 @@
+/*
+ * 転生で持ち越す武器を選ぶ画面（CarryOverScreen）。並びはインベントリ画面と同じ（Inventory.uss の型を使う）。
+ * 転生の渦で白く飛んだ画面から始まり、白が引いて石板のパネルが出る。決めると選ばなかった物が砕けて消え、また白へ溶ける。
+ */
+
+.carry-screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.carry-white {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgb(255, 255, 255);
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.9s;
+    transition-timing-function: ease-in-out-cubic;
+}
+
+.carry-screen.is-shown .carry-white {
+    opacity: 0;
+}
+
+/* 決めたあと、白へ戻す。 */
+.carry-screen.carry-screen--leaving .carry-white {
+    opacity: 1;
+    transition-duration: 0.7s;
+}
+
+.carry-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgb(10, 12, 20);
+}
+
+.carry .rpg-heading__title {
+    letter-spacing: 6px;
+}
+
+.carry__note {
+    margin: -4px 0 14px 0;
+    font-size: 12px;
+    color: var(--ink-faint);
+    -unity-text-align: middle-center;
+}
+
+.carry__footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 14px;
+}
+
+.carry__count {
+    margin-right: 14px;
+    font-size: 16px;
+    color: var(--ink-dim);
+    transition-property: color, scale;
+    transition-duration: 0.2s;
+}
+
+.carry__count--full {
+    color: var(--gold-bright);
+}
+
+.carry__count--denied {
+    color: var(--blood-bright);
+    scale: 1.1 1.1;
+    transition-duration: 0.05s;
+}
+
+/* 空の枠は選べない。 */
+.carry .slot.carry-slot--empty {
+    opacity: 0.4;
+}
+
+.carry .slot.carry-slot--empty:hover {
+    border-color: var(--brass-dim);
+    background-color: rgba(20, 17, 15, 0.84);
+}
+
+/* 選んだ枠。金の縁と光、右上に「残す」の印。 */
+.carry .slot.carry-slot--kept {
+    border-color: var(--gold-bright);
+    background-color: var(--gold-glow-strong);
+    scale: 1.06 1.06;
+}
+
+.carry-slot__mark {
+    position: absolute;
+    right: -6px;
+    top: -8px;
+    padding: 1px 5px;
+    font-size: 10px;
+    color: var(--stone);
+    background-color: var(--gold-bright);
+    opacity: 0;
+    scale: 0.4 0.4;
+    transition-property: opacity, scale;
+    transition-duration: 0.2s, 0.3s;
+    transition-timing-function: ease-out-cubic, ease-out-back;
+}
+
+.carry-slot--kept .carry-slot__mark {
+    opacity: 1;
+    scale: 1 1;
+}
+
+/* 上限に達したら、まだ選んでいない物は沈む。 */
+.carry--full .slot.carry-slot--item {
+    opacity: 0.55;
+}
+
+.carry--full .slot.carry-slot--item.carry-slot--kept {
+    opacity: 1;
+}
+
+/* 決めたとき、選ばなかった物が砕けて消える。 */
+.carry .slot.carry-slot--lost {
+    opacity: 0;
+    scale: 0.3 0.3;
+    rotate: 25deg;
+    transition-property: opacity, scale, rotate;
+    transition-duration: 0.45s;
+    transition-timing-function: ease-in-cubic;
+}

@@ -1,0 +1,66 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:kit="TpsDungeon.UiKit" xmlns:menu="TpsDungeon.Menu.UI" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
+    <Style src="project://database/Assets/_Project/UI/Menu/SoulUpgrade.uss" />
+    <ui:VisualElement name="soul-screen" class="soul-screen">
+        <ui:VisualElement class="soul-screen__backdrop" picking-mode="Ignore">
+            <ui:VisualElement class="soul-screen__glow" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <menu:SoulMotes name="motes" />
+        <ui:VisualElement name="viewport" class="soul-viewport">
+            <ui:VisualElement name="world" class="soul-world" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <kit:Vignette class="soul-screen__vignette" />
+
+        <ui:VisualElement class="soul-header" picking-mode="Ignore">
+            <ui:Label text="— SOUL ALTAR —" class="rpg-heading__caption rpg-deco" picking-mode="Ignore" />
+            <ui:Label text="魂の燭台" class="soul-header__title rpg-bold" picking-mode="Ignore" />
+            <ui:Label text="死んで得たソウルで、次の生を強くする" class="soul-header__note" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="souls" class="soul-counter" picking-mode="Ignore">
+            <menu:SoulGlyph name="souls-icon" class="soul-counter__icon" />
+            <ui:VisualElement class="soul-counter__text" picking-mode="Ignore">
+                <ui:Label name="souls-value" text="0" class="soul-counter__value rpg-deco-bold" picking-mode="Ignore" />
+                <ui:Label text="ソウル" class="soul-counter__unit" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="tooltip" class="soul-tooltip" picking-mode="Ignore">
+            <kit:OrnateFrame />
+            <ui:Label name="tooltip-title" class="soul-tooltip__title rpg-bold" picking-mode="Ignore" />
+            <ui:Label name="tooltip-effect" class="soul-tooltip__effect rpg-deco" picking-mode="Ignore" />
+            <ui:VisualElement class="soul-tooltip__rule" picking-mode="Ignore" />
+            <ui:Label name="tooltip-body" class="soul-tooltip__body" picking-mode="Ignore" />
+            <ui:VisualElement class="soul-tooltip__footer" picking-mode="Ignore">
+                <ui:Label name="tooltip-state" class="soul-tooltip__state rpg-bold" picking-mode="Ignore" />
+                <ui:VisualElement name="tooltip-price" class="soul-tooltip__price" picking-mode="Ignore">
+                    <menu:SoulGlyph class="soul-tooltip__price-icon" />
+                    <ui:Label name="tooltip-cost" class="soul-tooltip__cost rpg-deco-bold" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="soul-footer" picking-mode="Ignore">
+            <ui:Label name="hint" text="ドラッグで動かす　ホイールで拡大・縮小　クリックで解放　Esc で閉じる" class="rpg-hint soul-footer__hint" picking-mode="Ignore" />
+            <ui:VisualElement class="soul-footer__buttons" picking-mode="Ignore">
+                <ui:Button name="center-button" text="中央へ" class="rpg-button rpg-button--small" />
+                <ui:Button name="close-button" text="閉じる" class="rpg-button rpg-button--small rpg-button--primary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="harvest" class="soul-harvest">
+            <ui:VisualElement class="soul-harvest__heading" picking-mode="Ignore">
+                <ui:Label text="— HARVEST OF SOULS —" class="rpg-heading__caption rpg-deco" picking-mode="Ignore" />
+                <ui:Label text="生きた証が、ソウルに変わる" class="soul-harvest__title rpg-bold" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="harvest-cards" class="soul-harvest__cards" picking-mode="Ignore" />
+            <ui:VisualElement name="harvest-total" class="soul-harvest__total" picking-mode="Ignore">
+                <menu:SoulGlyph class="soul-harvest__total-icon" />
+                <ui:Label name="harvest-total-value" text="0" class="soul-harvest__total-value rpg-deco-bold" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="harvest-skip" text="クリックで飛ばす" class="rpg-hint soul-harvest__skip" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="fx" class="soul-fx" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -9,7 +9,7 @@ namespace TpsDungeon.Items
     ///      無ければ上の行から順に「確率 × 倍率」で振り、最初に当たった行。
     ///      落ちた行は出ないまま倒した数を 0 に戻し、ほかの行は 1 足す。
     ///   2. ユニークが出なければ、ランク E〜S の「確率 × 倍率」で 1 回振る（合計が 1 を超えたら 1 に縮める）。外れたら何も落とさない。
-    /// 倍率はドロップ増加のエンチャントの分（1 + 上乗せ）。天井には効かない。
+    /// 倍率はドロップ増加のエンチャントと魂の強化の分。ユニークには別の倍率を渡せる。天井には効かない。
     /// </summary>
     public static class WeaponDropRoller
     {
@@ -63,7 +63,13 @@ namespace TpsDungeon.Items
         /// multiplier は確率に掛ける倍率（ドロップ増加）。
         /// </summary>
         public static Result Roll(IReadOnlyList<float> rankChances, IReadOnlyList<UniqueOption> uniques, int[] misses,
-            float multiplier, Random random)
+            float multiplier, Random random) => Roll(rankChances, uniques, misses, multiplier, multiplier, random);
+
+        /// <summary>
+        /// ユニークの行だけ別の倍率（uniqueMultiplier）で振る。魂の強化のユニークのドロップ率の分を、ユニークにだけ掛けるため。
+        /// </summary>
+        public static Result Roll(IReadOnlyList<float> rankChances, IReadOnlyList<UniqueOption> uniques, int[] misses,
+            float multiplier, float uniqueMultiplier, Random random)
         {
             if (random == null) throw new ArgumentNullException(nameof(random));
 
@@ -74,7 +80,7 @@ namespace TpsDungeon.Items
             }
 
             double m = Math.Max(0f, multiplier);
-            int chosen = RollUnique(uniques, misses, m, random);
+            int chosen = RollUnique(uniques, misses, Math.Max(0f, uniqueMultiplier), random);
             for (int i = 0; i < uniqueCount; i++) misses[i] = i == chosen ? 0 : misses[i] + 1;
             if (chosen >= 0) return Result.Unique(chosen);
 
