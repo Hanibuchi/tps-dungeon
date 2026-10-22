@@ -24,7 +24,7 @@ namespace TpsDungeon.Menu.Editor
         private const float UpgradeSortingOrder = 8f;
         private const float CarryOverSortingOrder = 40f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/魂の強化の画面を組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/魂の強化の画面", false, 316)]
         public static void Setup()
         {
             var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);

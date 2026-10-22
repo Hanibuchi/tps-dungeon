@@ -210,6 +210,66 @@ namespace TpsDungeon.Progression
             Commit();
         }
 
+        // ---- デバッグ（魂の燭台のデバッグの窓から） ---------------------------
+
+        /// <summary>ソウルを value にする（デバッグ）。</summary>
+        public static void SetSouls(long value)
+        {
+            MetaProgressSaveData data = Load();
+            value = Math.Max(0, value);
+            if (data.souls == value) return;
+            data.souls = value;
+            Commit();
+        }
+
+        /// <summary>
+        /// ソウルを払わずに解放する・戻す（デバッグ）。解放するときは前の強化もたどって解放し、戻すときは先の強化も戻す（木がつながったままになるように）。
+        /// </summary>
+        public static void SetPurchased(string id, bool owned)
+        {
+            if (!Tree.Contains(id)) return;
+            MetaProgressSaveData data = Load();
+            if (owned)
+            {
+                for (string at = id; !string.IsNullOrEmpty(at) && Tree.TryGet(at, out SoulUpgradeNode node); at = node.parent)
+                {
+                    if (purchased.Add(at)) data.purchased.Add(at);
+                }
+            }
+            else
+            {
+                var stack = new Stack<string>();
+                stack.Push(id);
+                while (stack.Count > 0)
+                {
+                    string at = stack.Pop();
+                    if (purchased.Remove(at)) data.purchased.Remove(at);
+                    foreach (string child in Tree.Children(at)) stack.Push(child);
+                }
+            }
+            Commit();
+        }
+
+        /// <summary>全部の強化を、ソウルを払わずに解放する（デバッグ）。</summary>
+        public static void PurchaseAll()
+        {
+            MetaProgressSaveData data = Load();
+            foreach (SoulUpgradeNode node in Tree.Nodes)
+            {
+                if (purchased.Add(node.id)) data.purchased.Add(node.id);
+            }
+            Commit();
+        }
+
+        /// <summary>解放した強化を全部戻す。ソウルはそのまま（デバッグ）。</summary>
+        public static void ClearPurchases()
+        {
+            MetaProgressSaveData data = Load();
+            data.purchased.Clear();
+            purchased.Clear();
+            Commit();
+        }
+
         /// <summary>全部消す（デバッグ）。</summary>
         public static void ResetAll()
         {

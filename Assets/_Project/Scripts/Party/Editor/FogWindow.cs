@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace TpsDungeon.Party.Editor
 {
     /// <summary>
-    /// 霧を調節する窓（Tools/TPS Dungeon/霧の調節）。値は <see cref="FogSettings"/> のアセットに持つ。
+    /// 霧を調節する窓（Tools/TPS Dungeon/デバッグ/霧の調節）。値は <see cref="FogSettings"/> のアセットに持つ。
     /// - 塔のまわりのもや … 色と濃さは素材なので全部のシーンにすぐ効く。量・大きさ・始まる高さ・半径は、開いているシーン（地上か階）のもやを置き直して見せる。
     /// - 遠くの霧 … 開いているシーンの霧にすぐ入れて見せる。
     /// どちらも開いているシーンは保存しない。Play 中でも見ながら調節でき、値はアセットに残る。
@@ -23,7 +23,7 @@ namespace TpsDungeon.Party.Editor
         private string message;
         private Vector2 scroll;
 
-        [MenuItem("Tools/TPS Dungeon/霧の調節")]
+        [MenuItem("Tools/TPS Dungeon/デバッグ/霧の調節", false, 5)]
         public static void Open() => GetWindow<FogWindow>("霧の調節");
 
         private void OnEnable()

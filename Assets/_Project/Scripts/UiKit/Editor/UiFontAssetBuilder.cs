@@ -30,7 +30,7 @@ namespace TpsDungeon.UiKit.Editor
         private const int Padding = 8;
         private const int AtlasSize = 1024;
 
-        [MenuItem("Tools/TPS Dungeon/UI/フォントアセットを作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/UI のフォントアセットを作る", false, 530)]
         public static void Build()
         {
             Create(Folder + "IBMPlexSansJP-Regular.ttf", Regular, null);

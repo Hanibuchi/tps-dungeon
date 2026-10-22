@@ -33,7 +33,7 @@ namespace TpsDungeon.Party.Editor
         /// <summary>着いたパーティーが立つ所（ロープからの向きの前方へ）。</summary>
         private const float SpawnDistance = 2.8f;
 
-        [MenuItem("Tools/TPS Dungeon/地上のショートカットを置く")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上のショートカットを置く", false, 216)]
         public static void RebuildFromMenu() => Debug.Log(Rebuild());
 
         /// <summary>開いている地上のシーンにショートカットを置き直し、NavMesh を焼き直して保存する。</summary>

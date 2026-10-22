@@ -63,7 +63,7 @@ namespace TpsDungeon.Audio.Editor
         /// <summary>SE から BGM のダッキングへ送る量。常時一定でよい。</summary>
         private const float DuckSendLevel = -6f;
 
-        [MenuItem("Tools/TPS Dungeon/Audio/Generate Game Audio Mixer")]
+        [MenuItem("Tools/TPS Dungeon/音/ミキサーを作る", false, 600)]
         public static void GenerateFromMenu()
         {
             if (File.Exists(MixerPath) &&

@@ -41,7 +41,7 @@ namespace TpsDungeon.Player.Editor
         /// <summary>床の上面がちょうど y=0 なので、初期状態でめり込まないように少し浮かせる。</summary>
         private const float SpawnLift = 0.05f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/Generate Player Test Scene")]
+        [MenuItem("Tools/TPS Dungeon/シーン/確認用シーンを作る", false, 230)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());
@@ -53,7 +53,7 @@ namespace TpsDungeon.Player.Editor
             var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(ConfigPath);
             if (config == null)
             {
-                return "先に Tools/TPS Dungeon/プレースホルダのマップ一式を生成 を実行すること。設定が無い: "
+                return "先に Tools/TPS Dungeon/素材・プレハブ/プレースホルダのマップ一式を生成 を実行すること。設定が無い: "
                        + ConfigPath;
             }
 

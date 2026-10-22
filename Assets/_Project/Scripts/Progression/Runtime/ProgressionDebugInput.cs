@@ -6,7 +6,6 @@ namespace TpsDungeon.Progression
     /// <summary>
     /// キーで経験値やレベルを足して、成長を確かめるための入力。エディタと開発ビルドでだけ動き、製品版では何もしない。
     /// 結果はコンソールに出す（画面には何も足さない）。Shift を押しながらだと量が 10 倍。
-    /// 魂の強化のソウルを足す・強化を全部戻すキーもここにある。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Progression Debug Input")]
@@ -31,15 +30,6 @@ namespace TpsDungeon.Progression
 
         [SerializeField, Tooltip("保存を消す。")]
         private Key deleteSaveKey = Key.F8;
-
-        [SerializeField, Min(1), Tooltip("1 回で足すソウル（魂の強化の通貨）。")]
-        private int soulAmount = 100;
-
-        [SerializeField, Tooltip("ソウルを足す。")]
-        private Key grantSoulsKey = Key.F9;
-
-        [SerializeField, Tooltip("魂の強化を全部戻す（ソウルも 0 にする）。")]
-        private Key resetUpgradesKey = Key.F10;
 #pragma warning restore CS0414, CS0649
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -68,18 +58,6 @@ namespace TpsDungeon.Progression
             {
                 target.ResetForNewRun();
                 Log(target, "ゲームオーバー相当のリセット");
-            }
-
-            if (keyboard[grantSoulsKey].wasPressedThisFrame)
-            {
-                MetaUpgrades.AddSouls((long)soulAmount * scale);
-                Debug.Log($"[Progression] ソウル +{soulAmount * scale}（手持ち {MetaUpgrades.Souls}）");
-            }
-
-            if (keyboard[resetUpgradesKey].wasPressedThisFrame)
-            {
-                MetaUpgrades.ResetAll();
-                Debug.Log("[Progression] 魂の強化を全部戻した");
             }
 
             if (keyboard[deleteSaveKey].wasPressedThisFrame)

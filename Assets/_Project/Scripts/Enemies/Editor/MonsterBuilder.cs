@@ -217,7 +217,7 @@ namespace TpsDungeon.Enemies.Editor
         /// 音や見た目を差し替えたいときはこのファイル（グループの声・<see cref="Monsters"/> の With）・EnemyBehaviourSetup・
         /// EnemyEffectsBuilder を直してからこれを回す。開いているシーンには触らないので、敵の居るシーンを開いたままでもよい。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの音と見た目だけ入れ直す")]
+        [MenuItem("Tools/TPS Dungeon/敵/モンスターの音と見た目だけ入れ直す", false, 401)]
         public static void ApplyPresentationFromMenu()
         {
             Debug.Log(ApplyPresentation());
@@ -265,7 +265,7 @@ namespace TpsDungeon.Enemies.Editor
             death.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/モンスターの Animator とプレハブを作る")]
+        [MenuItem("Tools/TPS Dungeon/敵/モンスターの Animator とプレハブを作る", false, 400)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());

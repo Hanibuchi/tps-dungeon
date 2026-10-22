@@ -9,14 +9,14 @@ namespace TpsDungeon.Progression.Editor
     /// <summary>
     /// 魂の強化の表（Settings/Tables/SoulUpgrades.csv）を、Resources の表（<see cref="SoulUpgradeTable"/>）に書き込む。
     /// 表のアセットが無ければ作る。CSV を保存すると自動で取り込む。メニューからも呼べる。
-    /// 書き換えるのは強化の木だけで、表のアセットで調整したソウルの式やボーナスの倍率はそのまま残す。
+    /// 書き換えるのは強化の木だけで、表のアセットで調整したソウルの式やブーストの倍率はそのまま残す。
     /// </summary>
     public sealed class SoulUpgradeCsvImporter : AssetPostprocessor
     {
         public const string CsvPath = "Assets/_Project/Settings/Tables/SoulUpgrades.csv";
         public const string TablePath = "Assets/_Project/Resources/Progression/SoulUpgrades.asset";
 
-        [MenuItem("Tools/TPS Dungeon/魂の強化の CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/魂の強化", false, 101)]
         public static void Import()
         {
             if (!File.Exists(CsvPath))

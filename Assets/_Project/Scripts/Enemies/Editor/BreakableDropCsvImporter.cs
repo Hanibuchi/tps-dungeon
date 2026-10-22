@@ -20,7 +20,7 @@ namespace TpsDungeon.Enemies.Editor
         public const string TablePath = "Assets/_Project/Settings/Map/BreakableDrops.asset";
         public const string RanksCsvPath = "Assets/_Project/Settings/Tables/BreakableWeaponRanks.csv";
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/箱の中身の CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/箱の中身", false, 108)]
         public static void ImportFromMenu() => Import();
 
         /// <summary>CSV を読んで表に書き、表を返す。CSV が無ければ表をそのまま返す（無ければ null）。</summary>

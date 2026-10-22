@@ -22,7 +22,7 @@ namespace TpsDungeon.Combat.Editor
     /// </summary>
     public sealed class EnchantmentTestWindow : EditorWindow
     {
-        private const string MenuPath = "Tools/TPS Dungeon/Player/エンチャントの試験";
+        private const string MenuPath = "Tools/TPS Dungeon/デバッグ/エンチャントの試験";
         private const string DefaultDummyPath = "Assets/_Project/Prefabs/Enemies/Blob_GreenBlob.prefab";
         private const string DummyRootName = "[エンチャント試験の的]";
         private const int MaxRecordLines = 14;
@@ -55,7 +55,7 @@ namespace TpsDungeon.Combat.Editor
         private RangedAttacker hookedRanged;
         private Vector2 scroll;
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, 3)]
         public static void Open() => GetWindow<EnchantmentTestWindow>("エンチャントの試験");
 
         private void OnEnable()

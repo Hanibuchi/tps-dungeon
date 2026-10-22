@@ -18,7 +18,7 @@ namespace TpsDungeon.Party.Editor
     /// - パーティーの操作台（Party.prefab）を置き、シーンの主人公（Character Variant）を先頭にする。
     /// - 仲間を n 人、先頭の後ろに置く。名前・見た目（角・耳・しっぽ）・最初の装備は仲間ごとに変える。
     /// - フロアに FloorNavMesh を付け、生成の後に NavMesh を焼くようにする。部屋に敵を出す RoomEnemySpawner も付ける。
-    /// 先に「Tools/TPS Dungeon/Party/パーティーを組み込む」でプレハブを分けておくこと。
+    /// 先に「Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）」でプレハブを分けておくこと。
     /// </summary>
     public static class PartySceneSetup
     {
@@ -43,10 +43,10 @@ namespace TpsDungeon.Party.Editor
             new[] { "Weapon_01_4A_BlueSteelRapier", "Weapon_09_2C_HunterBow", "Weapon_26_1D_OldTalisman" },
         };
 
-        [MenuItem("Tools/TPS Dungeon/Party/確認シーンにパーティーを置く（仲間 4 人）")]
+        [MenuItem("Tools/TPS Dungeon/シーン/確認用シーンにパーティーを置く（仲間 4 人）", false, 232)]
         public static void PlaceFour() => Debug.Log(Place(4));
 
-        [MenuItem("Tools/TPS Dungeon/Party/確認シーンにパーティーを置く（仲間 11 人・12 人パーティー）")]
+        [MenuItem("Tools/TPS Dungeon/シーン/確認用シーンにパーティーを置く（仲間 11 人・12 人パーティー）", false, 233)]
         public static void PlaceEleven() => Debug.Log(Place(PartyGroup.MaxMembers - 1));
 
         /// <summary>確認用シーンに、先頭＋followers 人のパーティーを置いて保存する。何をしたかを返す。</summary>
@@ -57,7 +57,7 @@ namespace TpsDungeon.Party.Editor
             var partyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.PartyPrefabPath);
             var characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.CharacterPrefabPath);
             if (partyPrefab == null || characterPrefab == null)
-                return "先に Tools/TPS Dungeon/Party/パーティーを組み込む を実行すること。";
+                return "先に Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部） を実行すること。";
 
             Scene scene = SceneManager.GetActiveScene();
             if (scene.path != PlayerTestSceneBuilder.ScenePath)

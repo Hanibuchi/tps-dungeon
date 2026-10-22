@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies.Editor
     {
         public const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/敵に id を付ける")]
+        [MenuItem("Tools/TPS Dungeon/敵/敵に id を付ける", false, 403)]
         public static void SetupFromMenu()
         {
             Debug.Log(Setup());

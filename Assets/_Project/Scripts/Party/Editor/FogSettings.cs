@@ -8,7 +8,7 @@ namespace TpsDungeon.Party.Editor
     /// - もや（<see cref="MistBuilder"/>）… 塔のまわりにだけかかる霧。地上は塔の上の方を隠す雲（地上の近くには出さない）、階は窓の外の床より下に流す（どちらも始まる高さより上だけ）。
     /// - 遠くの霧（RenderSettings の霧）… 景色全体を遠いほど霞ませる。今は切ってある。霧はシーンごとに持つので、ここで値を持って各シーンへ書き込む。
     /// 景色の生成器（<see cref="SurfaceScenery"/>）もこの値を使うので、生成器を回し直しても調節した値は消えない。
-    /// 調節は <see cref="FogWindow"/>（Tools/TPS Dungeon/霧の調節）で。
+    /// 調節は <see cref="FogWindow"/>（Tools/TPS Dungeon/デバッグ/霧の調節）で。
     /// </summary>
     public sealed class FogSettings : ScriptableObject
     {

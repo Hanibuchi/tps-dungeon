@@ -21,7 +21,7 @@ namespace TpsDungeon.Party.Editor
         private const int MaxSize = 2048;
         private const float CameraHeight = 60f;
 
-        [MenuItem("Tools/TPS Dungeon/地上の地図を撮り直す")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上の地図を撮り直す", false, 218)]
         public static void CaptureFromMenu()
         {
             Scene scene = SceneManager.GetActiveScene();

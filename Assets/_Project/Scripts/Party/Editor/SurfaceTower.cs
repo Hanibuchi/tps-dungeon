@@ -63,7 +63,7 @@ namespace TpsDungeon.Party.Editor
         // 一番上の層の上にどれだけ積むか（elevation の差が取れないので）。
         private const float TopLayerHeight = 30f;
 
-        [MenuItem("Tools/TPS Dungeon/地上のダンジョンの塔を建て直す")]
+        [MenuItem("Tools/TPS Dungeon/シーン/地上のダンジョンの塔を建て直す", false, 217)]
         public static void RebuildFromMenu() => Debug.Log(Rebuild());
 
         /// <summary>開いている地上のシーンの [Surface]/Castle だけを建て直し、NavMesh を焼き直して保存する。村や手で直した所には触らない。</summary>

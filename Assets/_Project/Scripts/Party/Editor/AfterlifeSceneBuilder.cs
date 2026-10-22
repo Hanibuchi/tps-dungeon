@@ -86,7 +86,7 @@ namespace TpsDungeon.Party.Editor
         private static readonly Color WaterMapColor = new Color(0.02f, 0.04f, 0.05f);
         private static readonly Color FogColor = new Color(0.06f, 0.11f, 0.14f);
 
-        [MenuItem("Tools/TPS Dungeon/死後の場所のシーンを作る")]
+        [MenuItem("Tools/TPS Dungeon/シーン/死後の場所のシーンを作る", false, 201)]
         public static void GenerateFromMenu() => Debug.Log(Generate());
 
         /// <summary>死後の場所のシーンを作り直して保存し、何をしたかを返す。</summary>
@@ -95,7 +95,7 @@ namespace TpsDungeon.Party.Editor
             var partyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.PartyPrefabPath);
             var characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PartySetup.CharacterPrefabPath);
             var followCameraPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SurfaceSceneBuilder.FollowCameraPrefabPath);
-            if (partyPrefab == null || characterPrefab == null) return "先に Tools/TPS Dungeon/Party/パーティーを組み込む を実行すること。";
+            if (partyPrefab == null || characterPrefab == null) return "先に Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部） を実行すること。";
             if (followCameraPrefab == null) return $"追従カメラのプレハブが無い: {SurfaceSceneBuilder.FollowCameraPrefabPath}";
 
             EnsureFolder(MaterialsFolder);

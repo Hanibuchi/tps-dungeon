@@ -39,7 +39,7 @@ namespace TpsDungeon.Party.Editor
 
         private static readonly string[] UiChildren = { "Interaction HUD", "Game HUD", "Pause Menu", "Inventory Screen", "Game Over" };
 
-        [MenuItem("Tools/TPS Dungeon/Party/パーティーを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）", false, 300)]
         public static void Setup()
         {
             int ally = EnsureAllyLayer();

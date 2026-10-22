@@ -20,7 +20,7 @@ namespace TpsDungeon.Progression.Editor
         // 仮の効果音（効果音ラボ「ひらめく2」）。既に別の音が入っていれば上書きしない。
         private const string LevelUpClipPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Character/ひらめく2.mp3";
 
-        [MenuItem("Tools/TPS Dungeon/Progression/主人公に組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/成長", false, 319)]
         public static void Setup()
         {
             var playerProfile = EnsureProfile(PlayerProfilePath);
@@ -76,7 +76,7 @@ namespace TpsDungeon.Progression.Editor
             AssetDatabase.SaveAssets();
         }
 
-        [MenuItem("Tools/TPS Dungeon/Progression/成長表をログに出す")]
+        [MenuItem("Tools/TPS Dungeon/デバッグ/成長表をログに出す", false, 6)]
         public static void LogTable()
         {
             var profile = Selection.activeObject as CharacterGrowthProfile;

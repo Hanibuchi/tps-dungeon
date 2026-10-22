@@ -77,7 +77,7 @@ namespace TpsDungeon.Player.Editor
             new Vector3(1.2f, 0f, 2.0f),
         };
 
-        [MenuItem("Tools/TPS Dungeon/Player/確認用シーンに仮アイテムを置く")]
+        [MenuItem("Tools/TPS Dungeon/シーン/確認用シーンに仮アイテムを置く", false, 231)]
         public static void PlaceFromMenu()
         {
             Debug.Log(Place());
@@ -89,7 +89,7 @@ namespace TpsDungeon.Player.Editor
             var items = PlaceholderItemAssetGenerator.LoadAll();
             if (items.Count == 0)
             {
-                return "先に Tools/TPS Dungeon/プレースホルダのアイテムを生成 を実行すること。";
+                return "先に Tools/TPS Dungeon/素材・プレハブ/プレースホルダのアイテムを生成 を実行すること。";
             }
 
             var config = AssetDatabase.LoadAssetAtPath<FloorConfig>(PlayerTestSceneBuilder.ConfigPath);

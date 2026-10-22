@@ -25,7 +25,7 @@ namespace TpsDungeon.Map.Editor
         /// [Floor] の FloorBootstrap に道順とその層の FloorConfig を差す。デバッグは Tools/TPS Dungeon/階のデバッグ から。
         /// 窓の外の景色は「階の外の景色を置く（全層）」で置く。
         /// </summary>
-        [MenuItem("Tools/TPS Dungeon/階のシーンを作る（全層）")]
+        [MenuItem("Tools/TPS Dungeon/シーン/階のシーンを作る（全層）", false, 202)]
         public static void CreateAllFloorScenes()
         {
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(RoutePath);

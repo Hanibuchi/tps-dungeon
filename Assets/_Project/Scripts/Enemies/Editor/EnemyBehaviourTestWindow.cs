@@ -20,7 +20,7 @@ namespace TpsDungeon.Enemies.Editor
     /// </summary>
     public sealed class EnemyBehaviourTestWindow : EditorWindow
     {
-        private const string MenuPath = "Tools/TPS Dungeon/Enemies/敵の挙動の試験";
+        private const string MenuPath = "Tools/TPS Dungeon/デバッグ/敵の挙動の試験";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
         private const string SpawnRootName = "[敵の挙動の試験]";
         private const int MaxRecords = 200;
@@ -51,7 +51,7 @@ namespace TpsDungeon.Enemies.Editor
         private readonly HashSet<Behaviour> pausedFollowers = new HashSet<Behaviour>();
         private Vector2 scroll;
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, 2)]
         public static void Open() => GetWindow<EnemyBehaviourTestWindow>("敵の挙動の試験");
 
         private void OnEnable()

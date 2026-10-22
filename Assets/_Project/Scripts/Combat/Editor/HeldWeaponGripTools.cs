@@ -115,10 +115,10 @@ namespace TpsDungeon.Combat.Editor
 
     public static class HeldWeaponGripMenu
     {
-        private const string MenuPath = "Tools/TPS Dungeon/Player/手の武器を選ぶ";
+        private const string MenuPath = "Tools/TPS Dungeon/デバッグ/手の武器を選ぶ";
 
         /// <summary>操作しているキャラの手の武器を選び、Scene ビューで寄って、手の骨のローカル軸で動かせるようにする。</summary>
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, 4)]
         public static void SelectHeldWeapon()
         {
             // 仲間も武器を持っているので、操作しているキャラ（パーティーの先頭）の手の武器を選ぶ。パーティーが居ないシーンではシーンの 1 本。
@@ -137,7 +137,7 @@ namespace TpsDungeon.Combat.Editor
             if (SceneView.lastActiveSceneView != null) SceneView.lastActiveSceneView.FrameSelected();
         }
 
-        [MenuItem(MenuPath, true)]
+        [MenuItem(MenuPath, true, 4)]
         private static bool CanSelectHeldWeapon() => EditorApplication.isPlaying;
     }
 }

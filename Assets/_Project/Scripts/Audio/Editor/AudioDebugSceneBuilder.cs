@@ -16,7 +16,7 @@ namespace TpsDungeon.Audio.Editor
     {
         public const string ScenePath = "Assets/_Project/Scenes/Audio_Debug.unity";
 
-        [MenuItem("Tools/TPS Dungeon/Audio/Generate Audio Debug Scene")]
+        [MenuItem("Tools/TPS Dungeon/シーン/音の確認用シーンを作る", false, 234)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());

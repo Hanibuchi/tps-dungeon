@@ -27,7 +27,7 @@ namespace TpsDungeon.Audio.Editor
 
         private const int SampleRate = 44100;
 
-        [MenuItem("Tools/TPS Dungeon/Audio/Generate Placeholder Audio Clips")]
+        [MenuItem("Tools/TPS Dungeon/音/仮の音を作る", false, 602)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());

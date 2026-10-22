@@ -301,7 +301,7 @@ namespace TpsDungeon.Items.Editor
             Prison,
         }
 
-        [MenuItem("Tools/TPS Dungeon/プレースホルダの武器を生成")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/プレースホルダの武器を生成", false, 521)]
         public static void Generate()
         {
             Gen.EnsureFolder(WeaponsFolder);
@@ -1966,7 +1966,7 @@ namespace TpsDungeon.Items.Editor
         /// <summary>火の矢・空の魔法陣の色（隕石の火と範囲の円の橙に合わせる）。</summary>
         private static readonly Color RainFire = new Color(1f, 0.55f, 0.18f, 1f);
 
-        [MenuItem("Tools/TPS Dungeon/Items/持続弓の演出だけ入れ直す")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/持続弓の演出だけ入れ直す", false, 522)]
         public static void RewriteRainShotEffects()
         {
             var type = AssetDatabase.LoadAssetAtPath<WeaponTypeDefinition>(RainBowTypePath);

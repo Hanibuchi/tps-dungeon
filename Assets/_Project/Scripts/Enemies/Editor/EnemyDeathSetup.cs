@@ -14,7 +14,7 @@ namespace TpsDungeon.Enemies.Editor
         public const string FadeTemplatePath = "Assets/_Project/Materials/Enemies/EnemyFade.mat";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
-        [MenuItem("Tools/TPS Dungeon/Enemies/敵の死に方を設定")]
+        [MenuItem("Tools/TPS Dungeon/敵/敵の死に方を設定", false, 404)]
         public static void SetupFromMenu()
         {
             Debug.Log(Setup());

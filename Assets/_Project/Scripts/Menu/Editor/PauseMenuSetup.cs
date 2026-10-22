@@ -10,7 +10,7 @@ namespace TpsDungeon.Menu.Editor
     /// <summary>
     /// パーティーの操作台のプレハブ（PlayerInput を持つ）に、Esc で開くポーズメニュー（設定画面つき）と、操作の設定を当てる
     /// PlayerControlSettings を組み込む。何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
-    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
+    /// 操作台は「Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）」が作る。
     /// </summary>
     public static class PauseMenuSetup
     {
@@ -23,7 +23,7 @@ namespace TpsDungeon.Menu.Editor
         // HUD（-10）や照準の案内より上に描く。
         private const float MenuSortingOrder = 10f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/ポーズメニューを組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/ポーズメニュー", false, 315)]
         public static void Setup()
         {
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(MenuUxmlPath);

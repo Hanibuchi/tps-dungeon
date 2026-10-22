@@ -27,7 +27,7 @@ namespace TpsDungeon.Items.Editor
         /// <summary>素手の武器種。落とさない。</summary>
         private const string UnarmedTypeId = "00";
 
-        [MenuItem("Tools/TPS Dungeon/Items/敵のドロップ表を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/敵のドロップ表", false, 109)]
         public static void Import()
         {
             var errors = new List<string>();
@@ -44,7 +44,7 @@ namespace TpsDungeon.Items.Editor
             if (knownEnemies.Count == 0)
             {
                 Debug.LogWarning("id（EnemyIdentity）の付いた敵のプレハブが無いので、敵の id を確かめられない。" +
-                                 "メニュー「Tools/TPS Dungeon/Enemies/敵に id を付ける」を先に実行すること。");
+                                 "メニュー「Tools/TPS Dungeon/敵/敵に id を付ける」を先に実行すること。");
             }
 
             var entries = new List<EnemyDropTable.EnemyEntry>();

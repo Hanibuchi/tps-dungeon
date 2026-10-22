@@ -41,7 +41,7 @@ namespace TpsDungeon.Map.Editor
         private const float OpenDuration = 0.45f;
         private const float CloseDuration = 0.35f;
 
-        [MenuItem("Tools/TPS Dungeon/Map/ドアの Animator を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/ドアの Animator を作る", false, 507)]
         public static void BuildFromMenu()
         {
             Build();

@@ -10,7 +10,7 @@ namespace TpsDungeon.Hud.Editor
     /// パーティーの操作台のプレハブに常時表示の HUD（HP・ホットバー・マップ・ダメージの数字）と、大きな地図の開け閉め（PlayerMapToggle）を組み込む。
     /// HP・ホットバーなどキャラの分は、実行中にパーティーの先頭を写す（GameHudView が PartyRoster から結ぶ）ので、ここでは結ばない。
     /// 何度実行しても同じ結果になる（既にあれば設定だけ入れ直す）。
-    /// 操作台は「Tools/TPS Dungeon/Party/パーティーを組み込む」が作る。
+    /// 操作台は「Tools/TPS Dungeon/組み込み/パーティーを組み込む（全部）」が作る。
     /// </summary>
     public static class PlayerHudSetup
     {
@@ -22,7 +22,7 @@ namespace TpsDungeon.Hud.Editor
         // 照準の HUD と同じく、設定画面（sortingOrder 0）より下に描く。
         private const float HudSortingOrder = -10f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/HUD を組み込む")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/HUD", false, 311)]
         public static void Setup()
         {
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(HudUxmlPath);

@@ -155,7 +155,7 @@ namespace TpsDungeon.Player.Editor
         private const float SpellCastStart = 33f / 66f;
         private const float SpellCastExit = 58f / 66f;
 
-        [MenuItem("Tools/TPS Dungeon/Player/Generate Character Animator")]
+        [MenuItem("Tools/TPS Dungeon/組み込み/キャラの Animator を作る", false, 320)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());

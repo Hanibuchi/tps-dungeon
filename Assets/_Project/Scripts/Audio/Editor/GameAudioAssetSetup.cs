@@ -53,7 +53,7 @@ namespace TpsDungeon.Audio.Editor
             ("reveal", "../きらーん2.mp3"),
         };
 
-        [MenuItem("Tools/TPS Dungeon/Audio/Generate Game Audio Config And Prefab")]
+        [MenuItem("Tools/TPS Dungeon/音/音の設定とプレハブを作る", false, 601)]
         public static void GenerateFromMenu()
         {
             Debug.Log(Generate());

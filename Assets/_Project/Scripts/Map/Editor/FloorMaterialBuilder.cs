@@ -73,7 +73,7 @@ namespace TpsDungeon.Map.Editor
             new LayerLook(P("M_YFPM_Slates"), P("M_YFPM_SmoothSquare"), Fc("M_YFFlM_12", 0.85f, 0.8f, 0.9f)),
         };
 
-        [MenuItem("Tools/TPS Dungeon/階の素材を作る")]
+        [MenuItem("Tools/TPS Dungeon/素材・プレハブ/階の素材を作る", false, 502)]
         public static void BuildFromMenu() => Debug.Log(Build());
 
         public static string Build()

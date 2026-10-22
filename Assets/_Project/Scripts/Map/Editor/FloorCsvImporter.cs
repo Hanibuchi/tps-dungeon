@@ -23,7 +23,7 @@ namespace TpsDungeon.Map.Editor
     {
         public const string CsvPath = "Assets/_Project/Settings/Tables/Floors.csv";
 
-        [MenuItem("Tools/TPS Dungeon/階の広さの CSV を取り込む")]
+        [MenuItem("Tools/TPS Dungeon/CSV の取り込み/階の広さ", false, 102)]
         public static void Import()
         {
             var errors = new List<string>();
