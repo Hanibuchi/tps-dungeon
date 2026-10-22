@@ -38,24 +38,6 @@
     right: 0;
     bottom: 0;
     background-color: var(--soul-deep);
-    align-items: center;
-    justify-content: center;
-}
-
-/* 真ん中の淡い光だまり。開くとゆっくり広がる。 */
-.soul-screen__glow {
-    width: 900px;
-    height: 900px;
-    border-radius: 450px;
-    background-color: rgb(18, 22, 40);
-    scale: 0.6 0.6;
-    transition-property: scale;
-    transition-duration: 1.6s;
-    transition-timing-function: ease-out-cubic;
-}
-
-.soul-screen.is-shown .soul-screen__glow {
-    scale: 1 1;
 }
 
 .soul-motes {
@@ -135,7 +117,7 @@
     top: -14px;
     right: -14px;
     bottom: -14px;
-    border-radius: 60px;
+    border-radius: 999px;
     background-color: rgba(120, 200, 255, 0.0);
     transition-property: background-color, scale;
     transition-duration: 0.9s;
@@ -148,7 +130,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    border-radius: 50px;
+    border-radius: 999px;
     border-width: 2px;
     border-color: var(--soul-dim);
     background-color: rgb(14, 17, 30);
@@ -173,7 +155,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    border-radius: 60px;
+    border-radius: 999px;
     border-width: 3px;
     border-color: rgba(255, 230, 160, 0);
     background-color: rgba(255, 240, 200, 0);
@@ -200,7 +182,8 @@
     position: absolute;
     left: -30px;
     right: -30px;
-    bottom: -24px;
+    top: 100%;
+    margin-top: 6px;
     font-size: 13px;
     color: var(--soul);
     -unity-text-align: middle-center;
@@ -438,6 +421,13 @@
     right: 0;
     bottom: 22px;
     align-items: center;
+    transition-property: opacity;
+    transition-duration: 0.4s;
+}
+
+/* ソウルに変わる演出の間は、木の操作の案内を引っ込める。 */
+.soul-screen--harvest .soul-footer {
+    opacity: 0;
 }
 
 .soul-footer__hint {

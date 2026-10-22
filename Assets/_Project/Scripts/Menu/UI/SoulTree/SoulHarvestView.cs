@@ -97,7 +97,7 @@ namespace TpsDungeon.Menu.UI
             for (int i = 0; i < cardList.Count; i++)
             {
                 Card card = cardList[i];
-                long delay = 900 + 260 * i + 110 * i;
+                long delay = 1100 + 420L * i;
                 tweens.Add(UiTween.After(root, delay, () => Count(card)));
             }
             if (cardList.Count == 0) tweens.Add(UiTween.After(root, 600, Bank));
@@ -184,7 +184,7 @@ namespace TpsDungeon.Menu.UI
             int from = Mathf.Max(GrowthCurve.MinLevel, card.Member.level);
             int levels = from - GrowthCurve.MinLevel;
             int souls = card.Member.souls;
-            long duration = levels <= 0 ? 250 : Math.Min(2200, 300 + 45L * levels);
+            long duration = levels <= 0 ? 300 : Math.Min(3200, 700 + 110L * levels);
             card.Element.AddToClassList("soul-harvest-card--burning");
 
             int lastLevel = from;

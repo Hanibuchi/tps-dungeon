@@ -188,6 +188,9 @@ namespace TpsDungeon.Menu.UI
                 partyList.Add(card);
             }
 
+            // 列の数だけの幅にする（インベントリ画面と同じ）。
+            partyList.style.width = InventoryScreen.ColumnCount(partyList.childCount) * InventoryScreen.CardColumnWidth;
+
             Inventory shared = party.Bag;
             for (int i = 0; i < shared.Count; i++) bag.Add(CreateSlot(shared[i], null));
         }

@@ -58,7 +58,7 @@ namespace TpsDungeon.Menu.UI
         private const int CardsPerColumn = 6;
 
         /// <summary>札 1 列の幅（札の幅 186px ＋ 左右の余白 3px ずつ。Inventory.uss の .party-card と揃える）。</summary>
-        private const float CardColumnWidth = 192f;
+        internal const float CardColumnWidth = 192f;
 
         /// <summary>札の HP の棒を赤く灯す残りの割合（HUD の HP 欄と揃える）。</summary>
         private const float LowHpFraction = 0.3f;

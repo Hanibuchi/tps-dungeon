@@ -2,9 +2,7 @@
     <Style src="project://database/Assets/_Project/UI/Theme/Theme.uss" />
     <Style src="project://database/Assets/_Project/UI/Menu/SoulUpgrade.uss" />
     <ui:VisualElement name="soul-screen" class="soul-screen">
-        <ui:VisualElement class="soul-screen__backdrop" picking-mode="Ignore">
-            <ui:VisualElement class="soul-screen__glow" picking-mode="Ignore" />
-        </ui:VisualElement>
+        <ui:VisualElement class="soul-screen__backdrop" picking-mode="Ignore" />
         <menu:SoulMotes name="motes" />
         <ui:VisualElement name="viewport" class="soul-viewport">
             <ui:VisualElement name="world" class="soul-world" picking-mode="Ignore" />
@@ -40,7 +38,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <ui:VisualElement class="soul-footer" picking-mode="Ignore">
+        <ui:VisualElement name="footer" class="soul-footer" picking-mode="Ignore">
             <ui:Label name="hint" text="ドラッグで動かす　ホイールで拡大・縮小　クリックで解放　Esc で閉じる" class="rpg-hint soul-footer__hint" picking-mode="Ignore" />
             <ui:VisualElement class="soul-footer__buttons" picking-mode="Ignore">
                 <ui:Button name="center-button" text="中央へ" class="rpg-button rpg-button--small" />

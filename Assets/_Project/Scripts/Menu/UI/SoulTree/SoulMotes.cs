@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace TpsDungeon.Menu.UI
 {
     /// <summary>
-    /// 魂の強化の画面の背景。暗い中を、淡い光の粒がゆっくり上へ漂いながら明滅する。クリックは受けない。
+    /// 魂の強化の画面の背景。暗い中の真ん中に淡い光だまりがあり、光の粒がゆっくり上へ漂いながら明滅する。クリックは受けない。
     /// 粒の場所は要素の大きさに対する割合で持つので、画面の大きさが変わっても散らばり方は変わらない。
     /// 見えている間だけ動かす（<see cref="Running"/>）。
     /// </summary>
@@ -68,6 +68,22 @@ namespace TpsDungeon.Menu.UI
             }
         }
 
+        /// <summary>真ん中の淡い光だまり。薄い円を重ねて、縁の無いぼかしにする。ゆっくり息をするように大きさが揺れる。</summary>
+        private static void DrawGlow(Painter2D p, Rect r, float time)
+        {
+            const int steps = 48;
+            Vector2 center = r.center;
+            float radius = Mathf.Max(r.width, r.height) * (0.42f + 0.015f * Mathf.Sin(time * 0.5f));
+            p.fillColor = new Color(0.16f, 0.2f, 0.38f, 0.013f);
+            for (int i = 0; i < steps; i++)
+            {
+                float k = 1f - i / (float)steps;
+                p.BeginPath();
+                p.Arc(center, radius * k * k, 0f, 360f);
+                p.Fill();
+            }
+        }
+
         private void Draw(MeshGenerationContext context)
         {
             Rect r = contentRect;
@@ -75,6 +91,7 @@ namespace TpsDungeon.Menu.UI
 
             float time = (float)clock.Elapsed.TotalSeconds;
             Painter2D p = context.painter2D;
+            DrawGlow(p, r, time);
             for (int i = 0; i < Count; i++)
             {
                 Mote m = motes[i];

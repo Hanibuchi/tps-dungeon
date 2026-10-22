@@ -11,7 +11,7 @@ namespace TpsDungeon.Menu.UI
     [UxmlElement]
     public partial class SoulGlyph : VisualElement
     {
-        /// <summary>何の印か。None ならソウルの炎。</summary>
+        /// <summary>ソウルの炎か、効果の印か。</summary>
         public enum Kind
         {
             Flame,

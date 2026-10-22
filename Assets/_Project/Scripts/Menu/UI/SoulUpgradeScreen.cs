@@ -226,8 +226,10 @@ namespace TpsDungeon.Menu.UI
             {
                 SoulHarvest pending = MetaUpgrades.PendingHarvest;
                 HideTree();
+                screen.AddToClassList("soul-screen--harvest");
                 harvest.Play(pending, MetaUpgrades.Souls - pending.Total, () =>
                 {
+                    screen.RemoveFromClassList("soul-screen--harvest");
                     MetaUpgrades.ClearHarvest();
                     PlayIntro();
                 });
@@ -430,7 +432,7 @@ namespace TpsDungeon.Menu.UI
             }
         }
 
-        /// <summary>見えている強化が画面に収まる拡大。</summary>
+        /// <summary>見えている強化がおおよそ画面に収まる拡大。</summary>
         private float FitZoom()
         {
             float radius = RootRadius;
@@ -440,7 +442,8 @@ namespace TpsDungeon.Menu.UI
             }
             Rect area = viewport != null ? viewport.contentRect : new Rect(0, 0, 1280, 720);
             float half = Mathf.Max(200f, Mathf.Min(area.width, area.height) * 0.5f - 60f);
-            return Mathf.Clamp(half / radius, MinZoom, 1f);
+            // 端の強化は少しはみ出してよい（全部を収めると小さくなりすぎて値段が読めない）。
+            return Mathf.Clamp(half / radius * 1.2f, 0.55f, 1f);
         }
 
         private void Reveal(NodeView view, long delayMs)
