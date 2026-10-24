@@ -25,7 +25,7 @@ keen_4,クリティカル率増加 IV,keen_3,90,crit_chance,0.2,クリティカ�
 fury_1,クリティカル倍率増加 I,keen_1,20,crit_multiplier,0.5,クリティカルのダメージ倍率が増加する
 fury_2,クリティカル倍率増加 II,fury_1,60,crit_multiplier,1.0,クリティカルのダメージ倍率がより増加する
 fury_3,クリティカル倍率増加 III,fury_2,140,crit_multiplier,1.5,クリティカルのダメージ倍率がもっと増加する
-fury_4,クリティカル倍率増加 III,fury_3,140,crit_multiplier,2.0,クリティカルのダメージ倍率がさらに増加する
+fury_4,クリティカル倍率増加 IV,fury_3,140,crit_multiplier,2.0,クリティカルのダメージ倍率がさらに増加する
 # --- 絆 ---
 ally_1,メンバー追加 I,awaken,15,party_size,1,仲間ができる
 ally_2,メンバー追加 II,ally_1,50,party_size,2,もう 1 人仲間ができる
@@ -48,6 +48,14 @@ pack_5,大きな鞄 V,pack_4,110,bag_size,15,バッグの枠がさらに増え�
 pack_6,大きな鞄 VI,pack_5,110,bag_size,18,バッグの枠がさらに増える
 pack_7,大きな鞄 VII,pack_6,110,bag_size,21,バッグの枠がさらに増える
 pack_8,大きな鞄 VIII,pack_7,110,bag_size,24,バッグの枠がさらに増える
+box_weapon_1,箱の武器 I,fortune_1,20,box_weapon,0.5,壊した箱から武器が出やすくなる
+box_weapon_2,箱の武器 II,box_weapon_1,50,box_weapon,1.0,壊した箱から武器がより出やすくなる
+box_weapon_3,箱の武器 III,box_weapon_2,110,box_weapon,1.5,壊した箱から武器がもっと出やすくなる
+box_weapon_4,箱の武器 IV,box_weapon_3,110,box_weapon,2.0,壊した箱から武器がさらに出やすくなる
+box_count_1,箱の数 I,box_weapon_1,20,box_count,0.25,ダンジョンに箱が多く置かれる
+box_count_2,箱の数 II,box_count_1,50,box_count,0.5,ダンジョンに箱がより多く置かれる
+box_count_3,箱の数 III,box_count_2,110,box_count,0.75,ダンジョンに箱がもっと多く置かれる
+box_count_4,箱の数 IV,box_count_3,110,box_count,1.0,ダンジョンに箱がさらに多く置かれる
 keep_1,形見 I,awaken,30,carry_over,1,転生するとき、装備を 1 つ持ち越せる
 keep_2,形見 II,keep_1,80,carry_over,2,転生時、持ち越せる装備が増える
 keep_3,形見 III,keep_2,180,carry_over,3,転生時、持ち越せる装備が増える
@@ -65,6 +73,13 @@ haggle_2,目利き II,haggle_1,90,sell_price,0.5,武器をさらに高く売れ�
 haggle_3,目利き III,haggle_2,90,sell_price,0.75,武器をさらに高く売れる
 haggle_4,目利き IV,haggle_3,90,sell_price,1.0,武器をさらに高く売れる
 bank,倉庫の開放,shop,50,bank,1,地上の倉庫が開き、持ち物を預けられる
+bank_size_1,倉庫の拡張 I,bank,40,bank_size,10,倉庫に預けられる数が増える
+bank_size_2,倉庫の拡張 II,bank_size_1,90,bank_size,20,倉庫に預けられる数がさらに増える
+bank_size_3,倉庫の拡張 III,bank_size_2,90,bank_size,30,倉庫に預けられる数がさらに増える
+bank_size_4,倉庫の拡張 IV,bank_size_3,90,bank_size,40,倉庫に預けられる数がさらに増える
+gacha_1,ガチャ屋の開放,shop,40,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
+gacha_2,ガチャ D〜A,gacha_1,120,gacha,2,ガチャ屋に D〜A の武器を引ける台が並ぶ
+gacha_3,ガチャ B〜S,gacha_2,250,gacha,3,ガチャ屋に B〜S の武器を引ける台が並ぶ
 # --- 記憶 ---
 codex_weapon,武器の記憶,haggle_1,25,weapon_codex,1,手にした武器を書き留める武器図鑑
 codex_enemy,魔物の記憶,codex_weapon,25,enemy_codex,1,出会った敵を書き留める敵図鑑

@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Party::TpsDungeon.Party.Party
   members: []
-  bagCapacity: 12
+  bagCapacity: 6
   spacing: 1.6
   input: {fileID: 209701086555217484}
   followCamera: {fileID: 0}

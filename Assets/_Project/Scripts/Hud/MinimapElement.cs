@@ -324,6 +324,7 @@ namespace TpsDungeon.Hud
                     case SurfaceMapSource.MarkerKind.DungeonEntrance: DrawArch(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.WeaponShop: DrawSwords(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.Bank: DrawCoin(painter, p, r); break;
+                    case SurfaceMapSource.MarkerKind.Gacha: DrawCapsule(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.Upgrade: DrawFlame(painter, p, r); break;
                     case SurfaceMapSource.MarkerKind.Rebirth: DrawVortex(painter, p, r); break;
                     // ショートカットは番号（labels）だけ。
@@ -336,6 +337,7 @@ namespace TpsDungeon.Hud
             SurfaceMapSource.MarkerKind.DungeonEntrance => new Color32(92, 34, 28, 255),
             SurfaceMapSource.MarkerKind.WeaponShop => new Color32(44, 50, 62, 255),
             SurfaceMapSource.MarkerKind.Bank => new Color32(38, 62, 42, 255),
+            SurfaceMapSource.MarkerKind.Gacha => new Color32(70, 38, 64, 255),
             SurfaceMapSource.MarkerKind.Upgrade => new Color32(30, 52, 66, 255),
             SurfaceMapSource.MarkerKind.Rebirth => new Color32(26, 64, 80, 255),
             _ => shortcutColor,
@@ -417,6 +419,37 @@ namespace TpsDungeon.Hud
                 Circle(painter, c, r * 0.28f);
                 painter.Stroke();
             }
+        }
+
+        /// <summary>ガチャ屋。斜めに傾いたカプセル（上半分を塗り、下半分は縁だけ）。</summary>
+        private void DrawCapsule(Painter2D painter, Vector2 p, float r)
+        {
+            float w = r * 0.3f;
+            float h = r * 0.28f;
+            var axis = new Vector2(0.6f, -0.8f);
+            var side = new Vector2(-axis.y, axis.x);
+            var top = p + axis * h;
+            var bottom = p - axis * h;
+            float angle = Mathf.Atan2(axis.y, axis.x) * Mathf.Rad2Deg;
+
+            painter.fillColor = markerGlyphColor;
+            painter.BeginPath();
+            painter.MoveTo(p + side * w);
+            painter.LineTo(top + side * w);
+            painter.Arc(top, w, angle + 90f, angle - 90f, ArcDirection.CounterClockwise);
+            painter.LineTo(p - side * w);
+            painter.ClosePath();
+            painter.Fill();
+
+            painter.strokeColor = markerGlyphColor;
+            painter.lineWidth = Mathf.Max(1f, r * 0.1f);
+            painter.BeginPath();
+            painter.MoveTo(p - side * w);
+            painter.LineTo(bottom - side * w);
+            painter.Arc(bottom, w, angle - 90f, angle + 90f, ArcDirection.CounterClockwise);
+            painter.LineTo(p + side * w);
+            painter.ClosePath();
+            painter.Stroke();
         }
 
         /// <summary>強化の台。燭台の火（下が丸く上がとがった炎）。</summary>

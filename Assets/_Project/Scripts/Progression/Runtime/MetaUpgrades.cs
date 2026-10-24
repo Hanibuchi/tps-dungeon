@@ -148,6 +148,18 @@ namespace TpsDungeon.Progression
         /// <summary>武器の売値に掛ける倍率（武器屋の画面ができたら読む）。</summary>
         public static float SellPriceMultiplier => 1f + Mathf.Max(0f, Total(SoulUpgradeEffect.SellPrice));
 
+        /// <summary>壊した箱から武器が出る重みに掛ける倍率。</summary>
+        public static float BoxWeaponMultiplier => 1f + Mathf.Max(0f, Total(SoulUpgradeEffect.BoxWeaponRate));
+
+        /// <summary>階に置く木箱の数・宝箱の確率に掛ける倍率。</summary>
+        public static float BoxSpawnMultiplier => 1f + Mathf.Max(0f, Total(SoulUpgradeEffect.BoxSpawnRate));
+
+        /// <summary>解放したガチャの台（1 で E〜B、2 で D〜A、3 で B〜S。ガチャ屋の画面ができたら読む）。</summary>
+        public static List<int> GachaTiers => Values(SoulUpgradeEffect.Gacha).ConvertAll(Mathf.RoundToInt);
+
+        /// <summary>倉庫に足す枠の数（倉庫の画面ができたら読む）。</summary>
+        public static int ExtraBankSlots => Mathf.Max(0, Mathf.RoundToInt(Total(SoulUpgradeEffect.BankSize)));
+
         /// <summary>ソウルを足す（デバッグや、死んだとき）。</summary>
         public static void AddSouls(long amount)
         {

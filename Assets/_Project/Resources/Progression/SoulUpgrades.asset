@@ -154,7 +154,7 @@ MonoBehaviour:
     value: 1.5
     description: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u306E\u30C0\u30E1\u30FC\u30B8\u500D\u7387\u304C\u3082\u3063\u3068\u5897\u52A0\u3059\u308B"
   - id: fury_4
-    name: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u500D\u7387\u5897\u52A0 III"
+    name: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u500D\u7387\u5897\u52A0 IV"
     parent: fury_3
     cost: 140
     effect: 5
@@ -300,6 +300,62 @@ MonoBehaviour:
     effect: 4
     value: 24
     description: "\u30D0\u30C3\u30B0\u306E\u67A0\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
+  - id: box_weapon_1
+    name: "\u7BB1\u306E\u6B66\u5668 I"
+    parent: fortune_1
+    cost: 20
+    effect: 18
+    value: 0.5
+    description: "\u58CA\u3057\u305F\u7BB1\u304B\u3089\u6B66\u5668\u304C\u51FA\u3084\u3059\u304F\u306A\u308B"
+  - id: box_weapon_2
+    name: "\u7BB1\u306E\u6B66\u5668 II"
+    parent: box_weapon_1
+    cost: 50
+    effect: 18
+    value: 1
+    description: "\u58CA\u3057\u305F\u7BB1\u304B\u3089\u6B66\u5668\u304C\u3088\u308A\u51FA\u3084\u3059\u304F\u306A\u308B"
+  - id: box_weapon_3
+    name: "\u7BB1\u306E\u6B66\u5668 III"
+    parent: box_weapon_2
+    cost: 110
+    effect: 18
+    value: 1.5
+    description: "\u58CA\u3057\u305F\u7BB1\u304B\u3089\u6B66\u5668\u304C\u3082\u3063\u3068\u51FA\u3084\u3059\u304F\u306A\u308B"
+  - id: box_weapon_4
+    name: "\u7BB1\u306E\u6B66\u5668 IV"
+    parent: box_weapon_3
+    cost: 110
+    effect: 18
+    value: 2
+    description: "\u58CA\u3057\u305F\u7BB1\u304B\u3089\u6B66\u5668\u304C\u3055\u3089\u306B\u51FA\u3084\u3059\u304F\u306A\u308B"
+  - id: box_count_1
+    name: "\u7BB1\u306E\u6570 I"
+    parent: box_weapon_1
+    cost: 20
+    effect: 19
+    value: 0.25
+    description: "\u30C0\u30F3\u30B8\u30E7\u30F3\u306B\u7BB1\u304C\u591A\u304F\u7F6E\u304B\u308C\u308B"
+  - id: box_count_2
+    name: "\u7BB1\u306E\u6570 II"
+    parent: box_count_1
+    cost: 50
+    effect: 19
+    value: 0.5
+    description: "\u30C0\u30F3\u30B8\u30E7\u30F3\u306B\u7BB1\u304C\u3088\u308A\u591A\u304F\u7F6E\u304B\u308C\u308B"
+  - id: box_count_3
+    name: "\u7BB1\u306E\u6570 III"
+    parent: box_count_2
+    cost: 110
+    effect: 19
+    value: 0.75
+    description: "\u30C0\u30F3\u30B8\u30E7\u30F3\u306B\u7BB1\u304C\u3082\u3063\u3068\u591A\u304F\u7F6E\u304B\u308C\u308B"
+  - id: box_count_4
+    name: "\u7BB1\u306E\u6570 IV"
+    parent: box_count_3
+    cost: 110
+    effect: 19
+    value: 1
+    description: "\u30C0\u30F3\u30B8\u30E7\u30F3\u306B\u7BB1\u304C\u3055\u3089\u306B\u591A\u304F\u7F6E\u304B\u308C\u308B"
   - id: keep_1
     name: "\u5F62\u898B I"
     parent: awaken
@@ -413,9 +469,59 @@ MonoBehaviour:
     effect: 10
     value: 1
     description: "\u5730\u4E0A\u306E\u5009\u5EAB\u304C\u958B\u304D\u3001\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B"
+  - id: bank_size_1
+    name: "\u5009\u5EAB\u306E\u62E1\u5F35 I"
+    parent: bank
+    cost: 40
+    effect: 21
+    value: 10
+    description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u5897\u3048\u308B"
+  - id: bank_size_2
+    name: "\u5009\u5EAB\u306E\u62E1\u5F35 II"
+    parent: bank_size_1
+    cost: 90
+    effect: 21
+    value: 20
+    description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
+  - id: bank_size_3
+    name: "\u5009\u5EAB\u306E\u62E1\u5F35 III"
+    parent: bank_size_2
+    cost: 90
+    effect: 21
+    value: 30
+    description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
+  - id: bank_size_4
+    name: "\u5009\u5EAB\u306E\u62E1\u5F35 IV"
+    parent: bank_size_3
+    cost: 90
+    effect: 21
+    value: 40
+    description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
+  - id: gacha_1
+    name: "\u30AC\u30C1\u30E3\u5C4B\u306E\u958B\u653E"
+    parent: shop
+    cost: 40
+    effect: 20
+    value: 1
+    description: "\u5730\u4E0A\u306E\u30AC\u30C1\u30E3\u5C4B\u304C\u958B\u304D\u3001E\u301CB
+      \u306E\u6B66\u5668\u3092\u5F15\u3051\u308B"
+  - id: gacha_2
+    name: "\u30AC\u30C1\u30E3 D\u301CA"
+    parent: gacha_1
+    cost: 120
+    effect: 20
+    value: 2
+    description: "\u30AC\u30C1\u30E3\u5C4B\u306B D\u301CA \u306E\u6B66\u5668\u3092\u5F15\u3051\u308B\u53F0\u304C\u4E26\u3076"
+  - id: gacha_3
+    name: "\u30AC\u30C1\u30E3 B\u301CS"
+    parent: gacha_2
+    cost: 250
+    effect: 20
+    value: 3
+    description: "\u30AC\u30C1\u30E3\u5C4B\u306B B\u301CS \u306E\u6B66\u5668\u3092\u5F15\u3051\u308B\u53F0\u304C\u4E26\u3076"
   - id: codex_weapon
     name: "\u6B66\u5668\u306E\u8A18\u61B6"
-    parent: awaken
+    parent: haggle_1
     cost: 25
     effect: 14
     value: 1

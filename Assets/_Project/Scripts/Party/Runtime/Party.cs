@@ -32,7 +32,7 @@ namespace TpsDungeon.Party
         private List<PartyMember> members = new List<PartyMember>();
 
         [SerializeField, Min(0), Tooltip("共有のバッグの枠の数。")]
-        private int bagCapacity = 12;
+        private int bagCapacity = 6;
 
         [SerializeField, Min(0.5f), Tooltip("列で前の人との間（m）。")]
         private float spacing = 1.6f;
