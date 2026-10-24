@@ -2,7 +2,7 @@ id,name,parent,cost,effect,value,description
 # 魂の強化の木parent が空の行が真ん中（最初に獲得する強化）parent の強化を解放するまで、その先は見えない
 # value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%、exp_boost は秒、shortcut は層の番号（1 始まり）
 # 前の強化が同じ effect なら続きの段として、前の段の値を引いた分だけ上乗せする（真ん中の強化は先の段とつながらない）
-awaken,魂の目覚め,,5,exp_rate,1.0,最大体力が増える
+awaken,魂の目覚め,,5,max_hp,1.0,最大体力が増える
 # --- 生命 ---
 vigor_1,体力増加 I,awaken,10,max_hp,1.2,最大体力が増える
 vigor_2,体力増加 II,vigor_1,30,max_hp,1.4,最大体力がより増える
@@ -72,10 +72,10 @@ haggle_1,目利き I,shop,35,sell_price,0.25,武器を高く売れる
 haggle_2,目利き II,haggle_1,90,sell_price,0.5,武器をさらに高く売れる
 haggle_3,目利き III,haggle_2,90,sell_price,0.75,武器をさらに高く売れる
 haggle_4,目利き IV,haggle_3,90,sell_price,1.0,武器をさらに高く売れる
-bank,倉庫の開放,shop,50,bank,1,地上の倉庫が開き、持ち物を預けられる
-bank_size_1,倉庫の拡張 I,bank,40,bank_size,10,倉庫に預けられる数が増える
-bank_size_2,倉庫の拡張 II,bank_size_1,90,bank_size,20,倉庫に預けられる数がさらに増える
-bank_size_3,倉庫の拡張 III,bank_size_2,90,bank_size,30,倉庫に預けられる数がさらに増える
+bank,倉庫の開放,shop,50,bank,8,地上の倉庫が開き、持ち物を預けられる
+bank_size_1,倉庫の拡張 I,bank,40,bank_size,16,倉庫に預けられる数が増える
+bank_size_2,倉庫の拡張 II,bank_size_1,90,bank_size,24,倉庫に預けられる数がさらに増える
+bank_size_3,倉庫の拡張 III,bank_size_2,90,bank_size,32,倉庫に預けられる数がさらに増える
 bank_size_4,倉庫の拡張 IV,bank_size_3,90,bank_size,40,倉庫に預けられる数がさらに増える
 gacha_1,ガチャ屋の開放,shop,40,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
 gacha_2,ガチャ D〜A,gacha_1,120,gacha,2,ガチャ屋に D〜A の武器を引ける台が並ぶ

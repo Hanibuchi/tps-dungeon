@@ -17,7 +17,7 @@ MonoBehaviour:
     name: "\u9B42\u306E\u76EE\u899A\u3081"
     parent: 
     cost: 5
-    effect: 1
+    effect: 16
     value: 1
     description: "\u6700\u5927\u4F53\u529B\u304C\u5897\u3048\u308B"
   - id: vigor_1
@@ -467,28 +467,28 @@ MonoBehaviour:
     parent: shop
     cost: 50
     effect: 10
-    value: 1
+    value: 8
     description: "\u5730\u4E0A\u306E\u5009\u5EAB\u304C\u958B\u304D\u3001\u6301\u3061\u7269\u3092\u9810\u3051\u3089\u308C\u308B"
   - id: bank_size_1
     name: "\u5009\u5EAB\u306E\u62E1\u5F35 I"
     parent: bank
     cost: 40
     effect: 21
-    value: 10
+    value: 16
     description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u5897\u3048\u308B"
   - id: bank_size_2
     name: "\u5009\u5EAB\u306E\u62E1\u5F35 II"
     parent: bank_size_1
     cost: 90
     effect: 21
-    value: 20
+    value: 24
     description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
   - id: bank_size_3
     name: "\u5009\u5EAB\u306E\u62E1\u5F35 III"
     parent: bank_size_2
     cost: 90
     effect: 21
-    value: 30
+    value: 32
     description: "\u5009\u5EAB\u306B\u9810\u3051\u3089\u308C\u308B\u6570\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
   - id: bank_size_4
     name: "\u5009\u5EAB\u306E\u62E1\u5F35 IV"
