@@ -47,10 +47,13 @@ namespace TpsDungeon.Audio.Editor
             ("toHand", "決定ボタンを押す14.mp3"),
             ("toBag", "決定ボタンを押す32.mp3"),
             // 魂の強化の画面。UI のフォルダの外の素材は、効果音ラボのフォルダからの道（../）で書く。
-            ("soulGain", "カーソル移動8.mp3"),
+            ("soulGain", "決定ボタンを押す42.mp3"),
             ("soulBank", "../Character/ひらめく2.mp3"),
-            ("unlock", "../Arms/パワーアップ.mp3"),
+            ("unlock", "決定ボタンを押す18.mp3"),
             ("reveal", "../きらーん2.mp3"),
+            ("soulSpend", "決定ボタンを押す42.mp3"),
+            // 持ち越しの画面
+            ("carryLost", "キャンセル9.mp3"),
         };
 
         [MenuItem("Tools/TPS Dungeon/音/音の設定とプレハブを作る", false, 601)]

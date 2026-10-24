@@ -32,6 +32,9 @@ namespace TpsDungeon.Map.Runtime
         /// <summary>出口の部屋に置いた上り階段。</summary>
         public GameObject ExitStair { get; private set; }
 
+        /// <summary>木箱の数・宝箱の確率に掛ける倍率（魂の強化。SoulUpgradeWorld が入れる）。次の Build から効く。</summary>
+        public static float BoxSpawnMultiplier { get; set; } = 1f;
+
         /// <summary>パーティーを出口（上り階段の脇）に立たせるか。上の階から降りてきたとき。次の Build から効く。</summary>
         public bool SpawnAtExit { get; set; }
         /// <summary>閉ざされた扉（ボスを倒すまで開かない出口の扉など）。Unlock で開けられるようになる。</summary>
@@ -553,8 +556,8 @@ namespace TpsDungeon.Map.Runtime
             var settings = new RoomPropSettings
             {
                 CellSize = cellSize,
-                CratesPerCell = config.cratesPerCell,
-                ChestChance = config.chestChance,
+                CratesPerCell = config.cratesPerCell * Mathf.Max(0f, BoxSpawnMultiplier),
+                ChestChance = Mathf.Min(1f, config.chestChance * Mathf.Max(0f, BoxSpawnMultiplier)),
                 BossFloor = config.layoutShape == FloorLayoutShape.Boss,
                 BossArenaId = BossFloorLayout.ArenaId,
             };
@@ -659,5 +662,9 @@ namespace TpsDungeon.Map.Runtime
             var step = dir.Offset();
             return center + new Vector3(step.X, 0f, step.Y) * (cellSize * 0.5f);
         }
+
+        /// <summary>Enter Play Mode でドメインを読み直さない設定でも、前の再生の倍率を持ち越さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => BoxSpawnMultiplier = 1f;
     }
 }

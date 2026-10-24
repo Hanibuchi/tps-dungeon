@@ -87,6 +87,10 @@ namespace TpsDungeon.Menu.UI
                 case SoulUpgradeEffect.EnemyCodex: Skull(p, P, s); break;
                 case SoulUpgradeEffect.Shortcut: Ladder(p, P); break;
                 case SoulUpgradeEffect.ExpBoost: Hourglass(p, P); break;
+                case SoulUpgradeEffect.BoxWeaponRate: CrateSword(p, P); break;
+                case SoulUpgradeEffect.BoxSpawnRate: Crates(p, P); break;
+                case SoulUpgradeEffect.Gacha: Gacha(p, P, s); break;
+                case SoulUpgradeEffect.BankSize: Bank(p, P); break;
                 default: Flame(p, P, s); break;
             }
         }
@@ -319,6 +323,57 @@ namespace TpsDungeon.Menu.UI
                 Line(p, P(x, -0.04f), P(x, 0.26f));
             }
             Line(p, P(-0.4f, 0.36f), P(0.4f, 0.36f));
+        }
+
+        /// <summary>板を打ち付けた木箱（左上が x0, y0、幅と高さ w）。</summary>
+        private static void Crate(Painter2D p, Map P, float x0, float y0, float w)
+        {
+            p.BeginPath();
+            p.MoveTo(P(x0, y0));
+            p.LineTo(P(x0 + w, y0));
+            p.LineTo(P(x0 + w, y0 + w));
+            p.LineTo(P(x0, y0 + w));
+            p.ClosePath();
+            p.Stroke();
+            Line(p, P(x0, y0), P(x0 + w, y0 + w));
+        }
+
+        private static void CrateSword(Painter2D p, Map P)
+        {
+            // 木箱から飛び出す剣。
+            Crate(p, P, -0.32f, -0.02f, 0.4f);
+            Line(p, P(0.04f, 0.04f), P(0.36f, -0.36f));
+            Line(p, P(0.04f, -0.12f), P(0.2f, 0.0f));
+        }
+
+        private static void Crates(Painter2D p, Map P)
+        {
+            // 積んだ 3 つの木箱。
+            Crate(p, P, -0.38f, 0.04f, 0.34f);
+            Crate(p, P, 0.04f, 0.04f, 0.34f);
+            Crate(p, P, -0.17f, -0.34f, 0.34f);
+        }
+
+        private static void Gacha(Painter2D p, Map P, float s)
+        {
+            // 丸い玉入れの下に台と取り出し口。
+            p.BeginPath();
+            p.Arc(P(0f, -0.12f), s * 0.26f, 0f, 360f);
+            p.Stroke();
+            p.BeginPath();
+            p.Arc(P(-0.08f, -0.06f), s * 0.07f, 0f, 360f);
+            p.Fill();
+            p.BeginPath();
+            p.Arc(P(0.09f, -0.18f), s * 0.07f, 0f, 360f);
+            p.Fill();
+            p.BeginPath();
+            p.MoveTo(P(-0.26f, 0.14f));
+            p.LineTo(P(0.26f, 0.14f));
+            p.LineTo(P(0.3f, 0.38f));
+            p.LineTo(P(-0.3f, 0.38f));
+            p.ClosePath();
+            p.Stroke();
+            Line(p, P(-0.06f, 0.26f), P(0.06f, 0.26f));
         }
 
         private static void Book(Painter2D p, Map P)

@@ -7,7 +7,7 @@ namespace TpsDungeon.Map.Runtime
     /// 地上の地図の元。真上から撮った地上の絵（城を除く）と、その絵が写す範囲・城の土台の範囲（どちらもワールドの x と z、メートル）を持つ。
     /// 地上シーンの [Surface] に付け、生成器（地上の地図を撮る）が中身を入れる。HUD がこれを見つけて地図に描く。
     /// 死後の場所（[Afterlife]）も同じ作りの地図を持つ（城の土台は無い。左上の札の地名だけ変える）。
-    /// 地図に重ねる印（ダンジョンの入口・武器屋・銀行・解放したショートカット・強化の台・転生の渦）は、描くたびにシーンから拾う（<see cref="Markers"/>）。
+    /// 地図に重ねる印（ダンジョンの入口・武器屋・銀行・ガチャ屋・解放したショートカット・強化の台・転生の渦）は、描くたびにシーンから拾う（<see cref="Markers"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Surface Map Source")]
@@ -26,6 +26,7 @@ namespace TpsDungeon.Map.Runtime
             Upgrade = 4,
             /// <summary>死後の場所の転生の渦。</summary>
             Rebirth = 5,
+            Gacha = 6,
         }
 
         public readonly struct Marker
@@ -121,6 +122,7 @@ namespace TpsDungeon.Map.Runtime
             MapIcon.WeaponShop => MarkerKind.WeaponShop,
             MapIcon.Upgrade => MarkerKind.Upgrade,
             MapIcon.Rebirth => MarkerKind.Rebirth,
+            MapIcon.Gacha => MarkerKind.Gacha,
             _ => MarkerKind.Bank,
         };
     }

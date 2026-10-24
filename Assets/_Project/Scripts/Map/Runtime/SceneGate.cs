@@ -18,6 +18,8 @@ namespace TpsDungeon.Map.Runtime
         Upgrade = 4,
         /// <summary>死後の場所の転生の渦。</summary>
         Rebirth = 5,
+        /// <summary>ガチャ屋。</summary>
+        Gacha = 6,
     }
 
     /// <summary>

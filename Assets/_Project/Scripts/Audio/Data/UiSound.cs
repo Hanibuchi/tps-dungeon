@@ -45,7 +45,7 @@ namespace TpsDungeon.Audio.Data
         /// <summary>物を背嚢へ入れた。</summary>
         ToBag = 12,
 
-        /// <summary>魂の強化の画面で、レベルから生まれたソウルが 1 粒届いた。何度も続けて鳴るので控えめに。</summary>
+        /// <summary>魂の強化の画面で、レベルから生まれたソウルが 1 粒届いた。増える量に応じて何度も続けて鳴るので控えめに。</summary>
         SoulGain = 13,
 
         /// <summary>死んで得たソウルが、まとめて手持ちのソウルに入った。</summary>
@@ -56,5 +56,11 @@ namespace TpsDungeon.Audio.Data
 
         /// <summary>解放した強化の先に、新しい強化が現れた。</summary>
         Reveal = 16,
+
+        /// <summary>魂の強化を解放するとき、手持ちのソウルが 1 粒出ていった。払う量に応じて何度も続けて鳴る。</summary>
+        SoulSpend = 17,
+
+        /// <summary>持ち越す武器を決めて、選ばなかった武器が砕けた。</summary>
+        CarryLost = 18,
     }
 }

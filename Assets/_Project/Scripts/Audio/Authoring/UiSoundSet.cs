@@ -78,6 +78,12 @@ namespace TpsDungeon.Audio.Authoring
         [SerializeField, Tooltip("解放した強化の先に、新しい強化が現れたとき。")]
         private Entry reveal = new Entry(0.6f);
 
+        [SerializeField, Tooltip("魂の強化を解放するとき、ソウルが 1 粒出ていったとき。払う量に応じて続けて鳴るので控えめに。")]
+        private Entry soulSpend = new Entry(0.35f);
+
+        [SerializeField, Tooltip("持ち越す武器を決めて、選ばなかった武器が砕けたとき。")]
+        private Entry carryLost = new Entry(0.8f);
+
         [SerializeField, Min(0f), Tooltip("同じ音をこれより短い間隔では鳴らし直さない（秒）。枠の上を素早くなぞったときに音が団子にならないように。")]
         private float minInterval = 0.04f;
 
@@ -104,6 +110,8 @@ namespace TpsDungeon.Audio.Authoring
                 case UiSound.SoulBank: return soulBank;
                 case UiSound.Unlock: return unlock;
                 case UiSound.Reveal: return reveal;
+                case UiSound.SoulSpend: return soulSpend;
+                case UiSound.CarryLost: return carryLost;
                 default: return default;
             }
         }

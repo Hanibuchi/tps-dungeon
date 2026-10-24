@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TpsDungeon.Enemies;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Progression;
@@ -12,7 +13,8 @@ namespace TpsDungeon.Party
     /// - パーティーの補正（経験値・体力・クリティカル・ドロップ）は、起きたときと、強化を買うたび・経験値ブーストが始まる・終わるたびに入れ直す。
     /// - 共有のバッグは、強化の分だけ枠を足す（増やした分を覚えておき、何度当てても増えすぎない）。
     /// - ショートカットは、解放した層を開ける（閉じるのは「階のデバッグ」ウィンドウに任せる）。
-    /// - 地上の武器屋・銀行の扉（SceneGate の textId が weapon_shop / bank）は、解放してあれば開ける。中の画面はまだ無い。
+    /// - 地上の武器屋・銀行・ガチャ屋の扉（SceneGate の textId が weapon_shop / bank / gacha）は、解放してあれば開ける。中の画面はまだ無い。
+    /// - 箱の数（FloorBuilder.BoxSpawnMultiplier）と箱から武器が出る重み（BreakableProp.WeaponWeightMultiplier）を入れる。
     /// - 仲間の人数は、地上で始めたときと、転生して地上に着いたときに合わせる。連れて行けない仲間はパーティーから外して隠す。
     ///   転生で加わった仲間は Lv1 から。
     /// - 経験値を得て誰かのレベルが上がったら、経験値ブーストを始める（途中なら長さを戻す）。時間は死後の場所の外でだけ進む（ポーズ中は止まる）。
@@ -23,6 +25,7 @@ namespace TpsDungeon.Party
     {
         public const string WeaponShopTextId = "weapon_shop";
         public const string BankTextId = "bank";
+        public const string GachaTextId = "gacha";
 
         private const string OpenShopLabel = "入る（中はまだ準備中）";
 
@@ -84,6 +87,7 @@ namespace TpsDungeon.Party
             ApplyBag();
             ApplyShortcuts();
             ApplyGates();
+            ApplyBoxes();
         }
 
         /// <summary>シーンに着いて先頭を並べる直前（GameFlow.Arrive から）。転生なら人数を合わせる。</summary>
@@ -108,6 +112,13 @@ namespace TpsDungeon.Party
             addedBagSlots += extra;
         }
 
+        /// <summary>箱の数（次に作る階から）と、箱から武器が出る重み。</summary>
+        private static void ApplyBoxes()
+        {
+            FloorBuilder.BoxSpawnMultiplier = MetaUpgrades.BoxSpawnMultiplier;
+            BreakableProp.WeaponWeightMultiplier = MetaUpgrades.BoxWeaponMultiplier;
+        }
+
         private static void ApplyShortcuts()
         {
             foreach (float layer in MetaUpgrades.Values(SoulUpgradeEffect.Shortcut))
@@ -121,10 +132,12 @@ namespace TpsDungeon.Party
         {
             bool shop = MetaUpgrades.Has(SoulUpgradeEffect.WeaponShop);
             bool bank = MetaUpgrades.Has(SoulUpgradeEffect.Bank);
+            bool gacha = MetaUpgrades.Has(SoulUpgradeEffect.Gacha);
             foreach (SceneGate gate in FindObjectsByType<SceneGate>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (gate.TextId == WeaponShopTextId) Open(gate, shop);
                 else if (gate.TextId == BankTextId) Open(gate, bank);
+                else if (gate.TextId == GachaTextId) Open(gate, gacha);
             }
         }
 

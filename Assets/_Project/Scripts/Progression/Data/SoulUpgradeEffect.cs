@@ -44,6 +44,14 @@ namespace TpsDungeon.Progression
         MaxHp,
         /// <summary>レベルが上がってからしばらく経験値が増える時間（秒）。</summary>
         ExpBoost,
+        /// <summary>壊した箱（木箱・宝箱）から武器が出る重みの上乗せ（0.5 で +50%）。</summary>
+        BoxWeaponRate,
+        /// <summary>階に置く木箱の数・宝箱の確率の上乗せ（0.25 で +25%）。</summary>
+        BoxSpawnRate,
+        /// <summary>ガチャ屋の台（value。1 で E〜B、2 で D〜A、3 で B〜S）。1 つでも解放すればガチャ屋が開く。</summary>
+        Gacha,
+        /// <summary>倉庫の枠を増やす（枠）。</summary>
+        BankSize,
     }
 
     /// <summary>効果の名前（CSV の effect 列）と種類の対応。</summary>
@@ -68,6 +76,10 @@ namespace TpsDungeon.Progression
             { "enemy_codex", SoulUpgradeEffect.EnemyCodex },
             { "max_hp", SoulUpgradeEffect.MaxHp },
             { "exp_boost", SoulUpgradeEffect.ExpBoost },
+            { "box_weapon", SoulUpgradeEffect.BoxWeaponRate },
+            { "box_count", SoulUpgradeEffect.BoxSpawnRate },
+            { "gacha", SoulUpgradeEffect.Gacha },
+            { "bank_size", SoulUpgradeEffect.BankSize },
         };
 
         public static bool TryParse(string name, out SoulUpgradeEffect effect)
@@ -94,7 +106,7 @@ namespace TpsDungeon.Progression
                 case SoulUpgradeEffect.DropRate: return $"ドロップ率 +{Percent(value)}";
                 case SoulUpgradeEffect.UniqueDropRate: return $"ユニークのドロップ率 +{Percent(value)}";
                 case SoulUpgradeEffect.WeaponShop: return "武器屋が開く";
-                case SoulUpgradeEffect.Bank: return "銀行が開く";
+                case SoulUpgradeEffect.Bank: return "倉庫が開く";
                 case SoulUpgradeEffect.Shortcut: return $"第 {value:0} 層へのショートカット";
                 case SoulUpgradeEffect.ShopStock: return $"武器屋の品数 +{value:0}";
                 case SoulUpgradeEffect.SellPrice: return $"売値 +{Percent(value)}";
@@ -102,7 +114,23 @@ namespace TpsDungeon.Progression
                 case SoulUpgradeEffect.EnemyCodex: return "敵図鑑";
                 case SoulUpgradeEffect.MaxHp: return $"最大体力 +{Percent(value)}";
                 case SoulUpgradeEffect.ExpBoost: return $"レベルアップ後 {Duration(value)} 経験値が増える";
+                case SoulUpgradeEffect.BoxWeaponRate: return $"箱から武器 +{Percent(value)}";
+                case SoulUpgradeEffect.BoxSpawnRate: return $"箱の数 +{Percent(value)}";
+                case SoulUpgradeEffect.Gacha: return $"ガチャ（{GachaRange(value)}）";
+                case SoulUpgradeEffect.BankSize: return $"倉庫 +{value:0} 枠";
                 default: return string.Empty;
+            }
+        }
+
+        /// <summary>ガチャの台（1〜3）が出す武器のランクの幅。</summary>
+        public static string GachaRange(float tier)
+        {
+            switch ((int)Math.Round(tier))
+            {
+                case 1: return "E〜B";
+                case 2: return "D〜A";
+                case 3: return "B〜S";
+                default: return "?";
             }
         }
 

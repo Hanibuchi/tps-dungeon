@@ -344,9 +344,11 @@ namespace TpsDungeon.Party.Editor
             GameObject bank = PlaceBuilding(p, "rpgpp_lt_building_04", parent, new Vector3(-25f, 0f, -13f), 90f);
             AddDoorGate(bank, "bank", "銀行", "持ち物を預けられる。（準備中）", MapIcon.Bank);
 
+            GameObject gacha = PlaceBuilding(p, "rpgpp_lt_building_05", parent, new Vector3(30f, 0f, 8f), -90f);
+            AddDoorGate(gacha, "gacha", "ガチャ屋", "武器を引ける。（準備中）", MapIcon.Gacha);
+
             // 東の民家（入れない）。
             PlaceBuilding(p, "rpgpp_lt_building_01", parent, new Vector3(25f, 0f, -14f), -90f);
-            PlaceBuilding(p, "rpgpp_lt_building_05", parent, new Vector3(30f, 0f, 8f), -90f);
             PlaceBuilding(p, "rpgpp_lt_building_03", parent, new Vector3(-36f, 0f, 20f), 90f);
 
             p.Block(Rect.MinMaxRect(-31f, 0f, -19f, 12f));

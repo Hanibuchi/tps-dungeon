@@ -14,6 +14,7 @@ namespace TpsDungeon.Enemies
     ///   - 草花：<see cref="PlantSpawnTable"/> を 1 回振り、当たった敵を出す。
     ///   - 箱：<see cref="BreakableDropTable"/> の自分の種類の行で、敵・武器・何も出ないを選ぶ。敵は差し込まれたその層の敵から重みで選ぶ（<see cref="SetEnemyPool"/>）。
     ///     武器は差し込まれたその層のランクの重みで選び（<see cref="SetWeaponRanks"/>）、<see cref="WeaponRolled"/> で知らせる（出すのは Items の BreakableWeaponDrop）。
+    ///     武器の重みには魂の強化の倍率（<see cref="WeaponWeightMultiplier"/>）を掛ける。
     ///   敵は少し間を置いて、土煙と音と一緒に跳ね出るように出す（小さく出て膨らむ）。
     /// 当たりは物理では誰とも当たらないレイヤー（<see cref="BreakableLayer"/>）の箱なので、草花は歩いてすり抜けられる。
     /// 箱は体で当たる子（Default レイヤーの当たり）と NavMeshObstacle も持ち、壊れたら一緒に切る（通れるようになる）。
@@ -108,6 +109,9 @@ namespace TpsDungeon.Enemies
         /// <summary>出てきた敵を置く親。null ならシーンの直下。</summary>
         public Transform SpawnParent { get; set; }
 
+        /// <summary>箱の表の「武器」の重みに掛ける倍率（魂の強化。SoulUpgradeWorld が入れる）。</summary>
+        public static float WeaponWeightMultiplier { get; set; } = 1f;
+
         /// <summary>箱から武器が出るときのランク（E〜S、WeaponRank の 0〜5）の重み。その層の表。入っていなければ武器は出ない。</summary>
         public void SetWeaponRanks(IReadOnlyList<float> weights)
         {
@@ -200,7 +204,7 @@ namespace TpsDungeon.Enemies
             if (spawnTable != null) return spawnTable.Roll(Random.value);
             if (dropTable == null || !dropTable.TryGet(dropKind, out BreakableDropTable.Entry entry)) return null;
 
-            switch (BreakableDropRoller.RollOutcome(entry.enemy, entry.weapon, entry.nothing, Random.value))
+            switch (BreakableDropRoller.RollOutcome(entry.enemy, entry.weapon * Mathf.Max(0f, WeaponWeightMultiplier), entry.nothing, Random.value))
             {
                 case BreakableOutcome.Enemy:
                     int index = BreakableDropRoller.PickWeighted(enemyWeights, Random.value);
@@ -293,5 +297,9 @@ namespace TpsDungeon.Enemies
             }
             return any ? bounds.center : transform.position + Vector3.up * 0.4f;
         }
+
+        /// <summary>Enter Play Mode でドメインを読み直さない設定でも、前の再生の倍率を持ち越さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => WeaponWeightMultiplier = 1f;
     }
 }

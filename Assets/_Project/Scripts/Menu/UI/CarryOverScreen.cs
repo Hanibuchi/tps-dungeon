@@ -138,6 +138,9 @@ namespace TpsDungeon.Menu.UI
 
             while (!confirmed) yield return null;
 
+            // 決定ボタンの音と重ならないよう、少し間を置いてから砕く。
+            yield return WaitRealtime(0.5f);
+
             // 選ばなかった物を砕いて消し、白へ戻す。
             int i = 0;
             foreach (Slot slot in slots)
@@ -146,7 +149,7 @@ namespace TpsDungeon.Menu.UI
                 VisualElement element = slot.Element;
                 UiTween.After(element, 40L * i++, () => element.AddToClassList(LostClass));
             }
-            GameAudio.Instance?.PlayUi(UiSound.Discard);
+            GameAudio.Instance?.PlayUi(UiSound.CarryLost);
             yield return WaitRealtime(0.45f + 0.04f * i);
 
             screen.AddToClassList(LeavingClass);
