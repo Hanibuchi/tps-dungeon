@@ -146,7 +146,7 @@ namespace TpsDungeon.Menu.UI
                 VisualElement element = slot.Element;
                 UiTween.After(element, 40L * i++, () => element.AddToClassList(LostClass));
             }
-            GameAudio.Instance?.PlayUi(UiSound.Discard);
+            GameAudio.Instance?.PlayUi(UiSound.CarryLost);
             yield return WaitRealtime(0.45f + 0.04f * i);
 
             screen.AddToClassList(LeavingClass);

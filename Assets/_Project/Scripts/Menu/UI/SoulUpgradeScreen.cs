@@ -496,10 +496,16 @@ namespace TpsDungeon.Menu.UI
             Vector2 from = counter.worldBound.center;
             Vector2 to = view.Element.worldBound.center;
             const long fly = 460;
-            int orbs = 6;
-            for (int i = 0; i < orbs; i++) fx.Orb(from, to, i * 45L, fly, null, 11f);
+            // 払った量が多いほど玉を多く出し、出ていく 1 粒ごとに鳴らす。多いときは間を詰めて長くなりすぎないようにする。
+            int orbs = Mathf.Clamp(Mathf.RoundToInt((before - after) / 8f), 3, 24);
+            long gap = System.Math.Clamp(900L / orbs, 40L, 70L);
+            for (int i = 0; i < orbs; i++)
+            {
+                fx.Orb(from, to, i * gap, fly, null, 11f);
+                tweens.Add(UiTween.After(counter, i * gap, () => GameAudio.Instance?.PlayUi(UiSound.SoulSpend)));
+            }
 
-            tweens.Add(UiTween.Run(counter, fly + orbs * 45L, t => SetCounter((long)Mathf.Lerp(before, after, t)), () => SetCounter(after)));
+            tweens.Add(UiTween.Run(counter, fly + orbs * gap, t => SetCounter((long)Mathf.Lerp(before, after, t)), () => SetCounter(after)));
 
             // 前の強化からの枝を、玉が届くのに合わせて金で塗り直す。
             if (view.Link != null)
@@ -513,7 +519,7 @@ namespace TpsDungeon.Menu.UI
                 GrowLink(view, fly - 160, 300);
             }
 
-            long arrive = fly + orbs * 45L;
+            long arrive = fly + orbs * gap;
             tweens.Add(UiTween.After(view.Element, arrive, () =>
             {
                 // 先の強化は現れる演出で出すので、ここで見えるようになった強化は隠しておく。
