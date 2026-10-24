@@ -146,8 +146,11 @@ namespace TpsDungeon.Menu.UI
                 VisualElement element = slot.Element;
                 UiTween.After(element, 40L * i++, () => element.AddToClassList(LostClass));
             }
+            // 決定ボタンの音と重ならないよう、砕ける音は少し遅らせる。
+            const float lostSoundDelay = 0.5f;
+            yield return WaitRealtime(lostSoundDelay);
             GameAudio.Instance?.PlayUi(UiSound.CarryLost);
-            yield return WaitRealtime(0.45f + 0.04f * i);
+            yield return WaitRealtime(Mathf.Max(0f, 0.45f + 0.04f * i - lostSoundDelay));
 
             screen.AddToClassList(LeavingClass);
             yield return WaitRealtime(0.75f);
