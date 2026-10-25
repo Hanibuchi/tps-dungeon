@@ -203,22 +203,19 @@ namespace TpsDungeon.Party
 
         // ---- 死んだとき・転生するとき ------------------------------------------
 
-        /// <summary>全滅した。全員のレベルをソウルに変えて足し、Lv1 に戻す。足したソウルを返す。</summary>
+        /// <summary>全滅した。操作していたメンバー（先頭）1 人のレベルだけをソウルに変えて足し、全員を Lv1 に戻す。足したソウルを返す。</summary>
         public static int Harvest(Party party)
         {
             var members = new List<SoulHarvestMember>();
-            if (party != null)
+            PartyMember leader = party != null ? party.Leader : null;
+            if (leader != null && leader.Progression != null)
             {
-                foreach (PartyMember member in party.Members)
+                members.Add(new SoulHarvestMember
                 {
-                    if (member == null || member.Progression == null) continue;
-                    members.Add(new SoulHarvestMember
-                    {
-                        id = member.Progression.ProgressId,
-                        name = member.DisplayName,
-                        level = member.Progression.Level,
-                    });
-                }
+                    id = leader.Progression.ProgressId,
+                    name = leader.DisplayName,
+                    level = leader.Progression.Level,
+                });
             }
 
             int gained = MetaUpgrades.Harvest(members);

@@ -19,7 +19,7 @@ namespace TpsDungeon.Party
     ///   階のスポーン地点は生成（FloorBootstrap.Start）のあとにできるので、しばらく待つ。
     /// - 移るときは音を鳴らして暗転し、読み込んだシーンで先頭を並べ終えたら明転する（<see cref="ScreenFade"/>）。
     /// - 全員が倒れたら全滅の演出（<see cref="WipeSequence"/>）を回してから死後の場所（Afterlife）へ送り、全快にする（そこで魂の姿で歩き、転生の渦から地上へ戻る）。
-    ///   送る暗転の間に、全員のレベルをソウルに変えて Lv1 に戻す（<see cref="SoulUpgradeWorld.Harvest"/>）。
+    ///   送る暗転の間に、操作していたメンバー 1 人のレベルをソウルに変え、全員を Lv1 に戻す（<see cref="SoulUpgradeWorld.Harvest"/>）。
     /// - 転生の渦に入って白く飛んだら、持ち越せる数（魂の強化）があれば持ち越す武器を選ばせ（<see cref="CarryOverPicker"/>）、ほかの持ち物を手放す。
     /// - 魂の強化をゲームに当てるのは <see cref="SoulUpgradeWorld"/>（自分の GameObject に付ける）。
     /// - 全滅から死後の場所に着いたときは、明転の代わりに目を覚ます演出（<see cref="WakeSequence"/>。瞬きしながら視界がはっきりしてくる）を回す。
@@ -184,7 +184,7 @@ namespace TpsDungeon.Party
             // そのあとに起こすと止めた部品がまた動いてしまう。
             if (party != null)
             {
-                // 全滅して死後の場所へ。レベルをソウルに変えて Lv1 に戻す（起こす前に。戻すと HP も満タンになる）。
+                // 全滅して死後の場所へ。操作していたメンバーのレベルをソウルに変えて、全員 Lv1 に戻す（起こす前に。戻すと HP も満タンになる）。
                 if (revive && sceneName == SceneTravel.AfterlifeScene) SoulUpgradeWorld.Harvest(party);
                 if (revive) party.ReviveAll();
                 else party.LeaveDownedBehind();
