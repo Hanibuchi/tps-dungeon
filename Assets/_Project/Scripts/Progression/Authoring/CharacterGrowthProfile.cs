@@ -5,6 +5,7 @@ namespace TpsDungeon.Progression
     /// <summary>
     /// キャラ 1 人分の成長パラメータ。主人公用と仲間ごとに別のアセットを作って CharacterProgression に割り当てる。
     /// 式は <see cref="GrowthCurve"/> を参照。既定値は仮の値で、GrowthCurve.Default と揃えてある。
+    /// 必要経験値と最大レベルは全員共通で、<see cref="LevelBalance"/> にある。
     /// </summary>
     [CreateAssetMenu(fileName = "CharacterGrowth", menuName = "TPS Dungeon/Character Growth")]
     public sealed class CharacterGrowthProfile : ScriptableObject
@@ -29,17 +30,7 @@ namespace TpsDungeon.Progression
         [SerializeField, Min(0f), Tooltip("伸びの指数（p_atk）。HP とは別に持つ。")]
         private float attackExponent = 1.05f;
 
-        [Header("次のレベルまでの経験値 = round(EXP_base × L^q)")]
-        [SerializeField, Min(1f), Tooltip("Lv1→2 に要る経験値（EXP_base）。")]
-        private float expBase = 10f;
-
-        [SerializeField, Min(0f), Tooltip("必要経験値の指数（q）。")]
-        private float expExponent = 2f;
-
         [Header("その他")]
-        [SerializeField, Range(1, 99), Tooltip("最大レベル。")]
-        private int maxLevel = 99;
-
         [SerializeField, Tooltip("レベルアップで MaxHP が増えたときの現在 HP。増えた分だけ足すか、全回復か。")]
         private LevelUpHpMode levelUpHp = LevelUpHpMode.AddIncrease;
 
@@ -47,8 +38,7 @@ namespace TpsDungeon.Progression
 
         public GrowthCurve Curve => new GrowthCurve(
             hpBase, hpCoefficient, hpExponent,
-            attackBase, attackCoefficient, attackExponent,
-            expBase, expExponent, maxLevel);
+            attackBase, attackCoefficient, attackExponent);
 
         /// <summary>コードから作るとき（テストや仲間の動的生成）用。</summary>
         public void Configure(GrowthCurve curve, LevelUpHpMode hpMode = LevelUpHpMode.AddIncrease)
@@ -59,9 +49,6 @@ namespace TpsDungeon.Progression
             attackBase = (float)curve.AttackBase;
             attackCoefficient = (float)curve.AttackCoefficient;
             attackExponent = (float)curve.AttackExponent;
-            expBase = (float)curve.ExpBase;
-            expExponent = (float)curve.ExpExponent;
-            maxLevel = curve.MaxLevel;
             levelUpHp = hpMode;
         }
     }

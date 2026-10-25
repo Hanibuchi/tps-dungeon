@@ -12,7 +12,7 @@ namespace TpsDungeon.Party.Editor
     /// <summary>
     /// 魂の強化を確かめるためのウィンドウ（Tools/TPS Dungeon/デバッグ/魂の燭台のデバッグ）。
     /// - ソウルを足す・0 にする、強化を払わずに解放する・戻す（1 つずつ、全部）。Play していなくても使え、本物の保存（meta.json）に書く。
-    /// - Play 中は、強化の画面を開く、全滅と同じに死後の場所へ送る（レベルがソウルに変わる）、経験値ブーストを始める。
+    /// - Play 中は、強化の画面を開く、全滅と同じに死後の場所へ送る（レベルがソウルに変わる）、経験値ボーナスを受け取る。
     /// </summary>
     public sealed class SoulAltarDebugWindow : EditorWindow
     {
@@ -20,7 +20,7 @@ namespace TpsDungeon.Party.Editor
         private IntegerField amount;
         private Button openButton;
         private Button wipeButton;
-        private Button boostButton;
+        private Button bonusButton;
         private ScrollView list;
         private readonly Dictionary<string, Toggle> toggles = new Dictionary<string, Toggle>();
         private SoulUpgradeTree builtFor;
@@ -80,8 +80,8 @@ namespace TpsDungeon.Party.Editor
             playRow.Add(openButton);
             playRow.Add(wipeButton);
             root.Add(playRow);
-            boostButton = new Button(StartBoost) { text = "経験値ブーストを始める（レベルが上がったときと同じ）" };
-            root.Add(boostButton);
+            bonusButton = new Button(GrantBonus) { text = "経験値ボーナスを受け取る（階の部屋を全部攻略したときと同じ）" };
+            root.Add(bonusButton);
 
             root.Add(new Label("強化（チェックで払わずに解放・外すと先の強化ごと戻す）") { style = { marginTop = 8, unityFontStyleAndWeight = FontStyle.Bold } });
             list = new ScrollView { style = { flexGrow = 1 } };
@@ -110,13 +110,12 @@ namespace TpsDungeon.Party.Editor
 
             SoulHarvest harvest = MetaUpgrades.PendingHarvest;
             status.text = $"ソウル: {MetaUpgrades.Souls:N0}　解放: {owned} / {tree.Count}"
-                + $"\nまだ見せていない内訳: {(harvest != null ? $"あり（{harvest.members.Count} 人・{harvest.Total} ソウル）" : "なし")}"
-                + (MetaUpgrades.IsExpBoostActive ? $"\n経験値ブースト: 残り {MetaUpgrades.ExpBoostRemaining:0} 秒" : "");
+                + $"\nまだ見せていない内訳: {(harvest != null ? $"あり（{harvest.members.Count} 人・{harvest.Total} ソウル）" : "なし")}";
 
             bool playing = EditorApplication.isPlaying;
             openButton.SetEnabled(playing && Object.FindAnyObjectByType<SoulUpgradeScreen>() != null);
             wipeButton.SetEnabled(playing && GameFlow.Instance != null && !SceneTravel.Traveling);
-            boostButton.SetEnabled(playing && MetaUpgrades.ExpBoostDuration > 0f);
+            bonusButton.SetEnabled(playing && MetaUpgrades.FloorClearExp > 0 && PartyProgression.Current != null);
         }
 
         /// <summary>強化を木の順（前の強化の下に字下げ）で並べる。</summary>
@@ -190,10 +189,10 @@ namespace TpsDungeon.Party.Editor
             GameFlow.Instance.Travel(SceneTravel.AfterlifeScene, revive: true);
         }
 
-        private static void StartBoost()
+        private static void GrantBonus()
         {
-            MetaUpgrades.StartExpBoost();
-            Debug.Log($"[Soul] デバッグ: 経験値ブーストを始めた（{MetaUpgrades.ExpBoostDuration:0} 秒）");
+            int granted = SoulUpgradeWorld.GrantFloorClearBonus();
+            Debug.Log($"[Soul] デバッグ: 経験値ボーナスを受け取った（{granted}）");
         }
     }
 }

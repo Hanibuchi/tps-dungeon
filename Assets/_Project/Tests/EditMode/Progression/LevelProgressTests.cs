@@ -26,46 +26,46 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void BelowThreshold_OnlyAccumulates()
         {
-            Assert.AreEqual(0, progress.AddExp(9));
+            Assert.AreEqual(0, progress.AddExp(99));
             Assert.AreEqual(1, progress.Level);
-            Assert.AreEqual(9, progress.Exp);
+            Assert.AreEqual(99, progress.Exp);
             Assert.AreEqual(0, levelUps);
         }
 
         [Test]
         public void ReachingThreshold_LevelsUpAndCarriesOver()
         {
-            Assert.AreEqual(1, progress.AddExp(15));
+            Assert.AreEqual(1, progress.AddExp(150));
             Assert.AreEqual(2, progress.Level);
-            Assert.AreEqual(5, progress.Exp, "Lv1→2 の 10 を引いた余り");
+            Assert.AreEqual(50, progress.Exp, "Lv1→2 の 100 を引いた余り");
             Assert.AreEqual(1, levelUps);
         }
 
         [Test]
         public void OneBigGain_LevelsUpSeveralTimesAndNotifiesOnce()
         {
-            // Lv1→5 は 10+40+90+160 = 300。
-            Assert.AreEqual(4, progress.AddExp(305));
+            // Lv1→5 は 100+110+130+160 = 500。
+            Assert.AreEqual(4, progress.AddExp(505));
             Assert.AreEqual(5, progress.Level);
             Assert.AreEqual(5, progress.Exp);
             Assert.AreEqual(1, levelUps, "何レベル上がっても 1 回");
             Assert.AreEqual(1, lastFrom);
             Assert.AreEqual(5, lastTo);
-            Assert.AreEqual(305, progress.TotalExp);
+            Assert.AreEqual(505, progress.TotalExp);
         }
 
         [Test]
         public void ReachingMaxLevel_DropsRemainderAndIgnoresFurtherGains()
         {
             progress.AddExp(int.MaxValue);
-            Assert.AreEqual(99, progress.Level);
+            Assert.AreEqual(LevelBalance.MaxLevel, progress.Level);
             Assert.AreEqual(0, progress.Exp, "上限に着いたら余りは捨てる");
             Assert.IsTrue(progress.IsMaxLevel);
 
             int changes = 0;
             progress.ExpChanged += _ => changes++;
             Assert.AreEqual(0, progress.AddExp(1000));
-            Assert.AreEqual(0, progress.Exp, "Lv99 では経験値を足さない");
+            Assert.AreEqual(0, progress.Exp, "最大レベルでは経験値を足さない");
             Assert.AreEqual(0, changes);
         }
 
@@ -90,12 +90,12 @@ namespace TpsDungeon.Progression.Tests
         public void Restore_ClampsOutOfRangeValues()
         {
             progress.Restore(150, 99999);
-            Assert.AreEqual(99, progress.Level);
+            Assert.AreEqual(LevelBalance.MaxLevel, progress.Level);
             Assert.AreEqual(0, progress.Exp);
 
             progress.Restore(3, 500);
             Assert.AreEqual(3, progress.Level);
-            Assert.AreEqual(89, progress.Exp, "次に届く手前（90-1）まで");
+            Assert.AreEqual(129, progress.Exp, "次に届く手前（130-1）まで");
 
             progress.Restore(-2, -10);
             Assert.AreEqual(1, progress.Level);

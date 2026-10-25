@@ -26,7 +26,7 @@ namespace TpsDungeon.Progression.Tests
             playerProfile = ScriptableObject.CreateInstance<CharacterGrowthProfile>();
             companionProfile = ScriptableObject.CreateInstance<CharacterGrowthProfile>();
             // 仲間は主人公と別のパラメータを持てる。
-            companionProfile.Configure(new GrowthCurve(80, 5, 1, 12, 0.5, 1, 10, 2, 99));
+            companionProfile.Configure(new GrowthCurve(80, 5, 1, 12, 0.5, 1));
 
             playerGo = new GameObject("Player");
             playerHealth = playerGo.AddComponent<PlayerHealth>();
@@ -60,7 +60,7 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void GrantExp_GivesEveryoneTheSameAmount()
         {
-            Assert.AreEqual(55, party.GrantExp(55));
+            Assert.AreEqual(250, party.GrantExp(250)); // Lv3（100+110）と 40 余り
             Assert.AreEqual(player.TotalExp, companion.TotalExp);
             Assert.AreEqual(3, player.Level);
             Assert.AreEqual(3, companion.Level);
@@ -78,7 +78,7 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void CompanionGrowsByItsOwnProfile()
         {
-            party.GrantExp(2850); // Lv10
+            party.GrantExp(2930); // Lv10
             Assert.AreEqual(10, player.Level);
             Assert.AreEqual(10, companion.Level);
             Assert.AreEqual(129, player.MaxHp);
@@ -223,7 +223,7 @@ namespace TpsDungeon.Progression.Tests
         public void Store_OverwritesExistingSave()
         {
             party.Save();
-            party.GrantExp(10);
+            party.GrantExp(100);
             party.Save();
 
             Assert.IsTrue(ProgressSaveStore.TryLoad(out var data, savePath));

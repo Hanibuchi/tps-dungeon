@@ -42,8 +42,8 @@ namespace TpsDungeon.Progression
         EnemyCodex,
         /// <summary>最大体力の上乗せ（0.1 で +10%）。</summary>
         MaxHp,
-        /// <summary>レベルが上がってからしばらく経験値が増える時間（秒）。</summary>
-        ExpBoost,
+        /// <summary>階の部屋（敵の出る部屋）を全部攻略したときにもらえる経験値（倍率を掛けない固定の量）。</summary>
+        FloorClearExp,
         /// <summary>壊した箱（木箱・宝箱）から武器が出る重みの上乗せ（0.5 で +50%）。</summary>
         BoxWeaponRate,
         /// <summary>階に置く木箱の数・宝箱の確率の上乗せ（0.25 で +25%）。</summary>
@@ -75,7 +75,7 @@ namespace TpsDungeon.Progression
             { "weapon_codex", SoulUpgradeEffect.WeaponCodex },
             { "enemy_codex", SoulUpgradeEffect.EnemyCodex },
             { "max_hp", SoulUpgradeEffect.MaxHp },
-            { "exp_boost", SoulUpgradeEffect.ExpBoost },
+            { "floor_clear_exp", SoulUpgradeEffect.FloorClearExp },
             { "box_weapon", SoulUpgradeEffect.BoxWeaponRate },
             { "box_count", SoulUpgradeEffect.BoxSpawnRate },
             { "gacha", SoulUpgradeEffect.Gacha },
@@ -113,7 +113,7 @@ namespace TpsDungeon.Progression
                 case SoulUpgradeEffect.WeaponCodex: return "武器図鑑";
                 case SoulUpgradeEffect.EnemyCodex: return "敵図鑑";
                 case SoulUpgradeEffect.MaxHp: return $"最大体力 +{Percent(value)}";
-                case SoulUpgradeEffect.ExpBoost: return $"レベルアップ後 {Duration(value)} 経験値が増える";
+                case SoulUpgradeEffect.FloorClearExp: return $"全部屋攻略で経験値 +{ShortNumber.Format((long)Math.Round(value))}";
                 case SoulUpgradeEffect.BoxWeaponRate: return $"箱から武器 +{Percent(value)}";
                 case SoulUpgradeEffect.BoxSpawnRate: return $"箱の数 +{Percent(value)}";
                 case SoulUpgradeEffect.Gacha: return $"ガチャ（{GachaRange(value)}）";
@@ -135,14 +135,5 @@ namespace TpsDungeon.Progression
         }
 
         private static string Percent(float value) => $"{Math.Round(value * 100f, 1):0.#}%";
-
-        public static string Duration(float seconds)
-        {
-            int total = (int)Math.Round(seconds);
-            int minutes = total / 60;
-            int rest = total % 60;
-            if (minutes == 0) return $"{rest} 秒";
-            return rest == 0 ? $"{minutes} 分" : $"{minutes} 分 {rest} 秒";
-        }
     }
 }

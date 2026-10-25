@@ -48,7 +48,7 @@ namespace TpsDungeon.Progression.Tests
             health.Changed += _ => healthChanges++;
             character.MaxHpChanged += (_, from, to) => { maxFrom = from; maxTo = to; };
 
-            character.AddExp(2850); // 1 回で Lv1→10
+            character.AddExp(2930); // 1 回で Lv1→10
 
             Assert.AreEqual(10, character.Level);
             Assert.AreEqual(129, health.MaxHp);
@@ -67,7 +67,7 @@ namespace TpsDungeon.Progression.Tests
             character.Configure(profile);
             health.Damage(60);
 
-            character.AddExp(10);
+            character.AddExp(100);
 
             Assert.AreEqual(2, character.Level);
             Assert.AreEqual(health.MaxHp, health.CurrentHp);
@@ -79,7 +79,7 @@ namespace TpsDungeon.Progression.Tests
             int count = 0, from = 0, to = 0;
             character.LeveledUp += (_, f, t) => { count++; from = f; to = t; };
 
-            character.AddExp(305);
+            character.AddExp(505);
 
             Assert.AreEqual(1, count);
             Assert.AreEqual(1, from);
@@ -144,7 +144,7 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void CaptureAndRestore_RoundTrip()
         {
-            character.AddExp(355); // Lv5 + 55
+            character.AddExp(555); // Lv5 + 55
             health.Damage(40);
             var data = character.Capture();
 

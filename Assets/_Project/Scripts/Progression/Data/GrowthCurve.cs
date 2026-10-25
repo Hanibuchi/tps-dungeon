@@ -7,24 +7,20 @@ namespace TpsDungeon.Progression
     ///
     ///   MaxHP(L)       = round(HpBase + HpCoefficient * (L - 1)^HpExponent)
     ///   基礎攻撃力(L)   = AttackBase + AttackCoefficient * (L - 1)^AttackExponent
-    ///   次までの経験値(L) = round(ExpBase * L^ExpExponent)（最大レベルでは 0）
     ///
-    /// 必要経験値は多項式型。指数型は最大レベル 99 だと後半が桁外れに膨らむので使わない。
+    /// 必要経験値と最大レベルはキャラごとに変えず、<see cref="LevelBalance"/> の式と定数を使う。
     /// </summary>
     public readonly struct GrowthCurve
     {
-        public const int MinLevel = 1;
+        public const int MinLevel = LevelBalance.MinLevel;
 
         /// <summary>仮の初期値。CharacterGrowthProfile の既定値もこれに揃えてある。</summary>
         public static readonly GrowthCurve Default = new GrowthCurve(
             hpBase: 100, hpCoefficient: 2.6, hpExponent: 1.1,
-            attackBase: 10, attackCoefficient: 0.162, attackExponent: 1.05,
-            expBase: 10, expExponent: 2.0,
-            maxLevel: 99);
+            attackBase: 10, attackCoefficient: 0.162, attackExponent: 1.05);
 
         public GrowthCurve(double hpBase, double hpCoefficient, double hpExponent,
-            double attackBase, double attackCoefficient, double attackExponent,
-            double expBase, double expExponent, int maxLevel)
+            double attackBase, double attackCoefficient, double attackExponent)
         {
             HpBase = hpBase;
             HpCoefficient = hpCoefficient;
@@ -32,9 +28,6 @@ namespace TpsDungeon.Progression
             AttackBase = attackBase;
             AttackCoefficient = attackCoefficient;
             AttackExponent = attackExponent;
-            ExpBase = expBase;
-            ExpExponent = expExponent;
-            MaxLevel = Math.Max(MinLevel, maxLevel);
         }
 
         public double HpBase { get; }
@@ -43,9 +36,7 @@ namespace TpsDungeon.Progression
         public double AttackBase { get; }
         public double AttackCoefficient { get; }
         public double AttackExponent { get; }
-        public double ExpBase { get; }
-        public double ExpExponent { get; }
-        public int MaxLevel { get; }
+        public int MaxLevel => LevelBalance.MaxLevel;
 
         public int ClampLevel(int level) => Math.Min(Math.Max(level, MinLevel), MaxLevel);
 
@@ -64,22 +55,11 @@ namespace TpsDungeon.Progression
             return (float)(AttackBase + AttackCoefficient * Math.Pow(level - 1, AttackExponent));
         }
 
-        /// <summary>level から level+1 に上がるのに要る経験値。最大レベルでは 0。</summary>
-        public int ExpToNext(int level)
-        {
-            level = ClampLevel(level);
-            if (level >= MaxLevel) return 0;
-            return Math.Max(1, RoundToInt(ExpBase * Math.Pow(level, ExpExponent)));
-        }
+        /// <summary>level から level+1 に上がるのに要る経験値（<see cref="LevelBalance.RequiredExp"/>）。最大レベルでは 0。</summary>
+        public int ExpToNext(int level) => LevelBalance.RequiredExp(level);
 
         /// <summary>Lv1・経験値 0 から level に到達するまでに要る経験値の合計。</summary>
-        public long TotalExpToReach(int level)
-        {
-            level = ClampLevel(level);
-            long total = 0;
-            for (int l = MinLevel; l < level; l++) total += ExpToNext(l);
-            return total;
-        }
+        public long TotalExpToReach(int level) => LevelBalance.TotalExpToReach(level);
 
         private static int RoundToInt(double value)
         {

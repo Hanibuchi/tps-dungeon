@@ -86,7 +86,7 @@ namespace TpsDungeon.Menu.UI
                 case SoulUpgradeEffect.WeaponCodex: Book(p, P); break;
                 case SoulUpgradeEffect.EnemyCodex: Skull(p, P, s); break;
                 case SoulUpgradeEffect.Shortcut: Ladder(p, P); break;
-                case SoulUpgradeEffect.ExpBoost: Hourglass(p, P); break;
+                case SoulUpgradeEffect.FloorClearExp: Flag(p, P); break;
                 case SoulUpgradeEffect.BoxWeaponRate: CrateSword(p, P); break;
                 case SoulUpgradeEffect.BoxSpawnRate: Crates(p, P); break;
                 case SoulUpgradeEffect.Gacha: Gacha(p, P, s); break;
@@ -421,22 +421,16 @@ namespace TpsDungeon.Menu.UI
             Line(p, P(0.04f, 0.12f), P(0.04f, 0.36f));
         }
 
-        private static void Hourglass(Painter2D p, Map P)
+        private static void Flag(Painter2D p, Map P)
         {
-            Line(p, P(-0.28f, -0.38f), P(0.28f, -0.38f));
-            Line(p, P(-0.28f, 0.38f), P(0.28f, 0.38f));
+            // 攻略した階に立てる旗。
+            Line(p, P(-0.22f, -0.4f), P(-0.22f, 0.4f));
+            Line(p, P(-0.36f, 0.4f), P(-0.08f, 0.4f));
             p.BeginPath();
             p.MoveTo(P(-0.22f, -0.38f));
-            p.QuadraticCurveTo(P(-0.22f, -0.08f), P(0f, 0f));
-            p.QuadraticCurveTo(P(-0.22f, 0.08f), P(-0.22f, 0.38f));
-            p.MoveTo(P(0.22f, -0.38f));
-            p.QuadraticCurveTo(P(0.22f, -0.08f), P(0f, 0f));
-            p.QuadraticCurveTo(P(0.22f, 0.08f), P(0.22f, 0.38f));
-            p.Stroke();
-            p.BeginPath();
-            p.MoveTo(P(-0.14f, 0.32f));
-            p.LineTo(P(0f, 0.16f));
-            p.LineTo(P(0.14f, 0.32f));
+            p.QuadraticCurveTo(P(0.04f, -0.46f), P(0.32f, -0.3f));
+            p.LineTo(P(0.32f, 0.02f));
+            p.QuadraticCurveTo(P(0.04f, -0.14f), P(-0.22f, -0.06f));
             p.ClosePath();
             p.Fill();
         }
