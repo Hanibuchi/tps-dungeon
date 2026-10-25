@@ -79,10 +79,10 @@ namespace TpsDungeon.Progression.Tests
 
         [TestCase(0, 1f)]
         [TestCase(1, 2f)]
-        [TestCase(2, 3f)]
-        [TestCase(3, 4f)]
-        [TestCase(4, 5f)]
-        public void ExpMultiplier_AddsOnePerUnlock(int unlocks, float expected)
+        [TestCase(2, 4f)]
+        [TestCase(3, 8f)]
+        [TestCase(4, 16f)]
+        public void ExpMultiplier_DoublesPerUnlock(int unlocks, float expected)
         {
             Assert.AreEqual(expected, LevelBalance.ExpMultiplier(unlocks), 1e-6f);
         }
@@ -93,9 +93,9 @@ namespace TpsDungeon.Progression.Tests
         /// </summary>
         [TestCase(1, 806L)]
         [TestCase(2, 3_797L)]
-        [TestCase(3, 10_026L)]
-        [TestCase(4, 19_193L)]
-        [TestCase(5, 31_476L)]
+        [TestCase(3, 6_369L)]
+        [TestCase(4, 5_939L)]
+        [TestCase(5, 3_495L)]
         public void BaseExpPerFloor_MatchesTheDesign(int layer, long expected)
         {
             double current = LevelBalance.CumulativeExp(10 * layer) / (double)LevelBalance.ExpMultiplier(layer - 1);

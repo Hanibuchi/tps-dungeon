@@ -9,7 +9,7 @@ namespace TpsDungeon.Progression
     ///   次までの経験値 need(L)    = base(L) を有効数字 2 桁で四捨五入（10〜99 はそのまま。最大レベルでは 0）
     ///   累計経験値(L)            = need(1) + … + need(L)
     ///   全滅したときのソウル soul(L) = SoulCoefficient × L^SoulExponent（到達したレベルの 1 回分）
-    ///   経験値の倍率             = 1 + ExpBonusPerUnlock × 解放数（経験値増加の強化）
+    ///   経験値の倍率             = ExpMultiplierPerUnlock ^ 解放数（経験値増加の強化。1 つごとに ×2）
     ///
     /// 丸めは整数で計算する（浮動小数点の誤差で .5 の四捨五入がずれないように）。ソウルは 64bit で持つ（Lv100 で 10 億）。
     /// </summary>
@@ -35,8 +35,8 @@ namespace TpsDungeon.Progression
         /// <summary>ソウルの指数（レベルの何乗か）。</summary>
         public const int SoulExponent = 4;
 
-        /// <summary>経験値増加の強化を 1 つ解放するごとに倍率に足す量。</summary>
-        public const float ExpBonusPerUnlock = 1f;
+        /// <summary>経験値増加の強化を 1 つ解放するごとに倍率に掛ける量。</summary>
+        public const float ExpMultiplierPerUnlock = 2f;
 
         public static int ClampLevel(int level) => Math.Min(Math.Max(level, MinLevel), MaxLevel);
 
@@ -77,7 +77,7 @@ namespace TpsDungeon.Progression
         }
 
         /// <summary>経験値増加の強化を unlockCount 個解放したときの、経験値の倍率。</summary>
-        public static float ExpMultiplier(int unlockCount) => 1f + ExpBonusPerUnlock * Math.Max(0, unlockCount);
+        public static float ExpMultiplier(int unlockCount) => (float)Math.Pow(ExpMultiplierPerUnlock, Math.Max(0, unlockCount));
 
         /// <summary>
         /// 有効数字 digits 桁に四捨五入する（整数だけで計算する）。digits 桁以下の値はそのまま。

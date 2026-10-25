@@ -228,7 +228,7 @@ namespace TpsDungeon.Progression.Tests
             MetaUpgrades.TryBuy("exp_1");
             MetaUpgrades.TryBuy("exp_2");
             MetaUpgrades.ApplyTo(modifiers);
-            Assert.AreEqual(4f, modifiers.ExpMultiplier, 1e-5f, "倍率は値ではなく解放した数で決まる（3 つで ×4）");
+            Assert.AreEqual(8f, modifiers.ExpMultiplier, 1e-5f, "倍率は値ではなく解放した数で決まる（3 つで ×8）");
         }
 
         private static float Length(RadialTreeLayout.Point p) => new Vector2(p.X, p.Y).magnitude;
