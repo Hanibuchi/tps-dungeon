@@ -32,15 +32,15 @@ ally_2,メンバー追加 II,ally_1,500000,party_size,2,もう 1 人仲間がで
 ally_3,メンバー追加 III,ally_2,3600000,party_size,3,また 1 人仲間ができる
 ally_4,メンバー追加 IV,ally_3,20000000,party_size,4,さらに 1 人仲間ができる
 # --- 宝 ---
-fortune_1,ドロップ増加 I,awaken,12000,drop_rate,0.5,敵が武器を落としやすくなる
+fortune_1,ドロップ増加 I,pack_2,12000,drop_rate,0.5,敵が武器を落としやすくなる
 fortune_2,ドロップ増加 II,fortune_1,400000,drop_rate,1.0,敵が武器をより落としやすくなる
 fortune_3,ドロップ増加 III,fortune_2,3000000,drop_rate,1.5,敵が武器をもっと落としやすくなる
 fortune_4,ドロップ増加 IV,fortune_3,8000000,drop_rate,2.0,敵が武器をさらに落としやすくなる
-relic_1,ユニークドロップ増加 I,fortune_2,600000,unique_drop_rate,0.5,敵がユニーク武器を落としやすくなる
+relic_1,ユニークドロップ増加 I,fortune_3,600000,unique_drop_rate,0.5,敵がユニーク武器を落としやすくなる
 relic_2,ユニークドロップ増加 II,relic_1,4800000,unique_drop_rate,1.0,敵がユニーク武器をより落としやすくなる
 relic_3,ユニークドロップ増加 III,relic_2,12800000,unique_drop_rate,1.5,敵がユニーク武器をもっと落としやすくなる
 relic_4,ユニークドロップ増加 IV,relic_3,32000000,unique_drop_rate,2.0,敵がユニーク武器をさらに落としやすくなる
-pack_1,大きな鞄 I,fortune_1,20000,bag_size,3,バッグの枠が増える
+pack_1,大きな鞄 I,awaken,20000,bag_size,3,バッグの枠が増える
 pack_2,大きな鞄 II,pack_1,500000,bag_size,6,バッグの枠がさらに増える
 pack_3,大きな鞄 III,pack_2,3300000,bag_size,9,バッグの枠がさらに増える
 pack_4,大きな鞄 IV,pack_3,8800000,bag_size,12,バッグの枠がさらに増える
@@ -52,10 +52,10 @@ box_weapon_1,箱の武器 I,fortune_1,20000,box_weapon,0.5,壊した箱から武
 box_weapon_2,箱の武器 II,box_weapon_1,500000,box_weapon,1.0,壊した箱から武器がより出やすくなる
 box_weapon_3,箱の武器 III,box_weapon_2,3300000,box_weapon,1.5,壊した箱から武器がもっと出やすくなる
 box_weapon_4,箱の武器 IV,box_weapon_3,8800000,box_weapon,2.0,壊した箱から武器がさらに出やすくなる
-box_count_1,箱の数 I,box_weapon_1,20000,box_count,0.25,ダンジョンに箱が多く置かれる
-box_count_2,箱の数 II,box_count_1,500000,box_count,0.5,ダンジョンに箱がより多く置かれる
-box_count_3,箱の数 III,box_count_2,3300000,box_count,0.75,ダンジョンに箱がもっと多く置かれる
-box_count_4,箱の数 IV,box_count_3,8800000,box_count,1.0,ダンジョンに箱がさらに多く置かれる
+box_count_1,箱の数 I,box_weapon_1,20000,box_count,0.5,ダンジョンに箱が多く置かれる
+box_count_2,箱の数 II,box_count_1,500000,box_count,1.0,ダンジョンに箱がより多く置かれる
+box_count_3,箱の数 III,box_count_2,3300000,box_count,1.5,ダンジョンに箱がもっと多く置かれる
+box_count_4,箱の数 IV,box_count_3,8800000,box_count,2.0,ダンジョンに箱がさらに多く置かれる
 keep_1,形見 I,awaken,30000,carry_over,1,転生するとき、装備を 1 つ持ち越せる
 keep_2,形見 II,keep_1,800000,carry_over,2,転生時、持ち越せる装備が増える
 keep_3,形見 III,keep_2,5400000,carry_over,3,転生時、持ち越せる装備が増える
@@ -72,17 +72,17 @@ haggle_1,目利き I,shop,350000,sell_price,0.25,武器を高く売れる
 haggle_2,目利き II,haggle_1,2700000,sell_price,0.5,武器をさらに高く売れる
 haggle_3,目利き III,haggle_2,7200000,sell_price,0.75,武器をさらに高く売れる
 haggle_4,目利き IV,haggle_3,18000000,sell_price,1.0,武器をさらに高く売れる
-bank,倉庫の開放,shop,500000,bank,8,地上の倉庫が開き、持ち物を預けられる
+bank,倉庫の開放,path_1,500000,bank,8,地上の倉庫が開き、持ち物を預けられる
 bank_size_1,倉庫の拡張 I,bank,400000,bank_size,16,倉庫に預けられる数が増える
 bank_size_2,倉庫の拡張 II,bank_size_1,2700000,bank_size,24,倉庫に預けられる数がさらに増える
 bank_size_3,倉庫の拡張 III,bank_size_2,7200000,bank_size,32,倉庫に預けられる数がさらに増える
 bank_size_4,倉庫の拡張 IV,bank_size_3,18000000,bank_size,40,倉庫に預けられる数がさらに増える
-gacha_1,ガチャ屋の開放,shop,400000,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
+gacha_1,ガチャ屋の開放,haggle_2,400000,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
 gacha_2,ガチャ D〜A,gacha_1,3600000,gacha,2,ガチャ屋に D〜A の武器を引ける台が並ぶ
 gacha_3,ガチャ B〜S,gacha_2,20000000,gacha,3,ガチャ屋に B〜S の武器を引ける台が並ぶ
 # --- 記憶 ---
-codex_weapon,武器の記憶,haggle_1,250000,weapon_codex,1,手にした武器を書き留める武器図鑑
-codex_enemy,魔物の記憶,codex_weapon,250000,enemy_codex,1,出会った敵を書き留める敵図鑑
+codex_weapon,武器の記憶,keep_2,250000,weapon_codex,1,手にした武器を書き留める武器図鑑
+codex_enemy,魔物の記憶,keep_4,250000,enemy_codex,1,出会った敵を書き留める敵図鑑
 # --- 道 ---
 path_1,第１層への近道,awaken,30000,shortcut,1,地上のロープから第 1 層のボス階へ行ける
 path_2,第２層への近道,path_1,600000,shortcut,2,地上のロープから第 2 層のボス階へ行ける
