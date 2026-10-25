@@ -18,7 +18,4 @@ MonoBehaviour:
   attackBase: 10
   attackCoefficient: 0.162
   attackExponent: 1.05
-  expBase: 10
-  expExponent: 2
-  maxLevel: 99
   levelUpHp: 0

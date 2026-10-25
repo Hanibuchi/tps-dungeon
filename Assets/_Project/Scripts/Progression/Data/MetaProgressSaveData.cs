@@ -11,7 +11,7 @@ namespace TpsDungeon.Progression
         public string id;
         public string name;
         public int level;
-        public int souls;
+        public long souls;
     }
 
     /// <summary>死んで得たソウルの内訳。死後の場所で初めて強化の画面を開いたときに演出で見せ、見せたら消す。</summary>
@@ -20,13 +20,13 @@ namespace TpsDungeon.Progression
     {
         public List<SoulHarvestMember> members = new List<SoulHarvestMember>();
 
-        public int Total
+        public long Total
         {
             get
             {
                 long total = 0;
                 foreach (SoulHarvestMember member in members) total += member.souls;
-                return (int)Math.Min(int.MaxValue, total);
+                return total;
             }
         }
     }

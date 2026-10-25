@@ -139,7 +139,7 @@ namespace TpsDungeon.Progression.Tests
 
             var modifiers = new ProgressionModifiers();
             MetaUpgrades.ApplyTo(modifiers);
-            Assert.AreEqual(1.1f, modifiers.ExpMultiplier, 1e-5f, "経験値の倍率には入らない");
+            Assert.AreEqual(2f, modifiers.ExpMultiplier, 1e-5f, "経験値の倍率には入らない（root の経験値増加 1 つ分だけ）");
         }
 
         [Test]
@@ -176,15 +176,6 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
-        public void SoulConversion_GrowsWithLevel()
-        {
-            Assert.AreEqual(0, SoulConversion.SoulsFor(1));
-            Assert.AreEqual(0, SoulConversion.SoulsFor(0));
-            Assert.Greater(SoulConversion.SoulsFor(10), SoulConversion.SoulsFor(5));
-            Assert.AreEqual(9, SoulConversion.SoulsFor(10, 1f, 1f));
-        }
-
-        [Test]
         public void MetaUpgrades_BuysAndSaves()
         {
             MetaUpgrades.AddSouls(20);
@@ -203,12 +194,12 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void MetaUpgrades_HarvestAddsSoulsAndKeepsTheBreakdownUntilShown()
         {
-            int gained = MetaUpgrades.Harvest(new[]
+            long gained = MetaUpgrades.Harvest(new[]
             {
                 new SoulHarvestMember { id = "player", name = "主人公", level = 10 },
                 new SoulHarvestMember { id = "member_1", name = "仲間", level = 1 },
             });
-            Assert.AreEqual(MetaUpgrades.SoulsFor(10), gained);
+            Assert.AreEqual(100_000L + 10L, gained, "Lv10 の 10 × 10⁴ と Lv1 の 10");
             Assert.AreEqual(gained, MetaUpgrades.Souls);
             Assert.IsTrue(MetaUpgrades.HasHarvest);
             Assert.AreEqual(2, MetaUpgrades.PendingHarvest.members.Count);
@@ -231,8 +222,13 @@ namespace TpsDungeon.Progression.Tests
 
             var modifiers = new ProgressionModifiers();
             MetaUpgrades.ApplyTo(modifiers);
-            Assert.AreEqual(1.1f, modifiers.ExpMultiplier, 1e-5f);
+            Assert.AreEqual(2f, modifiers.ExpMultiplier, 1e-5f, "経験値増加を 1 つ解放して ×2");
             Assert.AreEqual(0.1f, modifiers.MaxHp.Percent, 1e-5f);
+
+            MetaUpgrades.TryBuy("exp_1");
+            MetaUpgrades.TryBuy("exp_2");
+            MetaUpgrades.ApplyTo(modifiers);
+            Assert.AreEqual(4f, modifiers.ExpMultiplier, 1e-5f, "倍率は値ではなく解放した数で決まる（3 つで ×4）");
         }
 
         private static float Length(RadialTreeLayout.Point p) => new Vector2(p.X, p.Y).magnitude;

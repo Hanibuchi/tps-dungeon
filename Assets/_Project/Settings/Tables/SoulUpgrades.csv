@@ -1,6 +1,6 @@
 id,name,parent,cost,effect,value,description
 # 魂の強化の木parent が空の行が真ん中（最初に獲得する強化）parent の強化を解放するまで、その先は見えない
-# value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%、floor_clear_exp は経験値（倍率を掛けない）、shortcut は層の番号（1 始まり）
+# value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%（exp_rate の倍率は解放した数から LevelBalance で出す。value は表示用で 1 段 +100%）、floor_clear_exp は経験値（倍率を掛けない）、shortcut は層の番号（1 始まり）
 # 前の強化が同じ effect なら続きの段として、前の段の値を引いた分だけ上乗せする（真ん中の強化は先の段とつながらない）
 awaken,魂の目覚め,,5,max_hp,1.0,最大体力が増える
 # --- 生命 ---
@@ -9,10 +9,10 @@ vigor_2,体力増加 II,vigor_1,30,max_hp,1.4,最大体力がより増える
 vigor_3,体力増加 III,vigor_2,80,max_hp,1.6,最大体力がもっと増える
 vigor_4,体力増加 IV,vigor_3,100,max_hp,1.8,最大体力がさらに増える
 # --- 経験値 ---
-exp_rate_1,経験値増加 I,awaken,25,exp_rate,0.2,得られる経験値が増える
-exp_rate_2,経験値増加 II,exp_rate_1,60,exp_rate,0.4,得られる経験値がより増える
-exp_rate_3,経験値増加 III,exp_rate_2,150,exp_rate,0.6,得られる経験値がもっと増える
-exp_rate_4,経験値増加 IV,exp_rate_3,200,exp_rate,0.8,得られる経験値がさらに増える
+exp_rate_1,経験値増加 I,awaken,25,exp_rate,1,得られる経験値が増える
+exp_rate_2,経験値増加 II,exp_rate_1,60,exp_rate,2,得られる経験値がより増える
+exp_rate_3,経験値増加 III,exp_rate_2,150,exp_rate,3,得られる経験値がもっと増える
+exp_rate_4,経験値増加 IV,exp_rate_3,200,exp_rate,4,得られる経験値がさらに増える
 bonus_1,経験値ボーナス I,exp_rate_2,25,floor_clear_exp,50,階の部屋を全部攻略すると経験値がもらえる
 bonus_2,経験値ボーナス II,bonus_1,60,floor_clear_exp,150,全部屋攻略でもらえる経験値が増える
 bonus_3,経験値ボーナス III,bonus_2,150,floor_clear_exp,300,全部屋攻略でもらえる経験値がより増える

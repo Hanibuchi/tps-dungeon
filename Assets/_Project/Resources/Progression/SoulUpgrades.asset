@@ -53,28 +53,28 @@ MonoBehaviour:
     parent: awaken
     cost: 25
     effect: 1
-    value: 0.2
+    value: 1
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u5897\u3048\u308B"
   - id: exp_rate_2
     name: "\u7D4C\u9A13\u5024\u5897\u52A0 II"
     parent: exp_rate_1
     cost: 60
     effect: 1
-    value: 0.4
+    value: 2
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3088\u308A\u5897\u3048\u308B"
   - id: exp_rate_3
     name: "\u7D4C\u9A13\u5024\u5897\u52A0 III"
     parent: exp_rate_2
     cost: 150
     effect: 1
-    value: 0.6
+    value: 3
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3082\u3063\u3068\u5897\u3048\u308B"
   - id: exp_rate_4
     name: "\u7D4C\u9A13\u5024\u5897\u52A0 IV"
     parent: exp_rate_3
     cost: 200
     effect: 1
-    value: 0.8
+    value: 4
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
   - id: bonus_1
     name: "\u7D4C\u9A13\u5024\u30DC\u30FC\u30CA\u30B9 I"
@@ -568,5 +568,3 @@ MonoBehaviour:
     effect: 11
     value: 5
     description: "\u5730\u4E0A\u306E\u30ED\u30FC\u30D7\u304B\u3089\u7B2C 5 \u5C64\u306E\u30DC\u30B9\u968E\u3078\u884C\u3051\u308B"
-  soulsPerLevel: 2
-  soulExponent: 1.3

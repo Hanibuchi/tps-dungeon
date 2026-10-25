@@ -505,7 +505,7 @@ namespace TpsDungeon.Menu.UI
                 tweens.Add(UiTween.After(counter, i * gap, () => GameAudio.Instance?.PlayUi(UiSound.SoulSpend)));
             }
 
-            tweens.Add(UiTween.Run(counter, fly + orbs * gap, t => SetCounter((long)Mathf.Lerp(before, after, t)), () => SetCounter(after)));
+            tweens.Add(UiTween.Run(counter, fly + orbs * gap, t => SetCounter(before + (long)System.Math.Round((after - before) * (double)t)), () => SetCounter(after)));
 
             // 前の強化からの枝を、玉が届くのに合わせて金で塗り直す。
             if (view.Link != null)

@@ -174,20 +174,14 @@ namespace TpsDungeon.Progression
 
         public static SoulHarvest PendingHarvest => Load().hasHarvest ? Load().harvest : null;
 
-        /// <summary>1 人分のソウル（表の式）。</summary>
-        public static int SoulsFor(int level)
-        {
-            SoulUpgradeTable source = Table;
-            return source != null
-                ? SoulConversion.SoulsFor(level, source.SoulsPerLevel, source.SoulExponent)
-                : SoulConversion.SoulsFor(level);
-        }
+        /// <summary>1 人分のソウル（<see cref="LevelBalance.SoulReward"/>）。</summary>
+        public static long SoulsFor(int level) => LevelBalance.SoulReward(level);
 
         /// <summary>
         /// 死んだ。members の各人のレベルをソウルに変えて足し、内訳を残す（前の内訳をまだ見せていなければ後ろに足す）。
         /// レベルを戻すのは呼ぶ側（PartyProgression.ResetForNewRun）。足したソウルを返す。
         /// </summary>
-        public static int Harvest(IEnumerable<SoulHarvestMember> members)
+        public static long Harvest(IEnumerable<SoulHarvestMember> members)
         {
             MetaProgressSaveData data = Load();
             if (!data.hasHarvest) data.harvest.members.Clear();
@@ -207,7 +201,7 @@ namespace TpsDungeon.Progression
             data.hasHarvest = true;
             data.souls += gained;
             Commit();
-            return (int)Math.Min(int.MaxValue, gained);
+            return gained;
         }
 
         /// <summary>死んだときの内訳を見せ終えた。</summary>
@@ -290,12 +284,12 @@ namespace TpsDungeon.Progression
 
         // ---- 補正 ------------------------------------------------------------
 
-        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。</summary>
+        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。経験値の倍率は、経験値増加の強化を解放した数から出す（<see cref="LevelBalance.ExpMultiplier"/>）。</summary>
         public static void ApplyTo(ProgressionModifiers modifiers)
         {
             if (modifiers == null) return;
 
-            modifiers.SetExpMultiplier(1f + Total(SoulUpgradeEffect.ExpRate));
+            modifiers.SetExpMultiplier(LevelBalance.ExpMultiplier(Values(SoulUpgradeEffect.ExpRate).Count));
             modifiers.SetMaxHp(new StatModifier(0f, Total(SoulUpgradeEffect.MaxHp)));
             modifiers.SetCritChance(new StatModifier(Total(SoulUpgradeEffect.CritChance), 0f));
             modifiers.SetCritMultiplier(new StatModifier(Total(SoulUpgradeEffect.CritMultiplier), 0f));

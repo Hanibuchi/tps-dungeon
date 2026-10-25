@@ -28,7 +28,7 @@ namespace TpsDungeon.Menu.UI
             public Label Level;
             public Label Souls;
             public SoulHarvestMember Member;
-            public int Shown;
+            public long Shown;
         }
 
         private readonly VisualElement root;
@@ -43,7 +43,7 @@ namespace TpsDungeon.Menu.UI
 
         private Action onDone;
         private long soulsBefore;
-        private int harvestTotal;
+        private long harvestTotal;
         private int finishedCards;
 
         public SoulHarvestView(VisualElement root, SoulFx fx, Action<long> setCounter, Func<VisualElement> counterTarget)
@@ -183,13 +183,13 @@ namespace TpsDungeon.Menu.UI
         {
             int from = Mathf.Max(GrowthCurve.MinLevel, card.Member.level);
             int levels = from - GrowthCurve.MinLevel;
-            int souls = card.Member.souls;
+            long souls = card.Member.souls;
             long duration = levels <= 0 ? 300 : Math.Min(3200, 700 + 110L * levels);
             card.Element.AddToClassList("soul-harvest-card--burning");
 
             int lastLevel = from;
             int orbsSent = 0;
-            int orbs = Mathf.Clamp(Mathf.CeilToInt(souls / 3f), souls > 0 ? 3 : 0, 26);
+            int orbs = souls <= 0 ? 0 : (int)Math.Min(26L, Math.Max(3L, (souls + 2) / 3));
             tweens.Add(UiTween.Run(card.Element, duration, t =>
             {
                 int level = Mathf.RoundToInt(Mathf.Lerp(from, GrowthCurve.MinLevel, t));
@@ -221,15 +221,14 @@ namespace TpsDungeon.Menu.UI
         }
 
         /// <summary>札から合計へ玉を 1 つ。届いたら札と合計の数を、玉の分だけ進める。</summary>
-        private void SendOrb(Card card, int souls, int orbs)
+        private void SendOrb(Card card, long souls, int orbs)
         {
-            int index = card.Shown;
             Vector2 from = card.Level.worldBound.center;
             Vector2 to = totalValue.worldBound.center;
-            int share = Mathf.CeilToInt(souls / (float)Mathf.Max(1, orbs));
+            long share = (souls + Math.Max(1, orbs) - 1) / Math.Max(1, orbs);
             fx.Orb(from, to, 0, 560, () =>
             {
-                card.Shown = Mathf.Min(souls, card.Shown + share);
+                card.Shown = Math.Min(souls, card.Shown + share);
                 card.Souls.text = $"+{card.Shown}";
                 RefreshTotal();
                 UiTransitions.Flash(total, "soul-harvest__total--bump", 120);
@@ -239,7 +238,7 @@ namespace TpsDungeon.Menu.UI
 
         private void RefreshTotal()
         {
-            int sum = 0;
+            long sum = 0;
             foreach (Card card in cardList) sum += card.Shown;
             totalValue.text = sum.ToString();
         }
@@ -273,7 +272,7 @@ namespace TpsDungeon.Menu.UI
                 GameAudio.Instance?.PlayUi(UiSound.SoulBank);
                 long before = soulsBefore;
                 long after = soulsBefore + harvestTotal;
-                tweens.Add(UiTween.Run(root, 600, t => setCounter((long)Mathf.Lerp(before, after, t)), () =>
+                tweens.Add(UiTween.Run(root, 600, t => setCounter(before + (long)Math.Round((after - before) * (double)t)), () =>
                 {
                     setCounter(after);
                     tweens.Add(UiTween.After(root, 450, Finish));

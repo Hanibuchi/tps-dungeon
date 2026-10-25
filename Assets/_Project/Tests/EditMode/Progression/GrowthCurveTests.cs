@@ -33,19 +33,21 @@ namespace TpsDungeon.Progression.Tests
             Assert.AreEqual(3.0, Curve.BaseAttack(99) / Curve.BaseAttack(1), 0.1, "攻撃力は初期値の約 3 倍");
         }
 
-        [TestCase(1, 10)]
-        [TestCase(2, 40)]
-        [TestCase(10, 1000)]
-        [TestCase(98, 96040)]
-        public void ExpToNext_IsPolynomial(int level, int expected)
+        [TestCase(1, 100)]
+        [TestCase(2, 110)]
+        [TestCase(10, 1100)]
+        [TestCase(50, 130000)]
+        public void ExpToNext_FollowsLevelBalance(int level, int expected)
         {
             Assert.AreEqual(expected, Curve.ExpToNext(level));
+            Assert.AreEqual(LevelBalance.RequiredExp(level), Curve.ExpToNext(level));
         }
 
         [Test]
         public void ExpToNext_IsZeroAtMaxLevel()
         {
-            Assert.AreEqual(0, Curve.ExpToNext(99));
+            Assert.AreEqual(LevelBalance.MaxLevel, Curve.MaxLevel);
+            Assert.AreEqual(0, Curve.ExpToNext(LevelBalance.MaxLevel));
             Assert.AreEqual(0, Curve.ExpToNext(150), "上限を超えたレベルは上限として扱う");
         }
 
@@ -53,16 +55,16 @@ namespace TpsDungeon.Progression.Tests
         public void TotalExp_IsSumOfSteps()
         {
             Assert.AreEqual(0, Curve.TotalExpToReach(1));
-            Assert.AreEqual(10, Curve.TotalExpToReach(2));
-            Assert.AreEqual(2850, Curve.TotalExpToReach(10));
-            Assert.AreEqual(3185490, Curve.TotalExpToReach(99));
+            Assert.AreEqual(100, Curve.TotalExpToReach(2));
+            Assert.AreEqual(2930, Curve.TotalExpToReach(10));
+            Assert.AreEqual(4030, Curve.TotalExpToReach(11));
         }
 
         [Test]
         public void Level_IsClampedToRange()
         {
             Assert.AreEqual(Curve.MaxHp(1), Curve.MaxHp(0));
-            Assert.AreEqual(Curve.MaxHp(99), Curve.MaxHp(200));
+            Assert.AreEqual(Curve.MaxHp(LevelBalance.MaxLevel), Curve.MaxHp(200));
         }
 
         [Test]
@@ -71,7 +73,7 @@ namespace TpsDungeon.Progression.Tests
             string table = GrowthTable.Format(Curve);
             StringAssert.Contains("| 1 | 100 |", table);
             StringAssert.Contains("| 50 | 288 |", table);
-            StringAssert.Contains("| 99 | 503 |", table);
+            StringAssert.Contains($"| {LevelBalance.MaxLevel} | {Curve.MaxHp(LevelBalance.MaxLevel)} |", table);
         }
     }
 }
