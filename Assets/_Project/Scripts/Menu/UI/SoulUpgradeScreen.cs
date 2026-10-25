@@ -269,7 +269,7 @@ namespace TpsDungeon.Menu.UI
         private void SetCounter(long value)
         {
             shownSouls = value;
-            if (counterValue != null) counterValue.text = value.ToString("N0");
+            if (counterValue != null) counterValue.text = ShortNumber.Format(value);
         }
 
         private void OnUpgradesChanged()
@@ -379,7 +379,7 @@ namespace TpsDungeon.Menu.UI
             view.Element.EnableInClassList(OwnedClass, owned);
             view.Element.EnableInClassList(AvailableClass, available);
             view.Element.EnableInClassList(LockedClass, visible && !owned && !available);
-            view.Cost.text = owned ? string.Empty : view.Node.cost.ToString();
+            view.Cost.text = owned ? string.Empty : ShortNumber.Format(view.Node.cost);
 
             if (available && !view.Pulsing)
             {
@@ -600,13 +600,13 @@ namespace TpsDungeon.Menu.UI
             {
                 SoulUpgradeCheck.Owned => "解放済み",
                 SoulUpgradeCheck.Ok => "クリックで解放",
-                SoulUpgradeCheck.NotEnough => $"ソウルが {node.cost - MetaUpgrades.Souls} 足りない",
+                SoulUpgradeCheck.NotEnough => $"ソウルが {ShortNumber.Format(node.cost - MetaUpgrades.Souls)} 足りない",
                 _ => string.Empty,
             };
             tooltip.EnableInClassList("soul-tooltip--owned", check == SoulUpgradeCheck.Owned);
             tooltip.EnableInClassList("soul-tooltip--short", check == SoulUpgradeCheck.NotEnough);
             tooltipPrice.style.display = check == SoulUpgradeCheck.Owned ? DisplayStyle.None : DisplayStyle.Flex;
-            tooltipCost.text = node.cost.ToString();
+            tooltipCost.text = ShortNumber.Format(node.cost);
 
             PlaceTooltip(view);
             UiTransitions.Show(tooltip);

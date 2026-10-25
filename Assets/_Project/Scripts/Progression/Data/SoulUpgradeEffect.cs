@@ -113,7 +113,7 @@ namespace TpsDungeon.Progression
                 case SoulUpgradeEffect.WeaponCodex: return "武器図鑑";
                 case SoulUpgradeEffect.EnemyCodex: return "敵図鑑";
                 case SoulUpgradeEffect.MaxHp: return $"最大体力 +{Percent(value)}";
-                case SoulUpgradeEffect.FloorClearExp: return $"全部屋攻略で経験値 +{value:0}";
+                case SoulUpgradeEffect.FloorClearExp: return $"全部屋攻略で経験値 +{ShortNumber.Format((long)Math.Round(value))}";
                 case SoulUpgradeEffect.BoxWeaponRate: return $"箱から武器 +{Percent(value)}";
                 case SoulUpgradeEffect.BoxSpawnRate: return $"箱の数 +{Percent(value)}";
                 case SoulUpgradeEffect.Gacha: return $"ガチャ（{GachaRange(value)}）";

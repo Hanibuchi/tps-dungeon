@@ -662,7 +662,7 @@ namespace TpsDungeon.Hud
 
         private void OnFloorClearBonus(int exp) => ShowBanner(ClearedTitle, ClearedNote(exp), gold: true, ClearedBannerMs);
 
-        public static string ClearedNote(int exp) => $"経験値ボーナス +{exp}";
+        public static string ClearedNote(int exp) => $"経験値ボーナス +{ShortNumber.Format(exp)}";
 
         /// <summary>
         /// 上中央に見出しを出す。閉じ込めたときは赤い「モンスターハウス！」と添え書き、鍵が開いたときは金の「扉が開いた」だけ、

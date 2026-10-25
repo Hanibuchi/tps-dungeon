@@ -112,7 +112,7 @@ namespace TpsDungeon.Menu.UI
             foreach (Card card in cardList)
             {
                 card.Level.text = $"Lv {GrowthCurve.MinLevel}";
-                card.Souls.text = $"+{card.Member.souls}";
+                card.Souls.text = $"+{ShortNumber.Format(card.Member.souls)}";
             }
             setCounter(soulsBefore + harvestTotal);
             Finish();
@@ -213,7 +213,7 @@ namespace TpsDungeon.Menu.UI
                 tweens.Add(UiTween.After(root, souls > 0 ? 700 : 100, () =>
                 {
                     card.Shown = souls;
-                    card.Souls.text = $"+{souls}";
+                    card.Souls.text = $"+{ShortNumber.Format(souls)}";
                     RefreshTotal();
                     if (++finishedCards >= cardList.Count) tweens.Add(UiTween.After(root, 650, Bank));
                 }));
@@ -229,7 +229,7 @@ namespace TpsDungeon.Menu.UI
             fx.Orb(from, to, 0, 560, () =>
             {
                 card.Shown = Math.Min(souls, card.Shown + share);
-                card.Souls.text = $"+{card.Shown}";
+                card.Souls.text = $"+{ShortNumber.Format(card.Shown)}";
                 RefreshTotal();
                 UiTransitions.Flash(total, "soul-harvest__total--bump", 120);
                 GameAudio.Instance?.PlayUi(UiSound.SoulGain);
@@ -240,7 +240,7 @@ namespace TpsDungeon.Menu.UI
         {
             long sum = 0;
             foreach (Card card in cardList) sum += card.Shown;
-            totalValue.text = sum.ToString();
+            totalValue.text = ShortNumber.Format(sum);
         }
 
         /// <summary>合計を右上の手持ちへ飛ばす。</summary>
