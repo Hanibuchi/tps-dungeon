@@ -1,23 +1,23 @@
+using System;
 using System.Collections.Generic;
 using TpsDungeon.Enemies;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Progression;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace TpsDungeon.Party
 {
     /// <summary>
     /// 魂の強化（<see cref="MetaUpgrades"/>）をゲームに当てる。<see cref="GameFlow"/> が自分の GameObject に付ける。
-    /// - パーティーの補正（経験値・体力・クリティカル・ドロップ）は、起きたときと、強化を買うたび・経験値ブーストが始まる・終わるたびに入れ直す。
+    /// - パーティーの補正（経験値・体力・クリティカル・ドロップ）は、起きたときと、強化を買うたびに入れ直す。
     /// - 共有のバッグは、強化の分だけ枠を足す（増やした分を覚えておき、何度当てても増えすぎない）。
     /// - ショートカットは、解放した層を開ける（閉じるのは「階のデバッグ」ウィンドウに任せる）。
     /// - 地上の武器屋・銀行・ガチャ屋の扉（SceneGate の textId が weapon_shop / bank / gacha）は、解放してあれば開ける。中の画面はまだ無い。
     /// - 箱の数（FloorBuilder.BoxSpawnMultiplier）と箱から武器が出る重み（BreakableProp.WeaponWeightMultiplier）を入れる。
     /// - 仲間の人数は、地上で始めたときと、転生して地上に着いたときに合わせる。連れて行けない仲間はパーティーから外して隠す。
     ///   転生で加わった仲間は Lv1 から。
-    /// - 経験値を得て誰かのレベルが上がったら、経験値ブーストを始める（途中なら長さを戻す）。時間は死後の場所の外でだけ進む（ポーズ中は止まる）。
+    /// - 階の部屋を全部攻略したら（<see cref="RoomEnemySpawner.AnyAllRoomsCleared"/>）、経験値ボーナスの強化の分だけ倍率を掛けずに経験値を配り、<see cref="FloorClearBonusGranted"/> で知らせる。
     /// 死んだときにレベルをソウルに変えるのは <see cref="Harvest"/>、持ち物を手放すのは <see cref="DiscardItems"/>（どちらも GameFlow が呼ぶ）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -32,7 +32,6 @@ namespace TpsDungeon.Party
         private Party party;
         private readonly List<PartyMember> roster = new List<PartyMember>();
         private int addedBagSlots;
-        private PartyProgression watched;
 
         public Party Party
         {
@@ -40,32 +39,23 @@ namespace TpsDungeon.Party
             set => party = value;
         }
 
+        /// <summary>階の部屋を全部攻略して、経験値ボーナスを配った（配った量）。</summary>
+        public static event Action<int> FloorClearBonusGranted;
+
         /// <summary>連れて行ける人数（先頭を含む）。</summary>
         public static int AllowedMembers => 1 + MetaUpgrades.ExtraMembers;
 
         private void OnEnable()
         {
             MetaUpgrades.Changed += OnUpgradesChanged;
-            MetaUpgrades.ExpBoostChanged += ApplyModifiers;
+            RoomEnemySpawner.AnyAllRoomsCleared += OnAllRoomsCleared;
         }
 
         private void OnDisable()
         {
             MetaUpgrades.Changed -= OnUpgradesChanged;
-            MetaUpgrades.ExpBoostChanged -= ApplyModifiers;
-            Watch(null);
+            RoomEnemySpawner.AnyAllRoomsCleared -= OnAllRoomsCleared;
         }
-
-        /// <summary>経験値でのレベルアップを見る相手を替える。</summary>
-        private void Watch(PartyProgression progression)
-        {
-            if (watched == progression) return;
-            if (watched != null) watched.LeveledUpByExp -= OnLeveledUpByExp;
-            watched = progression;
-            if (watched != null) watched.LeveledUpByExp += OnLeveledUpByExp;
-        }
-
-        private static void OnLeveledUpByExp(PartyProgression _, CharacterProgression __) => MetaUpgrades.StartExpBoost();
 
         private void Start()
         {
@@ -74,11 +64,18 @@ namespace TpsDungeon.Party
             OnUpgradesChanged();
         }
 
-        private void Update()
+        /// <summary>階の部屋を全部攻略した。経験値ボーナスを解放していれば、その量を倍率を掛けずに全員に配る。</summary>
+        private static void OnAllRoomsCleared(RoomEnemySpawner _) => GrantFloorClearBonus();
+
+        /// <summary>経験値ボーナスを配る（デバッグの窓からも呼ぶ）。配った量を返す。</summary>
+        public static int GrantFloorClearBonus()
         {
-            Watch(PartyProgression.Current);
-            if (SceneManager.GetActiveScene().name == SceneTravel.AfterlifeScene) return;
-            MetaUpgrades.TickExpBoost(Time.deltaTime);
+            int amount = MetaUpgrades.FloorClearExp;
+            PartyProgression progression = PartyProgression.Current;
+            if (amount <= 0 || progression == null) return 0;
+            int granted = progression.GrantFlatExp(amount);
+            if (granted > 0) FloorClearBonusGranted?.Invoke(granted);
+            return granted;
         }
 
         private void OnUpgradesChanged()
@@ -146,6 +143,10 @@ namespace TpsDungeon.Party
             gate.IsOpen = open;
             if (open) gate.OpenLabel = OpenShopLabel;
         }
+
+        /// <summary>Enter Play Mode でドメインを読み直さない設定でも、前の再生の購読を持ち越さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => FloorClearBonusGranted = null;
 
         // ---- 仲間の人数 ------------------------------------------------------
 

@@ -11,7 +11,6 @@ namespace TpsDungeon.Progression
     /// - 死んだときは <see cref="Harvest"/> でレベルをソウルに変えて足し、内訳を「まだ見せていない」として残す。
     ///   死後の場所で強化の画面を初めて開いたときに演出で見せ、<see cref="ClearHarvest"/> で消す。
     /// - 効果の量は <see cref="Total"/> で引く。パーティーの補正（経験値・体力・クリティカル・ドロップ）は <see cref="ApplyTo"/> で入れる。
-    /// - レベルが上がってからしばらく経験値が増えるブーストは、ここで残り時間を持つ（<see cref="StartExpBoost"/> / <see cref="TickExpBoost"/>。保存はしない）。
     /// 変わったら <see cref="Changed"/> で知らせる。
     /// </summary>
     public static class MetaUpgrades
@@ -26,13 +25,9 @@ namespace TpsDungeon.Progression
         private static SoulUpgradeTree tree;
         private static SoulUpgradeTable table;
         private static bool tableLoaded;
-        private static float expBoostRemaining;
 
         /// <summary>ソウル・解放した強化・まだ見せていない内訳のどれかが変わった。</summary>
         public static event Action Changed;
-
-        /// <summary>経験値ブーストが始まった・終わった。</summary>
-        public static event Action ExpBoostChanged;
 
         /// <summary>保存先を差し替える（テスト用）。null か空なら既定の場所に戻す。読み込んだ状態も捨てる。</summary>
         public static string PathOverride
@@ -159,6 +154,9 @@ namespace TpsDungeon.Progression
 
         /// <summary>倉庫に足す枠の数（倉庫の画面ができたら読む）。</summary>
         public static int ExtraBankSlots => Mathf.Max(0, Mathf.RoundToInt(Total(SoulUpgradeEffect.BankSize)));
+
+        /// <summary>階の部屋を全部攻略したときにもらえる経験値（倍率を掛けない）。解放していなければ 0。</summary>
+        public static int FloorClearExp => Mathf.Max(0, Mathf.RoundToInt(Total(SoulUpgradeEffect.FloorClearExp)));
 
         /// <summary>ソウルを足す（デバッグや、死んだとき）。</summary>
         public static void AddSouls(long amount)
@@ -287,56 +285,22 @@ namespace TpsDungeon.Progression
         {
             current = new MetaProgressSaveData();
             purchased = new HashSet<string>(StringComparer.Ordinal);
-            expBoostRemaining = 0f;
             Commit();
-            ExpBoostChanged?.Invoke();
         }
 
         // ---- 補正 ------------------------------------------------------------
 
-        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。ブーストの間は経験値にブーストの倍率も掛ける。</summary>
+        /// <summary>経験値・体力・クリティカル・ドロップの補正を入れる。</summary>
         public static void ApplyTo(ProgressionModifiers modifiers)
         {
             if (modifiers == null) return;
 
-            float boost = IsExpBoostActive ? ExpBoostMultiplier : 1f;
-            modifiers.SetExpMultiplier((1f + Total(SoulUpgradeEffect.ExpRate)) * boost);
+            modifiers.SetExpMultiplier(1f + Total(SoulUpgradeEffect.ExpRate));
             modifiers.SetMaxHp(new StatModifier(0f, Total(SoulUpgradeEffect.MaxHp)));
             modifiers.SetCritChance(new StatModifier(Total(SoulUpgradeEffect.CritChance), 0f));
             modifiers.SetCritMultiplier(new StatModifier(Total(SoulUpgradeEffect.CritMultiplier), 0f));
             modifiers.SetDropRate(new StatModifier(0f, Total(SoulUpgradeEffect.DropRate)));
             modifiers.SetUniqueDropRate(new StatModifier(0f, Total(SoulUpgradeEffect.UniqueDropRate)));
-        }
-
-        // ---- レベルアップ後の経験値ブースト -------------------------------------
-
-        /// <summary>ブーストの残り（秒）。</summary>
-        public static float ExpBoostRemaining => expBoostRemaining;
-
-        /// <summary>ブーストの長さ（秒。解放した一番先の段の値）。</summary>
-        public static float ExpBoostDuration => Mathf.Max(0f, Total(SoulUpgradeEffect.ExpBoost));
-
-        public static bool IsExpBoostActive => expBoostRemaining > 0f;
-
-        /// <summary>ブーストの間、経験値に掛ける倍率。</summary>
-        public static float ExpBoostMultiplier => Table != null ? Table.ExpBoostMultiplier : 2f;
-
-        /// <summary>レベルが上がった。ブーストを強化の長さで始める（途中なら長さを満タンに戻す。強化が無ければ何もしない）。</summary>
-        public static void StartExpBoost()
-        {
-            float duration = ExpBoostDuration;
-            if (duration <= 0f) return;
-            bool started = expBoostRemaining <= 0f;
-            expBoostRemaining = duration;
-            if (started) ExpBoostChanged?.Invoke();
-        }
-
-        /// <summary>ブーストの時間を進める。終わったら知らせる。</summary>
-        public static void TickExpBoost(float deltaTime)
-        {
-            if (expBoostRemaining <= 0f || deltaTime <= 0f) return;
-            expBoostRemaining = Mathf.Max(0f, expBoostRemaining - deltaTime);
-            if (expBoostRemaining <= 0f) ExpBoostChanged?.Invoke();
         }
 
         // ---- 保存 ------------------------------------------------------------
@@ -394,13 +358,11 @@ namespace TpsDungeon.Progression
         private static void ResetStatics()
         {
             Changed = null;
-            ExpBoostChanged = null;
             current = null;
             purchased = null;
             tree = null;
             table = null;
             tableLoaded = false;
-            expBoostRemaining = 0f;
         }
     }
 }

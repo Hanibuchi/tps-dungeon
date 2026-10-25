@@ -23,6 +23,7 @@ namespace TpsDungeon.Hud
     /// 遠距離の武器（弓など）を持っている間は、画面の中央に照準を出す。
     /// 経験値は数字を出さず、帯の伸びだけで見せる。
     /// モンスターハウスに閉じ込められたら上中央に大きく知らせ、閉じ込められている間は残りの敵の数を出す（<see cref="RoomEnemySpawner"/>）。
+    /// 階の部屋を全部攻略して経験値ボーナス（魂の強化）をもらったときも、同じ所に知らせる（<see cref="SoulUpgradeWorld.FloorClearBonusGranted"/>）。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -44,12 +45,15 @@ namespace TpsDungeon.Hud
         // モンスターハウスの見出しを出しておく時間（ミリ秒）。閉じ込めたときと、鍵が開いたとき。
         private const long TrappedBannerMs = 2600;
         private const long ReleasedBannerMs = 1800;
+        private const long ClearedBannerMs = 2600;
 
         // 残りの敵が 1 体減ったときに数を弾ませておく時間（ミリ秒）。
         private const long RemainingPopMs = 100;
 
         public const string TrappedTitle = "モンスターハウス！";
+        public const string TrappedNote = "敵をすべて倒すまで扉は開かない";
         public const string ReleasedTitle = "扉が開いた";
+        public const string ClearedTitle = "全部屋攻略";
 
         [SerializeField, Tooltip("HP の出どころ。未設定なら親から探す。")]
         private PlayerHealth health;
@@ -86,8 +90,6 @@ namespace TpsDungeon.Hud
         private Label levelValue;
         private VisualElement expRoot;
         private VisualElement expFill;
-        private Label expBoost;
-        private int expBoostShownSeconds = -1;
 
         // 獲得でレベルが上がった（LeveledUp は ExpChanged より先に来る）。保存の読み込みで上がったときは演出しない。
         private bool levelUpPending;
@@ -184,8 +186,6 @@ namespace TpsDungeon.Hud
             levelValue = root.Q<Label>("level-value");
             expRoot = root.Q<VisualElement>("exp");
             expFill = root.Q<VisualElement>("exp-fill");
-            expBoost = root.Q<Label>("exp-boost");
-            UiTransitions.HideImmediately(expBoost);
             levelUpPending = false;
             minimapFrame = root.Q<VisualElement>("minimap");
             mapOverlay = root.Q<VisualElement>("map-overlay");
@@ -223,6 +223,7 @@ namespace TpsDungeon.Hud
             if (mapToggle != null) mapToggle.Changed += OnMapToggleChanged;
             WipeSequence.Started += OnWipeStarted;
             WipeSequence.Ended += OnWipeEnded;
+            SoulUpgradeWorld.FloorClearBonusGranted += OnFloorClearBonus;
             RefreshCharacter();
             RefreshMapOverlay();
         }
@@ -238,6 +239,7 @@ namespace TpsDungeon.Hud
             if (mapToggle != null) mapToggle.Changed -= OnMapToggleChanged;
             WipeSequence.Started -= OnWipeStarted;
             WipeSequence.Ended -= OnWipeEnded;
+            SoulUpgradeWorld.FloorClearBonusGranted -= OnFloorClearBonus;
             UnbindFloor();
         }
 
@@ -322,29 +324,6 @@ namespace TpsDungeon.Hud
             RefreshCooldown();
             RefreshCrosshair();
             RefreshMonsterHouseCount();
-            RefreshExpBoost();
-        }
-
-        /// <summary>レベルアップ後の経験値ブースト（魂の強化）の残り時間。秒が変わったときだけ書き直す。</summary>
-        private void RefreshExpBoost()
-        {
-            if (expBoost == null) return;
-
-            float remaining = MetaUpgrades.ExpBoostRemaining;
-            int seconds = Mathf.CeilToInt(remaining);
-            if (seconds == expBoostShownSeconds) return;
-            bool wasShown = expBoostShownSeconds > 0;
-            expBoostShownSeconds = seconds;
-
-            if (seconds <= 0)
-            {
-                if (wasShown) UiTransitions.Hide(expBoost);
-                return;
-            }
-
-            expBoost.text = $"経験値ブースト ×{MetaUpgrades.ExpBoostMultiplier:0.#}　残り {seconds / 60}:{seconds % 60:00}";
-            expBoost.EnableInClassList("exp-boost--ending", seconds <= 10 && seconds % 2 == 0);
-            if (!wasShown) UiTransitions.Show(expBoost);
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)
@@ -677,21 +656,31 @@ namespace TpsDungeon.Hud
             foreach (var m in maps) m.SetPlayer(cell, yaw);
         }
 
-        private void OnTrapped(int _) => ShowMonsterHouseBanner(released: false);
+        private void OnTrapped(int _) => ShowBanner(TrappedTitle, TrappedNote, gold: false, TrappedBannerMs);
 
-        private void OnReleased(int _) => ShowMonsterHouseBanner(released: true);
+        private void OnReleased(int _) => ShowBanner(ReleasedTitle, null, gold: true, ReleasedBannerMs);
+
+        private void OnFloorClearBonus(int exp) => ShowBanner(ClearedTitle, ClearedNote(exp), gold: true, ClearedBannerMs);
+
+        public static string ClearedNote(int exp) => $"経験値ボーナス +{exp}";
 
         /// <summary>
-        /// 上中央に見出しを出す。閉じ込めたときは赤い「モンスターハウス！」と添え書き、鍵が開いたときは金の「扉が開いた」だけ。
+        /// 上中央に見出しを出す。閉じ込めたときは赤い「モンスターハウス！」と添え書き、鍵が開いたときは金の「扉が開いた」だけ、
+        /// 階の部屋を全部攻略したときは金の「全部屋攻略」と経験値ボーナスの量。
         /// 出すたびに頭から現れ直し、しばらくしたら上へ抜けて消える。
         /// </summary>
-        private void ShowMonsterHouseBanner(bool released)
+        private void ShowBanner(string title, string note, bool gold, long durationMs)
         {
             if (monsterHouseBanner == null) return;
 
-            monsterHouse?.EnableInClassList("monster-house--released", released);
-            if (monsterHouseTitle != null) monsterHouseTitle.text = released ? ReleasedTitle : TrappedTitle;
-            if (monsterHouseNote != null) monsterHouseNote.style.display = released ? DisplayStyle.None : DisplayStyle.Flex;
+            monsterHouse?.EnableInClassList("monster-house--released", gold);
+            if (monsterHouseTitle != null) monsterHouseTitle.text = title;
+            if (monsterHouseNote != null)
+            {
+                bool hasNote = !string.IsNullOrEmpty(note);
+                monsterHouseNote.style.display = hasNote ? DisplayStyle.Flex : DisplayStyle.None;
+                if (hasNote) monsterHouseNote.text = note;
+            }
 
             monsterHouseBanner.RemoveFromClassList("monster-house__banner--leaving");
             UiTransitions.HideImmediately(monsterHouseBanner);
@@ -703,7 +692,7 @@ namespace TpsDungeon.Hud
                 bannerHide = null;
                 monsterHouseBanner.AddToClassList("monster-house__banner--leaving");
                 UiTransitions.Hide(monsterHouseBanner);
-            }).StartingIn(released ? ReleasedBannerMs : TrappedBannerMs);
+            }).StartingIn(durationMs);
         }
 
         /// <summary>閉じ込められている間だけ、残りの敵の数を出す。減ったときだけ小さく弾ませる。</summary>

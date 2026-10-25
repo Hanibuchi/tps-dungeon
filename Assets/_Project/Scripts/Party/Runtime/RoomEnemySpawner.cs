@@ -21,6 +21,8 @@ namespace TpsDungeon.Party
     /// （ボス部屋の奥の扉と同じく「閉ざされている」）。2 部屋の外に残っていた仲間だけ、先頭の居る部屋へ移す。
     /// 2 部屋の敵を全部倒して releaseDelay 秒（既定 1 秒）経つと、閉ざしたドアを開けられるようにする。
     /// 閉じ込めたとき・鍵が開いたときに、層の表の音を鳴らす。モンスターハウスの予算の上限は表の倍率を掛けたもの。
+    /// 敵の出る部屋（RoomEnemyRoller.CanHostEnemies）を全部開け、その敵（箱から出た敵も）が全部居なくなって、閉じ込めも解けてから
+    /// clearDelay 秒経つと、階の部屋を全部攻略したと 1 度だけ知らせる（<see cref="AllRoomsCleared"/>）。
     /// 残りは倒れた知らせ（EnemyHealth.Died）では数えず、閉じ込めている間に毎フレーム数え直す。自爆する敵は Died を出さずに消え、
     /// ドアが閉まりきる前に 2 部屋の外へ出た敵は中から倒せないので、消えた・倒れた・2 部屋の外に居る敵は残りに入れない。
     /// FloorBuilder と同じ GameObject に付ける（GameFlow が FloorNavMesh と一緒に付ける）。
@@ -39,6 +41,9 @@ namespace TpsDungeon.Party
         [SerializeField, Min(0f), Tooltip("モンスターハウスの最後の敵が居なくなってから、ドアの鍵を開ける（音を鳴らす）までの間（秒）。倒した瞬間の音と重ねないように。")]
         private float releaseDelay = 1f;
 
+        [SerializeField, Min(0f), Tooltip("階の最後の敵が居なくなってから（閉じ込めていたら鍵が開いてから）、全部屋攻略を知らせるまでの間（秒）。「扉が開いた」の見出しと重ねないように。")]
+        private float clearDelay = 2f;
+
         private FloorBuilder builder;
         private FloorBootstrap bootstrap;
         private EnemySpawnTable table;
@@ -52,6 +57,11 @@ namespace TpsDungeon.Party
         private readonly Dictionary<int, List<EnemyHealth>> spawnedEnemies = new Dictionary<int, List<EnemyHealth>>();
         // 閉じ込めているモンスターハウスの部屋ごとの、閉じ込めの記録。
         private readonly Dictionary<int, Trap> traps = new Dictionary<int, Trap>();
+        // 敵の出る部屋の数。0 の階（敵の出ない階）は攻略を知らせない。
+        private int hostRooms;
+        private bool allRoomsCleared;
+        // 攻略の条件がそろった時刻。そろっていなければ null。
+        private float? allClearedAt;
 
         /// <summary>1 つの閉じ込め。モンスターハウスと開けた側の部屋、閉ざしたドア。</summary>
         private sealed class Trap
@@ -68,6 +78,15 @@ namespace TpsDungeon.Party
 
         /// <summary>モンスターハウスの敵を全部倒して、閉ざしたドアを開けられるようにした（部屋の番号）。</summary>
         public event Action<int> Released;
+
+        /// <summary>階の部屋を全部攻略した（階ごとに 1 度）。</summary>
+        public event Action AllRoomsCleared;
+
+        /// <summary>どこかの階の部屋を全部攻略した（シーンをまたいで残る側が聞く）。</summary>
+        public static event Action<RoomEnemySpawner> AnyAllRoomsCleared;
+
+        /// <summary>この階の部屋を全部攻略したか。</summary>
+        public bool IsAllRoomsCleared => allRoomsCleared;
 
         /// <summary>この階のモンスターハウスの部屋の番号。</summary>
         public IReadOnlyCollection<int> MonsterHouses => monsterHouses;
@@ -112,8 +131,14 @@ namespace TpsDungeon.Party
             return false;
         }
 
-        /// <summary>閉じ込めている範囲の敵が居なくなったら、releaseDelay 秒待ってから鍵を開ける。</summary>
         private void Update()
+        {
+            UpdateTraps();
+            UpdateAllCleared();
+        }
+
+        /// <summary>閉じ込めている範囲の敵が居なくなったら、releaseDelay 秒待ってから鍵を開ける。</summary>
+        private void UpdateTraps()
         {
             if (traps.Count == 0) return;
             List<int> ready = null;
@@ -129,6 +154,46 @@ namespace TpsDungeon.Party
             }
             if (ready == null) return;
             foreach (int house in ready) Release(house);
+        }
+
+        /// <summary>敵の出る部屋を全部開け、敵が全部居なくなり、閉じ込めも解けたら、clearDelay 秒待ってから攻略を知らせる。</summary>
+        private void UpdateAllCleared()
+        {
+            if (allRoomsCleared || hostRooms == 0 || layout == null) return;
+            if (traps.Count > 0 || !AllHostRoomsOpened() || AnyEnemyLeft())
+            {
+                allClearedAt = null;
+                return;
+            }
+            allClearedAt ??= Time.time;
+            if (Time.time - allClearedAt.Value < clearDelay) return;
+
+            allRoomsCleared = true;
+            Debug.Log("[Dungeon] 階の部屋を全部攻略した", this);
+            AllRoomsCleared?.Invoke();
+            AnyAllRoomsCleared?.Invoke(this);
+        }
+
+        private bool AllHostRoomsOpened()
+        {
+            foreach (var room in layout.Rooms)
+            {
+                if (RoomEnemyRoller.CanHostEnemies(room) && !spawnedRooms.Contains(room.Index)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>出した敵（箱から出た敵も）のうち、消えておらず倒れていないものが居るか。部屋の外へ出ていても数える。</summary>
+        private bool AnyEnemyLeft()
+        {
+            foreach (var enemies in spawnedEnemies.Values)
+            {
+                foreach (var enemy in enemies)
+                {
+                    if (enemy != null && !enemy.IsDead) return true;
+                }
+            }
+            return false;
         }
 
         private void Awake()
@@ -161,6 +226,13 @@ namespace TpsDungeon.Party
             spawnedEnemies.Clear();
             traps.Clear();
             enemyRoot = null;
+            allRoomsCleared = false;
+            allClearedAt = null;
+            hostRooms = 0;
+            foreach (var room in layout.Rooms)
+            {
+                if (RoomEnemyRoller.CanHostEnemies(room)) hostRooms++;
+            }
             // ボス階ではモンスターハウスにしない（閉じ込めると大扉やショートカットの部屋の扉まで閉ざしてしまう）。
             bool bossFloor = bootstrap != null && bootstrap.Config != null && bootstrap.Config.layoutShape == FloorLayoutShape.Boss;
             monsterHouses = bossFloor ? new HashSet<int>() : RoomEnemyRoller.PickMonsterHouses(rules, layout);
@@ -406,6 +478,10 @@ namespace TpsDungeon.Party
         {
             if (clip != null) GameAudio.Instance?.PlaySe(clip, table.SoundVolume);
         }
+
+        /// <summary>Enter Play Mode でドメインを読み直さない設定でも、前の再生の購読を持ち越さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AnyAllRoomsCleared = null;
 
         private void Release(int room)
         {

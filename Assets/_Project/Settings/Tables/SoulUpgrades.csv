@@ -1,6 +1,6 @@
 id,name,parent,cost,effect,value,description
 # 魂の強化の木parent が空の行が真ん中（最初に獲得する強化）parent の強化を解放するまで、その先は見えない
-# value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%、exp_boost は秒、shortcut は層の番号（1 始まり）
+# value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%、floor_clear_exp は経験値（倍率を掛けない）、shortcut は層の番号（1 始まり）
 # 前の強化が同じ effect なら続きの段として、前の段の値を引いた分だけ上乗せする（真ん中の強化は先の段とつながらない）
 awaken,魂の目覚め,,5,max_hp,1.0,最大体力が増える
 # --- 生命 ---
@@ -13,10 +13,10 @@ exp_rate_1,経験値増加 I,awaken,25,exp_rate,0.2,得られる経験値が増�
 exp_rate_2,経験値増加 II,exp_rate_1,60,exp_rate,0.4,得られる経験値がより増える
 exp_rate_3,経験値増加 III,exp_rate_2,150,exp_rate,0.6,得られる経験値がもっと増える
 exp_rate_4,経験値増加 IV,exp_rate_3,200,exp_rate,0.8,得られる経験値がさらに増える
-boost_1,経験値ブースト I,vigor_1,25,exp_boost,10,レベルアップ後一定時間の間得られる経験値が増える
-boost_2,経験値ブースト II,boost_1,60,exp_boost,30,レベルアップ後の経験値ブースト時間が長くなる
-boost_3,経験値ブースト III,boost_2,150,exp_boost,60,レベルアップ後の経験値ブースト時間がより長くなる
-boost_4,経験値ブースト IV,boost_3,200,exp_boost,120,レベルアップ後の経験値ブースト時間がもっと長くなる
+bonus_1,経験値ボーナス I,exp_rate_2,25,floor_clear_exp,50,階の部屋を全部攻略すると経験値がもらえる
+bonus_2,経験値ボーナス II,bonus_1,60,floor_clear_exp,150,全部屋攻略でもらえる経験値が増える
+bonus_3,経験値ボーナス III,bonus_2,150,floor_clear_exp,300,全部屋攻略でもらえる経験値がより増える
+bonus_4,経験値ボーナス IV,bonus_3,200,floor_clear_exp,500,全部屋攻略でもらえる経験値がもっと増える
 # --- 戦い ---
 keen_1,クリティカル率増加 I,awaken,10,crit_chance,0.05,クリティカル率が増加する
 keen_2,クリティカル率増加 II,keen_1,35,crit_chance,0.1,クリティカル率がより増加する

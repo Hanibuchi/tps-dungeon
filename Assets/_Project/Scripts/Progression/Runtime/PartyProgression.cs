@@ -157,9 +157,13 @@ namespace TpsDungeon.Progression
         /// <summary>
         /// 敵を倒したときなどの経験値。倍率を掛けた同じ量をパーティ全員に足す。実際に配った量を返す。
         /// </summary>
-        public int GrantExp(int baseAmount)
+        public int GrantExp(int baseAmount) => Distribute(modifiers.ApplyExp(baseAmount, 1f + gearExpBonus));
+
+        /// <summary>倍率を掛けずに、amount をそのままパーティ全員に足す（階の部屋を全部攻略したときのボーナスなど）。配った量を返す。</summary>
+        public int GrantFlatExp(int amount) => Distribute(amount);
+
+        private int Distribute(int amount)
         {
-            int amount = modifiers.ApplyExp(baseAmount, 1f + gearExpBonus);
             if (amount <= 0) return 0;
 
             // 足している途中でレベルアップの購読者がメンバーを増減させても崩れないように写してから回す。
