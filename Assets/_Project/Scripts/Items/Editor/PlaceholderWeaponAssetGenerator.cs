@@ -1124,6 +1124,8 @@ namespace TpsDungeon.Items.Editor
             WritePassiveGear(serialized, PassiveGear.Shield, true);
             // 左の前腕の外側に、前腕に沿って立て、面を体の外へ向ける（片手剣の構えで合わせた）。Play 中に Scene ビューで動かすと書き戻る。
             SeedHeldGrip(serialized, new Vector3(-0.12f, -0.052f, -0.086f), new Vector3(16f, 181f, 258f));
+            // 選んで右手（メインハンド）に持つときの握り。左手の値を左右に映した仮の値で、Play 中に手の盾を動かして合わせる。
+            SeedOtherHandGrip(serialized);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -1135,6 +1137,22 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("comboSteps").arraySize = 0;
             serialized.FindProperty("rangedKind").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(RangedAttackKind)), RangedAttackKind.None);
             serialized.FindProperty("heldInLeftHand").boolValue = leftHand;
+        }
+
+        /// <summary>
+        /// 逆の手に持つ位置が未調整（両方ゼロ）なら、いつもの手の値を左右に映して仮に入れる（位置の x と、向きの y・z の符号を返す）。
+        /// 調整済みなら触らない。
+        /// </summary>
+        private static void SeedOtherHandGrip(SerializedObject serialized)
+        {
+            SerializedProperty p = serialized.FindProperty("otherHandLocalPosition");
+            SerializedProperty e = serialized.FindProperty("otherHandLocalEuler");
+            if (p.vector3Value != Vector3.zero || e.vector3Value != Vector3.zero) return;
+
+            Vector3 position = serialized.FindProperty("heldLocalPosition").vector3Value;
+            Vector3 euler = serialized.FindProperty("heldLocalEuler").vector3Value;
+            p.vector3Value = new Vector3(-position.x, position.y, position.z);
+            e.vector3Value = new Vector3(euler.x, -euler.y, -euler.z);
         }
 
         /// <summary>手に持つ位置が未調整（両方ゼロ）なら、片手剣と同じ握りを仮に入れる。調整済みなら触らない。</summary>

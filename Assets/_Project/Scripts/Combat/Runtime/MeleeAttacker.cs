@@ -404,14 +404,15 @@ namespace TpsDungeon.Combat
 
             if (weapon == null || weapon.HeldModel == null || animator == null || !animator.isHuman) return;
 
-            Transform hand = animator.GetBoneTransform(weapon.WeaponType != null && weapon.WeaponType.HeldInLeftHand
-                ? HumanBodyBones.LeftHand
-                : HumanBodyBones.RightHand);
+            // お守り・盾を選んでいるときは利き手（右手）に持つ。盾はいつもは左手（オフハンド）なので、右手用の持ち位置を使う。
+            WeaponTypeDefinition type = weapon.WeaponType;
+            bool leftHand = type != null && type.HeldInLeftHand && !type.IsPassiveGear;
+            Transform hand = animator.GetBoneTransform(leftHand ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand);
             if (hand == null) return;
 
             heldModel = Instantiate(weapon.HeldModel, hand);
             heldModel.name = weapon.HeldModel.name;
-            heldModel.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
+            heldModel.AddComponent<HeldWeaponGrip>().Init(type, leftHand);
             foreach (Collider c in heldModel.GetComponentsInChildren<Collider>()) Destroy(c);
             WeaponAura.Attach(heldModel, weapon.Rank, held: true);
         }

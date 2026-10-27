@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 26
   displayName: "\u304A\u5B88\u308A"
   animatorWeaponType: 0
-  canUseShield: 0
+  canUseShield: 1
   passiveGear: 1
   enchantmentRanks:
   - definition: {fileID: 11400000, guid: a8be9e798afa14595b309ac6316a0645, type: 2}

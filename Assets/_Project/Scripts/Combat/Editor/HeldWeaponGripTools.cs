@@ -40,21 +40,25 @@ namespace TpsDungeon.Combat.Editor
                 bool turned = Quaternion.Angle(t.localRotation, Quaternion.Euler(grip.AppliedEuler)) > MovedAngle;
                 if (!moved && !turned) continue;
 
-                Write(grip.Type,
+                Write(grip.Type, grip.OtherHand,
                     moved ? Round(t.localPosition, PositionStep) : grip.AppliedPosition,
                     turned ? Round(Signed(t.localEulerAngles), EulerStep) : grip.AppliedEuler);
                 grip.Apply();
             }
         }
 
-        /// <summary>武器種の持ち位置を書き換える（Undo で戻せる）。</summary>
-        public static void Write(WeaponTypeDefinition type, Vector3 position, Vector3 euler)
+        /// <summary>武器種の持ち位置を書き換える（Undo で戻せる）。otherHand ならいつもと逆の手の値（otherHand〜）を書く。</summary>
+        public static void Write(WeaponTypeDefinition type, bool otherHand, Vector3 position, Vector3 euler)
         {
             var serialized = new SerializedObject(type);
-            serialized.FindProperty("heldLocalPosition").vector3Value = position;
-            serialized.FindProperty("heldLocalEuler").vector3Value = euler;
+            serialized.FindProperty(PositionProperty(otherHand)).vector3Value = position;
+            serialized.FindProperty(EulerProperty(otherHand)).vector3Value = euler;
             if (serialized.ApplyModifiedProperties()) Touched.Add(type);
         }
+
+        public static string PositionProperty(bool otherHand) => otherHand ? "otherHandLocalPosition" : "heldLocalPosition";
+
+        public static string EulerProperty(bool otherHand) => otherHand ? "otherHandLocalEuler" : "heldLocalEuler";
 
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
@@ -64,7 +68,8 @@ namespace TpsDungeon.Combat.Editor
             {
                 if (type == null) continue;
                 AssetDatabase.SaveAssetIfDirty(type);
-                Debug.Log($"手に持つ位置を保存した: {type.name} 位置 {type.HeldLocalPosition:F4} 向き {type.HeldLocalEuler:F1}", type);
+                Debug.Log($"手に持つ位置を保存した: {type.name} 位置 {type.HeldLocalPosition:F4} 向き {type.HeldLocalEuler:F1}"
+                    + $"　逆の手 位置 {type.OtherHandLocalPosition:F4} 向き {type.OtherHandLocalEuler:F1}", type);
             }
             Touched.Clear();
         }
@@ -101,32 +106,47 @@ namespace TpsDungeon.Combat.Editor
                 EditorGUILayout.ObjectField("書き戻す武器種", type, typeof(WeaponTypeDefinition), false);
 
             typeObject.Update();
-            EditorGUILayout.PropertyField(typeObject.FindProperty("heldLocalPosition"), new GUIContent("位置"));
-            EditorGUILayout.PropertyField(typeObject.FindProperty("heldLocalEuler"), new GUIContent("向き"));
+            string hand = (grip.OffHand ? "オフハンド・" : "メインハンド・") + (grip.LeftHand ? "左手" : "右手");
+            EditorGUILayout.PropertyField(typeObject.FindProperty(HeldWeaponGripSync.PositionProperty(grip.OtherHand)), new GUIContent($"位置（{hand}）"));
+            EditorGUILayout.PropertyField(typeObject.FindProperty(HeldWeaponGripSync.EulerProperty(grip.OtherHand)), new GUIContent($"向き（{hand}）"));
             typeObject.ApplyModifiedProperties();
 
-            if (GUILayout.Button("原点に戻す")) HeldWeaponGripSync.Write(type, Vector3.zero, Vector3.zero);
+            if (GUILayout.Button("原点に戻す")) HeldWeaponGripSync.Write(type, grip.OtherHand, Vector3.zero, Vector3.zero);
 
             EditorGUILayout.HelpBox(
                 "Scene ビューで動かす・回すか、ここの数値を変えると、武器種に書き戻る（Play を止めても残る）。" +
-                "軸は右手の骨のローカル。振りの途中は一時停止とコマ送りで確かめる。", MessageType.None);
+                "軸は持っている手の骨のローカル。振りの途中は一時停止とコマ送りで確かめる。", MessageType.None);
         }
     }
 
+    /// <summary>
+    /// 操作しているキャラの手の物を選び、Scene ビューで寄って、手の骨のローカル軸で動かせるようにする（Play 中だけ）。
+    /// メインハンド（選んでいる物）とオフハンド（左手の盾）は持ち位置を別々に持つので、メニューも分ける。
+    /// </summary>
     public static class HeldWeaponGripMenu
     {
-        private const string MenuPath = "Tools/TPS Dungeon/デバッグ/手の武器を選ぶ";
+        private const string MenuRoot = "Tools/TPS Dungeon/デバッグ/持ち位置の調整/";
+        private const string MainHandPath = MenuRoot + "メインハンドの持ち物を選ぶ";
+        private const string OffHandPath = MenuRoot + "オフハンドの盾を選ぶ";
 
-        /// <summary>操作しているキャラの手の武器を選び、Scene ビューで寄って、手の骨のローカル軸で動かせるようにする。</summary>
-        [MenuItem(MenuPath, false, 4)]
-        public static void SelectHeldWeapon()
+        [MenuItem(MainHandPath, false, 4)]
+        public static void SelectMainHand() => Select(false);
+
+        [MenuItem(OffHandPath, false, 5)]
+        public static void SelectOffHand() => Select(true);
+
+        [MenuItem(MainHandPath, true, 4)]
+        [MenuItem(OffHandPath, true, 5)]
+        private static bool CanSelect() => EditorApplication.isPlaying;
+
+        private static void Select(bool offHand)
         {
-            // 仲間も武器を持っているので、操作しているキャラ（パーティーの先頭）の手の武器を選ぶ。パーティーが居ないシーンではシーンの 1 本。
-            GameObject leader = PartyRoster.Leader;
-            HeldWeaponGrip grip = leader != null ? leader.GetComponentInChildren<HeldWeaponGrip>() : Object.FindAnyObjectByType<HeldWeaponGrip>();
+            HeldWeaponGrip grip = Find(offHand);
             if (grip == null)
             {
-                Debug.LogWarning("操作しているキャラが手に武器を持っていない（見た目のある武器をホットバーで持つ）");
+                Debug.LogWarning(offHand
+                    ? "操作しているキャラがオフハンドに盾を持っていない（盾を持てる物を選び、ほかの盾をホットバーに入れる）"
+                    : "操作しているキャラがメインハンドに何も持っていない（見た目のある物をホットバーで選ぶ）");
                 return;
             }
 
@@ -137,7 +157,19 @@ namespace TpsDungeon.Combat.Editor
             if (SceneView.lastActiveSceneView != null) SceneView.lastActiveSceneView.FrameSelected();
         }
 
-        [MenuItem(MenuPath, true, 4)]
-        private static bool CanSelectHeldWeapon() => EditorApplication.isPlaying;
+        // 仲間も物を持っているので、操作しているキャラ（パーティーの先頭）の手から探す。パーティーが居ないシーンではシーン全体から。
+        private static HeldWeaponGrip Find(bool offHand)
+        {
+            GameObject leader = PartyRoster.Leader;
+            HeldWeaponGrip[] grips = leader != null
+                ? leader.GetComponentsInChildren<HeldWeaponGrip>()
+                : Object.FindObjectsByType<HeldWeaponGrip>(FindObjectsSortMode.None);
+            foreach (HeldWeaponGrip grip in grips)
+            {
+                if (grip.OffHand == offHand) return grip;
+            }
+
+            return null;
+        }
     }
 }

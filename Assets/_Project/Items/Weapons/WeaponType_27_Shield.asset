@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 27
   displayName: "\u76FE"
   animatorWeaponType: 0
-  canUseShield: 0
+  canUseShield: 1
   passiveGear: 2
   enchantmentRanks:
   - definition: {fileID: 11400000, guid: 6275185dfcc954b7d8f0b25ad18a5e4e, type: 2}
@@ -109,6 +109,7 @@ MonoBehaviour:
     level: 4
     rank: 5
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
+  minEnchantments: 0
   characterAttackWeight: 1
   baseCritChance: 0.05
   baseCritMultiplier: 1.5
@@ -147,6 +148,9 @@ MonoBehaviour:
   rainEffect: {fileID: 0}
   rainEffectRadius: 4
   rainAimPitch: 35
+  rainSkyHeight: 3.5
+  rainShotEffect: {fileID: 0}
+  rainSkyEffect: {fileID: 0}
   castDelay: 0.12
   chainAimAngle: 10
   chainJumps: 3
@@ -203,7 +207,22 @@ MonoBehaviour:
   healRingColor: {r: 0.45, g: 1, b: 0.5, a: 0.85}
   healSound: {fileID: 0}
   healSoundVolume: 0.8
+  supportRange: 20
+  supportDuration: 12
+  supportRepeatInterval: 0.5
+  supportTargetCount: 3
+  damageReductionPerStrength: 0.01
+  maxDamageReduction: 0.8
+  critMultiplierPerStrength: 0.01
+  ailmentResistancePerStrength: 0.01
+  damageReductionEffect: {fileID: 0}
+  critMultiplierEffect: {fileID: 0}
+  ailmentResistanceEffect: {fileID: 0}
+  blessingEffectScale: 1
+  supportHitEffect: {fileID: 0}
+  supportHitEffectScale: 1
   drawSound: {fileID: 0}
+  drawSoundVolume: 0.5
   stickSound: {fileID: 0}
   stickSoundVolume: 0.6
   rainSound: {fileID: 0}
@@ -214,6 +233,8 @@ MonoBehaviour:
   heldInLeftHand: 1
   heldLocalPosition: {x: 0.105, y: 0.02, z: -0.063999996}
   heldLocalEuler: {x: 16, y: -179, z: 147.3}
+  otherHandLocalPosition: {x: -0.1363, y: -0.024799999, z: 0.0499}
+  otherHandLocalEuler: {x: -9.5, y: -6.5, z: -0.2}
   swingEffect: {fileID: 0}
   swingEffectScale: 1
   swingEffectLeadTime: 0

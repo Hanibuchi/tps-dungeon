@@ -426,11 +426,18 @@ namespace TpsDungeon.Items
         private bool heldInLeftHand;
 
         [SerializeField, Tooltip("手に持ったときの見た目の位置合わせ（持つ手の骨から見たローカル）。" +
-            "Play 中に手の武器（Tools/TPS Dungeon/デバッグ/手の武器を選ぶ）を Scene ビューで動かすと、ここに書き戻る。")]
+            "Play 中に手の物（Tools/TPS Dungeon/デバッグ/持ち位置の調整/〜）を Scene ビューで動かすと、ここに書き戻る。")]
         private Vector3 heldLocalPosition;
 
         [SerializeField, Tooltip("手に持ったときの見た目の向き（右手の骨から見たローカルのオイラー角）。")]
         private Vector3 heldLocalEuler;
+
+        [SerializeField, Tooltip("いつもと逆の手に持ったときの位置合わせ（逆の手の骨から見たローカル）。盾を選んで右手（メインハンド）に持つときに使う。" +
+            "Play 中にその手の武器を Scene ビューで動かすと、ここに書き戻る。")]
+        private Vector3 otherHandLocalPosition;
+
+        [SerializeField, Tooltip("いつもと逆の手に持ったときの見た目の向き（逆の手の骨から見たローカルのオイラー角）。")]
+        private Vector3 otherHandLocalEuler;
 
         [Header("エフェクト")]
         [SerializeField, Tooltip("振りの判定の瞬間に出す（任意）。位置と向きは段ごとの swingEffectOffset / swingEffectEuler。")]
@@ -677,6 +684,14 @@ namespace TpsDungeon.Items
         public bool HeldInLeftHand => heldInLeftHand;
         public Vector3 HeldLocalPosition => heldLocalPosition;
         public Vector3 HeldLocalEuler => heldLocalEuler;
+        public Vector3 OtherHandLocalPosition => otherHandLocalPosition;
+        public Vector3 OtherHandLocalEuler => otherHandLocalEuler;
+
+        /// <summary>leftHand の手に持ったときの位置合わせ。いつもの手（<see cref="HeldInLeftHand"/>）なら held〜、逆の手なら otherHand〜。</summary>
+        public Vector3 GripPosition(bool leftHand) => leftHand == heldInLeftHand ? heldLocalPosition : otherHandLocalPosition;
+
+        /// <summary>leftHand の手に持ったときの向き。</summary>
+        public Vector3 GripEuler(bool leftHand) => leftHand == heldInLeftHand ? heldLocalEuler : otherHandLocalEuler;
         public GameObject SwingEffect => swingEffect;
         public float SwingEffectScale => swingEffectScale;
         public float SwingEffectLeadTime => swingEffectLeadTime;
