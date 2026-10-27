@@ -26,6 +26,7 @@ namespace TpsDungeon.Party
     /// - 死後の場所から地上へ戻る（転生する）ときは、暗転の代わりに転生の演出（<see cref="RebirthSequence"/>。渦に吸い込まれて白く飛び、白い光の中で目覚める）を回す。
     /// - 倒れた人を残して別のシーンへ移るときは、その人をそこに置いていく（次のシーンには出さない。転生で全快にするとき戻る）。
     /// - 地上へ戻ったとき、シーンに置いてある 2 つ目は、子が起きる前に自分ごと消える（実行順を一番先にしてある）。
+    /// - オートセーブ（<see cref="GameSave"/>）を付け、シーンに着くたびと全滅の演出の始まりに書かせる。地上で起動したら、セーブの並び・持ち物を戻して居場所へ移る（階ならその階の入口から）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     [DisallowMultipleComponent]
@@ -68,6 +69,10 @@ namespace TpsDungeon.Party
         private RebirthSequence rebirth;
         private bool rebirthOnArrival;
         private SoulUpgradeWorld soulUpgrades;
+        private GameSave save;
+        private RunSaveData bootSave;
+        private bool restoring;
+        private bool quietLeave;
 
         /// <summary>転生で持ち越す武器を選ばせる画面。画面の側が自分を入れる。無ければ選ばせずに全部手放す。</summary>
         public static ICarryOverPicker CarryOverPicker { get; set; }
@@ -105,7 +110,74 @@ namespace TpsDungeon.Party
             rebirth.DiveSound = rebirthSound;
             soulUpgrades = gameObject.AddComponent<SoulUpgradeWorld>();
             soulUpgrades.Party = party;
+
+            // セーブは地上で始めたときだけ（確認用のシーンから始めた状態で上書きしないように）。
+            save = gameObject.AddComponent<GameSave>();
+            save.Initialize(this, party, soulUpgrades);
+            bool bootedOnSurface = SceneManager.GetActiveScene().name == SceneTravel.SurfaceScene;
+            save.enabled = bootedOnSurface;
+            if (bootedOnSurface && RunSaveStore.TryLoad(out bootSave))
+            {
+                restoring = true;
+                // 地上以外から再開するなら、地上がちらっと見えないよう暗いまま始める。
+                if (bootSave.wipePending || ResumeScene(bootSave) != null) StartCoroutine(fade.FadeTo(1f, 0f));
+            }
+
             DontDestroyOnLoad(gameObject);
+        }
+
+        /// <summary>
+        /// 起動したときにセーブから戻す。PartyProgression のレベル・HP と、SoulUpgradeWorld の人数・バッグの枠が当たってから（1 フレーム待つ）。
+        /// 並びと持ち物を戻し、居場所が地上でなければそこへ移る（階ならその階の入口から）。全滅の途中で閉じていたら全滅として死後の場所へ。
+        /// セーブが無くても、書いてよくなるのは 1 フレーム後（PartyProgression の読み込みより先に、フォーカスを失った知らせで Lv1 を書かないように）。
+        /// </summary>
+        private IEnumerator Start()
+        {
+            yield return null;
+            if (bootSave == null)
+            {
+                save.Ready = true;
+                yield break;
+            }
+
+            RunSaveData data = bootSave;
+            bootSave = null;
+            save.Restore(data);
+            save.Ready = true;
+            restoring = false;
+
+            if (data.wipePending || IsWiped())
+            {
+                quietLeave = true;
+                Travel(SceneTravel.AfterlifeScene, revive: true);
+                yield break;
+            }
+
+            string scene = ResumeScene(data);
+            if (scene == null)
+            {
+                party.LeaveDownedBehind();
+                if (fade != null && fade.Alpha > 0f) yield return fade.FadeTo(0f, fadeInSeconds);
+                yield break;
+            }
+
+            if (data.Floor.HasValue)
+            {
+                DungeonProgress.Pending = data.Floor;
+                DungeonProgress.PendingFromAbove = false;
+            }
+            quietLeave = true;
+            Travel(scene);
+        }
+
+        /// <summary>セーブの居場所が地上以外で、読み込めるシーンならその名前。地上か、読み込めなければ null。</summary>
+        private static string ResumeScene(RunSaveData data)
+        {
+            string scene = data.scene;
+            if (string.IsNullOrEmpty(scene) || scene == SceneTravel.SurfaceScene) return null;
+            if (Application.CanStreamedLevelBeLoaded(scene)) return scene;
+            Debug.LogWarning($"セーブの居場所 {scene} はビルドに入っていないので、地上から始める");
+            return null;
         }
 
         private void OnEnable()
@@ -132,7 +204,7 @@ namespace TpsDungeon.Party
 
         private void Update()
         {
-            if (traveling || party == null) return;
+            if (traveling || restoring || party == null) return;
 
             if (wiping || !IsWiped()) return;
             StartCoroutine(PlayWipe());
@@ -142,6 +214,9 @@ namespace TpsDungeon.Party
         private IEnumerator PlayWipe()
         {
             wiping = true;
+            // 演出の途中で閉じても、次に始めたら全滅として扱う。
+            save.WipePending = true;
+            save.SaveNow();
             if (wipe != null) yield return wipe.Play(party.Leader);
             wiping = false;
             Travel(SceneTravel.AfterlifeScene, revive: true);
@@ -174,9 +249,11 @@ namespace TpsDungeon.Party
             }
             else
             {
-                if (travelSound != null) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
+                // 起動してセーブの居場所へ移るときは鳴らさない。
+                if (travelSound != null && !quietLeave) GameAudio.Instance?.PlaySe(travelSound, travelSoundVolume);
                 if (fade != null) yield return fade.FadeTo(1f, fadeOutSeconds);
             }
+            quietLeave = false;
             if (wipe != null) wipe.Restore();
             if (wake != null && wake.IsPlaying) wake.Finish();
 
@@ -185,9 +262,17 @@ namespace TpsDungeon.Party
             if (party != null)
             {
                 // 全滅して死後の場所へ。操作していたメンバーのレベルをソウルに変えて、全員 Lv1 に戻す（起こす前に。戻すと HP も満タンになる）。
-                if (revive && sceneName == SceneTravel.AfterlifeScene) SoulUpgradeWorld.Harvest(party);
+                bool harvest = revive && sceneName == SceneTravel.AfterlifeScene;
+                if (harvest) SoulUpgradeWorld.Harvest(party);
                 if (revive) party.ReviveAll();
                 else party.LeaveDownedBehind();
+
+                // ソウルに変えたので、もう全滅の途中ではない。移っている途中でも、死後の場所に居るものとしてすぐ書く（閉じてもう一度ソウルにしないように）。
+                if (harvest)
+                {
+                    save.WipePending = false;
+                    save.SaveAt(SceneTravel.AfterlifeScene);
+                }
             }
             SceneTravel.Load(sceneName);
         }
@@ -295,6 +380,9 @@ namespace TpsDungeon.Party
 
             traveling = false;
             SceneTravel.Traveling = false;
+
+            // 着いたらオートセーブ（階なら、その階の入口から再開できるように）。
+            if (save != null) save.SaveNow();
 
             if (rebirthOnArrival && rebirth != null)
             {

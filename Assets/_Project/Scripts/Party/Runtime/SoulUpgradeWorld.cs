@@ -201,6 +201,55 @@ namespace TpsDungeon.Party
             }
         }
 
+        /// <summary>最初に居た仲間（パーティーから外した人も）。セーブの手持ちを人ごとに当てるのに使う。</summary>
+        public IReadOnlyList<PartyMember> Roster => roster;
+
+        /// <summary>
+        /// セーブした並び（ProgressId の列。先頭が操作するキャラ）に合わせる。最初に居た仲間から選び、連れて行ける人数までにする。
+        /// 並びに無い仲間は外して隠す。並びの誰も見つからなければ何もしない。
+        /// HP は戻さない（隠していた仲間は、出したときに PartyProgression がセーブの HP を当てる）。
+        /// </summary>
+        public void ApplyOrder(IReadOnlyList<string> ids)
+        {
+            if (party == null || ids == null) return;
+
+            var wanted = new List<PartyMember>();
+            int allowed = Mathf.Max(1, AllowedMembers);
+            foreach (string id in ids)
+            {
+                if (wanted.Count >= allowed) break;
+                PartyMember member = roster.Find(m => m != null && m.Progression != null && m.Progression.ProgressId == id);
+                if (member != null && !wanted.Contains(member)) wanted.Add(member);
+            }
+            if (wanted.Count == 0) return;
+
+            foreach (PartyMember member in wanted)
+            {
+                if (party.IndexOf(member) >= 0) continue;
+                member.gameObject.SetActive(true);
+                party.Add(member);
+            }
+
+            foreach (PartyMember member in roster)
+            {
+                if (member == null || wanted.Contains(member) || party.IndexOf(member) < 0) continue;
+                party.Remove(member);
+                member.gameObject.SetActive(false);
+            }
+
+            // 倒れた人と生きている人の前後は入れ替えられない（Party.Move が断る）ので、そのときは近い並びのまま。
+            for (int i = 0; i < wanted.Count; i++)
+            {
+                int at = party.IndexOf(wanted[i]);
+                if (at >= 0 && at != i) party.Move(at, i);
+            }
+
+            foreach (PartyMember member in party.Members)
+            {
+                if (member != null) member.SetLeader(party.Leader == member, party.Input);
+            }
+        }
+
         // ---- 死んだとき・転生するとき ------------------------------------------
 
         /// <summary>全滅した。操作していたメンバー（先頭）1 人のレベルだけをソウルに変えて足し、全員を Lv1 に戻す。足したソウルを返す。</summary>

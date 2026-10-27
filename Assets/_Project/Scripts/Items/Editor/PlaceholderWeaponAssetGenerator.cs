@@ -352,6 +352,7 @@ namespace TpsDungeon.Items.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮の武器データを作った: {WeaponsFolder}");
+            ItemCatalogBuilder.Build();
         }
 
         /// <summary>生成器が作った武器を全部読む。確認用シーンに置くときに使う。</summary>

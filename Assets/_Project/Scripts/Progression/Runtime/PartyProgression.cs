@@ -34,6 +34,7 @@ namespace TpsDungeon.Progression
         private bool leveledWhileGranting;
 
         private float gearExpBonus;
+        private bool started;
 
         /// <summary>今動いているパーティ。無ければ null。</summary>
         public static PartyProgression Current { get; private set; }
@@ -100,21 +101,24 @@ namespace TpsDungeon.Progression
         private void Start()
         {
             if (autoLoad) Load();
+            started = true;
         }
 
+        // 終了・中断の保存は、読み込み（Start）より先に来たら書かない。エディタが背面のまま Play に入ると、
+        // フォーカスを失った知らせが Start より先に来て、セーブが Lv1 で上書きされていた。
         private void OnApplicationPause(bool paused)
         {
-            if (paused && autoSave) Save();
+            if (paused && autoSave && started) Save();
         }
 
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused && autoSave) Save();
+            if (!focused && autoSave && started) Save();
         }
 
         private void OnApplicationQuit()
         {
-            if (autoSave) Save();
+            if (autoSave && started) Save();
         }
 
         public void SetExpMultiplier(float value) => modifiers.SetExpMultiplier(value);

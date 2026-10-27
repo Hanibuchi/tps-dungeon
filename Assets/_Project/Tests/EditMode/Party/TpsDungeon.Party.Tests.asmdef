@@ -6,7 +6,8 @@
         "UnityEditor.TestRunner",
         "TpsDungeon.Party",
         "TpsDungeon.Items",
-        "TpsDungeon.Player"
+        "TpsDungeon.Player",
+        "TpsDungeon.Map"
     ],
     "includePlatforms": [
         "Editor"
