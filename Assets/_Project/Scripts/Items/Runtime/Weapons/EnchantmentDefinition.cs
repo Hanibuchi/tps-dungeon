@@ -24,6 +24,9 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("副次の値（爆発なら半径 m）。段では増えず、お守りなどと重なったら大きい方を使う。")]
         private float secondaryAmount;
 
+        /// <summary>セーブで使う識別子（アセット名）。</summary>
+        public string Id => name;
+
         public EnchantmentKind Kind => kind;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? kind.ToString() : displayName;
         public string Description => description ?? string.Empty;

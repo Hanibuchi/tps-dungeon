@@ -62,6 +62,7 @@ namespace TpsDungeon.Items.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮アイテムを作った: {ItemsFolder}");
+            ItemCatalogBuilder.Build();
         }
 
         /// <summary>生成器が作ったアイテムの定義を全部読む。確認用シーンに置くときに使う。</summary>
