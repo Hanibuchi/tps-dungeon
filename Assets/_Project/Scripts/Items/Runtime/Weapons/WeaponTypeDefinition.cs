@@ -18,7 +18,7 @@ namespace TpsDungeon.Items
         /// <summary>杖の手に持つ見た目の中で、杖の先に置く目印の名前。杖の雷・連置・炎はここから出る。</summary>
         public const string StaffTipName = "Tip";
 
-        [SerializeField, Tooltip("武器種の番号（Notion の武器種データの番号。例: 01）。")]
+        [SerializeField, Tooltip("武器種の id（英名。例: OneHanded）。CSV（EnchantmentRanks.csv・WeaponTypes.csv）はこれで武器種を引く。")]
         private string id;
 
         [SerializeField] private string displayName;
@@ -26,7 +26,7 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("キャラの Animator の WeaponType に入れる値（CharacterAnimatorBuilder.Weapon）。")]
         private int animatorWeaponType;
 
-        [SerializeField, Tooltip("盾（武器種 27）の防御が効くか。片手武器なら真。")]
+        [SerializeField, Tooltip("盾（武器種 Shield）をオフハンドに持てるか（WeaponTypes.csv の shield）。")]
         private bool canUseShield;
 
         [SerializeField, Tooltip("振らずに持っているだけで効く装備（お守り・盾）か。そうなら攻撃欄は使わず、選んでいる間は素手で殴る。")]

@@ -9,13 +9,13 @@ namespace TpsDungeon.Items.Tests
         [Test]
         public void 見出し_空行_コメントを飛ばし_ランクの列から段を読む()
         {
-            const string text = "# メモ\r\nweaponType,kind,E,D,C,B,A,S\r\n\r\n01,DamageUp,1,2,3,,,\r\n 09 , homing , , , , 1 \r\n";
+            const string text = "# メモ\r\nweaponType,kind,E,D,C,B,A,S\r\n\r\nOneHanded,DamageUp,1,2,3,,,\r\n Bow , homing , , , , 1 \r\n";
             var errors = new List<string>();
             List<EnchantmentRankCsv.Row> rows = EnchantmentRankCsv.Parse(text, errors);
 
             Assert.IsEmpty(errors);
             Assert.AreEqual(4, rows.Count);
-            Assert.AreEqual("01", rows[0].WeaponType);
+            Assert.AreEqual("OneHanded", rows[0].WeaponType);
             Assert.AreEqual(EnchantmentKind.DamageUp, rows[0].Kind);
             Assert.AreEqual(1, rows[0].Level);
             Assert.AreEqual(WeaponRank.E, rows[0].Rank);
@@ -26,7 +26,7 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(4, rows[2].Line);
 
             // 後ろの列を省いてもよい。
-            Assert.AreEqual("09", rows[3].WeaponType);
+            Assert.AreEqual("Bow", rows[3].WeaponType);
             Assert.AreEqual(EnchantmentKind.Homing, rows[3].Kind);
             Assert.AreEqual(1, rows[3].Level);
             Assert.AreEqual(WeaponRank.B, rows[3].Rank);
@@ -36,14 +36,14 @@ namespace TpsDungeon.Items.Tests
         public void 読めないセルや行は飛ばして行番号付きのエラーにする()
         {
             const string text =
-                "01,DamageUp,1,,2,,,\n" +
-                "01,NoSuchKind,1,,,,,\n" +
-                "01,Size,0,x,1,,,\n" +
-                "01,Stun,1,,1,,,\n" +
-                "01,DamageUp,,,,,,1\n" +
-                "01,3,1,,,,,\n" +
-                "01,Pierce,1,,,,,,9\n" +
-                "02,DamageUp,,,,,,1\n";
+                "OneHanded,DamageUp,1,,2,,,\n" +
+                "OneHanded,NoSuchKind,1,,,,,\n" +
+                "OneHanded,Size,0,x,1,,,\n" +
+                "OneHanded,Stun,1,,1,,,\n" +
+                "OneHanded,DamageUp,,,,,,1\n" +
+                "OneHanded,3,1,,,,,\n" +
+                "OneHanded,Pierce,1,,,,,,9\n" +
+                "DashThrust,DamageUp,,,,,,1\n";
             var errors = new List<string>();
             List<EnchantmentRankCsv.Row> rows = EnchantmentRankCsv.Parse(text, errors);
 
@@ -53,7 +53,7 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(WeaponRank.C, rows[2].Rank);
             Assert.AreEqual(EnchantmentKind.Stun, rows[3].Kind);
             Assert.AreEqual(WeaponRank.E, rows[3].Rank);
-            Assert.AreEqual("02", rows[4].WeaponType);
+            Assert.AreEqual("DashThrust", rows[4].WeaponType);
             Assert.AreEqual(WeaponRank.S, rows[4].Rank);
 
             Assert.AreEqual(7, errors.Count);

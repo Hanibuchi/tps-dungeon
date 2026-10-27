@@ -13,13 +13,13 @@ namespace TpsDungeon.Items.Tests
                 "# メモ\r\n" +
                 "shield,memo,cooldown,id,name\r\n" +
                 "\r\n" +
-                " 1 ,ほげ, 0.3 ,01,片手近距離\r\n";
+                " 1 ,ほげ, 0.3 ,OneHanded,片手近距離\r\n";
             var errors = new List<string>();
             List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse(text, errors);
 
             Assert.IsEmpty(errors);
             Assert.AreEqual(1, rows.Count);
-            Assert.AreEqual("01", rows[0].Id);
+            Assert.AreEqual("OneHanded", rows[0].Id);
             Assert.AreEqual("片手近距離", rows[0].Name);
             Assert.AreEqual(0.3f, rows[0].Cooldown);
             Assert.IsTrue(rows[0].CanUseShield);
@@ -31,9 +31,9 @@ namespace TpsDungeon.Items.Tests
         {
             const string text =
                 WeaponTypeCsv.Header + "\n" +
-                "26,お守り,,0\n" +
-                "09,弓,0.8,false\n" +
-                "02,刺突,0,TRUE\n";
+                "Charm,お守り,,0\n" +
+                "Bow,弓,0.8,false\n" +
+                "DashThrust,刺突,0,TRUE\n";
             var errors = new List<string>();
             List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse(text, errors);
 
@@ -52,22 +52,22 @@ namespace TpsDungeon.Items.Tests
         {
             const string text =
                 WeaponTypeCsv.Header + "\n" +
-                "01,片手近距離,0.3,1\n" +
-                "04,両手,-1,0\n" +
-                "05,ハンマー,abc,0\n" +
-                "09,弓,0.8,yes\n" +
-                "11,,1.2,0\n" +
+                "OneHanded,片手近距離,0.3,1\n" +
+                "TwoHanded,両手,-1,0\n" +
+                "Hammer,ハンマー,abc,0\n" +
+                "Bow,弓,0.8,yes\n" +
+                "RainBow,,1.2,0\n" +
                 ",雨,1.2,0\n" +
-                "01,片手近距離,0.5,0\n" +
-                "19,\"閉じていない,0.9,0\n" +
-                "20,石棘,1,0\n";
+                "OneHanded,片手近距離,0.5,0\n" +
+                "Lightning,\"閉じていない,0.9,0\n" +
+                "SpikeLine,石棘,1,0\n";
             var errors = new List<string>();
             List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse(text, errors);
 
             Assert.AreEqual(2, rows.Count, "2 行目と最後の行だけ");
-            Assert.AreEqual("01", rows[0].Id);
+            Assert.AreEqual("OneHanded", rows[0].Id);
             Assert.AreEqual(0.3f, rows[0].Cooldown, "重複した後の行で上書きしない");
-            Assert.AreEqual("20", rows[1].Id);
+            Assert.AreEqual("SpikeLine", rows[1].Id);
             Assert.AreEqual(7, errors.Count);
             StringAssert.StartsWith("3 行目", errors[0]);
             StringAssert.StartsWith("9 行目", errors[6]);
@@ -77,7 +77,7 @@ namespace TpsDungeon.Items.Tests
         public void 見出しに要る列が無ければ読まない()
         {
             var errors = new List<string>();
-            List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse("id,name,cooldown\n01,片手近距離,0.3\n", errors);
+            List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse("id,name,cooldown\nOneHanded,片手近距離,0.3\n", errors);
 
             Assert.IsEmpty(rows);
             Assert.AreEqual(1, errors.Count);
@@ -89,8 +89,8 @@ namespace TpsDungeon.Items.Tests
         {
             var written = new List<WeaponTypeCsv.Row>
             {
-                new WeaponTypeCsv.Row(0, "01", "片手,近距離", 0.3f, true),
-                new WeaponTypeCsv.Row(0, "26", "お守り", null, false),
+                new WeaponTypeCsv.Row(0, "OneHanded", "片手,近距離", 0.3f, true),
+                new WeaponTypeCsv.Row(0, "Charm", "お守り", null, false),
             };
 
             string text = WeaponTypeCsv.Format(written);
@@ -98,7 +98,7 @@ namespace TpsDungeon.Items.Tests
             List<WeaponTypeCsv.Row> rows = WeaponTypeCsv.Parse(text, errors);
 
             StringAssert.StartsWith(WeaponTypeCsv.Header + "\n", text);
-            StringAssert.Contains("26,お守り,,0\n", text);
+            StringAssert.Contains("Charm,お守り,,0\n", text);
             Assert.IsEmpty(errors);
             Assert.AreEqual(2, rows.Count);
             for (int i = 0; i < rows.Count; i++)

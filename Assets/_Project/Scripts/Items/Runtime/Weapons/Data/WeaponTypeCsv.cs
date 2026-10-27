@@ -8,12 +8,12 @@ namespace TpsDungeon.Items
     /// <summary>
     /// 武器種ごとの値の表（WeaponTypes.csv）を読み書きする。UnityEngine に依存しない。
     /// 1 行 = 武器種 1 つ。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
-    ///   id       … 武器種の id（"01" など。EnchantmentRanks.csv の weaponType と同じ）
+    ///   id       … 武器種の id（"OneHanded" など。EnchantmentRanks.csv の weaponType と同じ）
     ///   name     … 画面に出す武器種の名前
     ///   cooldown … クールタイム（秒、0 以上）。近接はコンボが切れてから次に振れるまで、遠距離は撃つ間隔（速射の補正前）。
     ///              お守り・盾は使わないので空。空なら今の値のまま
     ///   shield   … この武器種を持っている間、ホットバーの盾が効くか。1・0（true・false でもよい）
-    /// 例: <c>01,片手近距離,0.3,1</c>
+    /// 例: <c>OneHanded,片手近距離,0.3,1</c>
     /// , を含む欄は "…" で囲む（"" は " 1 つ）。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
