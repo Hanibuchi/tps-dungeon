@@ -219,6 +219,7 @@ namespace TpsDungeon.Items.Editor
         private sealed class WeaponSpec
         {
             public string Id;
+            // ランク・強さ・名前・説明は Weapons.csv が無いときに書き出す元で、正は CSV（Weapons() で上書きする）。
             public string Name;
             public WeaponRank Rank;
             public float Strength;
@@ -339,16 +340,22 @@ namespace TpsDungeon.Items.Editor
             WriteDefaultEnchantmentRankCsv();
             EnchantmentRankCsvImporter.Import();
 
+            // 武器ごとのランク・強さ・名前・説明は CSV が正。無いときだけ、下の武器の並びから書き出す。
+            // 武器の並びは CSV の値で上書きして使う（アセットの名前と見た目もランクに合わせるため）。
+            WriteDefaultWeaponCsv();
+
             summonModels = WriteSummonModels();
             generatedTextures.Clear();
             DefaultUniqueEnchantments.Clear();
+            existingWeaponPaths = FindWeaponPathsById();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
+
+            WriteFists(WriteUnarmedType());
+            WeaponCsvImporter.Import();
 
             // ユニークの固定エンチャントも CSV が正。無いときだけ、上の武器の並びに書いた種類から書き出す。
             WriteDefaultUniqueEnchantmentCsv();
             UniqueEnchantmentCsvImporter.Import();
-
-            WriteFists(WriteUnarmedType());
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮の武器データを作った: {WeaponsFolder}");
@@ -373,7 +380,44 @@ namespace TpsDungeon.Items.Editor
 
         private static IEnumerable<WeaponSpec> Weapons()
         {
-            foreach (WeaponSpec spec in WeaponList()) yield return UniqueLook(spec);
+            Dictionary<string, WeaponCsv.Row> table = ReadWeaponCsv();
+            foreach (WeaponSpec spec in WeaponList())
+            {
+                if (table.TryGetValue(spec.Id, out WeaponCsv.Row row))
+                {
+                    spec.Rank = row.Rank;
+                    spec.Strength = row.Strength;
+                    spec.Name = row.Name;
+                    spec.Description = row.Description;
+                }
+
+                yield return UniqueLook(spec);
+            }
+        }
+
+        /// <summary>武器の表（CSV）を id で引けるように読む。無ければ空。読めない行はここでは黙って飛ばす（取り込みのときに出す）。</summary>
+        private static Dictionary<string, WeaponCsv.Row> ReadWeaponCsv()
+        {
+            var table = new Dictionary<string, WeaponCsv.Row>(StringComparer.Ordinal);
+            if (!File.Exists(WeaponCsvImporter.CsvPath)) return table;
+
+            foreach (WeaponCsv.Row row in WeaponCsv.Parse(File.ReadAllText(WeaponCsvImporter.CsvPath), null)) table[row.Id] = row;
+            return table;
+        }
+
+        /// <summary>
+        /// 武器の表（CSV）が無いときだけ、コードの武器の並び（CSV で上書きする前）と素手から書き出す。あれば手で直した表なので触らない。
+        /// </summary>
+        private static void WriteDefaultWeaponCsv()
+        {
+            if (File.Exists(WeaponCsvImporter.CsvPath)) return;
+
+            var rows = new List<WeaponCsv.Row>();
+            foreach (WeaponSpec spec in WeaponList()) rows.Add(new WeaponCsv.Row(0, spec.Id, spec.Rank, spec.Strength, spec.Name, spec.Description));
+            rows.Add(new WeaponCsv.Row(0, FistsId, WeaponRank.E, FistsStrength, FistsName, FistsDescription));
+
+            File.WriteAllText(WeaponCsvImporter.CsvPath, WeaponCsv.Format(rows));
+            AssetDatabase.ImportAsset(WeaponCsvImporter.CsvPath);
         }
 
         /// <summary>ユニークを光らせ、少し大きくする。</summary>
@@ -2439,16 +2483,26 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
+        private const string FistsId = "Weapon_Fists";
+        private const string FistsName = "素手";
+        private const string FistsDescription = "何も持たずに殴る。";
+        private const float FistsStrength = 3f; // 錆びた片手剣（5）より弱い。値は仮。
+
         private static void WriteFists(WeaponTypeDefinition type)
         {
             RenameAsset(OldFistsPath, FistsPath);
             var fists = Gen.LoadOrCreate<WeaponDefinition>(FistsPath);
+            bool created = string.IsNullOrEmpty(fists.Id);
             var serialized = new SerializedObject(fists);
-            serialized.FindProperty("id").stringValue = "Weapon_Fists";
-            serialized.FindProperty("displayName").stringValue = "素手";
-            serialized.FindProperty("description").stringValue = "何も持たずに殴る。";
-            serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(WeaponRank.E);
-            serialized.FindProperty("strength").floatValue = 3f; // 錆びた片手剣（5）より弱い。値は仮。
+            serialized.FindProperty("id").stringValue = FistsId;
+            // ランク・強さ・名前・説明は作ったときだけ書く。正は武器の表（CSV）で、このあと取り込む。
+            if (created)
+            {
+                serialized.FindProperty("displayName").stringValue = FistsName;
+                serialized.FindProperty("description").stringValue = FistsDescription;
+                serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(WeaponRank.E);
+                serialized.FindProperty("strength").floatValue = FistsStrength;
+            }
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = null;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -2547,6 +2601,15 @@ namespace TpsDungeon.Items.Editor
             // 武器のアセットとプレハブは武器種・ランクの順に並ぶ名前にする（Weapon_05_3B_IronMace など。id は spec.Id のまま）。
             // 前の名前のものは GUID を保って改名する。
             string prefabId = PrefabId(spec, type.Id);
+            // 武器の表（CSV）でランクを変えると名前も変わるので、同じ id の今のアセットとプレハブ・絵を新しい名前へ移す。
+            if (existingWeaponPaths.TryGetValue(spec.Id, out string currentPath))
+            {
+                string currentId = Path.GetFileNameWithoutExtension(currentPath);
+                RenameAsset(currentPath, WeaponAssetPath(spec, type.Id));
+                RenameAsset($"{Gen.PrefabsFolder}/Pickup_{currentId}.prefab", $"{Gen.PrefabsFolder}/Pickup_{prefabId}.prefab");
+                RenameAsset($"{Gen.PrefabsFolder}/Held_{currentId}.prefab", $"{Gen.PrefabsFolder}/Held_{prefabId}.prefab");
+                RenameAsset($"{Gen.IconsFolder}/Icon_{currentId}.png", $"{Gen.IconsFolder}/Icon_{prefabId}.png");
+            }
             RenameAsset($"{WeaponsFolder}/{spec.Id}.asset", WeaponAssetPath(spec, type.Id));
             RenameAsset($"{Gen.PrefabsFolder}/Pickup_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Pickup_{prefabId}.prefab");
             RenameAsset($"{Gen.PrefabsFolder}/Held_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Held_{prefabId}.prefab");
@@ -2599,6 +2662,22 @@ namespace TpsDungeon.Items.Editor
             string name = spec.Id.StartsWith(prefix, StringComparison.Ordinal) ? spec.Id.Substring(prefix.Length) : spec.Id;
             string rank = spec.Rank == WeaponRank.Unique ? "U" : spec.Rank.ToString();
             return $"{prefix}{typeId}_{RankEnumIndex(spec.Rank)}{rank}_{name}";
+        }
+
+        /// <summary>Generate の始めに集めた、武器フォルダにある武器の id → アセットのパス。</summary>
+        private static Dictionary<string, string> existingWeaponPaths = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        private static Dictionary<string, string> FindWeaponPathsById()
+        {
+            var paths = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(WeaponDefinition), new[] { WeaponsFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var weapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(path);
+                if (weapon != null && !string.IsNullOrEmpty(weapon.Id) && !paths.ContainsKey(weapon.Id)) paths[weapon.Id] = path;
+            }
+
+            return paths;
         }
 
         /// <summary>武器のアセットのパス（Items/Weapons/Weapon_05_3B_IronMace.asset など）。</summary>
