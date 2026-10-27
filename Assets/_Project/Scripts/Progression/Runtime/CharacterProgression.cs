@@ -116,6 +116,16 @@ namespace TpsDungeon.Progression
             return Level - from;
         }
 
+        /// <summary>
+        /// レベルを level にし、経験値を 0、HP を満タンにする（デバッグ用）。下げることもできる。範囲外は 1〜最大に丸める。
+        /// レベルアップの知らせ（LeveledUp）は飛ばさない。
+        /// </summary>
+        public void SetLevel(int level)
+        {
+            Progress.Restore(level, 0);
+            ApplyStats(HpUpdate.Fill);
+        }
+
         /// <summary>Lv1・経験値 0・HP 満タンに戻す（ゲームオーバー）。</summary>
         public void ResetProgress()
         {

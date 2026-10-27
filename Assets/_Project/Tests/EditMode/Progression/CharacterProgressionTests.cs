@@ -101,6 +101,32 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void SetLevel_UpOrDown_ZeroExpAndFullHealth_WithoutLevelUpEvent()
+        {
+            int leveledUp = 0;
+            character.LeveledUp += (_, from, to) => leveledUp++;
+            character.AddExp(1);
+            health.Damage(30);
+
+            character.SetLevel(30);
+            Assert.AreEqual(30, character.Level);
+            Assert.AreEqual(0, character.Exp);
+            Assert.AreEqual(character.MaxHp, health.MaxHp);
+            Assert.AreEqual(health.MaxHp, health.CurrentHp);
+
+            health.Damage(30);
+            character.SetLevel(3);
+            Assert.AreEqual(3, character.Level);
+            Assert.AreEqual(health.MaxHp, health.CurrentHp);
+
+            character.SetLevel(LevelBalance.MaxLevel + 50);
+            Assert.AreEqual(LevelBalance.MaxLevel, character.Level);
+            character.SetLevel(0);
+            Assert.AreEqual(1, character.Level);
+            Assert.AreEqual(0, leveledUp);
+        }
+
+        [Test]
         public void Modifiers_ScaleMaxHpAndAttack()
         {
             var modifiers = new ProgressionModifiers();
