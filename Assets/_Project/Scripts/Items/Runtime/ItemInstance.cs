@@ -134,7 +134,7 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
-        /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。
+        /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。攻撃力は 1 発のダメージ（<see cref="HitDamage"/>）。
         /// エンチャントは 1 行ずつそのランクの色で塗る（<see cref="TryGetEnchantmentRank"/>）。
         /// 盾は攻撃力の代わりに防御力を、治癒持続・治癒は回復量を、召喚はおとりの体力を、ダメージ軽減は加護の効き目を出し、お守りは強さを出さない。
         /// お守り・盾・召喚・治癒持続・ダメージ軽減・治癒は効き方を一行添える。
@@ -155,7 +155,7 @@ namespace TpsDungeon.Items
             else if (type != null && type.IsSummon) text.Append($"\nおとりの体力 {SummonHealth(weapon)}");
             else if (type != null && type.IsBuff) text.Append("\n").Append(BlessingText(weapon));
             else if (type != null && type.IsHeal) text.Append($"\n回復量 {weapon.Strength:0.#}");
-            else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {weapon.Strength:0.#}");
+            else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {HitDamage(weapon)}");
 
             WeaponRankTable table = WeaponRankTable.Default;
             foreach (EnchantmentStack stack in enchantments)
@@ -176,6 +176,28 @@ namespace TpsDungeon.Items
             if (!string.IsNullOrEmpty(usage)) text.Append("\n\n").Append(usage);
             if (!string.IsNullOrEmpty(Definition.Description)) text.Append("\n\n").Append(Definition.Description);
             return text.ToString();
+        }
+
+        /// <summary>
+        /// 情報欄に出す攻撃力。1 撃（1 発）が 1 体に与えるダメージで、持ち主の基礎攻撃力とエンチャントは入れない（クリティカル前）。
+        /// 強さは DPS なので、撃つ間隔や振る時間から逆算した値になる。近接は 1 段目、矢の雨と炎は 1 刻み。
+        /// 近接でも遠距離でもない武器種なら強さをそのまま出す。
+        /// </summary>
+        public static string HitDamage(WeaponDefinition weapon)
+        {
+            WeaponTypeDefinition type = weapon != null ? weapon.WeaponType : null;
+            if (type == null) return weapon != null ? weapon.Strength.ToString("0.#") : "0";
+
+            if (type.IsMelee) return weapon.ComputeMeleeStats(TpsDungeon.Items.EnchantmentTotals.Empty, 0f).HitDamage(0).ToString();
+            if (!type.IsRanged) return weapon.Strength.ToString("0.#");
+
+            RangedWeaponStats stats = weapon.ComputeRangedStats(TpsDungeon.Items.EnchantmentTotals.Empty, 0f);
+            return type.RangedKind switch
+            {
+                RangedAttackKind.Rain => stats.RainTickDamage.ToString(),
+                RangedAttackKind.Flame => stats.FlameTickDamage.ToString(),
+                _ => stats.ShotDamage.ToString(),
+            };
         }
 
         /// <summary>召喚した置物 1 体の体力（強さ × 武器種の係数、四捨五入、最低 1）。</summary>

@@ -9,7 +9,7 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器種ごとのエンチャントのランク表（CSV）を、各武器種（WeaponTypeDefinition）の enchantmentRanks に書き込む。
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。
-    /// 武器種は id（"01" など）で、エンチャントは種類（Enchantments/Enchant_*.asset の kind）で引く。CSV に出てこない武器種の表は空にする。
+    /// 武器種は id（"OneHanded" など）で、エンチャントは種類（Enchantments/Enchant_*.asset の kind）で引く。CSV に出てこない武器種の表は空にする。
     /// 読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>
     public sealed class EnchantmentRankCsvImporter : AssetPostprocessor

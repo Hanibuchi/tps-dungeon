@@ -4,9 +4,8 @@ using UnityEngine;
 namespace TpsDungeon.Combat
 {
     /// <summary>
-    /// 効いている盾（PlayerGear.ActiveShield。片手武器を持っている間だけ）の見た目を左手に持たせる。
-    /// 持ち位置は盾の武器種の HeldLocalPosition / HeldLocalEuler（HeldWeaponGrip）。盾そのものを選んでいるときは
-    /// 効いている盾にならず、MeleeAttacker が手の物として持たせるので、ここでは出さない。
+    /// オフハンドの盾（PlayerGear.OffHandShield。盾を持てる武器種を選んでいる間だけ）の見た目を左手に持たせる。
+    /// 持ち位置は盾の武器種の左手の値（HeldWeaponGrip）。選んでいる盾は MeleeAttacker が手の物として右手に持たせるので、ここでは出さない。
     /// プレイヤーのルート（PlayerGear と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
@@ -30,7 +29,7 @@ namespace TpsDungeon.Combat
         {
             if (gear == null) return;
             gear.Changed += OnGearChanged;
-            Show(gear.ActiveShield);
+            Show(gear.OffHandShield);
         }
 
         private void OnDisable()
@@ -39,7 +38,7 @@ namespace TpsDungeon.Combat
             Show(null);
         }
 
-        private void OnGearChanged(PlayerGear _) => Show(gear.ActiveShield);
+        private void OnGearChanged(PlayerGear _) => Show(gear.OffHandShield);
 
         private void Show(ItemInstance shield)
         {
@@ -57,7 +56,7 @@ namespace TpsDungeon.Combat
 
             model = Instantiate(weapon.HeldModel, hand);
             model.name = weapon.HeldModel.name;
-            model.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType);
+            model.AddComponent<HeldWeaponGrip>().Init(weapon.WeaponType, true, isOffHand: true);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Destroy(c);
             WeaponAura.Attach(model, weapon.Rank, held: true);
         }

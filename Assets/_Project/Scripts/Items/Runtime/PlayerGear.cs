@@ -30,13 +30,13 @@ namespace TpsDungeon.Items
         private PlayerLocomotionSpeed locomotion;
         private CharacterProgression progression;
         private PartyProgression party;
-        private ItemInstance activeShield;
+        private ItemInstance offHandShield;
 
         /// <summary>最後に効かせた効果。</summary>
         public GearBonuses Bonuses { get; private set; } = GearBonuses.None;
 
-        /// <summary>効いている盾（左手に持たせる）。無ければ null。</summary>
-        public ItemInstance ActiveShield => activeShield;
+        /// <summary>オフハンドに持っている盾（左手に持たせる）。無ければ null。選んでいる盾は手の物として MeleeAttacker が持たせる。</summary>
+        public ItemInstance OffHandShield => offHandShield;
 
         /// <summary>効果が出し直された。</summary>
         public event Action<PlayerGear> Changed;
@@ -96,23 +96,24 @@ namespace TpsDungeon.Items
                     : new GearSlot(gear, weapon.Strength, items[i].EnchantmentTotals()));
             }
 
+            // 選んでいる盾はメインハンドで効き、選んでいる物の武器種が盾を持てる（canUseShield。お守り・盾も表で選べる）なら、ほかの盾をオフハンドに持つ。
             WeaponDefinition held = items[hotbar.SelectedIndex]?.Weapon;
-            bool holdingShieldWeapon = held != null && held.WeaponType != null && held.WeaponType.CanUseShield && !held.WeaponType.IsPassiveGear;
-            return GearBonuses.Compute(slots, holdingShieldWeapon);
+            bool offHand = held != null && held.WeaponType != null && held.WeaponType.CanUseShield;
+            return GearBonuses.Compute(slots, offHand, hotbar.SelectedIndex);
         }
 
         /// <summary>出し直して効かせる。</summary>
         public void Refresh()
         {
             GearBonuses bonuses = CurrentBonuses();
-            ItemInstance shield = bonuses.ActiveShieldIndex >= 0 ? inventory.Inventory[bonuses.ActiveShieldIndex] : null;
+            ItemInstance shield = bonuses.OffHandShieldIndex >= 0 ? inventory.Inventory[bonuses.OffHandShieldIndex] : null;
             Apply(bonuses, shield);
         }
 
         private void Apply(GearBonuses bonuses, ItemInstance shield)
         {
             Bonuses = bonuses;
-            activeShield = shield;
+            offHandShield = shield;
 
             if (health != null)
             {

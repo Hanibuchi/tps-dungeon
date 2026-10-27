@@ -25,7 +25,7 @@ namespace TpsDungeon.Items.Editor
         private const string EnemyPrefabFolder = "Assets/_Project/Prefabs/Enemies";
 
         /// <summary>素手の武器種。落とさない。</summary>
-        private const string UnarmedTypeId = "00";
+        private const string UnarmedTypeId = "Unarmed";
 
         [MenuItem("Tools/TPS Dungeon/CSV の取り込み/敵のドロップ表", false, 109)]
         public static void Import()

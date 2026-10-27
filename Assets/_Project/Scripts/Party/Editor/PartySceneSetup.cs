@@ -30,17 +30,17 @@ namespace TpsDungeon.Party.Editor
         // 仲間ごとの最初の装備（武器のアセット名）。近接・遠距離・お守り・盾を混ぜる。
         private static readonly string[][] Kits =
         {
-            new[] { "Weapon_01_2C_IronSword", "Weapon_09_2C_HunterBow", "Weapon_27_0E_WoodenShield" },
-            new[] { "Weapon_04_3B_SteelGreatsword", "Weapon_28_1D_ThrowingKnife" },
-            new[] { "Weapon_09_4A_SoldierLongbow", "Weapon_19_0E_ChargedStaff", "Weapon_17_3B_WorldTreeBranchStaff" },
-            new[] { "Weapon_05_1D_StoneHammer", "Weapon_21_1D_EmberStaff", "Weapon_26_0E_RustyBell" },
-            new[] { "Weapon_02_2C_GaleRapier", "Weapon_11_2C_ArrowRainBow" },
-            new[] { "Weapon_20_1D_StoneSpikeStaff", "Weapon_01_0E_RustySword" },
-            new[] { "Weapon_30_2C_WoodenDollWhistle", "Weapon_05_3B_IronMace" },
-            new[] { "Weapon_09_0E_OldBow" },
-            new[] { "Weapon_04_1D_ChippedGreatsword", "Weapon_27_1D_IronRoundShield" },
-            new[] { "Weapon_19_3B_ThunderStaff", "Weapon_28_0E_ThrowingStone" },
-            new[] { "Weapon_01_4A_BlueSteelRapier", "Weapon_09_2C_HunterBow", "Weapon_26_1D_OldTalisman" },
+            new[] { "Weapon_OneHanded_2C_IronSword", "Weapon_Bow_2C_HunterBow", "Weapon_Shield_0E_WoodenShield" },
+            new[] { "Weapon_TwoHanded_3B_SteelGreatsword", "Weapon_Throw_1D_ThrowingKnife" },
+            new[] { "Weapon_Bow_4A_SoldierLongbow", "Weapon_Lightning_0E_ChargedStaff", "Weapon_HealField_3B_WorldTreeBranchStaff" },
+            new[] { "Weapon_Hammer_1D_StoneHammer", "Weapon_Flamethrower_1D_EmberStaff", "Weapon_Charm_0E_RustyBell" },
+            new[] { "Weapon_DashThrust_2C_GaleRapier", "Weapon_RainBow_2C_ArrowRainBow" },
+            new[] { "Weapon_SpikeLine_1D_StoneSpikeStaff", "Weapon_OneHanded_0E_RustySword" },
+            new[] { "Weapon_Summon_2C_WoodenDollWhistle", "Weapon_Hammer_3B_IronMace" },
+            new[] { "Weapon_Bow_0E_OldBow" },
+            new[] { "Weapon_TwoHanded_1D_ChippedGreatsword", "Weapon_Shield_1D_IronRoundShield" },
+            new[] { "Weapon_Lightning_3B_ThunderStaff", "Weapon_Throw_0E_ThrowingStone" },
+            new[] { "Weapon_OneHanded_4A_BlueSteelRapier", "Weapon_Bow_2C_HunterBow", "Weapon_Charm_1D_OldTalisman" },
         };
 
         [MenuItem("Tools/TPS Dungeon/シーン/確認用シーンにパーティーを置く（仲間 4 人）", false, 232)]

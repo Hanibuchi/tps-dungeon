@@ -30,7 +30,7 @@ namespace TpsDungeon.Items.Tests
 
             Assert.AreEqual(0.2f, bonuses.MoveSpeedPercent, 1e-5f);
             Assert.AreEqual(0.1f, bonuses.MaxHpPercent, 1e-5f);
-            Assert.AreEqual(-1, bonuses.ActiveShieldIndex);
+            Assert.AreEqual(-1, bonuses.OffHandShieldIndex);
             Assert.AreEqual(1f, bonuses.DamageTaken, 1e-5f);
         }
 
@@ -39,7 +39,7 @@ namespace TpsDungeon.Items.Tests
         {
             var bonuses = GearBonuses.Compute(new[] { Shield(30f, (EnchantmentKind.Regen, 1f)) }, false);
 
-            Assert.AreEqual(-1, bonuses.ActiveShieldIndex);
+            Assert.AreEqual(-1, bonuses.OffHandShieldIndex);
             Assert.AreEqual(0f, bonuses.RegenPerSecond, 1e-5f);
             Assert.AreEqual(1f, bonuses.DamageTaken, 1e-5f);
         }
@@ -54,16 +54,65 @@ namespace TpsDungeon.Items.Tests
                 Shield(18f, (EnchantmentKind.Regen, 3f)),
             }, true);
 
-            Assert.AreEqual(1, bonuses.ActiveShieldIndex);
+            Assert.AreEqual(1, bonuses.OffHandShieldIndex);
             Assert.AreEqual(30f, bonuses.ShieldDefense, 1e-5f);
             Assert.AreEqual(1f, bonuses.RegenPerSecond, 1e-5f);
+        }
+
+        [Test]
+        public void 選んでいる盾はメインハンドで効き_防御もエンチャントも付く()
+        {
+            var bonuses = GearBonuses.Compute(new[] { default, Shield(30f, (EnchantmentKind.MaxHp, 0.1f)) }, false, 1);
+
+            Assert.AreEqual(1, bonuses.MainShieldIndex);
+            Assert.AreEqual(-1, bonuses.OffHandShieldIndex);
+            Assert.AreEqual(30f, bonuses.ShieldDefense, 1e-5f);
+            Assert.AreEqual(0.1f, bonuses.MaxHpPercent, 1e-5f);
+            Assert.AreEqual(100f / 130f, bonuses.DamageTaken, 1e-5f);
+        }
+
+        [Test]
+        public void 盾を選んでいてほかにも盾があれば_オフハンドの1枚も効き2枚分を足す()
+        {
+            var bonuses = GearBonuses.Compute(new[]
+            {
+                Shield(30f, (EnchantmentKind.Regen, 1f)),
+                Shield(18f, (EnchantmentKind.Regen, 3f)),
+                Shield(6f, (EnchantmentKind.MaxHp, 0.1f)),
+            }, true, 2);
+
+            Assert.AreEqual(2, bonuses.MainShieldIndex);
+            Assert.AreEqual(0, bonuses.OffHandShieldIndex, "選んでいない盾のうち防御のいちばん高い 1 枚");
+            Assert.AreEqual(36f, bonuses.ShieldDefense, 1e-5f);
+            Assert.AreEqual(1f, bonuses.RegenPerSecond, 1e-5f);
+            Assert.AreEqual(0.1f, bonuses.MaxHpPercent, 1e-5f);
+        }
+
+        [Test]
+        public void 選んでいる盾はオフハンドの候補にしない()
+        {
+            var bonuses = GearBonuses.Compute(new[] { Shield(30f), Shield(18f) }, true, 0);
+
+            Assert.AreEqual(0, bonuses.MainShieldIndex);
+            Assert.AreEqual(1, bonuses.OffHandShieldIndex);
+            Assert.AreEqual(48f, bonuses.ShieldDefense, 1e-5f);
+        }
+
+        [Test]
+        public void 盾を持てない物を選んでいれば選んでいない盾は効かない()
+        {
+            var bonuses = GearBonuses.Compute(new[] { default, Shield(30f, (EnchantmentKind.Regen, 1f)) }, false, 0);
+
+            Assert.AreEqual(-1, bonuses.MainShieldIndex);
+            Assert.AreEqual(-1, bonuses.OffHandShieldIndex);
+            Assert.AreEqual(0f, bonuses.RegenPerSecond, 1e-5f);
         }
 
         [Test]
         public void 同じ防御の盾なら先の枠()
         {
             var bonuses = GearBonuses.Compute(new[] { default, Shield(18f), Shield(18f) }, true);
-            Assert.AreEqual(1, bonuses.ActiveShieldIndex);
+            Assert.AreEqual(1, bonuses.OffHandShieldIndex);
         }
 
         [Test]

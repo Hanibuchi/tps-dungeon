@@ -15,7 +15,7 @@ namespace TpsDungeon.Items.Editor
 {
     /// <summary>
     /// 武器まわりのデータ一式をコードから作る。数値は仮で、ここを直して作り直すか、できたアセットを直接いじって調整する。
-    /// - エンチャントの付き方・エンチャント 22 種・武器種 01（片手近距離）・02（ダッシュ突き）・04（両手近距離）・05（叩きつけ）・09（弓）・11（持続弓）・
+    /// - エンチャントの付き方・エンチャント 22 種・武器種 OneHanded（片手近距離）・DashThrust（ダッシュ突き）・TwoHanded（両手近距離）・Hammer（叩きつけ）・Bow（弓）・RainBow（持続弓）・
     ///   15（ダメージ軽減）・16（治癒）・17（治癒持続）・19（電撃）・20（範囲連置）・21（火炎放射器）・26（お守り）・27（盾）・28（投擲）・30（召喚）: Assets/_Project/Items/Weapons/
     /// - ランクの色と、ユニークの光・落ちた音: Assets/_Project/Resources/Weapons/（ゲーム中に WeaponRankTable.Default で引くため Resources に置く）
     ///   エンチャントのランクの重み・付く確率・最大数（EnchantmentRollSettings）とランクの色は、インスペクタで調整する値なので、無いときだけ仮の値を書く（作り直しても残る）
@@ -25,7 +25,7 @@ namespace TpsDungeon.Items.Editor
     ///   治癒持続で投げる種（Projectile_HealSeed）
     /// - 弓の飛ぶ矢の見た目（Projectile_Arrow）と、持続弓の範囲の円・雷の線の材質（RangeRing）
     /// - 範囲連置の 1 列の結晶（Effect_CrystalLine。Hovl の Crystals front attack を 1 本にしたバリアント）と、火炎放射器の炎（Effect_Flame）
-    /// - 素手の武器種 00 と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
+    /// - 素手の武器種 Unarmed と、素手のときに振る武器（Weapon_Fists。インベントリには入れない）
     /// - 振り・命中のエフェクトは ThirdParty/VFX のプレハブを、効果音は ThirdParty/Sound の効果音ラボの音を武器種に入れる
     /// - 枠と情報欄の絵は、手に持つ見た目のモデルを斜めから撮って作る（背景は透明）
     /// 見た目は ThirdParty の Blink の武器（FreeSwords の剣・Stylized のハンマーと杖と盾と短剣・LowPoly の弓と杖と槍と盾）と Pandazole の弓があればそれを、
@@ -44,22 +44,22 @@ namespace TpsDungeon.Items.Editor
         public const string RankTablePath = "Assets/_Project/Resources/" + WeaponRankTable.ResourcePath + ".asset";
         private const string OldRankTablePath = WeaponsFolder + "/WeaponRankTable.asset";
         public const string RollSettingsPath = WeaponsFolder + "/EnchantmentRollSettings.asset";
-        public const string OneHandedTypePath = WeaponsFolder + "/WeaponType_01_OneHanded.asset";
-        public const string DashThrustTypePath = WeaponsFolder + "/WeaponType_02_DashThrust.asset";
-        public const string TwoHandedTypePath = WeaponsFolder + "/WeaponType_04_TwoHanded.asset";
-        public const string HammerTypePath = WeaponsFolder + "/WeaponType_05_Hammer.asset";
-        public const string BowTypePath = WeaponsFolder + "/WeaponType_09_Bow.asset";
-        public const string RainBowTypePath = WeaponsFolder + "/WeaponType_11_RainBow.asset";
-        public const string LightningTypePath = WeaponsFolder + "/WeaponType_19_Lightning.asset";
-        public const string SpikeLineTypePath = WeaponsFolder + "/WeaponType_20_SpikeLine.asset";
-        public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_21_Flamethrower.asset";
-        public const string CharmTypePath = WeaponsFolder + "/WeaponType_26_Charm.asset";
-        public const string ShieldTypePath = WeaponsFolder + "/WeaponType_27_Shield.asset";
-        public const string ThrowTypePath = WeaponsFolder + "/WeaponType_28_Throw.asset";
-        public const string HealFieldTypePath = WeaponsFolder + "/WeaponType_17_HealField.asset";
-        public const string BlessingTypePath = WeaponsFolder + "/WeaponType_15_DamageReduction.asset";
-        public const string HealTypePath = WeaponsFolder + "/WeaponType_16_Heal.asset";
-        public const string SummonTypePath = WeaponsFolder + "/WeaponType_30_Summon.asset";
+        public const string OneHandedTypePath = WeaponsFolder + "/WeaponType_OneHanded.asset";
+        public const string DashThrustTypePath = WeaponsFolder + "/WeaponType_DashThrust.asset";
+        public const string TwoHandedTypePath = WeaponsFolder + "/WeaponType_TwoHanded.asset";
+        public const string HammerTypePath = WeaponsFolder + "/WeaponType_Hammer.asset";
+        public const string BowTypePath = WeaponsFolder + "/WeaponType_Bow.asset";
+        public const string RainBowTypePath = WeaponsFolder + "/WeaponType_RainBow.asset";
+        public const string LightningTypePath = WeaponsFolder + "/WeaponType_Lightning.asset";
+        public const string SpikeLineTypePath = WeaponsFolder + "/WeaponType_SpikeLine.asset";
+        public const string FlamethrowerTypePath = WeaponsFolder + "/WeaponType_Flamethrower.asset";
+        public const string CharmTypePath = WeaponsFolder + "/WeaponType_Charm.asset";
+        public const string ShieldTypePath = WeaponsFolder + "/WeaponType_Shield.asset";
+        public const string ThrowTypePath = WeaponsFolder + "/WeaponType_Throw.asset";
+        public const string HealFieldTypePath = WeaponsFolder + "/WeaponType_HealField.asset";
+        public const string BlessingTypePath = WeaponsFolder + "/WeaponType_Blessing.asset";
+        public const string HealTypePath = WeaponsFolder + "/WeaponType_Heal.asset";
+        public const string SummonTypePath = WeaponsFolder + "/WeaponType_Summon.asset";
         public const string SummonsFolder = Gen.PrefabsFolder + "/Summons";
         public const string HealSeedPrefabPath = Gen.PrefabsFolder + "/Projectile_HealSeed.prefab";
         private const string SummonHumanMeshPath = SummonsFolder + "/Mesh_SummonHuman.asset";
@@ -70,9 +70,9 @@ namespace TpsDungeon.Items.Editor
         public const string RangeRingMaterialPath = WeaponsFolder + "/RangeRing.mat";
         public const string AuraMaterialPath = WeaponsFolder + "/RankAura.mat";
         public const string ArrowPrefabPath = Gen.PrefabsFolder + "/Projectile_Arrow.prefab";
-        public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_00_Unarmed.asset";
-        // 素手は武器種 00・ランク E として、ほかの武器と同じ並びの名前にする。id は Weapon_Fists のまま。
-        public const string FistsPath = WeaponsFolder + "/Weapon_00_0E_Fists.asset";
+        public const string UnarmedTypePath = WeaponsFolder + "/WeaponType_Unarmed.asset";
+        // 素手は武器種 Unarmed・ランク E として、ほかの武器と同じ並びの名前にする。id は Weapon_Fists のまま。
+        public const string FistsPath = WeaponsFolder + "/Weapon_Unarmed_0E_Fists.asset";
         private const string OldFistsPath = WeaponsFolder + "/Weapon_Fists.asset";
 
         private const string HovlPrefabs = "Assets/ThirdParty/VFX/Hovl Studio/Magic effects pack/Prefabs/";
@@ -219,6 +219,7 @@ namespace TpsDungeon.Items.Editor
         private sealed class WeaponSpec
         {
             public string Id;
+            // ランク・強さ・名前・説明は Weapons.csv が無いときに書き出す元で、正は CSV（Weapons() で上書きする）。
             public string Name;
             public WeaponRank Rank;
             public float Strength;
@@ -339,16 +340,27 @@ namespace TpsDungeon.Items.Editor
             WriteDefaultEnchantmentRankCsv();
             EnchantmentRankCsvImporter.Import();
 
+            // 武器ごとのランク・強さ・名前・説明は CSV が正。無いときだけ、下の武器の並びから書き出す。
+            // 武器の並びは CSV の値で上書きして使う（アセットの名前と見た目もランクに合わせるため）。
+            WriteDefaultWeaponCsv();
+
             summonModels = WriteSummonModels();
             generatedTextures.Clear();
             DefaultUniqueEnchantments.Clear();
+            existingWeaponPaths = FindWeaponPathsById();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
+
+            WeaponTypeDefinition unarmed = WriteUnarmedType();
+            WriteFists(unarmed);
+            WeaponCsvImporter.Import();
+
+            // 武器種の名前・クールタイム・盾の可否も CSV が正。無いときだけ、上で書いた武器種から書き出す。
+            WriteDefaultWeaponTypeCsv(types.Values.Append(unarmed));
+            WeaponTypeCsvImporter.Import();
 
             // ユニークの固定エンチャントも CSV が正。無いときだけ、上の武器の並びに書いた種類から書き出す。
             WriteDefaultUniqueEnchantmentCsv();
             UniqueEnchantmentCsvImporter.Import();
-
-            WriteFists(WriteUnarmedType());
 
             AssetDatabase.SaveAssets();
             Debug.Log($"仮の武器データを作った: {WeaponsFolder}");
@@ -373,7 +385,60 @@ namespace TpsDungeon.Items.Editor
 
         private static IEnumerable<WeaponSpec> Weapons()
         {
-            foreach (WeaponSpec spec in WeaponList()) yield return UniqueLook(spec);
+            Dictionary<string, WeaponCsv.Row> table = ReadWeaponCsv();
+            foreach (WeaponSpec spec in WeaponList())
+            {
+                if (table.TryGetValue(spec.Id, out WeaponCsv.Row row))
+                {
+                    spec.Rank = row.Rank;
+                    spec.Strength = row.Strength;
+                    spec.Name = row.Name;
+                    spec.Description = row.Description;
+                }
+
+                yield return UniqueLook(spec);
+            }
+        }
+
+        /// <summary>武器の表（CSV）を id で引けるように読む。無ければ空。読めない行はここでは黙って飛ばす（取り込みのときに出す）。</summary>
+        private static Dictionary<string, WeaponCsv.Row> ReadWeaponCsv()
+        {
+            var table = new Dictionary<string, WeaponCsv.Row>(StringComparer.Ordinal);
+            if (!File.Exists(WeaponCsvImporter.CsvPath)) return table;
+
+            foreach (WeaponCsv.Row row in WeaponCsv.Parse(File.ReadAllText(WeaponCsvImporter.CsvPath), null)) table[row.Id] = row;
+            return table;
+        }
+
+        /// <summary>武器種の表（CSV）が無いときだけ、書いた武器種のアセットから id の順に書き出す。あれば手で直した表なので触らない。</summary>
+        private static void WriteDefaultWeaponTypeCsv(IEnumerable<WeaponTypeDefinition> types)
+        {
+            if (File.Exists(WeaponTypeCsvImporter.CsvPath)) return;
+
+            var rows = new List<WeaponTypeCsv.Row>();
+            foreach (WeaponTypeDefinition type in types.OrderBy(t => t.Id, StringComparer.Ordinal))
+            {
+                float? cooldown = type.IsMelee ? type.ComboCooldown : type.IsRanged ? type.FireInterval : (float?)null;
+                rows.Add(new WeaponTypeCsv.Row(0, type.Id, type.DisplayName, cooldown, type.CanUseShield));
+            }
+
+            File.WriteAllText(WeaponTypeCsvImporter.CsvPath, WeaponTypeCsv.Format(rows));
+            AssetDatabase.ImportAsset(WeaponTypeCsvImporter.CsvPath);
+        }
+
+        /// <summary>
+        /// 武器の表（CSV）が無いときだけ、コードの武器の並び（CSV で上書きする前）と素手から書き出す。あれば手で直した表なので触らない。
+        /// </summary>
+        private static void WriteDefaultWeaponCsv()
+        {
+            if (File.Exists(WeaponCsvImporter.CsvPath)) return;
+
+            var rows = new List<WeaponCsv.Row>();
+            foreach (WeaponSpec spec in WeaponList()) rows.Add(new WeaponCsv.Row(0, spec.Id, spec.Rank, spec.Strength, spec.Name, spec.Description));
+            rows.Add(new WeaponCsv.Row(0, FistsId, WeaponRank.E, FistsStrength, FistsName, FistsDescription));
+
+            File.WriteAllText(WeaponCsvImporter.CsvPath, WeaponCsv.Format(rows));
+            AssetDatabase.ImportAsset(WeaponCsvImporter.CsvPath);
         }
 
         /// <summary>ユニークを光らせ、少し大きくする。</summary>
@@ -391,7 +456,7 @@ namespace TpsDungeon.Items.Editor
         // ユニークは最上位と同じ形を光らせる（UniqueLook）。投擲とお守りは、名前が別の物（石・ナイフ…、鈴・護符・首飾り）なので例外。
         private static IEnumerable<WeaponSpec> WeaponList()
         {
-            // 01 片手近距離。Sword1 の銅→銀→金。
+            // OneHanded 片手近距離。Sword1 の銅→銀→金。
             yield return new WeaponSpec
             {
                 Id = "Weapon_RustySword", Name = "錆びた片手剣", Rank = WeaponRank.E, Strength = 5f,
@@ -512,7 +577,7 @@ namespace TpsDungeon.Items.Editor
                 FlamethrowerTypePath, LowPolyWeapons + "Staff_Epic.prefab",
                 EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.Size, EnchantmentKind.ProjectileCount, EnchantmentKind.ProjectileCount);
 
-            // お守り（26）。強さは今は使わない（ランクの目安）。
+            // お守り（Charm）。強さは今は使わない（ランクの目安）。
             yield return Gear("Weapon_RustyBell", "錆びた鈴", WeaponRank.E, 4f, "かすかに鳴り続け、持ち主の歩みを軽くする。",
                 CharmTypePath, Accessories + "FCA_Earring_Type1_Color1.prefab", CharmLength);
             yield return Gear("Weapon_OldTalisman", "古びた護符", WeaponRank.D, 14f, "文字はもう読めないが、効き目だけは残っている。",
@@ -520,7 +585,7 @@ namespace TpsDungeon.Items.Editor
             yield return Gear("Weapon_EmeraldNecklace", "翠玉の首飾り", WeaponRank.C, 24f, "石が濁るたび、災いをひとつ肩代わりしている。",
                 CharmTypePath, Accessories + "FCA_Necklace_Type1_Color3.prefab", CharmLength * 1.5f);
 
-            // 盾（27）。強さは防御力。
+            // 盾（Shield）。強さは防御力。
             yield return Gear("Weapon_WoodenShield", "木の盾", WeaponRank.E, 6f, "板を打ちつけただけの盾。無いよりはましだ。",
                 ShieldTypePath, StylizedShields + "Shield3_1_1.prefab", ShieldLength);
             yield return Gear("Weapon_IronRoundShield", "鉄の円盾", WeaponRank.D, 18f, "打ち込まれた刃を、鈍い音とともに受け流す。",
@@ -919,7 +984,7 @@ namespace TpsDungeon.Items.Editor
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(OneHandedTypePath);
             var serialized = new SerializedObject(type);
-            serialized.FindProperty("id").stringValue = "01";
+            serialized.FindProperty("id").stringValue = "OneHanded";
             serialized.FindProperty("displayName").stringValue = "片手近距離";
             serialized.FindProperty("animatorWeaponType").intValue = 1; // CharacterAnimatorBuilder.Weapon.OneHanded
             serialized.FindProperty("canUseShield").boolValue = true;
@@ -930,7 +995,7 @@ namespace TpsDungeon.Items.Editor
                 EnchantmentKind.RapidFire, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Explosion,
                 EnchantmentKind.ComboBonus,
             };
-            DefaultAllowedEnchantments["01"] = allowed;
+            DefaultAllowedEnchantments["OneHanded"] = allowed;
             serialized.FindProperty("enchantmentRoll").objectReferenceValue = roll;
             serialized.FindProperty("characterAttackWeight").floatValue = 1f;
             serialized.FindProperty("baseCritChance").floatValue = 0.05f;
@@ -974,7 +1039,7 @@ namespace TpsDungeon.Items.Editor
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(UnarmedTypePath);
             var serialized = new SerializedObject(type);
-            serialized.FindProperty("id").stringValue = "00";
+            serialized.FindProperty("id").stringValue = "Unarmed";
             serialized.FindProperty("displayName").stringValue = "素手";
             serialized.FindProperty("animatorWeaponType").intValue = 0; // CharacterAnimatorBuilder.Weapon.Unarmed
             serialized.FindProperty("canUseShield").boolValue = false;
@@ -1002,7 +1067,7 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
-        // ---- 武器種 02 / 04 / 05 ----------------------------------------------
+        // ---- 武器種 DashThrust / TwoHanded / Hammer ----------------------------------------------
 
         /// <summary>武器種の見出しと、付けられるエンチャント（ランク表の CSV が無いときの元）・ダメージの基礎を入れる。</summary>
         private static SerializedObject BeginType(WeaponTypeDefinition type, string id, string displayName, int animatorWeaponType,
@@ -1024,13 +1089,13 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// お守り（26）。振らず、ホットバーに入れておくだけで効く（PlayerGear）。選んでいる間は素手で殴り、手には持たせる。
+        /// お守り（Charm）。振らず、ホットバーに入れておくだけで効く（PlayerGear）。選んでいる間は素手で殴り、手には持たせる。
         /// </summary>
         private static WeaponTypeDefinition WriteCharmType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(CharmTypePath);
-            SerializedObject serialized = BeginType(type, "26", "お守り", 0, false, new[]
+            SerializedObject serialized = BeginType(type, "Charm", "お守り", 0, false, new[]
             {
                 EnchantmentKind.MoveSpeed, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount,
                 EnchantmentKind.Multishot, EnchantmentKind.Exp, EnchantmentKind.MaxHp, EnchantmentKind.Regen,
@@ -1043,14 +1108,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 盾（27）。ホットバーに入れて、片手武器（canUseShield）を持っている間だけ効く。強さが防御力で、
+        /// 盾（Shield）。ホットバーに入れて、片手武器（canUseShield）を持っている間だけ効く。強さが防御力で、
         /// 受けるダメージ × 100 / (100 + 防御力)。効いている間は左手に持たせる（HeldShieldView）。
         /// </summary>
         private static WeaponTypeDefinition WriteShieldType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(ShieldTypePath);
-            SerializedObject serialized = BeginType(type, "27", "盾", 0, false, new[]
+            SerializedObject serialized = BeginType(type, "Shield", "盾", 0, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount, EnchantmentKind.Multishot,
                 EnchantmentKind.Exp, EnchantmentKind.MoveSpeed, EnchantmentKind.MaxHp, EnchantmentKind.Defense,
@@ -1059,6 +1124,8 @@ namespace TpsDungeon.Items.Editor
             WritePassiveGear(serialized, PassiveGear.Shield, true);
             // 左の前腕の外側に、前腕に沿って立て、面を体の外へ向ける（片手剣の構えで合わせた）。Play 中に Scene ビューで動かすと書き戻る。
             SeedHeldGrip(serialized, new Vector3(-0.12f, -0.052f, -0.086f), new Vector3(16f, 181f, 258f));
+            // 選んで右手（メインハンド）に持つときの握り。左手の値を左右に映した仮の値で、Play 中に手の盾を動かして合わせる。
+            SeedOtherHandGrip(serialized);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return type;
         }
@@ -1070,6 +1137,22 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("comboSteps").arraySize = 0;
             serialized.FindProperty("rangedKind").enumValueIndex = Array.IndexOf(Enum.GetValues(typeof(RangedAttackKind)), RangedAttackKind.None);
             serialized.FindProperty("heldInLeftHand").boolValue = leftHand;
+        }
+
+        /// <summary>
+        /// 逆の手に持つ位置が未調整（両方ゼロ）なら、いつもの手の値を左右に映して仮に入れる（位置の x と、向きの y・z の符号を返す）。
+        /// 調整済みなら触らない。
+        /// </summary>
+        private static void SeedOtherHandGrip(SerializedObject serialized)
+        {
+            SerializedProperty p = serialized.FindProperty("otherHandLocalPosition");
+            SerializedProperty e = serialized.FindProperty("otherHandLocalEuler");
+            if (p.vector3Value != Vector3.zero || e.vector3Value != Vector3.zero) return;
+
+            Vector3 position = serialized.FindProperty("heldLocalPosition").vector3Value;
+            Vector3 euler = serialized.FindProperty("heldLocalEuler").vector3Value;
+            p.vector3Value = new Vector3(-position.x, position.y, position.z);
+            e.vector3Value = new Vector3(euler.x, -euler.y, -euler.z);
         }
 
         /// <summary>手に持つ位置が未調整（両方ゼロ）なら、片手剣と同じ握りを仮に入れる。調整済みなら触らない。</summary>
@@ -1084,14 +1167,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// ダッシュ突き（02）。1 段で、判定の瞬間から前へ走り、走っている間ずっと前方の箱で当てる。敵はすり抜け、壁で止まる。
+        /// ダッシュ突き（DashThrust）。1 段で、判定の瞬間から前へ走り、走っている間ずっと前方の箱で当てる。敵はすり抜け、壁で止まる。
         /// 持続時間のエンチャントで走る時間（＝距離）が延び、多重のエンチャントで走る回数が増える。コンボボーナスは付かない。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteDashThrustType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(DashThrustTypePath);
-            SerializedObject serialized = BeginType(type, "02", "ダッシュ突き", 5, true, new[]
+            SerializedObject serialized = BeginType(type, "DashThrust", "ダッシュ突き", 5, true, new[]
             {
                 EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.RapidFire,
                 EnchantmentKind.Duration, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Multishot,
@@ -1126,14 +1209,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 両手近距離（04）。大ぶりの横薙ぎ 3 回と、重い振り下ろしの 4 段目。4 段目は箱が大きく、ノックバックとスタンが強い。
+        /// 両手近距離（TwoHanded）。大ぶりの横薙ぎ 3 回と、重い振り下ろしの 4 段目。4 段目は箱が大きく、ノックバックとスタンが強い。
         /// 音は片手剣の振り・命中を流用し、4 段目の命中だけ替える。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteTwoHandedType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(TwoHandedTypePath);
-            SerializedObject serialized = BeginType(type, "04", "両手近距離", 2, false, new[]
+            SerializedObject serialized = BeginType(type, "TwoHanded", "両手近距離", 2, false, new[]
             {
                 EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.Size,
                 EnchantmentKind.RapidFire, EnchantmentKind.Stun, EnchantmentKind.Knockback, EnchantmentKind.Explosion,
@@ -1169,14 +1252,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 叩きつけ（05）。1 段で、前方の着弾点を中心とした円に当てる。
+        /// 叩きつけ（Hammer）。1 段で、前方の着弾点を中心とした円に当てる。
         /// 数のエンチャントで叩きつけが増えて持ち主を中心に 30° ずつ扇状に並び、多重のエンチャントで叩きつけごとにその向きへずらした追撃が遅れて落ちる。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteHammerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HammerTypePath);
-            SerializedObject serialized = BeginType(type, "05", "叩きつけ", 6, false, new[]
+            SerializedObject serialized = BeginType(type, "Hammer", "叩きつけ", 6, false, new[]
             {
                 EnchantmentKind.DamageUp, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount,
                 EnchantmentKind.Size, EnchantmentKind.Multishot, EnchantmentKind.RapidFire, EnchantmentKind.Stun,
@@ -1223,14 +1306,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 弓（09）。照準の先へ矢をまっすぐ放つ。数で扇状に増え、多重で遅れてもう一斉射、貫通・ホーミング・爆発が付く。値は仮。
+        /// 弓（Bow）。照準の先へ矢をまっすぐ放つ。数で扇状に増え、多重で遅れてもう一斉射、貫通・ホーミング・爆発が付く。値は仮。
         /// 撃つ間隔 0.8 秒なので、1 発は 強さ × 0.8。
         /// </summary>
         private static WeaponTypeDefinition WriteBowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll, GameObject arrow, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(BowTypePath);
-            SerializedObject serialized = BeginType(type, "09", "弓", 3, false, new[]
+            SerializedObject serialized = BeginType(type, "Bow", "弓", 3, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
                 EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
@@ -1243,14 +1326,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 持続弓（11）。照準の地面へ上から雨（見た目は Meteors AOE）を降らせ、半径 1.25 m に 0.5 秒ごと 3 秒間（6 刻み）ダメージ。値は仮。
+        /// 持続弓（RainBow）。照準の地面へ上から雨（見た目は Meteors AOE）を降らせ、半径 1.25 m に 0.5 秒ごと 3 秒間（6 刻み）ダメージ。値は仮。
         /// 撃つ間隔 1.2 秒なので、範囲にずっと居た 1 体が受ける合計は 強さ × 1.2。数で付近のランダムな所に雨が増え、多重で同じ所にもう一度降る。
         /// </summary>
         private static WeaponTypeDefinition WriteRainBowType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll, GameObject arrow, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(RainBowTypePath);
-            SerializedObject serialized = BeginType(type, "11", "持続弓", 3, false, new[]
+            SerializedObject serialized = BeginType(type, "RainBow", "持続弓", 3, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Size, EnchantmentKind.Stun, EnchantmentKind.DamageUp,
                 EnchantmentKind.DropUp, EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
@@ -1276,10 +1359,10 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
-        // ---- 武器種 28（投擲） ----------------------------------------------
+        // ---- 武器種 Throw（投擲） ----------------------------------------------
 
         /// <summary>
-        /// 投擲（28）。右手に持った武器を、腕を振り切る瞬間（押して 0.22 秒、Kevin の右手の突きを 1.5 倍）に照準の先へまっすぐ投げる。
+        /// 投擲（Throw）。右手に持った武器を、腕を振り切る瞬間（押して 0.22 秒、Kevin の右手の突きを 1.5 倍）に照準の先へまっすぐ投げる。
         /// 飛ぶのは武器の手に持つ見た目そのもので、投げてから次が投げられるまで手は空になる。数で扇状に増え、多重で遅れてもう一投、
         /// 貫通・ホーミングは弓と同じ。爆発は付かない。値は仮。撃つ間隔 0.7 秒なので、1 投は 強さ × 0.7。
         /// </summary>
@@ -1287,7 +1370,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(ThrowTypePath);
-            SerializedObject serialized = BeginType(type, "28", "投擲", 7, false, new[]
+            SerializedObject serialized = BeginType(type, "Throw", "投擲", 7, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
                 EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.Multishot, EnchantmentKind.ProjectileSpeed,
@@ -1313,7 +1396,7 @@ namespace TpsDungeon.Items.Editor
             return type;
         }
 
-        // ---- 武器種 17（治癒持続）・30（召喚） ----------------------------------------------
+        // ---- 武器種 HealField（治癒持続）・Summon（召喚） ----------------------------------------------
 
         /// <summary>
         /// 治癒持続（17、片手杖）。右手に杖を持ち、腕を振り切る瞬間（押して 0.22 秒）に狙った地面へ種を放物線で投げ、
@@ -1325,7 +1408,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, Material ring, GameObject seed)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HealFieldTypePath);
-            SerializedObject serialized = BeginType(type, "17", "治癒持続", 7, true, new[]
+            SerializedObject serialized = BeginType(type, "HealField", "治癒持続", 7, true, new[]
             {
                 EnchantmentKind.HealUp, EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.Size,
                 EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
@@ -1356,7 +1439,7 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 召喚（30）。腕を振り切る瞬間（押して 0.22 秒）に、狙った地面へ置物を呼び出す。置物は攻撃せず、敵を引きつける的（DecoyTarget）として
+        /// 召喚（Summon）。腕を振り切る瞬間（押して 0.22 秒）に、狙った地面へ置物を呼び出す。置物は攻撃せず、敵を引きつける的（DecoyTarget）として
         /// 12 秒立っている（おとりの体力 ＝ 強さ × 10。敵の攻撃はまだ無い）。数で狙った所から 1.2〜2.5 m のランダムな所に増え（互いに 1 m 以上離す）、持続時間で長く居る。
         /// 呼び直すと前の分は消える。撃つ間隔（呼び直しの待ち）8 秒。値は仮。手に持つ本は右手。
         /// 出るときの魔法陣（Magic circle）は自分では消えない素材なので、SummonedDecoy が少し見せてから薄くして消す。消えるときの煙は小さめ。
@@ -1365,7 +1448,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(SummonTypePath);
-            SerializedObject serialized = BeginType(type, "30", "召喚", 7, false, new[]
+            SerializedObject serialized = BeginType(type, "Summon", "召喚", 7, false, new[]
             {
                 EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
             }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振って呼ぶ所を指す）
@@ -1397,7 +1480,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, Material ring, GameObject redShield)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(BlessingTypePath);
-            SerializedObject serialized = BeginType(type, "15", "ダメージ軽減", 7, true, new[]
+            SerializedObject serialized = BeginType(type, "Blessing", "ダメージ軽減", 7, true, new[]
             {
                 EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
             }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振る）
@@ -1430,7 +1513,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(HealTypePath);
-            SerializedObject serialized = BeginType(type, "16", "治癒", 7, true, new[]
+            SerializedObject serialized = BeginType(type, "Heal", "治癒", 7, true, new[]
             {
                 EnchantmentKind.HealUp, EnchantmentKind.Multishot, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
             }, enchantments, roll); // 7 = CharacterAnimatorBuilder.Weapon.Throw（腕を前へ振る）
@@ -1760,7 +1843,7 @@ namespace TpsDungeon.Items.Editor
             return combined;
         }
 
-        // ---- 武器種 19 / 20 / 21（両手杖） ----------------------------------------------
+        // ---- 武器種 Lightning / SpikeLine / Flamethrower（両手杖） ----------------------------------------------
 
         /// <summary>
         /// 杖（雷・連置・炎）に共通の値。弓と同じ遠距離の欄を使い、Animator は魔法（撃ち出しは SpellCast、炎は CastingLoop）。
@@ -1780,14 +1863,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 電撃（19）。照準から 10° 以内の、いちばん照準に近い敵へ雷を放ち、6 m 以内の次の敵へ 3 回飛び移る（4 体まで）。値は仮。
+        /// 電撃（Lightning）。照準から 10° 以内の、いちばん照準に近い敵へ雷を放ち、6 m 以内の次の敵へ 3 回飛び移る（4 体まで）。値は仮。
         /// 撃つ間隔 0.9 秒なので、1 体あたり 強さ × 0.9。数 1 つで 2 回多く飛び移り、多重で 0.25 秒遅れてもう一度放つ。
         /// </summary>
         private static WeaponTypeDefinition WriteLightningType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll, Material ring)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(LightningTypePath);
-            SerializedObject serialized = BeginType(type, "19", "電撃", 4, false, new[]
+            SerializedObject serialized = BeginType(type, "Lightning", "電撃", 4, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
                 EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.ProjectileCount, EnchantmentKind.RapidFire,
@@ -1816,7 +1899,7 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 範囲連置（20）。照準の向きへ、1.2 m 先から 1.1 m おきに 8 か所（約 9 m）、結晶の列（Crystals front attack を 1 本にしたもの）を 0.32 秒で走らせ、
+        /// 範囲連置（SpikeLine）。照準の向きへ、1.2 m 先から 1.1 m おきに 8 か所（約 9 m）、結晶の列（Crystals front attack を 1 本にしたもの）を 0.32 秒で走らせ、
         /// 届いた所から順に当てる。1 か所は半径 0.9 m に当たり、
         /// 1 列は同じ敵に 1 回だけ。撃つ間隔 1.0 秒なので、1 体あたり 強さ × 1.0。数で 20° ずつ扇状に列が増え、持続時間で列が伸び、
         /// 多重で 0.45 秒遅れてもう一列。値は仮。
@@ -1825,7 +1908,7 @@ namespace TpsDungeon.Items.Editor
             EnchantmentRollSettings roll, GameObject line)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(SpikeLineTypePath);
-            SerializedObject serialized = BeginType(type, "20", "範囲連置", 4, false, new[]
+            SerializedObject serialized = BeginType(type, "SpikeLine", "範囲連置", 4, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Stun, EnchantmentKind.DamageUp, EnchantmentKind.DropUp,
                 EnchantmentKind.Knockback, EnchantmentKind.Multishot, EnchantmentKind.Duration, EnchantmentKind.ProjectileCount,
@@ -1855,14 +1938,14 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 火炎放射器（21）。押している間、杖の先から照準へ 6 m・広がり 14° の炎を最長 2.4 秒吐き、0.2 秒ごとにダメージ。吐き切ったら 1.0 秒待つ（途中で離せば吐いた割合だけ）。
+        /// 火炎放射器（Flamethrower）。押している間、杖の先から照準へ 6 m・広がり 14° の炎を最長 2.4 秒吐き、0.2 秒ごとにダメージ。吐き切ったら 1.0 秒待つ（途中で離せば吐いた割合だけ）。
         /// 吐き続けて待つ 1 周（3.4 秒）で 強さ × 3.4 を 12 刻みに分けて与える（炎の中にずっと居ればおよそ 強さ の DPS）。値は仮。
         /// </summary>
         private static WeaponTypeDefinition WriteFlamethrowerType(Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments,
             EnchantmentRollSettings roll, GameObject flame)
         {
             var type = Gen.LoadOrCreate<WeaponTypeDefinition>(FlamethrowerTypePath);
-            SerializedObject serialized = BeginType(type, "21", "火炎放射器", 4, false, new[]
+            SerializedObject serialized = BeginType(type, "Flamethrower", "火炎放射器", 4, false, new[]
             {
                 EnchantmentKind.CritChance, EnchantmentKind.Size, EnchantmentKind.Stun, EnchantmentKind.DamageUp,
                 EnchantmentKind.DropUp, EnchantmentKind.Knockback, EnchantmentKind.Homing, EnchantmentKind.ProjectileSpeed,
@@ -2439,16 +2522,26 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>素手のときに振る武器。拾えず、インベントリにも入らない（MeleeAttacker が直接持つ）。</summary>
+        private const string FistsId = "Weapon_Fists";
+        private const string FistsName = "素手";
+        private const string FistsDescription = "何も持たずに殴る。";
+        private const float FistsStrength = 3f; // 錆びた片手剣（5）より弱い。値は仮。
+
         private static void WriteFists(WeaponTypeDefinition type)
         {
             RenameAsset(OldFistsPath, FistsPath);
             var fists = Gen.LoadOrCreate<WeaponDefinition>(FistsPath);
+            bool created = string.IsNullOrEmpty(fists.Id);
             var serialized = new SerializedObject(fists);
-            serialized.FindProperty("id").stringValue = "Weapon_Fists";
-            serialized.FindProperty("displayName").stringValue = "素手";
-            serialized.FindProperty("description").stringValue = "何も持たずに殴る。";
-            serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(WeaponRank.E);
-            serialized.FindProperty("strength").floatValue = 3f; // 錆びた片手剣（5）より弱い。値は仮。
+            serialized.FindProperty("id").stringValue = FistsId;
+            // ランク・強さ・名前・説明は作ったときだけ書く。正は武器の表（CSV）で、このあと取り込む。
+            if (created)
+            {
+                serialized.FindProperty("displayName").stringValue = FistsName;
+                serialized.FindProperty("description").stringValue = FistsDescription;
+                serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(WeaponRank.E);
+                serialized.FindProperty("strength").floatValue = FistsStrength;
+            }
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = null;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -2544,9 +2637,18 @@ namespace TpsDungeon.Items.Editor
         private static void WriteWeapon(WeaponSpec spec, WeaponTypeDefinition type,
             Dictionary<EnchantmentKind, EnchantmentDefinition> enchantments)
         {
-            // 武器のアセットとプレハブは武器種・ランクの順に並ぶ名前にする（Weapon_05_3B_IronMace など。id は spec.Id のまま）。
+            // 武器のアセットとプレハブは武器種・ランクの順に並ぶ名前にする（Weapon_Hammer_3B_IronMace など。id は spec.Id のまま）。
             // 前の名前のものは GUID を保って改名する。
             string prefabId = PrefabId(spec, type.Id);
+            // 武器の表（CSV）でランクを変えると名前も変わるので、同じ id の今のアセットとプレハブ・絵を新しい名前へ移す。
+            if (existingWeaponPaths.TryGetValue(spec.Id, out string currentPath))
+            {
+                string currentId = Path.GetFileNameWithoutExtension(currentPath);
+                RenameAsset(currentPath, WeaponAssetPath(spec, type.Id));
+                RenameAsset($"{Gen.PrefabsFolder}/Pickup_{currentId}.prefab", $"{Gen.PrefabsFolder}/Pickup_{prefabId}.prefab");
+                RenameAsset($"{Gen.PrefabsFolder}/Held_{currentId}.prefab", $"{Gen.PrefabsFolder}/Held_{prefabId}.prefab");
+                RenameAsset($"{Gen.IconsFolder}/Icon_{currentId}.png", $"{Gen.IconsFolder}/Icon_{prefabId}.png");
+            }
             RenameAsset($"{WeaponsFolder}/{spec.Id}.asset", WeaponAssetPath(spec, type.Id));
             RenameAsset($"{Gen.PrefabsFolder}/Pickup_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Pickup_{prefabId}.prefab");
             RenameAsset($"{Gen.PrefabsFolder}/Held_{spec.Id}.prefab", $"{Gen.PrefabsFolder}/Held_{prefabId}.prefab");
@@ -2590,7 +2692,7 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>
-        /// 武器のアセットとプレハブの名前の本体。Weapon_{武器種}_{ランクの順}{ランク}_{名前}（例: Weapon_05_3B_IronMace）。
+        /// 武器のアセットとプレハブの名前の本体。Weapon_{武器種}_{ランクの順}{ランク}_{名前}（例: Weapon_Hammer_3B_IronMace）。
         /// 名前で並べると武器種ごとにまとまり、その中は E → S → ユニーク（U）の順になる。
         /// </summary>
         private static string PrefabId(WeaponSpec spec, string typeId)
@@ -2601,7 +2703,23 @@ namespace TpsDungeon.Items.Editor
             return $"{prefix}{typeId}_{RankEnumIndex(spec.Rank)}{rank}_{name}";
         }
 
-        /// <summary>武器のアセットのパス（Items/Weapons/Weapon_05_3B_IronMace.asset など）。</summary>
+        /// <summary>Generate の始めに集めた、武器フォルダにある武器の id → アセットのパス。</summary>
+        private static Dictionary<string, string> existingWeaponPaths = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        private static Dictionary<string, string> FindWeaponPathsById()
+        {
+            var paths = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(WeaponDefinition), new[] { WeaponsFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var weapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(path);
+                if (weapon != null && !string.IsNullOrEmpty(weapon.Id) && !paths.ContainsKey(weapon.Id)) paths[weapon.Id] = path;
+            }
+
+            return paths;
+        }
+
+        /// <summary>武器のアセットのパス（Items/Weapons/Weapon_Hammer_3B_IronMace.asset など）。</summary>
         private static string WeaponAssetPath(WeaponSpec spec, string typeId) => $"{WeaponsFolder}/{PrefabId(spec, typeId)}.asset";
 
         /// <summary>前の名前のアセットがあれば、参照（GUID）を保ったまま新しい名前へ改名する。</summary>
