@@ -350,8 +350,13 @@ namespace TpsDungeon.Items.Editor
             existingWeaponPaths = FindWeaponPathsById();
             foreach (WeaponSpec spec in Weapons()) WriteWeapon(spec, types[spec.TypePath], enchantments);
 
-            WriteFists(WriteUnarmedType());
+            WeaponTypeDefinition unarmed = WriteUnarmedType();
+            WriteFists(unarmed);
             WeaponCsvImporter.Import();
+
+            // 武器種の名前・クールタイム・盾の可否も CSV が正。無いときだけ、上で書いた武器種から書き出す。
+            WriteDefaultWeaponTypeCsv(types.Values.Append(unarmed));
+            WeaponTypeCsvImporter.Import();
 
             // ユニークの固定エンチャントも CSV が正。無いときだけ、上の武器の並びに書いた種類から書き出す。
             WriteDefaultUniqueEnchantmentCsv();
@@ -403,6 +408,22 @@ namespace TpsDungeon.Items.Editor
 
             foreach (WeaponCsv.Row row in WeaponCsv.Parse(File.ReadAllText(WeaponCsvImporter.CsvPath), null)) table[row.Id] = row;
             return table;
+        }
+
+        /// <summary>武器種の表（CSV）が無いときだけ、書いた武器種のアセットから id の順に書き出す。あれば手で直した表なので触らない。</summary>
+        private static void WriteDefaultWeaponTypeCsv(IEnumerable<WeaponTypeDefinition> types)
+        {
+            if (File.Exists(WeaponTypeCsvImporter.CsvPath)) return;
+
+            var rows = new List<WeaponTypeCsv.Row>();
+            foreach (WeaponTypeDefinition type in types.OrderBy(t => t.Id, StringComparer.Ordinal))
+            {
+                float? cooldown = type.IsMelee ? type.ComboCooldown : type.IsRanged ? type.FireInterval : (float?)null;
+                rows.Add(new WeaponTypeCsv.Row(0, type.Id, type.DisplayName, cooldown, type.CanUseShield));
+            }
+
+            File.WriteAllText(WeaponTypeCsvImporter.CsvPath, WeaponTypeCsv.Format(rows));
+            AssetDatabase.ImportAsset(WeaponTypeCsvImporter.CsvPath);
         }
 
         /// <summary>

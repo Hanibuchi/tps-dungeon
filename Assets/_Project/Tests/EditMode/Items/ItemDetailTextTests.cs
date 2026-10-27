@@ -42,6 +42,52 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void 攻撃力は1発のダメージで_近接は1段目_遠距離は撃つ間隔から出す()
+        {
+            var sword = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var bow = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var slowBow = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var swordType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var bowType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            var slowBowType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
+            try
+            {
+                // 1 周 1.4 秒、比重 1:1:2。強さ（DPS）20 なら 1 周 28 で、1 段目は 28 × 1/4 = 7。
+                typeof(WeaponTypeDefinition).GetField("comboSteps", Private).SetValue(swordType, new[]
+                {
+                    new MeleeComboStep { damageWeight = 1f, duration = 0.4f },
+                    new MeleeComboStep { damageWeight = 1f, duration = 0.4f },
+                    new MeleeComboStep { damageWeight = 2f, duration = 0.6f },
+                });
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(bowType, RangedAttackKind.Bow);
+                typeof(WeaponTypeDefinition).GetField("fireInterval", Private).SetValue(bowType, 0.8f);
+                typeof(WeaponTypeDefinition).GetField("rangedKind", Private).SetValue(slowBowType, RangedAttackKind.Bow);
+                typeof(WeaponTypeDefinition).GetField("fireInterval", Private).SetValue(slowBowType, 1.5f);
+
+                foreach (WeaponDefinition weapon in new[] { sword, bow, slowBow })
+                {
+                    typeof(WeaponDefinition).GetField("strength", Private).SetValue(weapon, 20f);
+                }
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(sword, swordType);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(bow, bowType);
+                typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(slowBow, slowBowType);
+
+                Assert.AreEqual("攻撃力 7", new ItemInstance(sword).DetailText().Split('\n')[1]);
+                Assert.AreEqual("攻撃力 16", new ItemInstance(bow).DetailText().Split('\n')[1], "20 × 武器種の撃つ間隔 0.8");
+                Assert.AreEqual("攻撃力 30", new ItemInstance(slowBow).DetailText().Split('\n')[1], "20 × 撃つ間隔 1.5");
+            }
+            finally
+            {
+                Object.DestroyImmediate(sword);
+                Object.DestroyImmediate(bow);
+                Object.DestroyImmediate(slowBow);
+                Object.DestroyImmediate(swordType);
+                Object.DestroyImmediate(bowType);
+                Object.DestroyImmediate(slowBowType);
+            }
+        }
+
+        [Test]
         public void 武器でなければ説明だけ()
         {
             var item = ScriptableObject.CreateInstance<ItemDefinition>();
