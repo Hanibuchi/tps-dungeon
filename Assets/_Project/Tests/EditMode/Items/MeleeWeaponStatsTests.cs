@@ -54,6 +54,42 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void コンボの待ちも1周に入れ_振り切って待つのを繰り返すとDPSは強さになる()
+        {
+            MeleeWeaponStats stats = MeleeWeaponStats.Compute(new MeleeWeaponInputs
+            {
+                Strength = 100f,
+                CharacterAttack = 20f,
+                CharacterAttackWeight = 0.5f,
+                StepWeights = Weights,
+                StepDurations = Durations,
+                ComboCooldown = 0.3f,
+                Enchantments = EnchantmentTotals.Empty,
+            });
+
+            Assert.AreEqual(2.5f, stats.CycleDuration, 1e-4f);
+            // (100 ＋ 20 × 0.5) × 2.5 = 275 を 1:1:1:2 に配る。
+            Assert.AreEqual(new[] { 55, 55, 55, 110 }, Hits(stats));
+            Assert.AreEqual(110f, stats.AverageDps, 1e-3f);
+        }
+
+        [Test]
+        public void 速射はモーションだけ縮め_コンボの待ちは縮めない()
+        {
+            MeleeWeaponStats stats = MeleeWeaponStats.Compute(new MeleeWeaponInputs
+            {
+                Strength = 100f,
+                StepWeights = Weights,
+                StepDurations = Durations,
+                ComboCooldown = 0.5f,
+                Enchantments = With(EnchantmentKind.RapidFire, 0.1f),
+            });
+
+            Assert.AreEqual(2.2f / 1.1f + 0.5f, stats.CycleDuration, 1e-4f);
+            Assert.AreEqual(54, stats.HitDamage(0), "1 撃は補正前の 1 周 2.7 秒から"); // 100 × 2.7 ÷ 5 = 54
+        }
+
+        [Test]
         public void 素手の2段は同じ重さで_エンチャント無しでも1撃が出る()
         {
             // 素手の仮の段: 比重 1/1、時間 0.45/0.45（1 周 0.9 秒）。強さ 3。

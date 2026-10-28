@@ -59,7 +59,7 @@ namespace TpsDungeon.Items
         [SerializeField, Min(0f), Tooltip("段が終わってからこの秒数以内に押せば次の段に続く。過ぎたら 1 段目から。")]
         private float comboChainGrace = 0.25f;
 
-        [SerializeField, Min(0f), Tooltip("コンボが切れて（最後の段を振り終えるか、猶予を過ぎて）から次に振れるまでの秒数。")]
+        [SerializeField, Min(0f), Tooltip("コンボが切れて（最後の段を振り終えるか、猶予を過ぎて）から次に振れるまでの秒数（WeaponTypes.csv の cooldown）。1 撃のダメージは 全段のモーション ＋ この秒数 の 1 周で 強さ × 1 周 になるよう配る。")]
         private float comboCooldown = 0.3f;
 
         [Header("ダッシュ（Lunge の段）")]

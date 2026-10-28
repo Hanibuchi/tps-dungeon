@@ -23,6 +23,9 @@ namespace TpsDungeon.Items
         /// <summary>段ごとのモーション時間（秒、速射の補正前）。</summary>
         public IReadOnlyList<float> StepDurations;
 
+        /// <summary>コンボが切れてから次に振れるまでの待ち（秒）。速射では縮まない。</summary>
+        public float ComboCooldown;
+
         public EnchantmentTotals Enchantments;
 
         /// <summary>補正前のクリティカル率（0〜1）とクリティカル倍率。</summary>
@@ -38,10 +41,12 @@ namespace TpsDungeon.Items
     /// 近接武器の実際の数値。「強さ」は DPS として定義されているので、1 撃のダメージは 1 周の時間から逆算する。
     ///
     ///   1 周の DPS の元 = 強さ ＋ 基礎攻撃力 × 係数
+    ///   1 周の時間       = 全段のモーション時間 ＋ コンボの待ち
     ///   段 i の 1 撃     = 元 × 1 周の時間 ÷ Σ比重 × 比重i × (1 ＋ ダメージ増加) × (1 ＋ コンボボーナス × 続けて当てた段の数)
     ///
+    /// 待ちも 1 周に入れるので、全段を振り切って待つのを繰り返せば DPS は元になる（遠距離の撃つ間隔と同じ考え方）。
     /// 続けて当てた段の数（コンボ）は周をまたいで数え、上限は無い。数えるのは振る側（ComboChain）で、ここは受け取って掛けるだけ。
-    /// 1 周の時間は速射の補正前で配るので、速射は時間だけ縮めて DPS を上げる。
+    /// 1 周の時間は速射の補正前で配るので、速射はモーションだけ縮めて DPS を上げる（待ちは実時間のまま）。
     /// 増える叩きつけ（数）と追撃（多重）は本撃と同じ 1 撃を別の場所に当てる。爆発は 1 撃に対する割合の上乗せ。どれもここの DPS には含めない。
     /// エンチャントの効果量は EnchantmentDefinition の値そのもの（例: ダメージ増加 0.15 で +15%）。
     /// </summary>
@@ -62,7 +67,7 @@ namespace TpsDungeon.Items
         /// <summary>攻撃速度の倍率（1 ＋ 速射）。モーションはこの速さで再生する。</summary>
         public float AttackSpeed { get; private set; } = 1f;
 
-        /// <summary>1 周の時間（秒、速射の補正後）。</summary>
+        /// <summary>1 周の時間（秒、全段のモーションは速射の補正後 ＋ コンボの待ち）。</summary>
         public float CycleDuration { get; private set; }
 
         public float CritChance { get; private set; }
@@ -141,6 +146,7 @@ namespace TpsDungeon.Items
                 weightSum += Math.Max(0f, weights[i]);
             }
 
+            float cooldown = Math.Max(0f, inputs.ComboCooldown);
             float speed = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.RapidFire));
             float source = Math.Max(0f, inputs.Strength + inputs.CharacterAttack * inputs.CharacterAttackWeight);
             float damageUp = Math.Max(0f, 1f + enchant.Amount(EnchantmentKind.DamageUp));
@@ -150,7 +156,7 @@ namespace TpsDungeon.Items
             for (int i = 0; i < count; i++)
             {
                 float share = weightSum > 0f ? Math.Max(0f, weights[i]) / weightSum : 0f;
-                hits[i] = source * baseCycle * share * damageUp;
+                hits[i] = source * (baseCycle + cooldown) * share * damageUp;
                 scaledDurations[i] = Math.Max(0f, durations[i]) / speed;
             }
 
@@ -164,7 +170,7 @@ namespace TpsDungeon.Items
             {
                 ComboBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.ComboBonus)),
                 AttackSpeed = speed,
-                CycleDuration = baseCycle / speed,
+                CycleDuration = baseCycle / speed + cooldown,
                 CritChance = Clamp01(critChance),
                 CritMultiplier = Math.Max(1f, critMultiplier),
                 HitboxScale = hitboxScale,
