@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_HellfireStaff
   displayName: "\u696D\u706B\u306E\u6756"
-  description: "\u62BC\u3055\u3048\u3066\u3044\u308B\u9593\u3001\u708E\u306F\u9014\u5207\u308C\u305A\u524D\u65B9\u3092\u8210\u3081\u308B\u3002"
+  description: "\u708E\u306F\u9014\u5207\u308C\u305A\u524D\u65B9\u3092\u8210\u3081\u308B\u3002"
   icon: {fileID: 2800000, guid: 5f19790547cac4b1987f78a67c41b061, type: 3}
   worldPrefab: {fileID: 1901408363489308944, guid: 86e2ac8fdf754465da74bbae4cc40130, type: 3}
   rank: 3
-  strength: 45
+  strength: 33.6
   weaponType: {fileID: 11400000, guid: 3066173a20f774f98a798aa2a60ffe3d, type: 2}
   heldModel: {fileID: 1657942492417942785, guid: acd0362e8de854a4999d0a92ce4ff6f9, type: 3}
   thrownSpinRate: 0

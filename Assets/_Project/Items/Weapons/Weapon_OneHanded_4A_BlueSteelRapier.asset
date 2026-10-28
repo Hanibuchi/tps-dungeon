@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_BlueSteelRapier
   displayName: "\u84BC\u92FC\u306E\u7D30\u5263"
-  description: "\u8584\u304F\u935B\u3048\u3089\u308C\u305F\u5203\u304C\u3001\u98A8\u3092\u88C2\u3044\u3066\u6575\u3092\u523B\u3080\u3002"
+  description: "\u935B\u3048\u3089\u308C\u305F\u5203\u304C\u3001\u98A8\u3092\u88C2\u3044\u3066\u6575\u3092\u523B\u3080\u3002"
   icon: {fileID: 2800000, guid: cfe43e45c5e0242748db27251123d407, type: 3}
   worldPrefab: {fileID: 9030478600762803280, guid: f34ab92f692964ba1a7a544a6cd54ac2, type: 3}
   rank: 4
-  strength: 70
+  strength: 78.3
   weaponType: {fileID: 11400000, guid: 4029f65ab88e24c319dc99b132f9a61f, type: 2}
   heldModel: {fileID: 165213653888943317, guid: 7409815216ee241fc9ef23ad0c7dbae7, type: 3}
   thrownSpinRate: 0

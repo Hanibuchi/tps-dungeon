@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_WorldTreeBranchStaff
   displayName: "\u4E16\u754C\u6A39\u306E\u679D\u6756"
-  description: "\u843D\u3061\u305F\u5834\u6240\u306B\u6839\u3092\u5F35\u308A\u3001\u5468\u56F2\u3092\u7DD1\u306E\u52A0\u8B77\u3067\u6E80\u305F\u3059\u3002"
+  description: "\u843D\u3061\u305F\u5834\u6240\u306B\u6839\u3092\u5F35\u308A\u3001\u5468\u56F2\u3092\u7652\u3057\u306E\u52A0\u8B77\u3067\u6E80\u305F\u3059\u3002"
   icon: {fileID: 2800000, guid: dedb3bdd9dc0a4b4b8c7fe32c71904d5, type: 3}
   worldPrefab: {fileID: 1946401698302868533, guid: 137081ec77f514bd9a044d99515d8029, type: 3}
   rank: 3
@@ -24,4 +24,5 @@ MonoBehaviour:
   thrownSpinRate: 0
   thrownBounces: 0
   summonModel: {fileID: 0}
+  blessingKind: 0
   fixedEnchantments: []
