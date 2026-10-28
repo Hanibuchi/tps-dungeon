@@ -179,7 +179,7 @@ MonoBehaviour:
   slamShake: 0
   followUpShakeRatio: 0.4
   rangedKind: 1
-  fireInterval: 0.8
+  fireInterval: 1
   muzzleOffset: {x: 0, y: 1.4, z: 0.5}
   aimMaxDistance: 40
   projectilePrefab: {fileID: 520120103719442634, guid: eb7e1cda5a6c241e1b77e1a2d53c97e1, type: 3}

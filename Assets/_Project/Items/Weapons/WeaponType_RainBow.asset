@@ -182,7 +182,7 @@ MonoBehaviour:
   slamShake: 0
   followUpShakeRatio: 0.4
   rangedKind: 2
-  fireInterval: 1.2
+  fireInterval: 3
   muzzleOffset: {x: 0, y: 1.4, z: 0.5}
   aimMaxDistance: 25
   projectilePrefab: {fileID: 520120103719442634, guid: eb7e1cda5a6c241e1b77e1a2d53c97e1, type: 3}
@@ -196,7 +196,7 @@ MonoBehaviour:
   homingRange: 12
   rainRadius: 1.25
   rainHeight: 2
-  rainDuration: 3
+  rainDuration: 2
   rainTickInterval: 0.5
   rainDelay: 0.7
   rainScatterMin: 1.25

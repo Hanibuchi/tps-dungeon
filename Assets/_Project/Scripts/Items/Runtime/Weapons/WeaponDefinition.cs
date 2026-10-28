@@ -77,6 +77,7 @@ namespace TpsDungeon.Items
                 CharacterAttackWeight = weaponType != null ? weaponType.CharacterAttackWeight : 0f,
                 StepWeights = weights,
                 StepDurations = durations,
+                ComboCooldown = weaponType != null ? weaponType.ComboCooldown : 0f,
                 Enchantments = enchantments,
                 BaseCritChance = weaponType != null ? weaponType.BaseCritChance : 0f,
                 BaseCritMultiplier = weaponType != null ? weaponType.BaseCritMultiplier : 1f,

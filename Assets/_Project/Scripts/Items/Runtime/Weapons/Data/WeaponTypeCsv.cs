@@ -12,8 +12,10 @@ namespace TpsDungeon.Items
     ///   name     … 画面に出す武器種の名前
     ///   cooldown … クールタイム（秒、0 以上）。近接はコンボが切れてから次に振れるまで、遠距離は撃つ間隔（速射の補正前）。
     ///              お守り・盾は使わないので空。空なら今の値のまま
+    ///   duration … 続く時間（秒、0 以上、持続時間のエンチャントの補正前）。持続弓は雨、加護は加護、治癒持続は場、召喚は置物が居る時間、
+    ///              火炎放射器は吐ける時間。ほかの武器種は使わないので空。空なら今の値のまま
     ///   shield   … この武器種を持っている間、ホットバーの盾が効くか。1・0（true・false でもよい）
-    /// 例: <c>OneHanded,片手近距離,0.3,1</c>
+    /// 例: <c>RainBow,持続弓,2,3,0</c>
     /// , を含む欄は "…" で囲む（"" は " 1 つ）。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
@@ -22,11 +24,12 @@ namespace TpsDungeon.Items
         public const string IdColumn = "id";
         public const string NameColumn = "name";
         public const string CooldownColumn = "cooldown";
+        public const string DurationColumn = "duration";
         public const string ShieldColumn = "shield";
 
-        public const string Header = IdColumn + "," + NameColumn + "," + CooldownColumn + "," + ShieldColumn;
+        public const string Header = IdColumn + "," + NameColumn + "," + CooldownColumn + "," + DurationColumn + "," + ShieldColumn;
 
-        private static readonly string[] RequiredColumns = { IdColumn, NameColumn, CooldownColumn, ShieldColumn };
+        private static readonly string[] RequiredColumns = { IdColumn, NameColumn, CooldownColumn, DurationColumn, ShieldColumn };
 
         public readonly struct Row
         {
@@ -37,14 +40,18 @@ namespace TpsDungeon.Items
             /// <summary>クールタイム（秒）。null なら今の値のまま。</summary>
             public readonly float? Cooldown;
 
+            /// <summary>続く時間（秒）。null なら今の値のまま。</summary>
+            public readonly float? Duration;
+
             public readonly bool CanUseShield;
 
-            public Row(int line, string id, string name, float? cooldown, bool canUseShield)
+            public Row(int line, string id, string name, float? cooldown, float? duration, bool canUseShield)
             {
                 Line = line;
                 Id = id;
                 Name = name;
                 Cooldown = cooldown;
+                Duration = duration;
                 CanUseShield = canUseShield;
             }
         }
@@ -93,18 +100,18 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
-                float? cooldown = null;
                 string cooldownCell = Cell(CooldownColumn);
-                if (cooldownCell.Length > 0)
+                if (!TryParseSeconds(cooldownCell, out float? cooldown))
                 {
-                    if (!float.TryParse(cooldownCell, NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds)
-                        || seconds < 0f || float.IsNaN(seconds) || float.IsInfinity(seconds))
-                    {
-                        errors?.Add($"{line} 行目: {id} のクールタイムは 0 以上の秒数か空「{cooldownCell}」");
-                        continue;
-                    }
+                    errors?.Add($"{line} 行目: {id} のクールタイムは 0 以上の秒数か空「{cooldownCell}」");
+                    continue;
+                }
 
-                    cooldown = seconds;
+                string durationCell = Cell(DurationColumn);
+                if (!TryParseSeconds(durationCell, out float? duration))
+                {
+                    errors?.Add($"{line} 行目: {id} の続く時間は 0 以上の秒数か空「{durationCell}」");
+                    continue;
                 }
 
                 if (!TryParseBool(Cell(ShieldColumn), out bool canUseShield))
@@ -119,7 +126,7 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
-                rows.Add(new Row(line, id, name, cooldown, canUseShield));
+                rows.Add(new Row(line, id, name, cooldown, duration, canUseShield));
             }
 
             return rows;
@@ -134,11 +141,27 @@ namespace TpsDungeon.Items
             {
                 text.Append(Quote(row.Id)).Append(',')
                     .Append(Quote(row.Name)).Append(',')
-                    .Append(row.Cooldown.HasValue ? row.Cooldown.Value.ToString("0.###", CultureInfo.InvariantCulture) : "").Append(',')
+                    .Append(FormatSeconds(row.Cooldown)).Append(',')
+                    .Append(FormatSeconds(row.Duration)).Append(',')
                     .Append(row.CanUseShield ? '1' : '0').Append('\n');
             }
 
             return text.ToString();
+        }
+
+        private static string FormatSeconds(float? seconds) =>
+            seconds.HasValue ? seconds.Value.ToString("0.###", CultureInfo.InvariantCulture) : "";
+
+        /// <summary>0 以上の秒数か空を読む。空なら null で真。</summary>
+        private static bool TryParseSeconds(string cell, out float? value)
+        {
+            value = null;
+            if (cell.Length == 0) return true;
+            if (!float.TryParse(cell, NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds)
+                || seconds < 0f || float.IsNaN(seconds) || float.IsInfinity(seconds)) return false;
+
+            value = seconds;
+            return true;
         }
 
         private static bool TryParseBool(string cell, out bool value)

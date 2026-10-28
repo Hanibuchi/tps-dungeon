@@ -22,7 +22,7 @@ namespace TpsDungeon.Combat
     /// 段のモーションは判定の時計と同じフレームに、段のステートへ直接 CrossFade して頭から再生する（連打してもずれていかないように）。
     /// 持ち替えたら Animator の WeaponType と手の見た目も替える。素手や武器でない物を持っているときは素手の武器（unarmedWeapon）で殴る。
     /// 近接でない武器（弓など）はここでは振らない（撃つのは RangedAttacker）。見た目（Animator の WeaponType と手のモデル）だけ替える。
-    /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown）、持ち替えたら持ち替えの待ち（switchCooldown）の間は振れない。
+    /// コンボが切れたら武器種の待ち（WeaponTypeDefinition.ComboCooldown を速射で縮めた MeleeWeaponStats.ComboCooldown）、持ち替えたら持ち替えの待ち（switchCooldown）の間は振れない。
     /// コンボの待ちは武器ごとに覚え（持ち替えても他の武器へは移らない）、持ち替えの待ちは別に数えて、両方明けたら振れる。
     /// コンボボーナスの段数（ComboChain）は周をまたいで数える。空振りするか、待ちが明けて comboKeepTime 秒振らなければ途切れる。
     /// サイズのエンチャントは判定に合わせて、振り・叩きつけ・追撃・爆発のエフェクトも大きくする。
@@ -103,6 +103,7 @@ namespace TpsDungeon.Combat
 
         private CharacterProgression progression;
         private PlayerGear gear;
+        private bool gearChanged;
         private CharacterController characterController;
 
         private bool initialized;
@@ -259,8 +260,15 @@ namespace TpsDungeon.Combat
             CacheAnimatorParameters();
         }
 
+        private void OnEnable()
+        {
+            Initialize();
+            if (gear != null) gear.Changed += OnGearChanged;
+        }
+
         private void OnDisable()
         {
+            if (gear != null) gear.Changed -= OnGearChanged;
             CancelExtraDashes();
             EndLunge();
             pressQueued = false;
@@ -297,8 +305,8 @@ namespace TpsDungeon.Combat
 
             stats = heldWeapon != null ? ComputeStats() : null;
             WeaponTypeDefinition heldType = heldWeapon != null ? heldWeapon.WeaponType : null;
-            combo = heldType != null ? new MeleeComboState(Timings(heldType, stats), heldType.ComboChainGrace, heldType.ComboCooldown) : null;
-            combo?.StartCooldown(cooldowns.Remaining(CooldownKey(item), Time.time), heldType.ComboCooldown);
+            combo = heldType != null ? new MeleeComboState(Timings(heldType, stats), heldType.ComboChainGrace, stats.ComboCooldown) : null;
+            combo?.StartCooldown(cooldowns.Remaining(CooldownKey(item), Time.time), stats.ComboCooldown);
 
             WeaponDefinition pose = isWeapon ? weapon : heldWeapon;
             AnimatorWeaponType = pose != null ? pose.WeaponType.AnimatorWeaponType : 0;
@@ -321,7 +329,7 @@ namespace TpsDungeon.Combat
             pressQueued = false;
             if (combo == null) return;
 
-            if (pressed && !combo.IsSwinging) stats = ComputeStats();
+            if (!combo.IsSwinging && (pressed || gearChanged)) RefreshStats();
             float speed = stats != null ? stats.AttackSpeed : 1f;
 
             // 先行入力があると、判定と次の段の始まりが同じフレームに来ることがある。判定は進める前の段で出す。
@@ -358,6 +366,17 @@ namespace TpsDungeon.Combat
             }
 
             return result;
+        }
+
+        // ホットバーのお守り・盾が替わった。速射・持続時間・多重が変わると段の時間と待ちも変わるので、振っていない間に出し直す。
+        private void OnGearChanged(PlayerGear _) => gearChanged = true;
+
+        /// <summary>数値を出し直し、段の時間と待ちをコンボに差し替える。</summary>
+        private void RefreshStats()
+        {
+            gearChanged = false;
+            stats = ComputeStats();
+            if (stats != null) combo.SetTimings(Timings(heldWeapon.WeaponType, stats), stats.ComboCooldown);
         }
 
         private MeleeWeaponStats ComputeStats()

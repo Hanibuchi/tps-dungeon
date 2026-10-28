@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using TpsDungeon.Items;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Party;
 using TpsDungeon.Player;
+using TpsDungeon.Progression;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,6 +17,8 @@ namespace TpsDungeon.Enemies.Editor
     ///   3. 敵の一覧 … 今していること（溜め・飛ぶ・導火…）・狙っている相手・HP・次の攻撃までを見ながら、
     ///      1 体ずつ止める・動かす・スタン・気絶・倒す・それだけ残す
     ///   4. 被ダメージの記録 … どの敵がどの仲間に何ダメージ与えたか（敵ごとの合計も）
+    ///   5. カカシ … 動かず倒れない的（TrainingDummy）を先頭の前に出し、受けたダメージから DPS を測る。
+    ///      手の武器の 強さ ＋ 基礎攻撃力 × 係数（エンチャント前の見込みの DPS）と見比べられる
     /// シーンの表示: Game 画面の敵の頭の上に状態を出せる。シーンビューで敵を選ぶと、見つける距離と攻撃の間合いを円で描く。
     /// ゲーム側には何も残さない（出した敵や表示は Play を止めれば消える）。
     /// </summary>
@@ -43,6 +47,10 @@ namespace TpsDungeon.Enemies.Editor
         [SerializeField] private bool enemiesImmortal;
         [SerializeField] private bool showLabels = true;
         [SerializeField] private float timeScale = 1f;
+        [SerializeField] private float dummyDistance = 3f;
+        [SerializeField] private float dummyIdleReset = 3f;
+        [SerializeField] private float dummyWindow = 5f;
+        [SerializeField] private bool dummyLabels = true;
 
         private List<GameObject> prefabs = new List<GameObject>();
         // IMGUI は Layout と Repaint で同じ数の部品を描かないと崩れるので、一覧は Layout のときだけ取り直す。
@@ -108,6 +116,8 @@ namespace TpsDungeon.Enemies.Editor
             DrawEnemies();
             EditorGUILayout.Space();
             DrawRecords();
+            EditorGUILayout.Space();
+            DrawDummies();
             EditorGUILayout.EndScrollView();
         }
 
@@ -426,7 +436,122 @@ namespace TpsDungeon.Enemies.Editor
             }
         }
 
+        // ---- 5. カカシ ----
+
+        private void DrawDummies()
+        {
+            EditorGUILayout.LabelField("カカシ（DPS を測る）", EditorStyles.boldLabel);
+            dummyDistance = EditorGUILayout.Slider("先頭からの距離 (m)", dummyDistance, 1f, 20f);
+            dummyIdleReset = EditorGUILayout.Slider(new GUIContent("この秒数当てなければ止める", "止めたあとに当てると計測をやり直す。"), dummyIdleReset, 0.5f, 10f);
+            dummyWindow = EditorGUILayout.Slider("直近の DPS を数える秒数", dummyWindow, 1f, 30f);
+            dummyLabels = EditorGUILayout.ToggleLeft("Game 画面のカカシの頭の上に DPS を出す", dummyLabels);
+
+            using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying))
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("先頭の前にカカシを出す"))
+                {
+                    SpawnDummy();
+                    GUIUtility.ExitGUI();
+                }
+                if (GUILayout.Button("カカシを全部消す", GUILayout.Width(130)))
+                {
+                    foreach (TrainingDummy dummy in Dummies()) Destroy(dummy.gameObject);
+                    GUIUtility.ExitGUI();
+                }
+            }
+            if (!EditorApplication.isPlaying) return;
+
+            EditorGUILayout.LabelField(HeldWeaponText(), EditorStyles.wordWrappedMiniLabel);
+
+            float now = Time.time;
+            foreach (TrainingDummy dummy in Dummies().OrderBy(d => d.GetInstanceID()))
+            {
+                // 窓の設定はカカシに毎回かける（出したあとに変えても効くように）。
+                DpsMeter meter = dummy.Meter;
+                meter.IdleReset = dummyIdleReset;
+                meter.Window = dummyWindow;
+                dummy.ShowLabel = dummyLabels;
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button(dummy.name, EditorStyles.boldLabel))
+                        {
+                            Selection.activeGameObject = dummy.gameObject;
+                            EditorGUIUtility.PingObject(dummy.gameObject);
+                        }
+                        GUILayout.FlexibleSpace();
+                        GUILayout.Label(!meter.HasHits ? "まだ当たっていない" : meter.IsMeasuring(now) ? "計測中" : "止めた");
+                    }
+
+                    if (meter.HasHits)
+                    {
+                        float crit = meter.Hits > 0 ? (float)meter.Criticals / meter.Hits : 0f;
+                        EditorGUILayout.LabelField($"DPS {meter.Dps(now):0.0}    直近 {meter.Window:0} 秒 {meter.RecentDps(now):0.0}");
+                        EditorGUILayout.LabelField($"合計 {meter.Total}（{meter.Elapsed(now):0.00} 秒）    {meter.Hits} 回    クリティカル {crit * 100f:0}%");
+                        EditorGUILayout.LabelField($"1 撃: 最後 {meter.LastHit}    最大 {meter.MaxHit}    平均 {meter.Total / (double)meter.Hits:0.0}");
+                    }
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("数え直す")) meter.Reset();
+                        if (GUILayout.Button("消す"))
+                        {
+                            Destroy(dummy.gameObject);
+                            GUIUtility.ExitGUI();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void SpawnDummy()
+        {
+            Transform leader = Leader();
+            if (leader == null)
+            {
+                ShowNotification(new GUIContent("パーティーの先頭が居ない"));
+                return;
+            }
+
+            GameObject root = GameObject.Find(SpawnRootName);
+            if (root == null) root = new GameObject(SpawnRootName);
+            Vector3 forward = Vector3.ProjectOnPlane(leader.forward, Vector3.up).normalized;
+            if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+
+            Vector3 position = EnemyMotor.OnNavMesh(leader.position + forward * dummyDistance, 4f);
+            TrainingDummy dummy = TrainingDummy.Spawn(position, Quaternion.LookRotation(-forward, Vector3.up), root.transform);
+            dummy.Meter.IdleReset = dummyIdleReset;
+            dummy.Meter.Window = dummyWindow;
+            dummy.ShowLabel = dummyLabels;
+            Selection.activeGameObject = dummy.gameObject;
+        }
+
+        /// <summary>先頭の手の武器と、エンチャント前の見込みの DPS（強さ ＋ 基礎攻撃力 × 係数）。</summary>
+        private static string HeldWeaponText()
+        {
+            Party.Party party = Party.Party.Current;
+            GameObject leader = party != null && party.Leader != null ? party.Leader.gameObject : null;
+            if (leader == null) return "先頭が居ない";
+
+            var inventory = leader.GetComponent<PlayerInventory>();
+            var hotbar = leader.GetComponent<PlayerHotbar>();
+            WeaponDefinition weapon = inventory != null && hotbar != null ? inventory.Inventory[hotbar.SelectedIndex]?.Weapon : null;
+            WeaponTypeDefinition type = weapon != null ? weapon.WeaponType : null;
+            if (type == null || type.IsPassiveGear) return "先頭の手: 素手（お守り・盾・武器でない物も素手で殴る）";
+
+            var progression = leader.GetComponent<CharacterProgression>();
+            float attack = progression != null ? progression.BaseAttack : 0f;
+            float expected = weapon.Strength + attack * type.CharacterAttackWeight;
+            return $"先頭の手: {weapon.DisplayName}（{type.DisplayName}）  強さ {weapon.Strength:0.#} ＋ 基礎攻撃力 {attack:0.#} × {type.CharacterAttackWeight:0.##} ＝ {expected:0.#}" +
+                   "（エンチャント・クリティカル前の見込みの DPS。クリティカルの平均で 5% 率・1.5 倍なら約 2.5% 上がる）";
+        }
+
         // ---- 道具 ----
+
+        private static IEnumerable<TrainingDummy> Dummies() => FindObjectsByType<TrainingDummy>(FindObjectsSortMode.None);
 
         private static IEnumerable<EnemyBrain> Brains() => FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None);
 

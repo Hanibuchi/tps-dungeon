@@ -26,6 +26,39 @@ namespace TpsDungeon.Combat.Tests
         }
 
         [Test]
+        public void 待ちを差し替えると_待ちの最中なら残りも同じ割合で縮む()
+        {
+            var steps = new[] { new ComboStepTiming(0.5f, 0.2f) };
+            var combo = new MeleeComboState(steps, 0f, 1f);
+            combo.Tick(0.01f, true);
+            Assert.AreEqual(ComboEvents.Ended, Finish(combo) & ComboEvents.Ended);
+            combo.Tick(0.5f, false);
+            Assert.AreEqual(0.5f, combo.CooldownRemaining, 1e-4f);
+
+            combo.SetTimings(steps, 0.8f);
+            Assert.AreEqual(0.4f, combo.CooldownRemaining, 1e-4f);
+            Assert.AreEqual(0.8f, combo.CooldownDuration, 1e-4f);
+
+            combo.Tick(0.5f, false);
+            Assert.IsFalse(combo.IsCoolingDown);
+            combo.Tick(0.01f, true);
+            Finish(combo);
+            Assert.AreEqual(0.8f, combo.CooldownRemaining, 1e-4f, "次の待ちは新しい長さ");
+        }
+
+        [Test]
+        public void 段の時間を差し替えると次に振る段から新しい長さになる()
+        {
+            var combo = new MeleeComboState(new[] { new ComboStepTiming(0.5f, 0.2f) }, 0f);
+            combo.SetTimings(new[] { new ComboStepTiming(1f, 0.2f) }, 0f);
+
+            combo.Tick(0.01f, true);
+            combo.Tick(0.8f, false);
+            Assert.IsTrue(combo.IsSwinging, "0.5 秒では終わらない");
+            Assert.Throws<System.ArgumentException>(() => combo.SetTimings(new ComboStepTiming[0], 0f));
+        }
+
+        [Test]
         public void 待機中に押すと1段目が始まる()
         {
             var combo = Combo();

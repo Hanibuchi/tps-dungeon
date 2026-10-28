@@ -176,7 +176,7 @@ MonoBehaviour:
   slamShake: 0
   followUpShakeRatio: 0.4
   rangedKind: 5
-  fireInterval: 1
+  fireInterval: 2
   muzzleOffset: {x: 0, y: 1.4, z: 0.5}
   aimMaxDistance: 20
   projectilePrefab: {fileID: 0}
@@ -223,7 +223,7 @@ MonoBehaviour:
   lineEffect: {fileID: 0}
   lineEffectLength: 7.8
   lineEffectTravelTime: 0.32
-  flameDuration: 2.4
+  flameDuration: 3
   flameTickInterval: 0.2
   flameRange: 6
   flameAngle: 14
