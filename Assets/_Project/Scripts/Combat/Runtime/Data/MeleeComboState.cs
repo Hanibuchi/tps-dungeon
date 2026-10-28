@@ -42,12 +42,13 @@ namespace TpsDungeon.Combat
     ///
     /// 時間は speed（攻撃速度の倍率）を掛けて進める。猶予と待ちは実時間のまま。
     /// 外から待たせたいとき（持ち替えて戻ってきた武器の待ちの残りなど）は <see cref="StartCooldown"/>。
+    /// 速射などで段の時間や待ちが変わったら <see cref="SetTimings"/> で差し替える（進み具合はそのまま）。
     /// </summary>
     public sealed class MeleeComboState
     {
         private readonly ComboStepTiming[] steps;
         private readonly float chainGrace;
-        private readonly float cooldown;
+        private float cooldown;
 
         private float stepTime;
         private float graceRemaining;
@@ -97,6 +98,26 @@ namespace TpsDungeon.Combat
 
             CooldownRemaining = seconds;
             CooldownDuration = Math.Max(seconds, duration);
+        }
+
+        /// <summary>
+        /// 段の時間と待ちを差し替える（段の数は同じ）。段の進み具合はそのままで、次の段・次の待ちから新しい長さを使う。
+        /// 待ちの最中なら、残りを新しい待ちの長さに合わせて同じ割合だけ縮める・延ばす。
+        /// </summary>
+        public void SetTimings(IReadOnlyList<ComboStepTiming> newSteps, float newCooldown)
+        {
+            if (newSteps == null || newSteps.Count != steps.Length) throw new ArgumentException("段の数が違う", nameof(newSteps));
+
+            for (int i = 0; i < steps.Length; i++) steps[i] = newSteps[i];
+            newCooldown = Math.Max(0f, newCooldown);
+            if (IsCoolingDown && cooldown > 0f && Math.Abs(CooldownDuration - cooldown) < 1e-4f)
+            {
+                float ratio = newCooldown / cooldown;
+                CooldownRemaining *= ratio;
+                CooldownDuration = newCooldown;
+            }
+
+            cooldown = newCooldown;
         }
 
         /// <summary>待機に戻す（持ち替えたときなど）。</summary>

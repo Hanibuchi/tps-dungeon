@@ -103,6 +103,7 @@ namespace TpsDungeon.Combat
 
         private CharacterProgression progression;
         private PlayerGear gear;
+        private bool gearChanged;
         private CharacterController characterController;
 
         private bool initialized;
@@ -259,8 +260,15 @@ namespace TpsDungeon.Combat
             CacheAnimatorParameters();
         }
 
+        private void OnEnable()
+        {
+            Initialize();
+            if (gear != null) gear.Changed += OnGearChanged;
+        }
+
         private void OnDisable()
         {
+            if (gear != null) gear.Changed -= OnGearChanged;
             CancelExtraDashes();
             EndLunge();
             pressQueued = false;
@@ -321,7 +329,7 @@ namespace TpsDungeon.Combat
             pressQueued = false;
             if (combo == null) return;
 
-            if (pressed && !combo.IsSwinging) stats = ComputeStats();
+            if (!combo.IsSwinging && (pressed || gearChanged)) RefreshStats();
             float speed = stats != null ? stats.AttackSpeed : 1f;
 
             // 先行入力があると、判定と次の段の始まりが同じフレームに来ることがある。判定は進める前の段で出す。
@@ -358,6 +366,17 @@ namespace TpsDungeon.Combat
             }
 
             return result;
+        }
+
+        // ホットバーのお守り・盾が替わった。速射・持続時間・多重が変わると段の時間と待ちも変わるので、振っていない間に出し直す。
+        private void OnGearChanged(PlayerGear _) => gearChanged = true;
+
+        /// <summary>数値を出し直し、段の時間と待ちをコンボに差し替える。</summary>
+        private void RefreshStats()
+        {
+            gearChanged = false;
+            stats = ComputeStats();
+            if (stats != null) combo.SetTimings(Timings(heldWeapon.WeaponType, stats), stats.ComboCooldown);
         }
 
         private MeleeWeaponStats ComputeStats()
