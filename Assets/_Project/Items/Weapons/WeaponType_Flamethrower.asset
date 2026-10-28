@@ -223,7 +223,7 @@ MonoBehaviour:
   lineEffect: {fileID: 0}
   lineEffectLength: 7.8
   lineEffectTravelTime: 0.32
-  flameDuration: 2.4
+  flameDuration: 3
   flameTickInterval: 0.2
   flameRange: 6
   flameAngle: 14

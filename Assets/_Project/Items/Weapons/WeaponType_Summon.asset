@@ -132,7 +132,7 @@ MonoBehaviour:
   flameEffect: {fileID: 0}
   flameEffectLength: 6
   flameSoundInterval: 0.6
-  summonDuration: 12
+  summonDuration: 10
   summonScatterMin: 1.2
   summonScatterMax: 2.5
   summonMinGap: 1

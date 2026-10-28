@@ -113,7 +113,7 @@ MonoBehaviour:
   slamShake: 0
   followUpShakeRatio: 0.4
   rangedKind: 8
-  fireInterval: 10
+  fireInterval: 20
   muzzleOffset: {x: 0, y: 1.4, z: 0.5}
   aimMaxDistance: 15
   projectilePrefab: {fileID: 0}
@@ -182,7 +182,7 @@ MonoBehaviour:
   dismissEffectScale: 1
   healRadius: 2
   healHeight: 2
-  healDuration: 5
+  healDuration: 10
   healTickInterval: 0.5
   healFlightTime: 0.55
   healArcHeight: 2
