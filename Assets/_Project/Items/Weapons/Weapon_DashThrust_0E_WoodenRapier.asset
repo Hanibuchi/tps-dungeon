@@ -18,6 +18,11 @@ MonoBehaviour:
   icon: {fileID: 2800000, guid: 8475447d78be346549d47e755f4f85e9, type: 3}
   worldPrefab: {fileID: 5950387296021177945, guid: 987d9f3f197ea46c78627b94bbf570a0, type: 3}
   rank: 0
-  strength: 8
+  strength: 24
   weaponType: {fileID: 11400000, guid: f765f3f5e3aaf47c29328fa531e09136, type: 2}
   heldModel: {fileID: 8609480364896291408, guid: 6a7e018d49a664cbea61699df50bbc13, type: 3}
+  thrownSpinRate: 0
+  thrownBounces: 0
+  summonModel: {fileID: 0}
+  blessingKind: 0
+  fixedEnchantments: []
