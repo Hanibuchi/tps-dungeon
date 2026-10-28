@@ -23,7 +23,7 @@ namespace TpsDungeon.Items
         /// <summary>段ごとのモーション時間（秒、速射の補正前）。</summary>
         public IReadOnlyList<float> StepDurations;
 
-        /// <summary>コンボが切れてから次に振れるまでの待ち（秒）。速射では縮まない。</summary>
+        /// <summary>コンボが切れてから次に振れるまでの待ち（秒、速射の補正前）。</summary>
         public float ComboCooldown;
 
         public EnchantmentTotals Enchantments;
@@ -46,7 +46,7 @@ namespace TpsDungeon.Items
     ///
     /// 待ちも 1 周に入れるので、全段を振り切って待つのを繰り返せば DPS は元になる（遠距離の撃つ間隔と同じ考え方）。
     /// 続けて当てた段の数（コンボ）は周をまたいで数え、上限は無い。数えるのは振る側（ComboChain）で、ここは受け取って掛けるだけ。
-    /// 1 周の時間は速射の補正前で配るので、速射はモーションだけ縮めて DPS を上げる（待ちは実時間のまま）。
+    /// 1 周の時間は速射の補正前で配るので、速射はモーションと待ちを縮めて DPS を（1 ＋ 速射）倍にする。
     /// 増える叩きつけ（数）と追撃（多重）は本撃と同じ 1 撃を別の場所に当てる。爆発は 1 撃に対する割合の上乗せ。どれもここの DPS には含めない。
     /// エンチャントの効果量は EnchantmentDefinition の値そのもの（例: ダメージ増加 0.15 で +15%）。
     /// </summary>
@@ -67,8 +67,11 @@ namespace TpsDungeon.Items
         /// <summary>攻撃速度の倍率（1 ＋ 速射）。モーションはこの速さで再生する。</summary>
         public float AttackSpeed { get; private set; } = 1f;
 
-        /// <summary>1 周の時間（秒、全段のモーションは速射の補正後 ＋ コンボの待ち）。</summary>
+        /// <summary>1 周の時間（秒、全段のモーション ＋ コンボの待ち、速射の補正後）。</summary>
         public float CycleDuration { get; private set; }
+
+        /// <summary>コンボが切れてから次に振れるまでの待ち（秒、速射の補正後）。</summary>
+        public float ComboCooldown { get; private set; }
 
         public float CritChance { get; private set; }
         public float CritMultiplier { get; private set; } = 1f;
@@ -170,7 +173,8 @@ namespace TpsDungeon.Items
             {
                 ComboBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.ComboBonus)),
                 AttackSpeed = speed,
-                CycleDuration = baseCycle / speed + cooldown,
+                CycleDuration = (baseCycle + cooldown) / speed,
+                ComboCooldown = cooldown / speed,
                 CritChance = Clamp01(critChance),
                 CritMultiplier = Math.Max(1f, critMultiplier),
                 HitboxScale = hitboxScale,

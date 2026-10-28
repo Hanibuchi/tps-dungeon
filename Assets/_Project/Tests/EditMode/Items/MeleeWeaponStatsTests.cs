@@ -74,7 +74,7 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
-        public void 速射はモーションだけ縮め_コンボの待ちは縮めない()
+        public void 速射はモーションもコンボの待ちも縮め_1撃は変えずにDPSを上げる()
         {
             MeleeWeaponStats stats = MeleeWeaponStats.Compute(new MeleeWeaponInputs
             {
@@ -85,7 +85,8 @@ namespace TpsDungeon.Items.Tests
                 Enchantments = With(EnchantmentKind.RapidFire, 0.1f),
             });
 
-            Assert.AreEqual(2.2f / 1.1f + 0.5f, stats.CycleDuration, 1e-4f);
+            Assert.AreEqual(2.7f / 1.1f, stats.CycleDuration, 1e-4f);
+            Assert.AreEqual(0.5f / 1.1f, stats.ComboCooldown, 1e-5f);
             Assert.AreEqual(54, stats.HitDamage(0), "1 撃は補正前の 1 周 2.7 秒から"); // 100 × 2.7 ÷ 5 = 54
         }
 
