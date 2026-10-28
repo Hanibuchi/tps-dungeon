@@ -2,91 +2,91 @@ id,name,parent,cost,effect,value,description
 # 魂の強化の木parent が空の行が真ん中（最初に獲得する強化）parent の強化を解放するまで、その先は見えない
 # value: その段まで解放したときの量（差分ではない）割合は 0.1 で 10%（exp_rate の倍率は解放した数から LevelBalance で出す。1 つごとに ×2。value は表示用で 倍率 − 1）、floor_clear_exp は経験値（倍率を掛けない）、shortcut は層の番号（1 始まり）
 # 前の強化が同じ effect なら続きの段として、前の段の値を引いた分だけ上乗せする（真ん中の強化は先の段とつながらない）
-awaken,魂の目覚め,,2000,max_hp,1.0,最大体力が増える
+awaken,魂の目覚め,,6,max_hp,1.0,最大体力が増える
 # --- 生命 ---
-vigor_1,体力増加 I,awaken,10000,max_hp,1.2,最大体力が増える
-vigor_2,体力増加 II,vigor_1,300000,max_hp,1.4,最大体力がより増える
-vigor_3,体力増加 III,vigor_2,2400000,max_hp,1.6,最大体力がもっと増える
-vigor_4,体力増加 IV,vigor_3,8000000,max_hp,1.8,最大体力がさらに増える
+vigor_1,体力増加 I,awaken,131000,max_hp,1.2,最大体力が増える
+vigor_2,体力増加 II,vigor_1,914000,max_hp,1.4,最大体力がより増える
+vigor_3,体力増加 III,vigor_2,3750000,max_hp,1.6,最大体力がもっと増える
+vigor_4,体力増加 IV,vigor_3,10600000,max_hp,1.8,最大体力がさらに増える
 # --- 経験値 ---
-exp_rate_1,経験値増加 I,awaken,25000,exp_rate,1,得られる経験値が増える
-exp_rate_2,経験値増加 II,exp_rate_1,600000,exp_rate,3,得られる経験値がより増える
-exp_rate_3,経験値増加 III,exp_rate_2,4500000,exp_rate,7,得られる経験値がもっと増える
-exp_rate_4,経験値増加 IV,exp_rate_3,16000000,exp_rate,15,得られる経験値がさらに増える
-bonus_1,経験値ボーナス I,exp_rate_2,250000,floor_clear_exp,10000,階の部屋を全部攻略すると経験値がもらえる
-bonus_2,経験値ボーナス II,bonus_1,1800000,floor_clear_exp,30000,全部屋攻略でもらえる経験値が増える
-bonus_3,経験値ボーナス III,bonus_2,12000000,floor_clear_exp,60000,全部屋攻略でもらえる経験値がより増える
-bonus_4,経験値ボーナス IV,bonus_3,40000000,floor_clear_exp,100000,全部屋攻略でもらえる経験値がもっと増える
+exp_rate_1,経験値増加 I,awaken,164000,exp_rate,1,得られる経験値が増える
+exp_rate_2,経験値増加 II,exp_rate_1,1140000,exp_rate,3,得られる経験値がより増える
+exp_rate_3,経験値増加 III,exp_rate_2,4690000,exp_rate,7,得られる経験値がもっと増える
+exp_rate_4,経験値増加 IV,exp_rate_3,13300000,exp_rate,15,得られる経験値がさらに増える
+bonus_1,経験値ボーナス I,exp_rate_1,98300,floor_clear_exp,10000,階の部屋を全部攻略すると経験値がもらえる
+bonus_2,経験値ボーナス II,bonus_1,685000,floor_clear_exp,30000,全部屋攻略でもらえる経験値が増える
+bonus_3,経験値ボーナス III,bonus_2,2810000,floor_clear_exp,60000,全部屋攻略でもらえる経験値がより増える
+bonus_4,経験値ボーナス IV,bonus_3,7960000,floor_clear_exp,100000,全部屋攻略でもらえる経験値がもっと増える
 # --- 戦い ---
-keen_1,クリティカル率増加 I,awaken,10000,crit_chance,0.05,クリティカル率が増加する
-keen_2,クリティカル率増加 II,keen_1,350000,crit_chance,0.1,クリティカル率がより増加する
-keen_3,クリティカル率増加 III,keen_2,2700000,crit_chance,0.15,クリティカル率がもっと増加する
-keen_4,クリティカル率増加 IV,keen_3,7200000,crit_chance,0.2,クリティカル率がさらに増加する
-fury_1,クリティカル倍率増加 I,keen_1,20000,crit_multiplier,0.5,クリティカルのダメージ倍率が増加する
-fury_2,クリティカル倍率増加 II,fury_1,600000,crit_multiplier,1.0,クリティカルのダメージ倍率がより増加する
-fury_3,クリティカル倍率増加 III,fury_2,4200000,crit_multiplier,1.5,クリティカルのダメージ倍率がもっと増加する
-fury_4,クリティカル倍率増加 IV,fury_3,11200000,crit_multiplier,2.0,クリティカルのダメージ倍率がさらに増加する
+keen_1,クリティカル率増加 I,awaken,2400,crit_chance,0.05,クリティカル率が増加する
+keen_2,クリティカル率増加 II,keen_1,65500,crit_chance,0.1,クリティカル率がより増加する
+keen_3,クリティカル率増加 III,keen_2,457000,crit_chance,0.15,クリティカル率がもっと増加する
+keen_4,クリティカル率増加 IV,keen_3,1870000,crit_chance,0.2,クリティカル率がさらに増加する
+fury_1,クリティカル倍率増加 I,keen_1,2400,crit_multiplier,0.5,クリティカルのダメージ倍率が増加する
+fury_2,クリティカル倍率増加 II,fury_1,65500,crit_multiplier,1.0,クリティカルのダメージ倍率がより増加する
+fury_3,クリティカル倍率増加 III,fury_2,457000,crit_multiplier,1.5,クリティカルのダメージ倍率がもっと増加する
+fury_4,クリティカル倍率増加 IV,fury_3,1870000,crit_multiplier,2.0,クリティカルのダメージ倍率がさらに増加する
 # --- 絆 ---
-ally_1,メンバー追加 I,awaken,6000,party_size,1,仲間ができる
-ally_2,メンバー追加 II,ally_1,500000,party_size,2,もう 1 人仲間ができる
-ally_3,メンバー追加 III,ally_2,4000000,party_size,3,また 1 人仲間ができる
-ally_4,メンバー追加 IV,ally_3,15000000,party_size,4,さらに 1 人仲間ができる
-ally_5,メンバー追加 V,ally_4,40000000,party_size,5,さらに 1 人仲間ができる
+ally_1,メンバー追加 I,awaken,7200,party_size,1,仲間ができる
+ally_2,メンバー追加 II,ally_1,197000,party_size,2,もう 1 人仲間ができる
+ally_3,メンバー追加 III,ally_2,1370000,party_size,3,また 1 人仲間ができる
+ally_4,メンバー追加 IV,ally_3,5620000,party_size,4,さらに 1 人仲間ができる
+ally_5,メンバー追加 V,ally_4,15900000,party_size,5,さらに 1 人仲間ができる
 # --- 宝 ---
-fortune_1,ドロップ増加 I,pack_2,12000,drop_rate,0.5,敵が武器を落としやすくなる
-fortune_2,ドロップ増加 II,fortune_1,400000,drop_rate,1.0,敵が武器をより落としやすくなる
-fortune_3,ドロップ増加 III,fortune_2,3000000,drop_rate,1.5,敵が武器をもっと落としやすくなる
-fortune_4,ドロップ増加 IV,fortune_3,8000000,drop_rate,2.0,敵が武器をさらに落としやすくなる
-relic_1,ユニークドロップ増加 I,fortune_3,600000,unique_drop_rate,0.5,敵がユニーク武器を落としやすくなる
-relic_2,ユニークドロップ増加 II,relic_1,4800000,unique_drop_rate,1.0,敵がユニーク武器をより落としやすくなる
-relic_3,ユニークドロップ増加 III,relic_2,12800000,unique_drop_rate,1.5,敵がユニーク武器をもっと落としやすくなる
-relic_4,ユニークドロップ増加 IV,relic_3,32000000,unique_drop_rate,2.0,敵がユニーク武器をさらに落としやすくなる
-pack_1,大きな鞄 I,awaken,20000,bag_size,3,バッグの枠が増える
-pack_2,大きな鞄 II,pack_1,500000,bag_size,6,バッグの枠がさらに増える
-pack_3,大きな鞄 III,pack_2,3300000,bag_size,9,バッグの枠がさらに増える
-pack_4,大きな鞄 IV,pack_3,8800000,bag_size,12,バッグの枠がさらに増える
-pack_5,大きな鞄 V,pack_4,22000000,bag_size,15,バッグの枠がさらに増える
-pack_6,大きな鞄 VI,pack_5,22000000,bag_size,18,バッグの枠がさらに増える
-pack_7,大きな鞄 VII,pack_6,22000000,bag_size,21,バッグの枠がさらに増える
-pack_8,大きな鞄 VIII,pack_7,22000000,bag_size,24,バッグの枠がさらに増える
-box_weapon_1,箱の武器 I,fortune_1,20000,box_weapon,0.5,壊した箱から武器が出やすくなる
-box_weapon_2,箱の武器 II,box_weapon_1,500000,box_weapon,1.0,壊した箱から武器がより出やすくなる
-box_weapon_3,箱の武器 III,box_weapon_2,3300000,box_weapon,1.5,壊した箱から武器がもっと出やすくなる
-box_weapon_4,箱の武器 IV,box_weapon_3,8800000,box_weapon,2.0,壊した箱から武器がさらに出やすくなる
-box_count_1,箱の数 I,box_weapon_1,20000,box_count,0.5,ダンジョンに箱が多く置かれる
-box_count_2,箱の数 II,box_count_1,500000,box_count,1.0,ダンジョンに箱がより多く置かれる
-box_count_3,箱の数 III,box_count_2,3300000,box_count,1.5,ダンジョンに箱がもっと多く置かれる
-box_count_4,箱の数 IV,box_count_3,8800000,box_count,2.0,ダンジョンに箱がさらに多く置かれる
-keep_1,形見 I,awaken,30000,carry_over,1,転生するとき、装備を 1 つ持ち越せる
-keep_2,形見 II,keep_1,800000,carry_over,2,転生時、持ち越せる装備が増える
-keep_3,形見 III,keep_2,5400000,carry_over,3,転生時、持ち越せる装備が増える
-keep_4,形見 IV,keep_3,14400000,carry_over,4,転生時、持ち越せる装備が増える
-keep_5,形見 V,keep_4,36000000,carry_over,6,転生時、持ち越せる装備が増える
-keep_6,形見 VI,keep_5,36000000,carry_over,8,転生時、持ち越せる装備が増える
+fortune_1,ドロップ増加 I,pack_2,3600,drop_rate,0.5,敵が武器を落としやすくなる
+fortune_2,ドロップ増加 II,fortune_1,98300,drop_rate,1.0,敵が武器をより落としやすくなる
+fortune_3,ドロップ増加 III,fortune_2,685000,drop_rate,1.5,敵が武器をもっと落としやすくなる
+fortune_4,ドロップ増加 IV,fortune_3,2810000,drop_rate,2.0,敵が武器をさらに落としやすくなる
+relic_1,ユニークドロップ増加 I,fortune_1,3600,unique_drop_rate,0.5,敵がユニーク武器を落としやすくなる
+relic_2,ユニークドロップ増加 II,relic_1,98300,unique_drop_rate,1.0,敵がユニーク武器をより落としやすくなる
+relic_3,ユニークドロップ増加 III,relic_2,685000,unique_drop_rate,1.5,敵がユニーク武器をもっと落としやすくなる
+relic_4,ユニークドロップ増加 IV,relic_3,2810000,unique_drop_rate,2.0,敵がユニーク武器をさらに落としやすくなる
+pack_1,大きな鞄 I,awaken,1200,bag_size,3,バッグの枠が増える
+pack_2,大きな鞄 II,pack_1,2400,bag_size,6,バッグの枠がさらに増える
+pack_3,大きな鞄 III,pack_2,32800,bag_size,9,バッグの枠がさらに増える
+pack_4,大きな鞄 IV,pack_3,65500,bag_size,12,バッグの枠がさらに増える
+pack_5,大きな鞄 V,pack_4,228000,bag_size,15,バッグの枠がさらに増える
+pack_6,大きな鞄 VI,pack_5,457000,bag_size,18,バッグの枠がさらに増える
+pack_7,大きな鞄 VII,pack_6,937000,bag_size,21,バッグの枠がさらに増える
+pack_8,大きな鞄 VIII,pack_7,2650000,bag_size,24,バッグの枠がさらに増える
+box_weapon_1,箱の武器 I,fortune_1,1200,box_weapon,0.5,壊した箱から武器が出やすくなる
+box_weapon_2,箱の武器 II,box_weapon_1,32800,box_weapon,1.0,壊した箱から武器がより出やすくなる
+box_weapon_3,箱の武器 III,box_weapon_2,228000,box_weapon,1.5,壊した箱から武器がもっと出やすくなる
+box_weapon_4,箱の武器 IV,box_weapon_3,937000,box_weapon,2.0,壊した箱から武器がさらに出やすくなる
+box_count_1,箱の数 I,box_weapon_1,1200,box_count,0.5,ダンジョンに箱が多く置かれる
+box_count_2,箱の数 II,box_count_1,32800,box_count,1.0,ダンジョンに箱がより多く置かれる
+box_count_3,箱の数 III,box_count_2,228000,box_count,1.5,ダンジョンに箱がもっと多く置かれる
+box_count_4,箱の数 IV,box_count_3,937000,box_count,2.0,ダンジョンに箱がさらに多く置かれる
+keep_1,形見 I,awaken,6000,carry_over,1,転生するとき、装備を 1 つ持ち越せる
+keep_2,形見 II,keep_1,9600,carry_over,2,転生時、持ち越せる装備が増える
+keep_3,形見 III,keep_2,164000,carry_over,3,転生時、持ち越せる装備が増える
+keep_4,形見 IV,keep_3,1140000,carry_over,4,転生時、持ち越せる装備が増える
+keep_5,形見 V,keep_4,4690000,carry_over,6,転生時、持ち越せる装備が増える
+keep_6,形見 VI,keep_5,13300000,carry_over,8,転生時、持ち越せる装備が増える
 # --- 街 ---
-shop,武器屋の開放,awaken,20000,weapon_shop,1,地上の武器屋が店を開ける
-stock_1,品揃え I,shop,400000,shop_stock,2,武器屋に並ぶ武器が増える
-stock_2,品揃え II,stock_1,3000000,shop_stock,4,武器屋に並ぶ武器がさらに増える
-stock_3,品揃え III,stock_2,8000000,shop_stock,6,武器屋に並ぶ武器がさらに増える
-stock_4,品揃え IV,stock_3,20000000,shop_stock,8,武器屋に並ぶ武器がさらに増える
-haggle_1,目利き I,shop,350000,sell_price,0.25,武器を高く売れる
-haggle_2,目利き II,haggle_1,2700000,sell_price,0.5,武器をさらに高く売れる
-haggle_3,目利き III,haggle_2,7200000,sell_price,0.75,武器をさらに高く売れる
-haggle_4,目利き IV,haggle_3,18000000,sell_price,1.0,武器をさらに高く売れる
-bank,倉庫の開放,path_1,500000,bank,8,地上の倉庫が開き、持ち物を預けられる
-bank_size_1,倉庫の拡張 I,bank,400000,bank_size,16,倉庫に預けられる数が増える
-bank_size_2,倉庫の拡張 II,bank_size_1,2700000,bank_size,24,倉庫に預けられる数がさらに増える
-bank_size_3,倉庫の拡張 III,bank_size_2,7200000,bank_size,32,倉庫に預けられる数がさらに増える
-bank_size_4,倉庫の拡張 IV,bank_size_3,18000000,bank_size,40,倉庫に預けられる数がさらに増える
-gacha_1,ガチャ屋の開放,haggle_2,400000,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
-gacha_2,ガチャ D〜A,gacha_1,3600000,gacha,2,ガチャ屋に D〜A の武器を引ける台が並ぶ
-gacha_3,ガチャ B〜S,gacha_2,20000000,gacha,3,ガチャ屋に B〜S の武器を引ける台が並ぶ
+shop,武器屋の開放,awaken,4800,weapon_shop,1,地上の武器屋が店を開ける
+stock_1,品揃え I,shop,131000,shop_stock,2,武器屋に並ぶ武器が増える
+stock_2,品揃え II,stock_1,914000,shop_stock,4,武器屋に並ぶ武器がさらに増える
+stock_3,品揃え III,stock_2,3750000,shop_stock,6,武器屋に並ぶ武器がさらに増える
+stock_4,品揃え IV,stock_3,10600000,shop_stock,8,武器屋に並ぶ武器がさらに増える
+haggle_1,目利き I,shop,197000,sell_price,0.25,武器を高く売れる
+haggle_2,目利き II,haggle_1,1370000,sell_price,0.5,武器をさらに高く売れる
+haggle_3,目利き III,haggle_2,5620000,sell_price,0.75,武器をさらに高く売れる
+haggle_4,目利き IV,haggle_3,15900000,sell_price,1.0,武器をさらに高く売れる
+bank,倉庫の開放,shop,4800,bank,8,地上の倉庫が開き、持ち物を預けられる
+bank_size_1,倉庫の拡張 I,bank,131000,bank_size,16,倉庫に預けられる数が増える
+bank_size_2,倉庫の拡張 II,bank_size_1,914000,bank_size,24,倉庫に預けられる数がさらに増える
+bank_size_3,倉庫の拡張 III,bank_size_2,3750000,bank_size,32,倉庫に預けられる数がさらに増える
+bank_size_4,倉庫の拡張 IV,bank_size_3,10600000,bank_size,40,倉庫に預けられる数がさらに増える
+gacha_1,ガチャ屋の開放,haggle_1,164000,gacha,1,地上のガチャ屋が開き、E〜B の武器を引ける
+gacha_2,ガチャ D〜A,gacha_1,1140000,gacha,2,ガチャ屋に D〜A の武器を引ける台が並ぶ
+gacha_3,ガチャ B〜S,gacha_2,4690000,gacha,3,ガチャ屋に B〜S の武器を引ける台が並ぶ
 # --- 記憶 ---
-codex_weapon,武器の記憶,keep_2,250000,weapon_codex,1,手にした武器を書き留める武器図鑑
-codex_enemy,魔物の記憶,keep_4,250000,enemy_codex,1,出会った敵を書き留める敵図鑑
+codex_weapon,武器の記憶,keep_2,65500,weapon_codex,1,手にした武器を書き留める武器図鑑
+codex_enemy,魔物の記憶,keep_4,1870000,enemy_codex,1,出会った敵を書き留める敵図鑑
 # --- 道 ---
-path_1,第１層への近道,awaken,30000,shortcut,1,地上のロープから第 1 層のボス階へ行ける
-path_2,第２層への近道,path_1,600000,shortcut,2,地上のロープから第 2 層のボス階へ行ける
-path_3,第３層への近道,path_2,3300000,shortcut,3,地上のロープから第 3 層のボス階へ行ける
-path_4,第４層への近道,path_3,14400000,shortcut,4,地上のロープから第 4 層のボス階へ行ける
-path_5,第５層への近道,path_4,52000000,shortcut,5,地上のロープから第 5 層のボス階へ行ける
+path_1,第１層への近道,bank,197000,shortcut,1,地上のロープから第 1 層のボス階へ行ける
+path_2,第２層への近道,path_1,1370000,shortcut,2,地上のロープから第 2 層のボス階へ行ける
+path_3,第３層への近道,path_2,5620000,shortcut,3,地上のロープから第 3 層のボス階へ行ける
+path_4,第４層への近道,path_3,15900000,shortcut,4,地上のロープから第 4 層のボス階へ行ける
+path_5,第５層への近道,path_4,21200000,shortcut,5,地上のロープから第 5 層のボス階へ行ける
