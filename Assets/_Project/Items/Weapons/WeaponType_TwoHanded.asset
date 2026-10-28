@@ -209,7 +209,7 @@ MonoBehaviour:
     swingSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
     hitSound: {fileID: 8300000, guid: 6f335e99863f4496aac5682b17b27dcc, type: 3}
   comboChainGrace: 0.35
-  comboCooldown: 0.5
+  comboCooldown: 1
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
   slamSpreadAngle: 30

@@ -179,7 +179,7 @@ MonoBehaviour:
     swingSound: {fileID: 0}
     hitSound: {fileID: 0}
   comboChainGrace: 0
-  comboCooldown: 0.4
+  comboCooldown: 1
   lungePassesThroughEnemies: 1
   invulnerableDuringLunge: 1
   slamSpreadAngle: 30
