@@ -9,6 +9,7 @@ namespace TpsDungeon.Items.Editor
     /// <summary>
     /// 武器種ごとの値の表（Settings/Tables/WeaponTypes.csv）を、各武器種（WeaponTypeDefinition）に書き込む。
     /// 名前は displayName、盾の可否は canUseShield、クールタイムは近接なら comboCooldown・遠距離なら fireInterval に書く。
+    /// 続く時間は撃ち方で欄を選ぶ（<see cref="DurationProperty"/>）。
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。武器種は id で引く。CSV に無い武器種はそのまま。
     /// 読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>
@@ -49,7 +50,13 @@ namespace TpsDungeon.Items.Editor
                     errors.Add($"{row.Line} 行目: {row.Id} は振りも撃ちもしないので、クールタイムは使わない（空にする）");
                 }
 
-                if (Write(type, row, cooldownProperty)) changed++;
+                string durationProperty = DurationProperty(type);
+                if (row.Duration.HasValue && durationProperty == null)
+                {
+                    errors.Add($"{row.Line} 行目: {row.Id} は続く効果が無いので、続く時間は使わない（空にする）");
+                }
+
+                if (Write(type, row, cooldownProperty, durationProperty)) changed++;
             }
 
             if (changed > 0) AssetDatabase.SaveAssets();
@@ -65,6 +72,23 @@ namespace TpsDungeon.Items.Editor
             return null;
         }
 
+        /// <summary>
+        /// 続く時間を書く欄。持続弓は rainDuration、加護は supportDuration、治癒持続は healDuration、召喚は summonDuration、
+        /// 火炎放射器は flameDuration（吐ける時間）。どれでもなければ null。
+        /// </summary>
+        public static string DurationProperty(WeaponTypeDefinition type)
+        {
+            switch (type.RangedKind)
+            {
+                case RangedAttackKind.Rain: return "rainDuration";
+                case RangedAttackKind.Buff: return "supportDuration";
+                case RangedAttackKind.HealField: return "healDuration";
+                case RangedAttackKind.Summon: return "summonDuration";
+                case RangedAttackKind.Flame: return "flameDuration";
+                default: return null;
+            }
+        }
+
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
@@ -76,20 +100,23 @@ namespace TpsDungeon.Items.Editor
         }
 
         /// <summary>今と違えば書き換える。書き換えたら真。</summary>
-        private static bool Write(WeaponTypeDefinition type, WeaponTypeCsv.Row row, string cooldownProperty)
+        private static bool Write(WeaponTypeDefinition type, WeaponTypeCsv.Row row, string cooldownProperty, string durationProperty)
         {
             var serialized = new SerializedObject(type);
             SerializedProperty displayName = serialized.FindProperty("displayName");
             SerializedProperty shield = serialized.FindProperty("canUseShield");
             SerializedProperty cooldown = row.Cooldown.HasValue && cooldownProperty != null ? serialized.FindProperty(cooldownProperty) : null;
+            SerializedProperty duration = row.Duration.HasValue && durationProperty != null ? serialized.FindProperty(durationProperty) : null;
 
             bool same = displayName.stringValue == row.Name && shield.boolValue == row.CanUseShield
-                && (cooldown == null || Mathf.Approximately(cooldown.floatValue, row.Cooldown.Value));
+                && (cooldown == null || Mathf.Approximately(cooldown.floatValue, row.Cooldown.Value))
+                && (duration == null || Mathf.Approximately(duration.floatValue, row.Duration.Value));
             if (same) return false;
 
             displayName.stringValue = row.Name;
             shield.boolValue = row.CanUseShield;
             if (cooldown != null) cooldown.floatValue = row.Cooldown.Value;
+            if (duration != null) duration.floatValue = row.Duration.Value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return true;
         }

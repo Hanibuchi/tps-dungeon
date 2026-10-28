@@ -419,7 +419,10 @@ namespace TpsDungeon.Items.Editor
             foreach (WeaponTypeDefinition type in types.OrderBy(t => t.Id, StringComparer.Ordinal))
             {
                 float? cooldown = type.IsMelee ? type.ComboCooldown : type.IsRanged ? type.FireInterval : (float?)null;
-                rows.Add(new WeaponTypeCsv.Row(0, type.Id, type.DisplayName, cooldown, type.CanUseShield));
+                float? duration = WeaponTypeCsvImporter.DurationProperty(type) != null
+                    ? type.RainDuration + type.BlessingDuration + type.HealDuration + type.SummonDuration + type.FlameDuration
+                    : (float?)null;
+                rows.Add(new WeaponTypeCsv.Row(0, type.Id, type.DisplayName, cooldown, duration, type.CanUseShield));
             }
 
             File.WriteAllText(WeaponTypeCsvImporter.CsvPath, WeaponTypeCsv.Format(rows));
