@@ -9,23 +9,25 @@ namespace TpsDungeon.Items
     /// 武器ごとの値の表（Weapons.csv）を読み書きする。UnityEngine に依存しない。
     /// 1 行 = 武器 1 本。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
     ///   id          … 武器の id（"Weapon_RustySword" など）
+    ///   type        … 武器種の id（WeaponTypes.csv の id。"OneHanded" など）。武器のアセットの武器種と照らすだけで、書き換えはしない。列が無い・空でもよい
     ///   rank        … ランク。E・D・C・B・A・S・U（Unique でもよい）
     ///   strength    … 強さ（0 以上）。意味は武器種による（近接・遠距離なら DPS）
     ///   name        … 画面に出す名前
     ///   description … 説明。空でよい
-    /// 例: <c>Weapon_RustySword,E,5,錆びた片手剣,刃こぼれした古い剣。</c>
+    /// 例: <c>Weapon_RustySword,OneHanded,E,5,錆びた片手剣,刃こぼれした古い剣。</c>
     /// , を含む欄は "…" で囲む（"" は " 1 つ）。改行は \n と書く。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class WeaponCsv
     {
         public const string IdColumn = "id";
+        public const string TypeColumn = "type";
         public const string RankColumn = "rank";
         public const string StrengthColumn = "strength";
         public const string NameColumn = "name";
         public const string DescriptionColumn = "description";
 
-        public const string Header = IdColumn + "," + RankColumn + "," + StrengthColumn + "," + NameColumn + "," + DescriptionColumn;
+        public const string Header = IdColumn + "," + TypeColumn + "," + RankColumn + "," + StrengthColumn + "," + NameColumn + "," + DescriptionColumn;
 
         private static readonly string[] RequiredColumns = { IdColumn, RankColumn, StrengthColumn, NameColumn, DescriptionColumn };
 
@@ -33,15 +35,20 @@ namespace TpsDungeon.Items
         {
             public readonly int Line;
             public readonly string Id;
+
+            /// <summary>武器種の id。列が無い・空なら ""。</summary>
+            public readonly string Type;
+
             public readonly WeaponRank Rank;
             public readonly float Strength;
             public readonly string Name;
             public readonly string Description;
 
-            public Row(int line, string id, WeaponRank rank, float strength, string name, string description)
+            public Row(int line, string id, string type, WeaponRank rank, float strength, string name, string description)
             {
                 Line = line;
                 Id = id;
+                Type = type ?? "";
                 Rank = rank;
                 Strength = strength;
                 Name = name;
@@ -112,7 +119,7 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
-                rows.Add(new Row(line, id, rank, strength, name, Cell(DescriptionColumn)));
+                rows.Add(new Row(line, id, Cell(TypeColumn), rank, strength, name, Cell(DescriptionColumn)));
             }
 
             return rows;
@@ -126,6 +133,7 @@ namespace TpsDungeon.Items
             foreach (Row row in rows)
             {
                 text.Append(Quote(row.Id)).Append(',')
+                    .Append(Quote(row.Type)).Append(',')
                     .Append(RankCell(row.Rank)).Append(',')
                     .Append(row.Strength.ToString("0.###", CultureInfo.InvariantCulture)).Append(',')
                     .Append(Quote(row.Name)).Append(',')

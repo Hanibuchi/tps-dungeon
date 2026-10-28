@@ -437,11 +437,20 @@ namespace TpsDungeon.Items.Editor
             if (File.Exists(WeaponCsvImporter.CsvPath)) return;
 
             var rows = new List<WeaponCsv.Row>();
-            foreach (WeaponSpec spec in WeaponList()) rows.Add(new WeaponCsv.Row(0, spec.Id, spec.Rank, spec.Strength, spec.Name, spec.Description));
-            rows.Add(new WeaponCsv.Row(0, FistsId, WeaponRank.E, FistsStrength, FistsName, FistsDescription));
+            foreach (WeaponSpec spec in WeaponList())
+                rows.Add(new WeaponCsv.Row(0, spec.Id, TypeIdOf(spec.TypePath), spec.Rank, spec.Strength, spec.Name, spec.Description));
+            rows.Add(new WeaponCsv.Row(0, FistsId, TypeIdOf(UnarmedTypePath), WeaponRank.E, FistsStrength, FistsName, FistsDescription));
 
             File.WriteAllText(WeaponCsvImporter.CsvPath, WeaponCsv.Format(rows));
             AssetDatabase.ImportAsset(WeaponCsvImporter.CsvPath);
+        }
+
+        /// <summary>武器種のアセットのパス（…/WeaponType_OneHanded.asset）から武器種の id（OneHanded）を出す。</summary>
+        private static string TypeIdOf(string typePath)
+        {
+            string name = Path.GetFileNameWithoutExtension(typePath);
+            const string prefix = "WeaponType_";
+            return name.StartsWith(prefix, StringComparison.Ordinal) ? name.Substring(prefix.Length) : name;
         }
 
         /// <summary>ユニークを光らせ、少し大きくする。</summary>
