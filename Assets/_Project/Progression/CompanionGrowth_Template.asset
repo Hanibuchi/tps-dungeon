@@ -15,7 +15,7 @@ MonoBehaviour:
   hpBase: 100
   hpCoefficient: 2.6
   hpExponent: 1.1
-  attackBase: 10
-  attackCoefficient: 0.162
-  attackExponent: 1.05
+  attackBase: 20
+  attackCoefficient: 2
+  attackExponent: 1
   levelUpHp: 0

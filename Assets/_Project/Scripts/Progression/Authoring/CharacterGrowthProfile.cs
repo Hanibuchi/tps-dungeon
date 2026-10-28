@@ -20,15 +20,15 @@ namespace TpsDungeon.Progression
         [SerializeField, Min(0f), Tooltip("伸びの指数（p）。1 で直線、大きいほど後半に伸びる。")]
         private float hpExponent = 1.1f;
 
-        [Header("基礎攻撃力 = ATK_base + C_atk × (L−1)^p_atk")]
+        [Header("基礎攻撃力 = ATK_base + C_atk × (L−1)^p_atk（スプレッドシート「バランス」の攻撃力シート B 列）")]
         [SerializeField, Min(0f), Tooltip("Lv1 の基礎攻撃力（ATK_base）。")]
-        private float attackBase = 10f;
+        private float attackBase = 20f;
 
         [SerializeField, Min(0f), Tooltip("レベルごとの伸びの係数（C_atk）。")]
-        private float attackCoefficient = 0.162f;
+        private float attackCoefficient = 2f;
 
         [SerializeField, Min(0f), Tooltip("伸びの指数（p_atk）。HP とは別に持つ。")]
-        private float attackExponent = 1.05f;
+        private float attackExponent = 1f;
 
         [Header("その他")]
         [SerializeField, Tooltip("レベルアップで MaxHP が増えたときの現在 HP。増えた分だけ足すか、全回復か。")]

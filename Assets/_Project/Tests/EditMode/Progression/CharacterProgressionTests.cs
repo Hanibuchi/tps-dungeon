@@ -36,7 +36,7 @@ namespace TpsDungeon.Progression.Tests
             Assert.AreEqual(1, character.Level);
             Assert.AreEqual(100, health.MaxHp);
             Assert.AreEqual(100, health.CurrentHp);
-            Assert.AreEqual(10f, character.GetBaseAttack(), 0.001f);
+            Assert.AreEqual(20f, character.GetBaseAttack(), 0.001f);
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace TpsDungeon.Progression.Tests
             Assert.AreEqual(70 + 29, health.CurrentHp, "増えた 29 だけ足す");
             Assert.AreEqual(100, maxFrom);
             Assert.AreEqual(129, maxTo);
-            Assert.AreEqual(11.6f, character.BaseAttack, 0.05f);
+            Assert.AreEqual(38f, character.BaseAttack, 0.001f);
             Assert.AreEqual("99 / 129", GameHudView.HpText(health.CurrentHp, health.MaxHp), "HUD の表示は新しい最大を指す");
             Assert.Greater(healthChanges, 0, "HUD が購読している Changed が飛ぶ");
         }
@@ -137,7 +137,7 @@ namespace TpsDungeon.Progression.Tests
 
             Assert.AreEqual(180, health.MaxHp, "(100 + 20) × 1.5");
             Assert.AreEqual(180, health.CurrentHp, "満タンなら増えた分も満タン");
-            Assert.AreEqual(11f, character.BaseAttack, 0.001f);
+            Assert.AreEqual(22f, character.BaseAttack, 0.001f);
 
             character.SetModifiers(null);
             Assert.AreEqual(100, health.MaxHp, "外すと元に戻る");

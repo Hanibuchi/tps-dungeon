@@ -17,20 +17,27 @@ namespace TpsDungeon.Progression.Tests
             Assert.AreEqual(expected, Curve.MaxHp(level));
         }
 
-        [TestCase(1, 10.0f)]
-        [TestCase(10, 11.6f)]
-        [TestCase(50, 19.6f)]
-        [TestCase(99, 30.0f)]
+        [TestCase(1, 20f)]
+        [TestCase(10, 38f)]
+        [TestCase(50, 118f)]
+        [TestCase(100, 218f)]
         public void BaseAttack_FollowsFormula(int level, float expected)
         {
             Assert.AreEqual(expected, Curve.BaseAttack(level), 0.05f);
         }
 
         [Test]
-        public void MaxValues_AreAboutFiveAndThreeTimesTheStart()
+        public void MaxHp_IsAboutFiveTimesTheStart()
         {
             Assert.AreEqual(5.0, Curve.MaxHp(99) / (double)Curve.MaxHp(1), 0.1, "HP は初期値の約 5 倍");
-            Assert.AreEqual(3.0, Curve.BaseAttack(99) / Curve.BaseAttack(1), 0.1, "攻撃力は初期値の約 3 倍");
+        }
+
+        [Test]
+        public void BaseAttack_MatchesBalanceSheet()
+        {
+            // スプレッドシート「バランス」の攻撃力シート B 列: 20 ＋ 2 × (L−1)
+            for (int level = 1; level <= LevelBalance.MaxLevel; level++)
+                Assert.AreEqual(20f + 2f * (level - 1), Curve.BaseAttack(level), 0.001f, $"Lv{level}");
         }
 
         [TestCase(1, 100)]
