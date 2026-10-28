@@ -42,12 +42,12 @@ MonoBehaviour:
   cratesPerCell: 0.4
   chestChance: 0.15
   boxWeaponRanks:
-  - 10
-  - 3
-  - 0.5
-  - 0
-  - 0
-  - 0
+  - 1024
+  - 256
+  - 64
+  - 16
+  - 4
+  - 1
   mood:
     ambient: {r: 0.72156864, g: 0.68235296, b: 0.6117647, a: 1}
     filter: {r: 1, g: 1, b: 1, a: 1}

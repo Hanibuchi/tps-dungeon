@@ -163,7 +163,7 @@ MonoBehaviour:
   - id: ally_1
     name: "\u30E1\u30F3\u30D0\u30FC\u8FFD\u52A0 I"
     parent: awaken
-    cost: 15000
+    cost: 6000
     effect: 2
     value: 1
     description: "\u4EF2\u9593\u304C\u3067\u304D\u308B"
@@ -177,16 +177,23 @@ MonoBehaviour:
   - id: ally_3
     name: "\u30E1\u30F3\u30D0\u30FC\u8FFD\u52A0 III"
     parent: ally_2
-    cost: 3600000
+    cost: 4000000
     effect: 2
     value: 3
     description: "\u307E\u305F 1 \u4EBA\u4EF2\u9593\u304C\u3067\u304D\u308B"
   - id: ally_4
     name: "\u30E1\u30F3\u30D0\u30FC\u8FFD\u52A0 IV"
     parent: ally_3
-    cost: 20000000
+    cost: 15000000
     effect: 2
     value: 4
+    description: "\u3055\u3089\u306B 1 \u4EBA\u4EF2\u9593\u304C\u3067\u304D\u308B"
+  - id: ally_5
+    name: "\u30E1\u30F3\u30D0\u30FC\u8FFD\u52A0 V"
+    parent: ally_4
+    cost: 40000000
+    effect: 2
+    value: 5
     description: "\u3055\u3089\u306B 1 \u4EBA\u4EF2\u9593\u304C\u3067\u304D\u308B"
   - id: fortune_1
     name: "\u30C9\u30ED\u30C3\u30D7\u5897\u52A0 I"

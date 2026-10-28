@@ -14,10 +14,10 @@ namespace TpsDungeon.Progression
     {
         public const int MinLevel = LevelBalance.MinLevel;
 
-        /// <summary>仮の初期値。CharacterGrowthProfile の既定値もこれに揃えてある。</summary>
+        /// <summary>初期値。攻撃力はスプレッドシート「バランス」の攻撃力シート（20 ＋ 2 × (L−1)）、HP は仮。CharacterGrowthProfile の既定値もこれに揃えてある。</summary>
         public static readonly GrowthCurve Default = new GrowthCurve(
             hpBase: 100, hpCoefficient: 2.6, hpExponent: 1.1,
-            attackBase: 10, attackCoefficient: 0.162, attackExponent: 1.05);
+            attackBase: 20, attackCoefficient: 2, attackExponent: 1);
 
         public GrowthCurve(double hpBase, double hpCoefficient, double hpExponent,
             double attackBase, double attackCoefficient, double attackExponent)

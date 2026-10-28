@@ -20,6 +20,7 @@ namespace TpsDungeon.Items.Tests
             Assert.IsEmpty(errors);
             Assert.AreEqual(1, rows.Count);
             Assert.AreEqual("Weapon_A", rows[0].Id);
+            Assert.AreEqual("", rows[0].Type, "type の列は無くてよい");
             Assert.AreEqual(WeaponRank.C, rows[0].Rank);
             Assert.AreEqual(21f, rows[0].Strength);
             Assert.AreEqual("鉄の剣", rows[0].Name);
@@ -32,11 +33,12 @@ namespace TpsDungeon.Items.Tests
         {
             const string text =
                 WeaponCsv.Header + "\n" +
-                "Weapon_A,U,8.5,\"影,駆け\",\"「\"\"速い\"\"」\\n二行目\"\n";
+                "Weapon_A,DashThrust,U,8.5,\"影,駆け\",\"「\"\"速い\"\"」\\n二行目\"\n";
             var errors = new List<string>();
             List<WeaponCsv.Row> rows = WeaponCsv.Parse(text, errors);
 
             Assert.IsEmpty(errors);
+            Assert.AreEqual("DashThrust", rows[0].Type);
             Assert.AreEqual(WeaponRank.Unique, rows[0].Rank);
             Assert.AreEqual(8.5f, rows[0].Strength);
             Assert.AreEqual("影,駆け", rows[0].Name);
@@ -46,10 +48,11 @@ namespace TpsDungeon.Items.Tests
         [Test]
         public void 説明は空でよい()
         {
-            List<WeaponCsv.Row> rows = WeaponCsv.Parse(WeaponCsv.Header + "\nWeapon_A,E,3,素手,\n", new List<string>());
+            List<WeaponCsv.Row> rows = WeaponCsv.Parse(WeaponCsv.Header + "\nWeapon_A,,E,3,素手,\n", new List<string>());
 
             Assert.AreEqual(1, rows.Count);
             Assert.AreEqual("", rows[0].Description);
+            Assert.AreEqual("", rows[0].Type, "武器種も空でよい");
         }
 
         [TestCase("U", WeaponRank.Unique)]
@@ -67,15 +70,15 @@ namespace TpsDungeon.Items.Tests
         {
             const string text =
                 WeaponCsv.Header + "\n" +
-                "Weapon_A,E,3,剣,\n" +
-                "Weapon_B,X,3,剣,\n" +
-                "Weapon_C,E,-1,剣,\n" +
-                "Weapon_D,E,abc,剣,\n" +
-                "Weapon_E,E,3,,\n" +
-                ",E,3,剣,\n" +
-                "Weapon_A,D,4,剣,\n" +
-                "Weapon_F,E,3,\"閉じていない,\n" +
-                "Weapon_G,E,3,剣,\n";
+                "Weapon_A,OneHanded,E,3,剣,\n" +
+                "Weapon_B,OneHanded,X,3,剣,\n" +
+                "Weapon_C,OneHanded,E,-1,剣,\n" +
+                "Weapon_D,OneHanded,E,abc,剣,\n" +
+                "Weapon_E,OneHanded,E,3,,\n" +
+                ",OneHanded,E,3,剣,\n" +
+                "Weapon_A,OneHanded,D,4,剣,\n" +
+                "Weapon_F,OneHanded,E,3,\"閉じていない,\n" +
+                "Weapon_G,OneHanded,E,3,剣,\n";
             var errors = new List<string>();
             List<WeaponCsv.Row> rows = WeaponCsv.Parse(text, errors);
 
@@ -104,8 +107,8 @@ namespace TpsDungeon.Items.Tests
         {
             var written = new List<WeaponCsv.Row>
             {
-                new WeaponCsv.Row(0, "Weapon_A", WeaponRank.Unique, 8.25f, "影,駆け", "「\"速い\"」\n二行目"),
-                new WeaponCsv.Row(0, "Weapon_B", WeaponRank.E, 3f, "素手", ""),
+                new WeaponCsv.Row(0, "Weapon_A", "DashThrust", WeaponRank.Unique, 8.25f, "影,駆け", "「\"速い\"」\n二行目"),
+                new WeaponCsv.Row(0, "Weapon_B", "Unarmed", WeaponRank.E, 3f, "素手", ""),
             };
 
             string text = WeaponCsv.Format(written);
@@ -113,12 +116,13 @@ namespace TpsDungeon.Items.Tests
             List<WeaponCsv.Row> rows = WeaponCsv.Parse(text, errors);
 
             StringAssert.StartsWith(WeaponCsv.Header + "\n", text);
-            StringAssert.Contains("Weapon_B,E,3,素手,\n", text);
+            StringAssert.Contains("Weapon_B,Unarmed,E,3,素手,\n", text);
             Assert.IsEmpty(errors);
             Assert.AreEqual(2, rows.Count);
             for (int i = 0; i < rows.Count; i++)
             {
                 Assert.AreEqual(written[i].Id, rows[i].Id);
+                Assert.AreEqual(written[i].Type, rows[i].Type);
                 Assert.AreEqual(written[i].Rank, rows[i].Rank);
                 Assert.AreEqual(written[i].Strength, rows[i].Strength);
                 Assert.AreEqual(written[i].Name, rows[i].Name);

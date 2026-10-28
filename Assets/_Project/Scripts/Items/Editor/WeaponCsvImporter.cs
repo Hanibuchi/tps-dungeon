@@ -11,6 +11,7 @@ namespace TpsDungeon.Items.Editor
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。武器は id で引く。CSV に無い武器はそのまま。
     /// ランクを変えても見た目（ランクごとの型や色、ユニークの光）とアセットの名前は、生成器を回し直すまで前のまま。
     /// ユニークかどうかが変わったら、固定のエンチャント（ユニークだけに付く）も取り込み直す。
+    /// 武器種（type の列）は書き換えず、アセットの武器種と違えばエラーに出すだけ（武器種を変えるのは生成器）。
     /// 読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>
     public sealed class WeaponCsvImporter : AssetPostprocessor
@@ -44,6 +45,10 @@ namespace TpsDungeon.Items.Editor
                     errors.Add($"{row.Line} 行目: 武器 {row.Id} が無い");
                     continue;
                 }
+
+                string typeId = weapon.WeaponType != null ? weapon.WeaponType.Id : "";
+                if (row.Type.Length > 0 && !string.Equals(row.Type, typeId, StringComparison.Ordinal))
+                    errors.Add($"{row.Line} 行目: {row.Id} の武器種が「{row.Type}」になっているが、アセットは「{typeId}」");
 
                 bool wasUnique = weapon.Rank == WeaponRank.Unique;
                 if (!Write(weapon, row)) continue;
