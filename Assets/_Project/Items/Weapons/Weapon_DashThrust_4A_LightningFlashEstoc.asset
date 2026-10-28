@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 2800000, guid: cb3b6e1138c3a4b48b2f83b631f67336, type: 3}
   worldPrefab: {fileID: 7200633076939363459, guid: 8e8a700c85add47e99da8f2f3737cc5a, type: 3}
   rank: 4
-  strength: 84
+  strength: 93.9
   weaponType: {fileID: 11400000, guid: f765f3f5e3aaf47c29328fa531e09136, type: 2}
   heldModel: {fileID: 8823443600175488149, guid: 3b474cdef89bb416fbcad07f59201557, type: 3}
   thrownSpinRate: 0

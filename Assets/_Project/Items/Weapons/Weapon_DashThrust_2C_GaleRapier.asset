@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_GaleRapier
   displayName: "\u75BE\u98A8\u306E\u30EC\u30A4\u30D4\u30A2"
-  description: "\u6301\u3061\u624B\u3092\u8FFD\u3044\u8D8A\u3059\u307B\u3069\u306E\u901F\u3055\u3067\u7A81\u304D\u51FA\u3055\u308C\u308B\u3002"
+  description: "\u5203\u304C\u98A8\u306E\u3088\u3046\u306A\u901F\u3055\u3067\u7A81\u304D\u51FA\u3055\u308C\u308B\u3002"
   icon: {fileID: 2800000, guid: a5617184aaa7c43779ad80869b9aa418, type: 3}
   worldPrefab: {fileID: 1229943953672027504, guid: d891996bcc078419b9bcf74671b5ae0e, type: 3}
   rank: 2
-  strength: 42
+  strength: 47
   weaponType: {fileID: 11400000, guid: f765f3f5e3aaf47c29328fa531e09136, type: 2}
   heldModel: {fileID: 644150500168547382, guid: 8e3fa129545a84d2a9336269c06cb3e0, type: 3}
   thrownSpinRate: 0

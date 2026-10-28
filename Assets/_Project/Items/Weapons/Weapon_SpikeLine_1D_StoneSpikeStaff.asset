@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_StoneSpikeStaff
   displayName: "\u77F3\u68D8\u306E\u6756"
-  description: "\u5730\u9762\u304B\u3089\u77F3\u306E\u68D8\u304C\u3001\u307E\u3063\u3059\u3050\u9023\u306A\u3063\u3066\u7A81\u304D\u51FA\u3059\u3002"
+  description: "\u5730\u9762\u304B\u3089\u68D8\u304C\u307E\u3063\u3059\u3050\u9023\u306A\u3063\u3066\u7A81\u304D\u51FA\u3059\u3002"
   icon: {fileID: 2800000, guid: 0cc73b30179af4105a08c90cec5d2757, type: 3}
   worldPrefab: {fileID: 2653761686144687828, guid: 77bf9ab4c4ae94b609b404c34784780d, type: 3}
   rank: 1
-  strength: 20
+  strength: 14
   weaponType: {fileID: 11400000, guid: 01c325f8eba28488391b940415c86734, type: 2}
   heldModel: {fileID: 1676811011025036270, guid: 6a2beade6b05e4911bdb30c464a3a9bd, type: 3}
   thrownSpinRate: 0

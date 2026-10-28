@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponDefinition
   id: Weapon_ThunderStaff
   displayName: "\u96F7\u6483\u306E\u6756"
-  description: "\u8D70\u3063\u305F\u7A32\u5149\u304C\u3001\u7FA4\u308C\u3092\u307E\u3068\u3081\u3066\u713C\u304D\u6255\u3046\u3002"
+  description: "\u8D70\u3063\u305F\u7A32\u5149\u304C\u3001\u6575\u306E\u7FA4\u308C\u3092\u307E\u3068\u3081\u3066\u713C\u304D\u6255\u3046\u3002"
   icon: {fileID: 2800000, guid: 1d510d90671c742e3973c6e0cbb347fe, type: 3}
   worldPrefab: {fileID: 8877249371685395761, guid: 4ff6193e0749241379549fab4d0fe4bb, type: 3}
   rank: 3
-  strength: 50
+  strength: 55.9
   weaponType: {fileID: 11400000, guid: 233f22a66ee9347f7ba1520276c939e9, type: 2}
   heldModel: {fileID: 2002772331836686940, guid: 83b3599246ba64547a02e2dca6658a95, type: 3}
   thrownSpinRate: 0
