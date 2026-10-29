@@ -1,3 +1,4 @@
+using TpsDungeon.Audio.Runtime;
 using UnityEngine;
 
 namespace TpsDungeon.Player
@@ -10,6 +11,7 @@ namespace TpsDungeon.Player
     /// - パーティーの先頭のときだけ有効にする（後ろの仲間は NavMeshAgent が動かす）。
     /// - 先頭を替えてもカメラが跳ねないよう、注視点の向きを <see cref="CameraYaw"/> / <see cref="CameraPitch"/> で読み書きできる。
     /// 足音と着地の音はアニメーションのイベント（OnFootstep / OnLand）で鳴らす。無効でも呼ばれるので、仲間の足音もここで鳴る。
+    ///   音は GameAudio の足音の音源から SE のグループへ流す（元の PlayClipAtPoint はミキサーを通らず、音量の設定が効かない）。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
@@ -287,13 +289,13 @@ namespace TpsDungeon.Player
             if (animationEvent.animatorClipInfo.weight <= 0.5f || FootstepAudioClips == null || FootstepAudioClips.Length == 0) return;
 
             int index = Random.Range(0, FootstepAudioClips.Length);
-            AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(Center()), FootstepAudioVolume);
+            GameAudio.Instance?.PlayFootstepAt(FootstepAudioClips[index], transform.TransformPoint(Center()), FootstepAudioVolume);
         }
 
         private void OnLand(AnimationEvent animationEvent)
         {
             if (animationEvent.animatorClipInfo.weight <= 0.5f || LandingAudioClip == null) return;
-            AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(Center()), FootstepAudioVolume);
+            GameAudio.Instance?.PlayFootstepAt(LandingAudioClip, transform.TransformPoint(Center()), FootstepAudioVolume);
         }
 
         private Vector3 Center() => controller != null ? controller.center : Vector3.up;
