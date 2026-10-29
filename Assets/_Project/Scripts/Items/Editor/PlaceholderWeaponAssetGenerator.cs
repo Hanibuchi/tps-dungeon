@@ -970,7 +970,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.MoveSpeed, "移動速度", 0.10f, 0f, "1 段ごとに、歩く速さが 10% 上がる。"),
                 (EnchantmentKind.Exp, "経験値", 0.10f, 0f, "1 段ごとに、得られる経験値が 10% 増える。"),
                 (EnchantmentKind.MaxHp, "体力増加", 0.10f, 0f, "1 段ごとに、最大 HP が 10% 増える。"),
-                (EnchantmentKind.Defense, "防御力", 0.10f, 0f, "1 段ごとに、受けるダメージが 10% 減る。"),
+                (EnchantmentKind.Defense, "防御力", 0.10f, 0f, "1 段ごとに、盾の防御力が 10% 上がる。"),
                 (EnchantmentKind.Regen, "自然回復", 1f, 0f, "1 段ごとに、HP が毎秒 1 ずつ回復する。"),
             };
 

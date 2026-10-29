@@ -242,7 +242,7 @@ namespace TpsDungeon.Items
             if (type.IsHealField) return "狙った地面に種を投げ、落ちた所に治癒の場を張る。";
             if (type.IsHeal) return "近くの仲間のうち、体力の割合が低い人から選んで回復する。";
             if (type.IsCharm) return "ホットバーに入れておくだけで効く。";
-            if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。";
+            if (type.IsShield) return "ホットバーに入れて、片手武器を持っている間だけ効く（盾が複数あれば防御力の高い 1 枚）。並びの両隣の仲間にも同じ防御力が付く。";
             return string.Empty;
         }
 

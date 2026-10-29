@@ -1143,11 +1143,11 @@ namespace TpsDungeon.Menu.UI
             if (member.Progression != null) lines.Add($"攻撃力 {member.Progression.BaseAttack:0.#}");
             if (member.Health != null)
             {
-                // 防御力は手に持っている盾の分。受けるダメージには防御力のエンチャントと加護も入る。
+                // 防御力は自分と両隣が手に持っている盾の分（防御力のエンチャントも）。受けるダメージには加護も入る。
                 var gear = member.GetComponent<PlayerGear>();
-                float defense = gear != null ? gear.Bonuses.ShieldDefense : 0f;
+                float defense = gear != null ? gear.Defense : 0f;
                 int reduced = Mathf.RoundToInt((1f - member.Health.EffectiveDamageTaken) * 100f);
-                lines.Add(reduced > 0 ? $"防御力 {defense:0.#}（受けるダメージ −{reduced}%）" : $"防御力 {defense:0.#}");
+                lines.Add(reduced > 0 ? $"防御力 {defense:0.#}（被ダメージ −{reduced}%）" : $"防御力 {defense:0.#}");
             }
             return string.Join("\n", lines);
         }
