@@ -8,7 +8,8 @@ namespace TpsDungeon.Menu.UI
     /// <summary>
     /// 魂の強化の木の枝（前の強化から先の強化への線）を Painter2D で描く。木の面（中心が根）の子に、大きさ 0 で置く（線は外へはみ出して描かれる）。
     /// - 解放した強化どうし: 金の線に淡い光。
-    /// - 解放した強化から、まだの強化へ: 水色の点線が先へ向かって流れる（買える所の目印）。
+    /// - 解放した強化から、まだの強化へ: 水色の点線が先へ向かって流れる（買える所の目印）。ソウルが足りなければ暗くする。
+    /// - まだ見えない強化へ: 細く淡い実線。遠い枝ほど薄く（<see cref="Link.Alpha"/>）。
     /// 線は根から見た向きに沿って緩く曲げ、マインドマップの枝のようにする。
     /// 枝ごとの伸び具合（0〜1）で、先へ向かって線が伸びていく途中を描ける（解放したときの演出）。
     /// </summary>
@@ -20,6 +21,8 @@ namespace TpsDungeon.Menu.UI
             Owned,
             /// <summary>前だけ解放した（先は買える・まだ買えない）。</summary>
             Next,
+            /// <summary>先がまだ見えない（この先の分かれ方だけ薄く見せる）。</summary>
+            Ghost,
         }
 
         public sealed class Link
@@ -30,14 +33,20 @@ namespace TpsDungeon.Menu.UI
             public State State;
             /// <summary>どこまで伸びているか（0〜1）。</summary>
             public float Progress;
-            /// <summary>先がまだ見えていないので描かない。</summary>
+            /// <summary>描かない。</summary>
             public bool Hidden;
+            /// <summary>先がまだ買えない（Next を暗く描く）。</summary>
+            public bool Dim;
+            /// <summary>濃さ（0〜1）。Ghost の遠さに使う。</summary>
+            public float Alpha = 1f;
         }
 
         private static readonly Color OwnedColor = new Color(0.98f, 0.82f, 0.48f, 1f);
         private static readonly Color OwnedGlow = new Color(0.98f, 0.72f, 0.32f, 0.12f);
         private static readonly Color NextColor = new Color(0.62f, 0.9f, 1f, 0.85f);
         private static readonly Color NextGlow = new Color(0.45f, 0.8f, 1f, 0.08f);
+        private static readonly Color DimColor = new Color(0.4f, 0.52f, 0.62f, 0.5f);
+        private static readonly Color GhostColor = new Color(0.5f, 0.66f, 0.8f, 1f);
 
         private const int Segments = 28;
         private const float DashLength = 9f;
@@ -87,7 +96,7 @@ namespace TpsDungeon.Menu.UI
             // 光（太く淡い線）を先にまとめて描き、その上に芯を描く。
             foreach (Link link in links)
             {
-                if (link.Hidden || link.Progress <= 0f) continue;
+                if (link.Hidden || link.Progress <= 0f || link.State == State.Ghost || link.Dim) continue;
                 Sample(link);
                 p.strokeColor = link.State == State.Owned ? OwnedGlow : NextGlow;
                 p.lineWidth = link.State == State.Owned ? 12f : 9f;
@@ -104,9 +113,17 @@ namespace TpsDungeon.Menu.UI
                     p.lineWidth = 3f;
                     StrokeSolid(p);
                 }
+                else if (link.State == State.Ghost)
+                {
+                    Color color = GhostColor;
+                    color.a *= link.Alpha;
+                    p.strokeColor = color;
+                    p.lineWidth = 1.6f;
+                    StrokeSolid(p);
+                }
                 else
                 {
-                    p.strokeColor = NextColor;
+                    p.strokeColor = link.Dim ? DimColor : NextColor;
                     p.lineWidth = 2.2f;
                     StrokeDashed(p, time * DashSpeed);
                 }

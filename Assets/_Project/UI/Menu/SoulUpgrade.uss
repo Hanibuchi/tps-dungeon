@@ -193,8 +193,17 @@
 
 /* まだ買えない（ソウルが足りない）。 */
 .soul-node--locked .soul-node__ring {
-    border-color: rgb(52, 64, 82);
-    background-color: rgb(12, 14, 22);
+    border-color: rgb(44, 54, 70);
+    background-color: rgb(10, 12, 19);
+}
+
+/* ソウルが足りない強化は全体を暗く沈める（買える・買ったものとの差をはっきり）。 */
+.soul-node--locked.is-shown {
+    opacity: 0.58;
+}
+
+.soul-node--locked.soul-node--hover.is-shown {
+    opacity: 0.8;
 }
 
 .soul-node--locked .soul-node__glyph {
@@ -215,9 +224,14 @@
     color: var(--soul-bright);
 }
 
+/* 買える強化はいつも淡く光り、明滅でさらに強く光る。 */
+.soul-node--available .soul-node__halo {
+    background-color: rgba(120, 200, 255, 0.12);
+}
+
 .soul-node--available.soul-node--glow .soul-node__halo {
-    background-color: rgba(120, 200, 255, 0.07);
-    scale: 1.12 1.12;
+    background-color: rgba(140, 215, 255, 0.24);
+    scale: 1.18 1.18;
 }
 
 .soul-node--available.soul-node--hover .soul-node__ring {
@@ -236,11 +250,49 @@
 }
 
 .soul-node--owned .soul-node__halo {
-    background-color: rgba(255, 190, 90, 0.05);
+    background-color: rgba(255, 190, 90, 0.16);
 }
 
 .soul-node--owned.soul-node--hover .soul-node__ring {
     background-color: rgb(78, 56, 28);
+}
+
+/* まだ見えない強化。この先の分かれ方だけ見せる。濃さは見えている強化から何段先か（-1 〜 -5、-6 は出さない）。 */
+.soul-node--ghost .soul-node__ring {
+    border-color: var(--soul-dim);
+    background-color: rgb(10, 12, 20);
+}
+
+.soul-node--ghost .soul-node__glyph {
+    color: var(--soul-dim);
+}
+
+.soul-node--ghost .soul-node__halo {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.soul-node--ghost-1.is-shown {
+    opacity: 0.32;
+}
+
+.soul-node--ghost-2.is-shown {
+    opacity: 0.2;
+}
+
+.soul-node--ghost-3.is-shown {
+    opacity: 0.12;
+}
+
+.soul-node--ghost-4.is-shown {
+    opacity: 0.07;
+}
+
+.soul-node--ghost-5.is-shown {
+    opacity: 0.04;
+}
+
+.soul-node--ghost-6.is-shown {
+    opacity: 0;
 }
 
 /* 真ん中の強化は大きく、輪を二重に見せる。 */

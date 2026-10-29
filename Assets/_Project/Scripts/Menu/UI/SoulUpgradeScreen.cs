@@ -15,7 +15,8 @@ namespace TpsDungeon.Menu.UI
     /// <summary>
     /// 魂の強化の画面。死後の場所の燭台（<see cref="UpgradeAltar"/>）を調べると開く。SoulUpgrade.uxml を UIDocument に差して、パーティーの操作台の子に置く。
     /// - 真ん中に最初の強化があり、そこからマインドマップのように枝分かれする（並びは <see cref="RadialTreeLayout"/>）。
-    ///   前の強化を解放していない強化は出さない。
+    ///   前の強化を解放していない強化は、この先の分かれ方が分かるように薄く出す（遠いほど薄く、<see cref="MaxGhostSteps"/> 段より先は出さない）。
+    ///   買った・買える強化は光らせ、ソウルが足りない強化は暗くする。
     /// - ドラッグで動かし、ホイールでカーソルの所を中心に拡大・縮小する。強化に乗せると説明が出て、クリックで解放する。
     /// - 解放すると、右上のソウルから光の玉が強化へ飛び、強化が光って弾け、その先へ枝が伸びて新しい強化が現れる。
     ///   ソウルが足りなければ強化が震える。
@@ -35,6 +36,11 @@ namespace TpsDungeon.Menu.UI
         private const string GlowClass = "soul-node--glow";
         private const string BurstClass = "soul-node--burst";
         private const string HoverClass = "soul-node--hover";
+        private const string GhostClass = "soul-node--ghost";
+        /// <summary>まだ見えない強化の濃さの段（soul-node--ghost-1 〜 -N。N より先は 0）。</summary>
+        private const string GhostLevelClass = "soul-node--ghost-";
+        private const int MaxGhostSteps = 5;
+        private static readonly float[] GhostAlpha = { 1f, 0.32f, 0.2f, 0.12f, 0.07f, 0.04f, 0f };
 
         private const float NodeRadius = 30f;
         private const float RootRadius = 42f;
@@ -361,7 +367,7 @@ namespace TpsDungeon.Menu.UI
             return view;
         }
 
-        /// <summary>全部の強化の姿（解放した・買える・まだ買えない・見えない）と、枝の色を今の状態に合わせる。現れる演出はしない。</summary>
+        /// <summary>全部の強化の姿（解放した・買える・まだ買えない・まだ見えない）と、枝の色を今の状態に合わせる。現れる演出はしない。</summary>
         private void RefreshAll()
         {
             foreach (NodeView view in views.Values) RefreshNode(view);
@@ -370,16 +376,20 @@ namespace TpsDungeon.Menu.UI
         private void RefreshNode(NodeView view)
         {
             string id = view.Node.id;
-            bool visible = MetaUpgrades.IsVisible(id);
+            int steps = Mathf.Min(MetaUpgrades.StepsBeyondVisible(id), MaxGhostSteps + 1);
+            bool visible = steps == 0;
             SoulUpgradeCheck check = MetaUpgrades.Check(id);
             bool owned = check == SoulUpgradeCheck.Owned;
             bool available = check == SoulUpgradeCheck.Ok;
 
-            view.Element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            // まだ見えない強化は触れない（説明も値段も出さない）。
+            view.Element.pickingMode = visible ? PickingMode.Position : PickingMode.Ignore;
+            view.Element.EnableInClassList(GhostClass, !visible);
+            for (int i = 1; i <= MaxGhostSteps + 1; i++) view.Element.EnableInClassList(GhostLevelClass + i, steps == i);
             view.Element.EnableInClassList(OwnedClass, owned);
             view.Element.EnableInClassList(AvailableClass, available);
             view.Element.EnableInClassList(LockedClass, visible && !owned && !available);
-            view.Cost.text = owned ? string.Empty : ShortNumber.Format(view.Node.cost);
+            view.Cost.text = owned || !visible ? string.Empty : ShortNumber.Format(view.Node.cost);
 
             if (available && !view.Pulsing)
             {
@@ -394,8 +404,10 @@ namespace TpsDungeon.Menu.UI
 
             if (view.Link != null)
             {
-                view.Link.Hidden = !visible;
-                view.Link.State = owned ? SoulTreeLinks.State.Owned : SoulTreeLinks.State.Next;
+                view.Link.Hidden = steps > MaxGhostSteps;
+                view.Link.State = owned ? SoulTreeLinks.State.Owned : visible ? SoulTreeLinks.State.Next : SoulTreeLinks.State.Ghost;
+                view.Link.Dim = visible && !owned && !available;
+                view.Link.Alpha = GhostAlpha[Mathf.Max(steps, 0)];
             }
         }
 
@@ -421,7 +433,8 @@ namespace TpsDungeon.Menu.UI
 
             foreach (NodeView view in views.Values)
             {
-                if (!MetaUpgrades.IsVisible(view.Node.id)) continue;
+                // 遠すぎて今は出さない強化も、ここで出しておく（濃さ 0 の段にあり、解放して近づくと濃さの切り替えで現れる）。
+                if (MetaUpgrades.StepsBeyondVisible(view.Node.id) < 0) continue;
                 long linkDelay = 120 + (view.Depth - 1) * 150L;
                 if (view.Depth == 0) Reveal(view, 80);
                 else

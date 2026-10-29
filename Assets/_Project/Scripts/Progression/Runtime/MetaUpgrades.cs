@@ -105,6 +105,9 @@ namespace TpsDungeon.Progression
 
         public static bool IsVisible(string id) => Tree.IsVisible(id, Purchased);
 
+        /// <summary>見えている強化から何段先か（見えていれば 0）。</summary>
+        public static int StepsBeyondVisible(string id) => Tree.StepsBeyondVisible(id, Purchased);
+
         public static SoulUpgradeCheck Check(string id) => Tree.Check(id, Purchased, Souls);
 
         /// <summary>強化を買う。買えたら（<see cref="SoulUpgradeCheck.Ok"/>）ソウルを引いて書き出し、知らせる。</summary>

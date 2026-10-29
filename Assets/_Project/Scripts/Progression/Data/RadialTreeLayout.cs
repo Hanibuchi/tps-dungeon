@@ -6,6 +6,7 @@ namespace TpsDungeon.Progression
     /// <summary>
     /// 魂の強化の木を、根を真ん中にしてマインドマップのように放射状に並べる。UnityEngine に依存しない。
     /// - 根の子は全周を、その先の葉の数に比例して分け合う。孫から先は、親の扇をまた葉の数で分ける。
+    /// - 孫から先の子の並びは表の順だが、表で親のすぐ次の行にある子（同じ種類の続きの段）は兄弟の真ん中に入れる。
     /// - 置く場所は扇の真ん中の向きで、根からの距離は 1 段目が <see cref="FirstRing"/>、そこから 1 段ごとに <see cref="RingStep"/>。
     /// 並べるのは見えない強化も含めた全部なので、解放して先が見えてきても、もう出ている強化は動かない。
     /// 座標は画面の向き（x は右、y は下）。根は (0, 0)。
@@ -39,6 +40,12 @@ namespace TpsDungeon.Progression
 
             var leaves = new Dictionary<string, int>(StringComparer.Ordinal);
             CountLeaves(tree, tree.Root, leaves);
+            var mainChild = new Dictionary<string, string>(StringComparer.Ordinal);
+            IReadOnlyList<SoulUpgradeNode> nodes = tree.Nodes;
+            for (int i = 0; i + 1 < nodes.Count; i++)
+            {
+                if (nodes[i + 1].parent == nodes[i].id) mainChild[nodes[i].id] = nodes[i + 1].id;
+            }
 
             points[tree.Root] = new Point(0f, 0f, 0f);
 
@@ -47,7 +54,7 @@ namespace TpsDungeon.Progression
             int total = leaves[tree.Root];
             double full = Math.PI * 2;
             double first = top.Count > 0 ? full * leaves[top[0]] / total : 0;
-            Place(tree, tree.Root, startAngle - first / 2, startAngle - first / 2 + full, 0, firstRing, ringStep, leaves, points);
+            Place(tree, tree.Root, startAngle - first / 2, startAngle - first / 2 + full, 0, firstRing, ringStep, leaves, mainChild, points);
             return points;
         }
 
@@ -62,10 +69,12 @@ namespace TpsDungeon.Progression
         }
 
         private static void Place(SoulUpgradeTree tree, string id, double from, double to, int depth, float firstRing, float ringStep,
-            Dictionary<string, int> leaves, Dictionary<string, Point> points)
+            Dictionary<string, int> leaves, Dictionary<string, string> mainChild, Dictionary<string, Point> points)
         {
             IReadOnlyList<string> kids = tree.Children(id);
             if (kids.Count == 0) return;
+            // 根の子は全周に並ぶので真ん中が無い。
+            if (depth > 0 && kids.Count > 2 && mainChild.TryGetValue(id, out string main)) kids = MainInTheMiddle(kids, main);
 
             int total = 0;
             foreach (string kid in kids) total += leaves[kid];
@@ -77,9 +86,21 @@ namespace TpsDungeon.Progression
                 double span = (to - from) * leaves[kid] / total;
                 double angle = at + span / 2;
                 points[kid] = new Point((float)(Math.Cos(angle) * radius), (float)(Math.Sin(angle) * radius), (float)angle);
-                Place(tree, kid, at, at + span, depth + 1, firstRing, ringStep, leaves, points);
+                Place(tree, kid, at, at + span, depth + 1, firstRing, ringStep, leaves, mainChild, points);
                 at += span;
             }
+        }
+
+        /// <summary>main を兄弟の真ん中へ移す。ほかの子の順は変えない。</summary>
+        private static List<string> MainInTheMiddle(IReadOnlyList<string> kids, string main)
+        {
+            var ordered = new List<string>(kids.Count);
+            foreach (string kid in kids)
+            {
+                if (kid != main) ordered.Add(kid);
+            }
+            ordered.Insert((kids.Count - 1) / 2, main);
+            return ordered;
         }
     }
 }
