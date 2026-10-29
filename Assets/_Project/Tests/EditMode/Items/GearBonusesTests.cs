@@ -118,10 +118,38 @@ namespace TpsDungeon.Items.Tests
         [Test]
         public void 受けるダメージは防御と防御力のエンチャントで減る()
         {
-            Assert.AreEqual(100f / 130f, GearBonuses.DamageTakenFor(30f, 0f), 1e-5f, "防御 30 で 100 / 130");
-            Assert.AreEqual(100f / 106f * 0.9f, GearBonuses.DamageTakenFor(6f, 0.1f), 1e-5f);
-            Assert.AreEqual(0.2f, GearBonuses.DamageTakenFor(0f, 5f), 1e-5f, "エンチャントで減らせるのは 80% まで");
-            Assert.AreEqual(1f, GearBonuses.DamageTakenFor(0f, 0f), 1e-5f);
+            Assert.AreEqual(100f / 130f, GearBonuses.DamageTakenFor(30f), 1e-5f, "防御 30 で 100 / 130");
+            Assert.AreEqual(1f, GearBonuses.DamageTakenFor(0f), 1e-5f);
+        }
+
+        [Test]
+        public void 防御力は自分と両隣の盾の合計()
+        {
+            var defenses = new[] { 10f, 0f, 30f, 18f };
+
+            Assert.AreEqual(10f, GearBonuses.WithNeighbors(defenses, 0), 1e-5f, "先頭は右隣だけ");
+            Assert.AreEqual(40f, GearBonuses.WithNeighbors(defenses, 1), 1e-5f, "盾が無くても両隣の分が付く");
+            Assert.AreEqual(48f, GearBonuses.WithNeighbors(defenses, 2), 1e-5f);
+            Assert.AreEqual(48f, GearBonuses.WithNeighbors(defenses, 3), 1e-5f, "最後は左隣だけ");
+            Assert.AreEqual(0f, GearBonuses.WithNeighbors(defenses, 4), 1e-5f, "並びの外");
+            Assert.AreEqual(7f, GearBonuses.WithNeighbors(new[] { 7f }, 0), 1e-5f, "1 人なら自分だけ");
+        }
+
+        [Test]
+        public void 防御力のエンチャントは盾の防御力を割合で上げ_オフハンドもそれで選ぶ()
+        {
+            Assert.AreEqual(11f, GearBonuses.Compute(new[] { Shield(10f, (EnchantmentKind.Defense, 0.1f)) }, true).ShieldDefense, 1e-5f,
+                "10 × (1 + 0.1) = 11");
+
+            var bonuses = GearBonuses.Compute(new[]
+            {
+                Shield(30f),
+                Shield(18f, (EnchantmentKind.Defense, 0.8f)),
+            }, true);
+
+            Assert.AreEqual(1, bonuses.OffHandShieldIndex, "18 × 1.8 = 32.4 で 30 より高い");
+            Assert.AreEqual(32.4f, bonuses.ShieldDefense, 1e-4f);
+            Assert.AreEqual(100f / 132.4f, bonuses.DamageTaken, 1e-5f);
         }
 
         [Test]

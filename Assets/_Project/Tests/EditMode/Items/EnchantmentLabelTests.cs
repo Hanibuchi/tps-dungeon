@@ -29,6 +29,7 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual("コンボボーナス +10%/段", EnchantmentLabel.Format(EnchantmentKind.ComboBonus, "コンボボーナス", 0.1f));
             Assert.AreEqual("ノックバック +4 m/s", EnchantmentLabel.Format(EnchantmentKind.Knockback, "ノックバック", 4f));
             Assert.AreEqual("自然回復 +1/秒", EnchantmentLabel.Format(EnchantmentKind.Regen, "自然回復", 1f));
+            Assert.AreEqual("鑑定 +2", EnchantmentLabel.Format(EnchantmentKind.Appraisal, "鑑定", 2f));
             Assert.AreEqual("爆発 40%（半径 2.5 m）", EnchantmentLabel.Format(EnchantmentKind.Explosion, "爆発", 0.4f, 2.5f));
             Assert.AreEqual("ホーミング", EnchantmentLabel.Format(EnchantmentKind.Homing, "ホーミング", 1f));
         }

@@ -74,7 +74,7 @@ namespace TpsDungeon.Items
         public string PromptLabel => lastInventory != null && !lastInventory.HasSpace ? fullLabel : pickupLabel;
 
         public string DetailTitle => Instance != null ? Instance.DisplayName : string.Empty;
-        public string DetailBody => Instance != null ? Instance.DetailText() : string.Empty;
+        public string DetailBody => Instance != null ? Instance.DetailTextForLeader() : string.Empty;
         public Texture2D DetailIcon => Instance != null ? Instance.Icon : null;
         public Color? DetailBackground => Instance != null && Instance.TryGetRankColor(out Color color) ? color : (Color?)null;
 

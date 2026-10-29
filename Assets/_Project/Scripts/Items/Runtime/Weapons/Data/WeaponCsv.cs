@@ -14,6 +14,7 @@ namespace TpsDungeon.Items
     ///   strength    … 強さ（0 以上）。意味は武器種による（近接・遠距離なら DPS）
     ///   name        … 画面に出す名前
     ///   description … 説明。空でよい
+    ///   price       … 売値のうち武器だけの金額（0 以上の整数）。列が無い・空なら 0。ランクとエンチャントの金額は SellPrices.csv
     /// 例: <c>Weapon_RustySword,OneHanded,E,5,錆びた片手剣,刃こぼれした古い剣。</c>
     /// , を含む欄は "…" で囲む（"" は " 1 つ）。改行は \n と書く。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
@@ -26,8 +27,9 @@ namespace TpsDungeon.Items
         public const string StrengthColumn = "strength";
         public const string NameColumn = "name";
         public const string DescriptionColumn = "description";
+        public const string PriceColumn = "price";
 
-        public const string Header = IdColumn + "," + TypeColumn + "," + RankColumn + "," + StrengthColumn + "," + NameColumn + "," + DescriptionColumn;
+        public const string Header = IdColumn + "," + TypeColumn + "," + RankColumn + "," + StrengthColumn + "," + NameColumn + "," + DescriptionColumn + "," + PriceColumn;
 
         private static readonly string[] RequiredColumns = { IdColumn, RankColumn, StrengthColumn, NameColumn, DescriptionColumn };
 
@@ -44,7 +46,10 @@ namespace TpsDungeon.Items
             public readonly string Name;
             public readonly string Description;
 
-            public Row(int line, string id, string type, WeaponRank rank, float strength, string name, string description)
+            /// <summary>売値のうち武器だけの金額。列が無い・空なら 0。</summary>
+            public readonly int Price;
+
+            public Row(int line, string id, string type, WeaponRank rank, float strength, string name, string description, int price = 0)
             {
                 Line = line;
                 Id = id;
@@ -53,6 +58,7 @@ namespace TpsDungeon.Items
                 Strength = strength;
                 Name = name;
                 Description = description;
+                Price = price;
             }
         }
 
@@ -106,6 +112,14 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
+                int price = 0;
+                string priceCell = Cell(PriceColumn);
+                if (priceCell.Length > 0 && (!int.TryParse(priceCell, NumberStyles.Integer, CultureInfo.InvariantCulture, out price) || price < 0))
+                {
+                    errors?.Add($"{line} 行目: {id} の売値は 0 以上の整数「{priceCell}」");
+                    continue;
+                }
+
                 string name = Cell(NameColumn);
                 if (name.Length == 0)
                 {
@@ -119,7 +133,7 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
-                rows.Add(new Row(line, id, Cell(TypeColumn), rank, strength, name, Cell(DescriptionColumn)));
+                rows.Add(new Row(line, id, Cell(TypeColumn), rank, strength, name, Cell(DescriptionColumn), price));
             }
 
             return rows;
@@ -137,7 +151,8 @@ namespace TpsDungeon.Items
                     .Append(RankCell(row.Rank)).Append(',')
                     .Append(row.Strength.ToString("0.###", CultureInfo.InvariantCulture)).Append(',')
                     .Append(Quote(row.Name)).Append(',')
-                    .Append(Quote(row.Description)).Append('\n');
+                    .Append(Quote(row.Description)).Append(',')
+                    .Append(row.Price.ToString(CultureInfo.InvariantCulture)).Append('\n');
             }
 
             return text.ToString();

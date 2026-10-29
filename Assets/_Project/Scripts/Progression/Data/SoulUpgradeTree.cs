@@ -145,6 +145,20 @@ namespace TpsDungeon.Progression
             return string.IsNullOrEmpty(node.parent) || (purchased != null && purchased.Contains(node.parent));
         }
 
+        /// <summary>見えている強化から何段先か。見えていれば 0、見えている強化のすぐ先なら 1。表に無ければ -1。</summary>
+        public int StepsBeyondVisible(string id, ICollection<string> purchased)
+        {
+            int steps = 0;
+            string at = id;
+            while (TryGet(at, out SoulUpgradeNode node))
+            {
+                if (IsVisible(at, purchased)) return steps;
+                steps++;
+                at = node.parent;
+            }
+            return -1;
+        }
+
         public SoulUpgradeCheck Check(string id, ICollection<string> purchased, long souls)
         {
             if (!TryGet(id, out SoulUpgradeNode node)) return SoulUpgradeCheck.Unknown;

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace TpsDungeon.Player
 {
@@ -63,7 +64,44 @@ namespace TpsDungeon.Player
         private void Update()
         {
             InputAction action = SprintAction;
-            sprint = action != null && action.enabled && action.IsPressed();
+            sprint = action != null && action.enabled && (TrustOsShift ? IsPressedWithOsShift(action) : action.IsPressed());
+        }
+
+        // macOS では、階の読み込みのようにフレームが長く止まると、Input System の Shift が押したまま離した扱いになり、
+        // そのあとの押す・離すが逆に届き続ける（押すと歩き、離すと走る）。OS に今の修飾キーの状態を直接聞けば逆にならないので、
+        // macOS ではダッシュの Shift だけそちらで見る。ほかのキーやパッドはそのまま読む。
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+        [System.Runtime.InteropServices.DllImport("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")]
+        private static extern ulong CGEventSourceFlagsState(int stateId);
+
+        // kCGEventSourceStateCombinedSessionState と、左右の Shift の印（NX_DEVICELSHIFTKEYMASK / NX_DEVICERSHIFTKEYMASK）。
+        private const int CombinedSessionState = 0;
+        private const ulong LeftShiftMask = 0x2;
+        private const ulong RightShiftMask = 0x4;
+
+        private const bool TrustOsShift = true;
+
+        private static bool OsShift(Key key)
+        {
+            ulong flags = CGEventSourceFlagsState(CombinedSessionState);
+            return (flags & (key == Key.LeftShift ? LeftShiftMask : RightShiftMask)) != 0;
+        }
+#else
+        private const bool TrustOsShift = false;
+
+        private static bool OsShift(Key key) => false;
+#endif
+
+        private bool IsPressedWithOsShift(InputAction action)
+        {
+            foreach (InputControl control in action.controls)
+            {
+                bool pressed = control is KeyControl key && (key.keyCode == Key.LeftShift || key.keyCode == Key.RightShift)
+                    ? OsShift(key.keyCode)
+                    : control.IsPressed();
+                if (pressed) return true;
+            }
+            return false;
         }
 
         // PlayerInput は OnEnable でアクションを用意し直すことがあるので、別のアセットのものになっていたら掴み直す。

@@ -11,12 +11,12 @@ vigor_4,体力増加 IV,vigor_3,10600000,max_hp,1.8,最大体力がさらに増�
 # --- 経験値 ---
 exp_rate_1,経験値増加 I,awaken,164000,exp_rate,1,得られる経験値が増える
 exp_rate_2,経験値増加 II,exp_rate_1,1140000,exp_rate,3,得られる経験値がより増える
-exp_rate_3,経験値増加 III,exp_rate_2,4690000,exp_rate,7,得られる経験値がもっと増える
-exp_rate_4,経験値増加 IV,exp_rate_3,13300000,exp_rate,15,得られる経験値がさらに増える
-bonus_1,経験値ボーナス I,exp_rate_1,98300,floor_clear_exp,10000,階の部屋を全部攻略すると経験値がもらえる
-bonus_2,経験値ボーナス II,bonus_1,685000,floor_clear_exp,30000,全部屋攻略でもらえる経験値が増える
-bonus_3,経験値ボーナス III,bonus_2,2810000,floor_clear_exp,60000,全部屋攻略でもらえる経験値がより増える
-bonus_4,経験値ボーナス IV,bonus_3,7960000,floor_clear_exp,100000,全部屋攻略でもらえる経験値がもっと増える
+exp_rate_3,経験値増加 III,exp_rate_2,4690000,exp_rate,6,得られる経験値がもっと増える
+exp_rate_4,経験値増加 IV,exp_rate_3,13300000,exp_rate,10,得られる経験値がさらに増える
+bonus_1,経験値ボーナス I,exp_rate_1,98300,floor_clear_exp,800,階の部屋を全部攻略すると経験値がもらえる
+bonus_2,経験値ボーナス II,bonus_1,685000,floor_clear_exp,3000,全部屋攻略でもらえる経験値が増える
+bonus_3,経験値ボーナス III,bonus_2,2810000,floor_clear_exp,9000,全部屋攻略でもらえる経験値がより増える
+bonus_4,経験値ボーナス IV,bonus_3,7960000,floor_clear_exp,20000,全部屋攻略でもらえる経験値がもっと増える
 # --- 戦い ---
 keen_1,クリティカル率増加 I,awaken,2400,crit_chance,0.05,クリティカル率が増加する
 keen_2,クリティカル率増加 II,keen_1,65500,crit_chance,0.1,クリティカル率がより増加する

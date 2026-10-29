@@ -270,6 +270,38 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void 実効DPSは叩きつけの段に数と追撃を掛け_爆発とクリティカルも入れる()
+        {
+            var motions = new[] { MeleeStepMotion.Swing, MeleeStepMotion.Swing, MeleeStepMotion.Swing, MeleeStepMotion.Slam };
+            MeleeWeaponStats plain = Compute(100f);
+            Assert.AreEqual(plain.AverageDps, plain.EffectiveDps(motions), 1e-3f, "数・多重・爆発が無ければ平均 DPS と同じ");
+
+            var totals = new EnchantmentTotals();
+            totals.Add(EnchantmentKind.ProjectileCount, 1f, 0f, 2);
+            totals.Add(EnchantmentKind.Multishot, 1f, 0f, 1);
+            totals.Add(EnchantmentKind.Explosion, 0.4f, 2.5f, 1);
+            MeleeWeaponStats stats = Compute(100f, totals);
+
+            // 1〜3 段目は 1 回、叩きつけの 4 段目は (1 + 2) × (1 + 1) = 6 回。どの 1 撃にも爆発が添う。
+            double sum = 0;
+            for (int i = 0; i < 3; i++) sum += stats.HitDamage(i) + stats.ExplosionDamage(stats.HitDamage(i));
+            sum += 6.0 * (stats.HitDamage(3) + stats.ExplosionDamage(stats.HitDamage(3)));
+            float crit = 1f + stats.CritChance * (stats.CritMultiplier - 1f);
+            Assert.AreEqual((float)(sum * crit / stats.CycleDuration), stats.EffectiveDps(motions), 1e-2f);
+        }
+
+        [Test]
+        public void 実効DPSは走る段に多重で走り足す分を掛け_延びた時間を1周に足す()
+        {
+            var motions = new[] { MeleeStepMotion.Lunge, MeleeStepMotion.Swing, MeleeStepMotion.Swing, MeleeStepMotion.Swing };
+            MeleeWeaponStats stats = Compute(100f, With(EnchantmentKind.Multishot, 1f, 1));
+
+            double sum = 2.0 * stats.HitDamage(0) + stats.HitDamage(1) + stats.HitDamage(2) + stats.HitDamage(3);
+            float crit = 1f + stats.CritChance * (stats.CritMultiplier - 1f);
+            Assert.AreEqual((float)(sum * crit / (stats.CycleDuration + 0.6f)), stats.EffectiveDps(motions, 0.6f), 1e-2f);
+        }
+
+        [Test]
         public void 数や多重の効果量が端数なら切り捨てる()
         {
             Assert.AreEqual(1, Compute(100f, With(EnchantmentKind.ProjectileCount, 0.5f, 3)).ExtraSlamCount);

@@ -131,6 +131,34 @@ namespace TpsDungeon.Items
             }
         }
 
+        /// <summary>
+        /// 鑑定で出す実効 DPS。クリティカルに加え、叩きつけの段は数で増える叩きつけと追撃、走る段は多重で走り足す分、
+        /// どの段にも爆発を、全部 1 体に当たるとして掛ける（コンボボーナスは含めない）。
+        /// motions は段ごとの当て方。extraSeconds は走る段が延びた時間の合計（秒、速射の補正前）で、1 周の時間に足す。
+        /// </summary>
+        public float EffectiveDps(IReadOnlyList<MeleeStepMotion> motions, float extraSeconds = 0f)
+        {
+            float cycle = CycleDuration + Math.Max(0f, extraSeconds) / AttackSpeed;
+            if (cycle <= 0f) return 0f;
+
+            double sum = 0;
+            for (int i = 0; i < rawHits.Length; i++)
+            {
+                MeleeStepMotion motion = motions != null && i < motions.Count ? motions[i] : MeleeStepMotion.Swing;
+                int strikes = motion switch
+                {
+                    MeleeStepMotion.Slam => (1 + ExtraSlamCount) * (1 + FollowUpCount),
+                    MeleeStepMotion.Lunge => 1 + FollowUpCount,
+                    _ => 1,
+                };
+                int hit = HitDamage(i);
+                sum += (double)(hit + ExplosionDamage(hit)) * strikes;
+            }
+
+            float critFactor = 1f + CritChance * (CritMultiplier - 1f);
+            return (float)(sum * critFactor / cycle);
+        }
+
         /// <summary>クリティカルを掛けた 1 撃。四捨五入、最低 1。</summary>
         public int ApplyCritical(int damage) => Math.Max(1, RoundToInt(damage * CritMultiplier));
 

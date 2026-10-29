@@ -155,6 +155,37 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void Layout_PutsTheNextRowInTheMiddleOfItsSiblings()
+        {
+            const string csv =
+                "id,name,parent,cost,effect,value,description\n" +
+                "root,根,,1,max_hp,0,\n" +
+                "b_1,B I,root,1,crit_chance,0.1,\n" +
+                "b_2,B II,b_1,1,crit_chance,0.2,\n" +
+                "c_1,C I,b_1,1,crit_multiplier,0.1,\n" +
+                "d_1,D I,b_1,1,bag_size,1,\n";
+            var tree = new SoulUpgradeTree(SoulUpgradeCsv.Parse(csv, null));
+            Dictionary<string, RadialTreeLayout.Point> points = RadialTreeLayout.Layout(tree);
+
+            // b_1 のすぐ次の行 b_2 は、表では先頭でも 3 つの真ん中に来る。
+            Assert.Less((points["c_1"].Angle - points["b_2"].Angle) * (points["d_1"].Angle - points["b_2"].Angle), 0f);
+        }
+
+        [Test]
+        public void StepsBeyondVisible_CountsFromTheNearestVisibleUpgrade()
+        {
+            var tree = new SoulUpgradeTree(SoulUpgradeCsv.Parse(Csv, null));
+            var purchased = new HashSet<string> { "root" };
+            Assert.AreEqual(0, tree.StepsBeyondVisible("root", purchased));
+            Assert.AreEqual(0, tree.StepsBeyondVisible("hp_1", purchased));
+            Assert.AreEqual(1, tree.StepsBeyondVisible("hp_2", purchased));
+            Assert.AreEqual(1, tree.StepsBeyondVisible("path_2", purchased));
+            purchased.Clear();
+            Assert.AreEqual(2, tree.StepsBeyondVisible("hp_2", purchased));
+            Assert.AreEqual(-1, tree.StepsBeyondVisible("none", purchased));
+        }
+
+        [Test]
         public void Layout_OfTheRealTableDoesNotOverlap()
         {
             string csv = File.ReadAllText("Assets/_Project/Settings/Tables/SoulUpgrades.csv");

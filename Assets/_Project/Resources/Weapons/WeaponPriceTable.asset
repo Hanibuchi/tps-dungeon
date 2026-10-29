@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ba8de220772b480a88efb18eafd45ec, type: 3}
+  m_Name: WeaponPriceTable
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.WeaponPriceTable
+  entries:
+  - rank: 0
+    weapon: 10
+    enchantment: 5
+  - rank: 1
+    weapon: 25
+    enchantment: 10
+  - rank: 2
+    weapon: 60
+    enchantment: 20
+  - rank: 3
+    weapon: 150
+    enchantment: 40
+  - rank: 4
+    weapon: 400
+    enchantment: 80
+  - rank: 5
+    weapon: 1000
+    enchantment: 160
+  - rank: 6
+    weapon: 2500
+    enchantment: 300

@@ -67,42 +67,42 @@ MonoBehaviour:
     parent: exp_rate_2
     cost: 4690000
     effect: 1
-    value: 7
+    value: 6
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3082\u3063\u3068\u5897\u3048\u308B"
   - id: exp_rate_4
     name: "\u7D4C\u9A13\u5024\u5897\u52A0 IV"
     parent: exp_rate_3
     cost: 13300000
     effect: 1
-    value: 15
+    value: 10
     description: "\u5F97\u3089\u308C\u308B\u7D4C\u9A13\u5024\u304C\u3055\u3089\u306B\u5897\u3048\u308B"
   - id: bonus_1
     name: "\u7D4C\u9A13\u5024\u30DC\u30FC\u30CA\u30B9 I"
     parent: exp_rate_1
     cost: 98300
     effect: 17
-    value: 10000
+    value: 800
     description: "\u968E\u306E\u90E8\u5C4B\u3092\u5168\u90E8\u653B\u7565\u3059\u308B\u3068\u7D4C\u9A13\u5024\u304C\u3082\u3089\u3048\u308B"
   - id: bonus_2
     name: "\u7D4C\u9A13\u5024\u30DC\u30FC\u30CA\u30B9 II"
     parent: bonus_1
     cost: 685000
     effect: 17
-    value: 30000
+    value: 3000
     description: "\u5168\u90E8\u5C4B\u653B\u7565\u3067\u3082\u3089\u3048\u308B\u7D4C\u9A13\u5024\u304C\u5897\u3048\u308B"
   - id: bonus_3
     name: "\u7D4C\u9A13\u5024\u30DC\u30FC\u30CA\u30B9 III"
     parent: bonus_2
     cost: 2810000
     effect: 17
-    value: 60000
+    value: 9000
     description: "\u5168\u90E8\u5C4B\u653B\u7565\u3067\u3082\u3089\u3048\u308B\u7D4C\u9A13\u5024\u304C\u3088\u308A\u5897\u3048\u308B"
   - id: bonus_4
     name: "\u7D4C\u9A13\u5024\u30DC\u30FC\u30CA\u30B9 IV"
     parent: bonus_3
     cost: 7960000
     effect: 17
-    value: 100000
+    value: 20000
     description: "\u5168\u90E8\u5C4B\u653B\u7565\u3067\u3082\u3089\u3048\u308B\u7D4C\u9A13\u5024\u304C\u3082\u3063\u3068\u5897\u3048\u308B"
   - id: keen_1
     name: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u5897\u52A0 I"

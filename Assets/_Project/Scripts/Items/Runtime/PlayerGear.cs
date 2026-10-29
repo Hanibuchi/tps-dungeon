@@ -12,7 +12,9 @@ namespace TpsDungeon.Items
     /// - 体力増加 → CharacterProgression.SetGearMaxHpPercent
     /// - 移動速度 → PlayerLocomotionSpeed.Multiplier
     /// - 経験値 → PartyProgression.GearExpBonus
-    /// - 自然回復・防御（盾） → PlayerHealth.RegenPerSecond / DamageTaken
+    /// - 自然回復 → PlayerHealth.RegenPerSecond
+    /// - 防御（盾） → PlayerHealth.DamageTaken。防御力は自分と並びの両隣（PartyRoster）の盾の合計（<see cref="Defense"/>）。
+    ///   倒れている人（HP 0）の盾は数えない。自分か隣の盾、並びが変わるたびに書き直す。
     /// クリティカル率・ドロップ増加・数・多重は、攻撃の実行役（MeleeAttacker / RangedAttacker）が数値を出すときに
     /// <see cref="CurrentBonuses"/> の WeaponTotals を手の武器のエンチャントに足す。
     /// 経験値だけはパーティーに 1 つなので、パーティーの先頭のときだけ書く。
@@ -23,6 +25,7 @@ namespace TpsDungeon.Items
     public sealed class PlayerGear : MonoBehaviour
     {
         private readonly List<GearSlot> slots = new List<GearSlot>(PlayerHotbar.SlotCount);
+        private static readonly List<float> rosterDefenses = new List<float>();
 
         private PlayerInventory inventory;
         private PlayerHotbar hotbar;
@@ -31,9 +34,13 @@ namespace TpsDungeon.Items
         private CharacterProgression progression;
         private PartyProgression party;
         private ItemInstance offHandShield;
+        private bool wasDead;
 
         /// <summary>最後に効かせた効果。</summary>
         public GearBonuses Bonuses { get; private set; } = GearBonuses.None;
+
+        /// <summary>自分と両隣の盾を合わせた防御力。受けるダメージはこれで決まる。</summary>
+        public float Defense { get; private set; }
 
         /// <summary>オフハンドに持っている盾（左手に持たせる）。無ければ null。選んでいる盾は手の物として MeleeAttacker が持たせる。</summary>
         public ItemInstance OffHandShield => offHandShield;
@@ -56,6 +63,9 @@ namespace TpsDungeon.Items
             if (inventory != null) inventory.Changed += OnInventoryChanged;
             if (hotbar != null) hotbar.Changed += OnHotbarChanged;
             PartyRoster.LeaderChanged += OnLeaderChanged;
+            PartyRoster.Changed += OnRosterChanged;
+            if (health != null) health.Changed += OnHealthChanged;
+            wasDead = health != null && health.IsDead;
             Refresh();
         }
 
@@ -64,6 +74,8 @@ namespace TpsDungeon.Items
             if (inventory != null) inventory.Changed -= OnInventoryChanged;
             if (hotbar != null) hotbar.Changed -= OnHotbarChanged;
             PartyRoster.LeaderChanged -= OnLeaderChanged;
+            PartyRoster.Changed -= OnRosterChanged;
+            if (health != null) health.Changed -= OnHealthChanged;
             Apply(GearBonuses.None, null);
         }
 
@@ -75,7 +87,30 @@ namespace TpsDungeon.Items
 
         private void OnInventoryChanged(PlayerInventory _) => Refresh();
 
+        // 並びが変われば隣が替わる。全員がそれぞれ自分の分を書き直す。
+        private void OnRosterChanged() => RefreshDefense();
+
+        // 倒れた・起きたで、隣に盾を貸すかが変わる。
+        private void OnHealthChanged(PlayerHealth _)
+        {
+            if (health.IsDead == wasDead) return;
+            wasDead = health.IsDead;
+            RefreshNeighborhood();
+        }
+
         private void OnHotbarChanged(PlayerHotbar _) => Refresh();
+
+        /// <summary>
+        /// 操作キャラ（パーティーの先頭）のお守りの鑑定の段（合計の切り捨て）。並びが無いシーンではシーンの持ち主を見る。
+        /// 武器の情報欄はこれで詳しい数値を出す（ItemInstance.DetailTextForLeader）。
+        /// </summary>
+        public static int LeaderAppraisal()
+        {
+            GameObject leader = PartyRoster.Leader;
+            PlayerGear gear = leader != null ? leader.GetComponent<PlayerGear>() : FindAnyObjectByType<PlayerGear>();
+            if (gear == null) return 0;
+            return (int)Math.Floor(gear.Bonuses.Totals.Amount(EnchantmentKind.Appraisal) + 0.0001f);
+        }
 
         /// <summary>
         /// 今のホットバーから効果を出す。持ち替えの通知の順番に左右されないよう、攻撃の実行役はこれを読む
@@ -115,11 +150,8 @@ namespace TpsDungeon.Items
             Bonuses = bonuses;
             offHandShield = shield;
 
-            if (health != null)
-            {
-                health.DamageTaken = bonuses.DamageTaken;
-                health.RegenPerSecond = bonuses.RegenPerSecond;
-            }
+            if (health != null) health.RegenPerSecond = bonuses.RegenPerSecond;
+            RefreshNeighborhood();
 
             if (locomotion != null) locomotion.Multiplier = 1f + bonuses.MoveSpeedPercent;
             if (progression != null) progression.SetGearMaxHpPercent(bonuses.MaxHpPercent);
@@ -129,6 +161,62 @@ namespace TpsDungeon.Items
             if (target != null && PartyRoster.IsLeader(gameObject)) target.GearExpBonus = bonuses.ExpPercent;
 
             Changed?.Invoke(this);
+        }
+
+        // 自分の盾は自分と両隣の防御力に入るので、3 人分を書き直す。
+        private void RefreshNeighborhood()
+        {
+            IReadOnlyList<GameObject> members = PartyRoster.Members;
+            int index = IndexIn(members);
+            if (index < 0)
+            {
+                RefreshDefense();
+                return;
+            }
+
+            for (int i = Mathf.Max(0, index - 1); i <= Mathf.Min(members.Count - 1, index + 1); i++)
+            {
+                if (members[i] != null && members[i].TryGetComponent(out PlayerGear gear)) gear.RefreshDefense();
+            }
+        }
+
+        /// <summary>自分と両隣の盾から防御力を出し直し、受けるダメージの倍率へ書く。並びに居なければ（1 人のテストなど）自分の盾だけ。</summary>
+        private void RefreshDefense()
+        {
+            IReadOnlyList<GameObject> members = PartyRoster.Members;
+            int index = IndexIn(members);
+            float defense;
+            if (index < 0)
+            {
+                defense = OwnDefense();
+            }
+            else
+            {
+                rosterDefenses.Clear();
+                foreach (GameObject member in members)
+                {
+                    rosterDefenses.Add(member != null && member.TryGetComponent(out PlayerGear gear) ? gear.OwnDefense() : 0f);
+                }
+                defense = GearBonuses.WithNeighbors(rosterDefenses, index);
+            }
+
+            if (Mathf.Approximately(defense, Defense) && health != null && Mathf.Approximately(health.DamageTaken, GearBonuses.DamageTakenFor(defense))) return;
+
+            Defense = defense;
+            if (health != null) health.DamageTaken = GearBonuses.DamageTakenFor(defense);
+            Changed?.Invoke(this);
+        }
+
+        // 隣へ貸す分。効いていない（無効・倒れている）なら 0。
+        private float OwnDefense() => isActiveAndEnabled && (health == null || !health.IsDead) ? Bonuses.ShieldDefense : 0f;
+
+        private int IndexIn(IReadOnlyList<GameObject> members)
+        {
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (members[i] == gameObject) return i;
+            }
+            return -1;
         }
     }
 }

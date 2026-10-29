@@ -23,6 +23,7 @@ namespace TpsDungeon.Items
                 case EnchantmentKind.ProjectileCount:
                 case EnchantmentKind.Pierce:
                 case EnchantmentKind.Multishot:
+                case EnchantmentKind.Appraisal:
                     return Signed(amount);
                 case EnchantmentKind.ChargeTimeDown:
                     return $"-{Number(amount * 100f)}%";
