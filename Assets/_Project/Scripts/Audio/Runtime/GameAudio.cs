@@ -24,6 +24,9 @@ namespace TpsDungeon.Audio.Runtime
         [SerializeField, Min(1), Tooltip("同時に鳴らせる SE の数。足りなくなると一番古い音を止めて使い回す。")]
         private int seVoiceCount = 8;
 
+        [SerializeField, Min(1), Tooltip("同時に鳴らせる足音の数。SE とは別に持つので、仲間が大勢歩いても戦闘の音を押し出さない。")]
+        private int footstepVoiceCount = 6;
+
         [SerializeField, Min(1), Tooltip("同時に鳴らせる UI の操作音の数。SE とは別に持つので、戦闘の音に押し出されない。")]
         private int uiVoiceCount = 4;
 
@@ -31,6 +34,8 @@ namespace TpsDungeon.Audio.Runtime
         private AudioSource[] seSources;
         private int activeBgmIndex;
         private int nextSeIndex;
+        private AudioSource[] footstepSources;
+        private int nextFootstepIndex;
         private AudioSource[] uiSources;
         private int nextUiIndex;
         private readonly float[] lastUiPlayed = new float[System.Enum.GetValues(typeof(UiSound)).Length];
@@ -199,6 +204,16 @@ namespace TpsDungeon.Audio.Runtime
             source.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
         }
 
+        /// <summary>足音・着地の音。SE と同じグループ（音量）へ流すが、音源は別に持つ。</summary>
+        public void PlayFootstepAt(AudioClip clip, Vector3 position, float volumeScale = 1f)
+        {
+            if (footstepSources == null || clip == null) return;
+            AudioSource source = Take(footstepSources, ref nextFootstepIndex);
+
+            source.transform.position = position;
+            source.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
+        }
+
         /// <summary>空いている音源を返す。全部埋まっていたら一番古いものを奪う。</summary>
         private AudioSource TakeSeSource()
         {
@@ -294,6 +309,17 @@ namespace TpsDungeon.Audio.Runtime
                 seSources[i].spatialBlend = 0f;
                 seSources[i].rolloffMode = AudioRolloffMode.Linear;
                 seSources[i].maxDistance = 30f;
+            }
+
+            footstepSources = new AudioSource[Mathf.Max(1, footstepVoiceCount)];
+            for (int i = 0; i < footstepSources.Length; i++)
+            {
+                footstepSources[i] = CreateSource("Footstep " + (i + 1), config.SeGroup);
+                footstepSources[i].loop = false;
+                footstepSources[i].volume = 1f;
+                footstepSources[i].spatialBlend = 1f;
+                footstepSources[i].rolloffMode = AudioRolloffMode.Linear;
+                footstepSources[i].maxDistance = 30f;
             }
 
             uiSources = new AudioSource[Mathf.Max(1, uiVoiceCount)];
