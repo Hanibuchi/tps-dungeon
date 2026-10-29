@@ -1,6 +1,7 @@
 using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Interaction;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TpsDungeon.Map.Runtime
 {
@@ -11,6 +12,7 @@ namespace TpsDungeon.Map.Runtime
     /// 扉板の当たり判定は閉じきっているときだけ効かせる。動いている扉板に押されたり引っかかったりしないように。
     /// 閉ざす（<see cref="Seal"/>）と、閉まりきるまでの間は閉じた扉板の位置に見えない壁を立てる。開いている途中から閉め終えるまで開口が素通しになり、
     /// モンスターハウスに閉じ込めた直後に外へ戻れてしまうため。
+    /// 開いている扉板は当たり判定が無くカメラがよけないので、カメラと操作キャラの間に入ったら半透明にする（影は残す。<see cref="HideLeavesBetween"/>）。
     /// 音は開け始めに開ける音、閉まりきったときに閉める音（「バタン」が頭にあるので、閉め始めではなく当たったときに鳴らす）。
     ///
     /// 枠も扉板も実寸（メートル）で作ってあり、どこもスケールしない。素材の模様の密度を壁と揃えるためと、
@@ -68,12 +70,33 @@ namespace TpsDungeon.Map.Runtime
 
         [SerializeField] private string lockedLabel = "閉ざされている";
 
+        [SerializeField, Range(0f, 1f), Tooltip("開いた扉板がカメラと操作キャラの間に入ったときの不透明度。")]
+        private float occludedAlpha = 0.25f;
+
+        [SerializeField, Min(0.01f), Tooltip("半透明になるまで・戻るまでにかける時間（秒）。")]
+        private float occludeFadeDuration = 0.2f;
+
         // 閉じたときに扉板の位置に誰かいないか調べる用。自分の枠や扉板も拾うので少し余裕を持たせる。
         private readonly Collider[] overlaps = new Collider[8];
 
         private BoxCollider[] leafColliders = System.Array.Empty<BoxCollider>();
         // 閉ざしてから閉まりきるまで、閉じた扉板の位置を塞ぐ見えない壁（扉板ごと）。Hinge の外に置くので回らない。
         private BoxCollider[] sealColliders = System.Array.Empty<BoxCollider>();
+        // 扉板の見た目。カメラとの間に入ったら元の材質を半透明の写し（初めて要るときに作る）へ差し替えて薄くし、戻りきったら元へ戻す。
+        private Renderer[] leafRenderers = System.Array.Empty<Renderer>();
+        private Material[][] opaqueMaterials = System.Array.Empty<Material[]>();
+        private Material[][] fadeMaterials;
+        private Color[][] fadeColors;
+        private float leafAlpha = 1f;
+        private bool usingFadeMaterials;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
+        private static readonly System.Collections.Generic.List<Door> Active = new System.Collections.Generic.List<Door>();
+
+        // カメラの半径と near clip の分だけ扉板の箱を広げて、かすめたときも消す（m）。
+        private const float CameraClearance = 0.25f;
+
         private bool isOpen;
         private bool closeSoundPending;
         private bool closePending;
@@ -157,6 +180,138 @@ namespace TpsDungeon.Map.Runtime
             }
             leafColliders = colliders.ToArray();
             sealColliders = seals.ToArray();
+
+            var renderers = new System.Collections.Generic.List<Renderer>();
+            if (leaf != null) renderers.AddRange(leaf.GetComponentsInChildren<Renderer>(true));
+            if (leafRight != null) renderers.AddRange(leafRight.GetComponentsInChildren<Renderer>(true));
+            leafRenderers = renderers.ToArray();
+            opaqueMaterials = System.Array.ConvertAll(leafRenderers, r => r.sharedMaterials);
+        }
+
+        private void OnEnable() => Active.Add(this);
+
+        private void OnDisable()
+        {
+            Active.Remove(this);
+            leafAlpha = 1f;
+            UseFadeMaterials(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (fadeMaterials == null) return;
+            foreach (var materials in fadeMaterials)
+            {
+                foreach (var m in materials)
+                {
+                    if (m != null) Destroy(m);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 閉じきっていない扉板のうち、target（カメラが追う点）からカメラまでの間に入っている物、カメラがめり込んでいる物を半透明へ寄せ、外れた物は不透明へ戻す。
+        /// カメラが動いたあと毎フレーム呼ぶ。閉じきった扉板は当たり判定がありカメラがよけるので薄くしない。
+        /// </summary>
+        public static void HideLeavesBetween(Vector3 camera, Vector3 target)
+        {
+            Vector3 toCamera = camera - target;
+            float distance = toCamera.magnitude;
+            var ray = new Ray(target, distance > 0.0001f ? toCamera / distance : Vector3.forward);
+            foreach (var door in Active)
+            {
+                bool hide = false;
+                if (door.isOpen || door.IsSwinging)
+                {
+                    foreach (var renderer in door.leafRenderers)
+                    {
+                        if (renderer == null) continue;
+                        Bounds bounds = renderer.bounds;
+                        bounds.Expand(CameraClearance * 2f);
+                        if (bounds.Contains(camera) || bounds.IntersectRay(ray, out float hit) && hit <= distance)
+                        {
+                            hide = true;
+                            break;
+                        }
+                    }
+                }
+
+                door.FadeLeaves(hide ? door.occludedAlpha : 1f);
+            }
+        }
+
+        private void FadeLeaves(float targetAlpha)
+        {
+            if (Mathf.Approximately(leafAlpha, targetAlpha)) return;
+
+            // 不透明 ⇔ 半透明を occludeFadeDuration 秒で動かす速さ。
+            float speed = Mathf.Max(1f - occludedAlpha, 0.01f) / occludeFadeDuration;
+            leafAlpha = Mathf.MoveTowards(leafAlpha, targetAlpha, speed * Time.deltaTime);
+            if (leafAlpha >= 1f)
+            {
+                UseFadeMaterials(false);
+                return;
+            }
+
+            UseFadeMaterials(true);
+            for (int i = 0; i < fadeMaterials.Length; i++)
+            {
+                for (int j = 0; j < fadeMaterials[i].Length; j++)
+                {
+                    if (fadeMaterials[i][j] == null) continue;
+                    Color c = fadeColors[i][j];
+                    c.a *= leafAlpha;
+                    fadeMaterials[i][j].SetColor(BaseColorId, c);
+                }
+            }
+        }
+
+        private void UseFadeMaterials(bool value)
+        {
+            if (usingFadeMaterials == value) return;
+            if (value && fadeMaterials == null) CreateFadeMaterials();
+            usingFadeMaterials = value;
+            for (int i = 0; i < leafRenderers.Length; i++)
+            {
+                if (leafRenderers[i] != null) leafRenderers[i].sharedMaterials = value ? fadeMaterials[i] : opaqueMaterials[i];
+            }
+        }
+
+        private void CreateFadeMaterials()
+        {
+            fadeMaterials = new Material[opaqueMaterials.Length][];
+            fadeColors = new Color[opaqueMaterials.Length][];
+            for (int i = 0; i < opaqueMaterials.Length; i++)
+            {
+                Material[] source = opaqueMaterials[i];
+                fadeMaterials[i] = new Material[source.Length];
+                fadeColors[i] = new Color[source.Length];
+                for (int j = 0; j < source.Length; j++)
+                {
+                    if (source[j] == null) continue;
+                    var m = new Material(source[j]) { name = source[j].name + " (Fade)" };
+                    MakeTransparent(m);
+                    fadeMaterials[i][j] = m;
+                    fadeColors[i][j] = m.HasProperty(BaseColorId) ? m.GetColor(BaseColorId) : Color.white;
+                }
+            }
+        }
+
+        /// <summary>URP Lit の材質を半透明（アルファで混ぜる）に切り替える。EnemyDeath.MakeTransparent と同じ（Map は Enemies を参照しないので写した）。</summary>
+        private static void MakeTransparent(Material m)
+        {
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
+            m.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_ZWrite", 0f);
+            m.SetFloat("_AlphaClip", 0f);
+            m.DisableKeyword("_ALPHATEST_ON");
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.renderQueue = (int)RenderQueue.Transparent;
         }
 
         /// <summary>
@@ -186,6 +341,10 @@ namespace TpsDungeon.Map.Runtime
                 if (seal != null) seal.enabled = value;
             }
         }
+
+        // ドメインリロードを切っているので、再生のたびに前回の扉を捨てる。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Active.Clear();
 
         private void Start()
         {

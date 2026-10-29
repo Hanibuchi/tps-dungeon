@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TpsDungeon.Items;
+using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -42,6 +43,12 @@ namespace TpsDungeon.Party
 
         [SerializeField, Tooltip("先頭を追うカメラ。未設定ならシーンから探す。")]
         private CinemachineCamera followCamera;
+
+        [SerializeField, Min(0f), Tooltip("カメラが壁に当たって寄るときにかける時間（秒）。大きくすると一瞬壁にめり込んで向こうが透ける。")]
+        private float cameraDampingIntoCollision = 0.1f;
+
+        [SerializeField, Min(0f), Tooltip("壁が無くなってカメラが元の距離へ戻るときにかける時間（秒）。0 だとドア枠を抜けるたびに一瞬で跳ぶ。")]
+        private float cameraDampingFromCollision = 0.6f;
 
         [SerializeField, Min(1f), Tooltip("先頭が 1 フレームでこれより大きく動いたら（階段・ワープ）、跡を作り直して全員を後ろへ呼び寄せる（m）。")]
         private float teleportDistance = 6f;
@@ -98,11 +105,13 @@ namespace TpsDungeon.Party
             Current = this;
             ApplyAll();
             FloorNavMesh.Baked += OnNavMeshBaked;
+            CinemachineCore.CameraUpdatedEvent.AddListener(OnCameraUpdated);
         }
 
         private void OnDisable()
         {
             FloorNavMesh.Baked -= OnNavMeshBaked;
+            CinemachineCore.CameraUpdatedEvent.RemoveListener(OnCameraUpdated);
             if (Current == this) Current = null;
             PartyRoster.Clear();
         }
@@ -421,6 +430,35 @@ namespace TpsDungeon.Party
             if (followCamera == null) followCamera = FindAnyObjectByType<CinemachineCamera>();
             Transform target = leader.CameraTarget;
             if (followCamera != null && target != null) followCamera.Target.TrackingTarget = target;
+            ApplyCameraDamping();
+        }
+
+        /// <summary>
+        /// カメラの壁よけの寄り・戻りの時間を入れる。カメラは Starter Assets のプレハブ（どちらも 0）をそのまま使うので、ここで上書きする。
+        /// </summary>
+        private void ApplyCameraDamping()
+        {
+            var follow = followCamera != null ? followCamera.GetComponent<CinemachineThirdPersonFollow>() : null;
+            if (follow == null) return;
+
+            follow.AvoidObstacles.DampingIntoCollision = cameraDampingIntoCollision;
+            follow.AvoidObstacles.DampingFromCollision = cameraDampingFromCollision;
+        }
+
+        // Brain がカメラを動かした直後。開いた扉板がカメラと先頭の間に入っていたら半透明にする（当たり判定が無いのでカメラがよけない）。
+        private void OnCameraUpdated(CinemachineBrain brain)
+        {
+            PartyMember leader = Leader;
+            Camera camera = brain != null ? brain.OutputCamera : null;
+            if (leader == null || camera == null) return;
+
+            Door.HideLeavesBetween(camera.transform.position, leader.CameraTarget.position);
+        }
+
+        // Play 中に Inspector で値を詰められるように。
+        private void OnValidate()
+        {
+            if (Application.isPlaying) ApplyCameraDamping();
         }
 
         /// <summary>position の近くの NavMesh 上の点。見つからなければ position のまま。</summary>
