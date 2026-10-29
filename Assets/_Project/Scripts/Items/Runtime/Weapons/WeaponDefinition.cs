@@ -21,6 +21,9 @@ namespace TpsDungeon.Items
 
         [SerializeField] private WeaponTypeDefinition weaponType;
 
+        [SerializeField, Min(0), Tooltip("売値のうち、この武器だけの金額。ランクとエンチャントのランクの金額（Settings/Tables/SellPrices.csv）を足したものが売値。正は CSV（Weapons.csv の price）。")]
+        private int basePrice;
+
         [SerializeField, Tooltip("手に持ったときの見た目（当たり判定の無いモデル）。未設定なら持たない。")]
         private GameObject heldModel;
 
@@ -42,6 +45,7 @@ namespace TpsDungeon.Items
         public WeaponRank Rank => rank;
         public float Strength => strength;
         public WeaponTypeDefinition WeaponType => weaponType;
+        public int BasePrice => basePrice;
         public GameObject HeldModel => heldModel;
         public float ThrownSpinRate => thrownSpinRate;
         public bool ThrownBounces => thrownBounces;
@@ -85,6 +89,36 @@ namespace TpsDungeon.Items
                 CritMultiplierModifier = critMultiplierModifier,
             });
         }
+
+        /// <summary>
+        /// 鑑定で出す、エンチャント enchantments 込みの実効 DPS（持ち主の基礎攻撃力・お守り・永続強化は入れない）。
+        /// 近接は走る段が持続時間と多重で延びる分も 1 周に入れる（MeleeAttacker の段の時間と同じ）。敵を傷つけない武器種では 0。
+        /// </summary>
+        public float EffectiveDps(EnchantmentTotals enchantments)
+        {
+            if (weaponType == null) return 0f;
+            if (weaponType.IsMelee)
+            {
+                MeleeWeaponStats stats = ComputeMeleeStats(enchantments, 0f);
+                var motions = new List<MeleeStepMotion>();
+                float extra = 0f;
+                foreach (MeleeComboStep step in weaponType.ComboSteps)
+                {
+                    motions.Add(step.motion);
+                    if (step.motion != MeleeStepMotion.Lunge) continue;
+                    float lunge = Mathf.Max(0f, step.lungeDuration) * stats.LungeTimeScale;
+                    extra += Mathf.Max(0f, step.lungeDuration * (stats.LungeTimeScale - 1f)) + stats.FollowUpCount * (Mathf.Max(0f, step.hitTime) + lunge);
+                }
+
+                return stats.EffectiveDps(motions, extra);
+            }
+
+            return weaponType.IsRanged ? ComputeRangedStats(enchantments, 0f).EffectiveDps : 0f;
+        }
+
+        /// <summary>鑑定で出す、エンチャント enchantments 込みの毎秒の回復量（治癒・治癒持続）。回復しない武器種では 0。</summary>
+        public float HealPerSecond(EnchantmentTotals enchantments) =>
+            weaponType != null && weaponType.IsRanged ? ComputeRangedStats(enchantments, 0f).HealPerSecond : 0f;
 
         /// <summary>
         /// 遠距離武器（弓・持続弓・杖・投擲・召喚・治癒持続・ダメージ軽減・治癒）の数値を出す。引数は <see cref="ComputeMeleeStats"/> と同じ。

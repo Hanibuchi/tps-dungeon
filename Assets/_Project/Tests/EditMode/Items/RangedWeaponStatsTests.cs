@@ -392,6 +392,36 @@ namespace TpsDungeon.Items.Tests
         }
 
         [Test]
+        public void 実効DPSは平均DPSに数と多重と爆発を掛ける()
+        {
+            Assert.AreEqual(Bow(100f).AverageDps, Bow(100f).EffectiveDps, 1e-3f);
+
+            var totals = new EnchantmentTotals();
+            totals.Add(EnchantmentKind.ProjectileCount, 1f, 0f, 2);
+            totals.Add(EnchantmentKind.Multishot, 1f, 0f, 1);
+            totals.Add(EnchantmentKind.Explosion, 0.4f, 2.5f, 1);
+            RangedWeaponStats stats = Bow(100f, totals);
+            Assert.AreEqual(stats.AverageDps * 3f * 2f * 1.4f, stats.EffectiveDps, 1e-2f);
+
+            Assert.AreEqual(0f, InstantHeal(25f).EffectiveDps, "敵を傷つけない武器種は 0");
+        }
+
+        [Test]
+        public void 回復の毎秒の量は治癒は人数と多重_治癒持続は場の合計と数と多重を撃つ間隔で割る()
+        {
+            Assert.AreEqual(25f * 3f / 3f, InstantHeal(25f).HealPerSecond, 1e-3f);
+            Assert.AreEqual(25f * 3f * 2f / 3f, InstantHeal(25f, With(EnchantmentKind.Multishot, 1f)).HealPerSecond, 1e-3f);
+
+            RangedWeaponStats field = Heal(30f);
+            Assert.AreEqual(field.HealPerField / 4f, field.HealPerSecond, 1e-3f);
+            RangedWeaponStats more = Heal(30f, With(EnchantmentKind.ProjectileCount, 1f, 1));
+            Assert.AreEqual(more.HealPerField * 2f / 4f, more.HealPerSecond, 1e-3f);
+
+            Assert.AreEqual(0f, Bow(100f).HealPerSecond);
+            Assert.AreEqual(0f, Summon().HealPerSecond);
+        }
+
+        [Test]
         public void 加護を張らない武器種では加護も治癒も0()
         {
             Assert.AreEqual(0f, Bow(100f).BlessingDuration);

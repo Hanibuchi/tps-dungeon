@@ -1,7 +1,7 @@
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// エンチャントの種類（ゲーム全体で 22 種）。値はアセットに焼き込まれるので並べ替えず、足すときは末尾に。
+    /// エンチャントの種類（ゲーム全体で 23 種）。値はアセットに焼き込まれるので並べ替えず、足すときは末尾に。
     /// どの武器種に付くかは武器種の定義（WeaponTypeDefinition）が持つ。
     /// </summary>
     public enum EnchantmentKind
@@ -28,5 +28,6 @@ namespace TpsDungeon.Items
         MaxHp = 19,
         Defense = 20,
         Regen = 21,
+        Appraisal = 22,
     }
 }

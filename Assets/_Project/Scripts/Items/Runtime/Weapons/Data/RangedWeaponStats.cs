@@ -235,6 +235,34 @@ namespace TpsDungeon.Items
             }
         }
 
+        /// <summary>
+        /// 鑑定で出す実効 DPS。<see cref="AverageDps"/> に、数で増える分・多重の一斉射・爆発を、全部 1 体に当たるとして掛ける
+        /// （雷の飛び移りも 1 本と数える）。敵を傷つけない武器種では 0。
+        /// </summary>
+        public float EffectiveDps
+        {
+            get
+            {
+                float explosion = ExplosionRadius > 0f ? ExplosionRatio : 0f;
+                return AverageDps * (1 + ExtraProjectiles) * (1 + MultishotCount) * (1f + explosion);
+            }
+        }
+
+        /// <summary>
+        /// 鑑定で出す毎秒の回復量（全部 1 人が受けるとして）。治癒は 1 人への回復量 × 人数 × (1 ＋ 多重)、
+        /// 治癒持続は 1 つの場の合計 × (1 ＋ 数) × (1 ＋ 多重) を撃つ間隔で割る。回復しない武器種では 0。
+        /// </summary>
+        public float HealPerSecond
+        {
+            get
+            {
+                if (FireInterval <= 0f) return 0f;
+                if (HealAmount > 0) return (float)HealAmount * TargetCount * (1 + MultishotCount) / FireInterval;
+                if (HealTickCount > 0) return (float)HealPerField * (1 + ExtraProjectiles) * (1 + MultishotCount) / FireInterval;
+                return 0f;
+            }
+        }
+
         /// <summary>クリティカルを掛けた 1 撃。四捨五入、最低 1。</summary>
         public int ApplyCritical(int damage) => Math.Max(1, RoundToInt(damage * CritMultiplier));
 

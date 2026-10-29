@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using TpsDungeon.Player;
+using TpsDungeon.Progression;
 using UnityEngine;
 
 namespace TpsDungeon.Items
@@ -134,13 +135,40 @@ namespace TpsDungeon.Items
         }
 
         /// <summary>
+        /// 武器の売値（<see cref="WeaponPrice"/>）。武器だけの金額に、武器のランクと付いたエンチャントそれぞれのランクの金額（<see cref="WeaponPriceTable"/>）を足し、
+        /// multiplier（永続強化の売値の上乗せ）を掛ける。table を渡さなければ <see cref="WeaponPriceTable.Default"/>。武器でなければ 0。
+        /// </summary>
+        public int SellPrice(float multiplier = 1f, WeaponPriceTable table = null)
+        {
+            WeaponDefinition weapon = Weapon;
+            if (weapon == null) return 0;
+
+            if (table == null) table = WeaponPriceTable.Default;
+            var enchantmentPrices = new List<int>();
+            foreach (EnchantmentStack stack in enchantments)
+            {
+                if (table != null && TryGetEnchantmentRank(stack, out WeaponRank rank)) enchantmentPrices.Add(table.EnchantmentPriceOf(rank));
+            }
+
+            return WeaponPrice.Compute(weapon.BasePrice, table != null ? table.WeaponPriceOf(weapon.Rank) : 0, enchantmentPrices, multiplier);
+        }
+
+        /// <summary>
+        /// 操作キャラ（パーティーの先頭）の鑑定の段（<see cref="PlayerGear.LeaderAppraisal"/>）と永続強化の売値の倍率で出す情報欄の本文。
+        /// 画面に出すときはこれを使う。
+        /// </summary>
+        public string DetailTextForLeader() => DetailText(PlayerGear.LeaderAppraisal(), MetaUpgrades.SellPriceMultiplier);
+
+        /// <summary>
         /// 情報欄の本文。武器なら「ランク」「攻撃力」「エンチャント」を説明の前に並べる。攻撃力は 1 発のダメージ（<see cref="HitDamage"/>）。
+        /// appraisal は鑑定の段。1 以上なら攻撃力の次にエンチャント込みの実効 DPS（回復の武器なら HPS。どちらも無い武器種は出さない）、
+        /// 2 以上なら売値（sellMultiplier を掛けた <see cref="SellPrice"/>）も出す。
         /// エンチャントは 1 行ずつそのランクの色で塗る（<see cref="TryGetEnchantmentRank"/>）。
         /// 盾は攻撃力の代わりに防御力を、治癒持続・治癒は回復量を、召喚はおとりの体力を、ダメージ軽減は加護の効き目を出し、お守りは強さを出さない。
         /// お守り・盾・召喚・治癒持続・ダメージ軽減・治癒は効き方を一行添える。
         /// ランクは表（<see cref="WeaponRankTable.Default"/>）があればその色で塗る（リッチテキスト）。
         /// </summary>
-        public string DetailText()
+        public string DetailText(int appraisal = 0, float sellMultiplier = 1f)
         {
             WeaponDefinition weapon = Weapon;
             if (weapon == null) return Definition.Description;
@@ -156,6 +184,8 @@ namespace TpsDungeon.Items
             else if (type != null && type.IsBuff) text.Append("\n").Append(BlessingText(weapon));
             else if (type != null && type.IsHeal) text.Append($"\n回復量 {weapon.Strength:0.#}");
             else if (type == null || !type.IsCharm) text.Append($"\n攻撃力 {HitDamage(weapon)}");
+            if (appraisal >= 1) AppendAppraisedRate(text, weapon);
+            if (appraisal >= 2) text.Append($"\n売値 {SellPrice(sellMultiplier)}");
 
             WeaponRankTable table = WeaponRankTable.Default;
             foreach (EnchantmentStack stack in enchantments)
@@ -176,6 +206,21 @@ namespace TpsDungeon.Items
             if (!string.IsNullOrEmpty(usage)) text.Append("\n\n").Append(usage);
             if (!string.IsNullOrEmpty(Definition.Description)) text.Append("\n\n").Append(Definition.Description);
             return text.ToString();
+        }
+
+        /// <summary>鑑定 1 の行。回復の武器なら実効 HPS、攻撃の武器なら実効 DPS。どちらも 0 なら出さない。</summary>
+        private void AppendAppraisedRate(StringBuilder text, WeaponDefinition weapon)
+        {
+            EnchantmentTotals totals = EnchantmentTotals();
+            float hps = weapon.HealPerSecond(totals);
+            if (hps > 0f)
+            {
+                text.Append($"\n実効 HPS {hps:0.#}");
+                return;
+            }
+
+            float dps = weapon.EffectiveDps(totals);
+            if (dps > 0f) text.Append($"\n実効 DPS {dps:0.#}");
         }
 
         /// <summary>

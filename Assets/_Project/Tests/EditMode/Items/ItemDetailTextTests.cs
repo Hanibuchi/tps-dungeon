@@ -52,7 +52,7 @@ namespace TpsDungeon.Items.Tests
             var slowBowType = ScriptableObject.CreateInstance<WeaponTypeDefinition>();
             try
             {
-                // 1 周 1.4 秒、比重 1:1:2。強さ（DPS）20 なら 1 周 28 で、1 段目は 28 × 1/4 = 7。
+                // 段 1.4 秒 ＋ コンボの待ち（既定 0.3 秒）で 1 周 1.7 秒、比重 1:1:2。強さ（DPS）20 なら 1 周 34 で、1 段目は 34 × 1/4 = 8.5 → 9。
                 typeof(WeaponTypeDefinition).GetField("comboSteps", Private).SetValue(swordType, new[]
                 {
                     new MeleeComboStep { damageWeight = 1f, duration = 0.4f },
@@ -72,7 +72,7 @@ namespace TpsDungeon.Items.Tests
                 typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(bow, bowType);
                 typeof(WeaponDefinition).GetField("weaponType", Private).SetValue(slowBow, slowBowType);
 
-                Assert.AreEqual("攻撃力 7", new ItemInstance(sword).DetailText().Split('\n')[1]);
+                Assert.AreEqual("攻撃力 9", new ItemInstance(sword).DetailText().Split('\n')[1]);
                 Assert.AreEqual("攻撃力 16", new ItemInstance(bow).DetailText().Split('\n')[1], "20 × 武器種の撃つ間隔 0.8");
                 Assert.AreEqual("攻撃力 30", new ItemInstance(slowBow).DetailText().Split('\n')[1], "20 × 撃つ間隔 1.5");
             }

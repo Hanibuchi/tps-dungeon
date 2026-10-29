@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TpsDungeon.Items.Editor
 {
     /// <summary>
-    /// 武器ごとの値の表（Settings/Tables/Weapons.csv）を、各武器（WeaponDefinition）のランク・強さ・名前・説明に書き込む。
+    /// 武器ごとの値の表（Settings/Tables/Weapons.csv）を、各武器（WeaponDefinition）のランク・強さ・名前・説明・売値に書き込む。
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。武器は id で引く。CSV に無い武器はそのまま。
     /// ランクを変えても見た目（ランクごとの型や色、ユニークの光）とアセットの名前は、生成器を回し直すまで前のまま。
     /// ユニークかどうかが変わったら、固定のエンチャント（ユニークだけに付く）も取り込み直す。
@@ -82,15 +82,17 @@ namespace TpsDungeon.Items.Editor
             SerializedProperty strength = serialized.FindProperty("strength");
             SerializedProperty displayName = serialized.FindProperty("displayName");
             SerializedProperty description = serialized.FindProperty("description");
+            SerializedProperty price = serialized.FindProperty("basePrice");
 
             int rankIndex = Array.IndexOf(Enum.GetValues(typeof(WeaponRank)), row.Rank);
             if (rank.enumValueIndex == rankIndex && Mathf.Approximately(strength.floatValue, row.Strength)
-                && displayName.stringValue == row.Name && description.stringValue == row.Description) return false;
+                && displayName.stringValue == row.Name && description.stringValue == row.Description && price.intValue == row.Price) return false;
 
             rank.enumValueIndex = rankIndex;
             strength.floatValue = row.Strength;
             displayName.stringValue = row.Name;
             description.stringValue = row.Description;
+            price.intValue = row.Price;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return true;
         }

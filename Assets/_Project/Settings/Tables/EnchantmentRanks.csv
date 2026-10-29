@@ -109,6 +109,7 @@ Charm,Multishot,,,,,1,2
 Charm,Exp,,,1,2,3,
 Charm,MaxHp,1,2,3,4,5,
 Charm,Regen,,,1,2,3,4
+Charm,Appraisal,,,1,,2,
 Shield,CritChance,1,2,3,4,5,
 Shield,DropUp,,,1,2,3,
 Shield,ProjectileCount,,,,,,1

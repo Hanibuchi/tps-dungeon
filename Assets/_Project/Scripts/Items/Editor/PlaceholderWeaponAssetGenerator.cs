@@ -219,11 +219,12 @@ namespace TpsDungeon.Items.Editor
         private sealed class WeaponSpec
         {
             public string Id;
-            // ランク・強さ・名前・説明は Weapons.csv が無いときに書き出す元で、正は CSV（Weapons() で上書きする）。
+            // ランク・強さ・名前・説明・売値は Weapons.csv が無いときに書き出す元で、正は CSV（Weapons() で上書きする）。
             public string Name;
             public WeaponRank Rank;
             public float Strength;
             public string Description;
+            public int Price;
             /// <summary>武器種（WeaponTypeDefinition のアセットのパス）。</summary>
             public string TypePath;
             /// <summary>見た目の素材のプレハブ（フルパス）。無ければプリミティブの剣で代える。</summary>
@@ -394,6 +395,7 @@ namespace TpsDungeon.Items.Editor
                     spec.Strength = row.Strength;
                     spec.Name = row.Name;
                     spec.Description = row.Description;
+                    spec.Price = row.Price;
                 }
 
                 yield return UniqueLook(spec);
@@ -438,7 +440,7 @@ namespace TpsDungeon.Items.Editor
 
             var rows = new List<WeaponCsv.Row>();
             foreach (WeaponSpec spec in WeaponList())
-                rows.Add(new WeaponCsv.Row(0, spec.Id, TypeIdOf(spec.TypePath), spec.Rank, spec.Strength, spec.Name, spec.Description));
+                rows.Add(new WeaponCsv.Row(0, spec.Id, TypeIdOf(spec.TypePath), spec.Rank, spec.Strength, spec.Name, spec.Description, spec.Price));
             rows.Add(new WeaponCsv.Row(0, FistsId, TypeIdOf(UnarmedTypePath), WeaponRank.E, FistsStrength, FistsName, FistsDescription));
 
             File.WriteAllText(WeaponCsvImporter.CsvPath, WeaponCsv.Format(rows));
@@ -972,6 +974,7 @@ namespace TpsDungeon.Items.Editor
                 (EnchantmentKind.MaxHp, "体力増加", 0.10f, 0f, "1 段ごとに、最大 HP が 10% 増える。"),
                 (EnchantmentKind.Defense, "防御力", 0.10f, 0f, "1 段ごとに、盾の防御力が 10% 上がる。"),
                 (EnchantmentKind.Regen, "自然回復", 1f, 0f, "1 段ごとに、HP が毎秒 1 ずつ回復する。"),
+                (EnchantmentKind.Appraisal, "鑑定", 1f, 0f, "操作キャラが持っていると、武器の情報欄に詳しい数値が出る。1 段で実効 DPS（回復なら HPS）、2 段で売値も。"),
             };
 
             var result = new Dictionary<EnchantmentKind, EnchantmentDefinition>();
@@ -1111,6 +1114,7 @@ namespace TpsDungeon.Items.Editor
             {
                 EnchantmentKind.MoveSpeed, EnchantmentKind.CritChance, EnchantmentKind.DropUp, EnchantmentKind.ProjectileCount,
                 EnchantmentKind.Multishot, EnchantmentKind.Exp, EnchantmentKind.MaxHp, EnchantmentKind.Regen,
+                EnchantmentKind.Appraisal,
             }, enchantments, roll); // 0 = CharacterAnimatorBuilder.Weapon.Unarmed
             WritePassiveGear(serialized, PassiveGear.Charm, false);
             // お守りは持っているだけの物なので、何も付かないと持つ意味が無い。必ず 1 つは付ける。
@@ -2693,6 +2697,7 @@ namespace TpsDungeon.Items.Editor
             serialized.FindProperty("worldPrefab").objectReferenceValue = pickup;
             serialized.FindProperty("rank").enumValueIndex = RankEnumIndex(spec.Rank);
             serialized.FindProperty("strength").floatValue = spec.Strength;
+            serialized.FindProperty("basePrice").intValue = spec.Price;
             serialized.FindProperty("weaponType").objectReferenceValue = type;
             serialized.FindProperty("heldModel").objectReferenceValue = held;
             serialized.FindProperty("thrownSpinRate").floatValue = spec.ThrownSpinRate;

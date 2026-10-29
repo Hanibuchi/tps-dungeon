@@ -259,7 +259,7 @@ namespace TpsDungeon.Menu.UI
             if (details == null) return;
             details.EnableInClassList("inventory__details--empty", item == null);
             if (detailsTitle != null) detailsTitle.text = item != null ? item.DisplayName : string.Empty;
-            if (detailsBody != null) detailsBody.text = item != null ? item.DetailText() : string.Empty;
+            if (detailsBody != null) detailsBody.text = item != null ? item.DetailTextForLeader() : string.Empty;
             if (detailsIcon != null)
             {
                 detailsIcon.style.backgroundImage = item != null && item.Icon != null

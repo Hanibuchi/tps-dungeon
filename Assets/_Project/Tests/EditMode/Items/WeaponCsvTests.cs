@@ -55,6 +55,29 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual("", rows[0].Type, "武器種も空でよい");
         }
 
+        [Test]
+        public void 売値の列は無くても空でもよく_0になる()
+        {
+            const string old = "id,type,rank,strength,name,description\nWeapon_A,,E,3,素手,\n";
+            List<WeaponCsv.Row> rows = WeaponCsv.Parse(old, new List<string>());
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual(0, rows[0].Price);
+
+            rows = WeaponCsv.Parse(WeaponCsv.Header + "\nWeapon_A,,E,3,素手,,\nWeapon_B,,C,3,剣,,250\n", new List<string>());
+            Assert.AreEqual(0, rows[0].Price);
+            Assert.AreEqual(250, rows[1].Price);
+        }
+
+        [Test]
+        public void 売値が負や小数なら行を飛ばしてエラーにする()
+        {
+            var errors = new List<string>();
+            List<WeaponCsv.Row> rows = WeaponCsv.Parse(WeaponCsv.Header + "\nWeapon_A,,E,3,素手,,-1\nWeapon_B,,E,3,剣,,1.5\n", errors);
+            Assert.IsEmpty(rows);
+            Assert.AreEqual(2, errors.Count);
+            StringAssert.Contains("売値", errors[0]);
+        }
+
         [TestCase("U", WeaponRank.Unique)]
         [TestCase("unique", WeaponRank.Unique)]
         [TestCase("s", WeaponRank.S)]
@@ -107,7 +130,7 @@ namespace TpsDungeon.Items.Tests
         {
             var written = new List<WeaponCsv.Row>
             {
-                new WeaponCsv.Row(0, "Weapon_A", "DashThrust", WeaponRank.Unique, 8.25f, "影,駆け", "「\"速い\"」\n二行目"),
+                new WeaponCsv.Row(0, "Weapon_A", "DashThrust", WeaponRank.Unique, 8.25f, "影,駆け", "「\"速い\"」\n二行目", 1200),
                 new WeaponCsv.Row(0, "Weapon_B", "Unarmed", WeaponRank.E, 3f, "素手", ""),
             };
 
@@ -116,7 +139,7 @@ namespace TpsDungeon.Items.Tests
             List<WeaponCsv.Row> rows = WeaponCsv.Parse(text, errors);
 
             StringAssert.StartsWith(WeaponCsv.Header + "\n", text);
-            StringAssert.Contains("Weapon_B,Unarmed,E,3,素手,\n", text);
+            StringAssert.Contains("Weapon_B,Unarmed,E,3,素手,,0\n", text);
             Assert.IsEmpty(errors);
             Assert.AreEqual(2, rows.Count);
             for (int i = 0; i < rows.Count; i++)
@@ -127,6 +150,7 @@ namespace TpsDungeon.Items.Tests
                 Assert.AreEqual(written[i].Strength, rows[i].Strength);
                 Assert.AreEqual(written[i].Name, rows[i].Name);
                 Assert.AreEqual(written[i].Description, rows[i].Description);
+                Assert.AreEqual(written[i].Price, rows[i].Price);
             }
         }
     }

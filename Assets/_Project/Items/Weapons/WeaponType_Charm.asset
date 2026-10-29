@@ -102,6 +102,12 @@ MonoBehaviour:
   - definition: {fileID: 11400000, guid: e713955dcbe5e48679852a593e2add05, type: 2}
     level: 4
     rank: 5
+  - definition: {fileID: 11400000, guid: 0ef5441a5cbc6405595e2b133f7f4f84, type: 2}
+    level: 1
+    rank: 2
+  - definition: {fileID: 11400000, guid: 0ef5441a5cbc6405595e2b133f7f4f84, type: 2}
+    level: 2
+    rank: 4
   enchantmentRoll: {fileID: 11400000, guid: ae4ff83fa4f7a4266a45b36745fd2a2c, type: 2}
   minEnchantments: 1
   characterAttackWeight: 1

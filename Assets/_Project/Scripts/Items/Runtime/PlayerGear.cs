@@ -101,6 +101,18 @@ namespace TpsDungeon.Items
         private void OnHotbarChanged(PlayerHotbar _) => Refresh();
 
         /// <summary>
+        /// 操作キャラ（パーティーの先頭）のお守りの鑑定の段（合計の切り捨て）。並びが無いシーンではシーンの持ち主を見る。
+        /// 武器の情報欄はこれで詳しい数値を出す（ItemInstance.DetailTextForLeader）。
+        /// </summary>
+        public static int LeaderAppraisal()
+        {
+            GameObject leader = PartyRoster.Leader;
+            PlayerGear gear = leader != null ? leader.GetComponent<PlayerGear>() : FindAnyObjectByType<PlayerGear>();
+            if (gear == null) return 0;
+            return (int)Math.Floor(gear.Bonuses.Totals.Amount(EnchantmentKind.Appraisal) + 0.0001f);
+        }
+
+        /// <summary>
         /// 今のホットバーから効果を出す。持ち替えの通知の順番に左右されないよう、攻撃の実行役はこれを読む
         /// （<see cref="Bonuses"/> はまだ出し直す前のことがある）。
         /// </summary>
