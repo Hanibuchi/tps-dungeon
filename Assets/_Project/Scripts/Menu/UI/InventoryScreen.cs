@@ -1137,7 +1137,7 @@ namespace TpsDungeon.Menu.UI
         private static string MemberDetailText(PartyMember member, int index)
         {
             var lines = new List<string>();
-            lines.Add(index == 0 ? "操作中（パーティーの先頭）" : $"列の {index + 1} 番目");
+            lines.Add(index == 0 ? "操作中" : $"列の {index + 1} 番目");
             if (member.Progression != null) lines.Add($"Lv {member.Progression.Level}");
             if (member.Health != null) lines.Add($"HP {member.Health.CurrentHp} / {member.Health.MaxHp}");
             if (member.Progression != null) lines.Add($"攻撃力 {member.Progression.BaseAttack:0.#}");
@@ -1147,7 +1147,9 @@ namespace TpsDungeon.Menu.UI
                 var gear = member.GetComponent<PlayerGear>();
                 float defense = gear != null ? gear.Defense : 0f;
                 int reduced = Mathf.RoundToInt((1f - member.Health.EffectiveDamageTaken) * 100f);
-                lines.Add(reduced > 0 ? $"防御力 {defense:0.#}（被ダメージ −{reduced}%）" : $"防御力 {defense:0.#}");
+                // 欄が狭く 1 行に並べると途中で折り返すので、被ダメージは次の行に分ける。
+                lines.Add($"防御力 {defense:0.#}");
+                if (reduced > 0) lines.Add($"被ダメージ −{reduced}%");
             }
             return string.Join("\n", lines);
         }
