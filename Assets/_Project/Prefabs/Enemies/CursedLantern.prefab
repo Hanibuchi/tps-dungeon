@@ -15,13 +15,13 @@ GameObject:
   - component: {fileID: 8095566003129583855}
   - component: {fileID: 3859361104688361733}
   - component: {fileID: 2403543796848323949}
+  - component: {fileID: 8189921760373245776}
+  - component: {fileID: 1583651556200981779}
   - component: {fileID: 478663117965459295}
   - component: {fileID: 3539796023849411636}
   - component: {fileID: 38489489320552757}
-  - component: {fileID: 1583651556200981779}
-  - component: {fileID: 8189921760373245776}
   m_Layer: 0
-  m_Name: Flying_Ghost
+  m_Name: CursedLantern
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 6
+  exp: 26
 --- !u!114 &2317861320831201543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 30
+  maxHp: 129
   immortal: 0
   prop: 0
 --- !u!114 &8095566003129583855
@@ -165,6 +165,33 @@ MonoBehaviour:
   corpseDelay: 2
   fadeDuration: 1.5
   fadeTemplate: {fileID: 2100000, guid: 5908f5acdfb3d42dbb8a216f5aea1d12, type: 2}
+--- !u!114 &8189921760373245776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
+  id: cursed_lantern
+--- !u!114 &1583651556200981779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353089085633950042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  scatter: 0.3
+  spawnLift: 0.3
 --- !u!195 &478663117965459295
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -223,7 +250,8 @@ MonoBehaviour:
   loseRadius: 22
   memoryTime: 5
   scanInterval: 0.2
-  damage: 8
+  retargetInterval: 1
+  damage: 14
   cooldown: 1.2
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: a037ebb461f374e5d82774212efaad53, type: 3}
@@ -237,35 +265,6 @@ MonoBehaviour:
   hitRadius: 1
   windup: 0.4
   recovery: 0.4
---- !u!114 &1583651556200981779
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5353089085633950042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
-  scatter: 0.3
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!114 &8189921760373245776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5353089085633950042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
-  id: ghost
 --- !u!1001 &7758115122663712730
 PrefabInstance:
   m_ObjectHideFlags: 0

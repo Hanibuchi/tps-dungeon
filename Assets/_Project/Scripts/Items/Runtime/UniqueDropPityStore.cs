@@ -30,12 +30,18 @@ namespace TpsDungeon.Items
 
         private static Dictionary<(string, string), int> counts;
 
-        /// <summary>敵の id を EnemyIdentity にする前は、プレハブのファイル名で数えていた。古い保存はこれで読み替える。</summary>
+        /// <summary>
+        /// 古い保存の敵の読み替え。敵の id を EnemyIdentity にする前はプレハブのファイル名で数えていた。
+        /// そのあと仮の 8 体を Notion「敵一覧」の敵に作り替えたので、そのときの id（pink_blob など）も今の id にする。
+        /// </summary>
         private static readonly Dictionary<string, string> LegacyEnemyIds = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "Blob_PinkBlob", "pink_blob" }, { "Blob_GreenBlob", "green_blob" }, { "Blob_Wizard", "wizard" },
-            { "Blob_Mushnub", "mushnub" }, { "Flying_Ghost", "ghost" }, { "Flying_Hywirl", "hywirl" },
-            { "Big_Frog", "frog" }, { "Big_Orc", "orc" },
+            { "Blob_PinkBlob", "lava_slime" }, { "Blob_GreenBlob", "poison_slime" }, { "Blob_Wizard", "skeleton_mage" },
+            { "Blob_Mushnub", "bomb_mushroom" }, { "Flying_Ghost", "cursed_lantern" }, { "Flying_Hywirl", "will_o_wisp" },
+            { "Big_Frog", "miasma_frog" }, { "Big_Orc", "goblin" },
+            { "pink_blob", "lava_slime" }, { "green_blob", "poison_slime" }, { "wizard", "skeleton_mage" },
+            { "mushnub", "bomb_mushroom" }, { "ghost", "cursed_lantern" }, { "hywirl", "will_o_wisp" },
+            { "frog", "miasma_frog" }, { "orc", "goblin" },
         };
 
         public static string DefaultPath => Path.Combine(Application.persistentDataPath, FileName);

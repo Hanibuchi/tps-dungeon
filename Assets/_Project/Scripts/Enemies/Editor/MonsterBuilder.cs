@@ -29,8 +29,9 @@ namespace TpsDungeon.Enemies.Editor
     /// 死んでいる間（Dead が true）は Dead を戻すまでどれも流れない。
     ///
     /// プレハブは「ルート（CapsuleCollider・EnemyHealth・EnemyDamageReaction・EnemyRagdoll・EnemyDeath・EnemyExpReward・
-    /// EnemyIdentity（id はモデル名の snake_case）・EnemyWeaponDrop・NavMeshAgent・EnemyMotor・敵種ごとの EnemyBrain）＋子の Model（FBX と Animator）」。
-    /// 足元がルートの原点、背丈はグループの <see cref="Group.Height"/> にそろえる。動きの付け方は <see cref="EnemyBehaviourSetup"/>。
+    /// EnemyIdentity（id はプレハブ名の snake_case）・EnemyWeaponDrop・NavMeshAgent・EnemyMotor・敵種ごとの EnemyBrain）＋子の Model（FBX と Animator）」。
+    /// プレハブ名は敵の名前（Goblin など、<see cref="Monsters"/>）。
+    /// 足元がルートの原点、背丈はグループの <see cref="Group.Height"/> に敵ごとの倍率を掛けた高さにそろえる。動きの付け方は <see cref="EnemyBehaviourSetup"/>。
     /// ルートモーションは使わない。
     ///
     /// 気絶で倒れ込むためのラグドールも骨に焼き込む（<see cref="Group.Ragdoll"/>）。
@@ -182,35 +183,170 @@ namespace TpsDungeon.Enemies.Editor
 
         private static readonly Group[] Groups = { Big, Flying, Blob };
 
+        private const string Arms = "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/";
+
         /// <summary>
-        /// プレハブにするモンスター。FBX のファイル名（拡張子なし）で足していけばよい。
-        /// hp は最大 HP（<see cref="EnemyHealth"/>）、exp は倒したときの経験値（<see cref="EnemyExpReward"/>）、
-        /// behaviour は敵種（Notion「敵種」の 01〜07）と、その動きの数（速さ・ダメージなど）。どれも 1 層を想定した仮の値。
+        /// 層ごとの強さの倍率（1 層 = 1）。どれもスプレッドシート「バランス」から取った仮の値。
+        /// HP と経験値は「攻撃力」シートの層ごとの標準総 DPS（154・359・660・1056・1502）の比、
+        /// ダメージは層のレベル帯の真ん中（Lv5・15・25・35・45）の MaxHP（<see cref="GrowthCurve.Default"/>）の比。
+        /// </summary>
+        private static readonly float[] HpScale = { 1f, 2.3f, 4.3f, 6.9f, 9.8f };
+        private static readonly float[] DamageScale = { 1f, 1.3f, 1.7f, 2f, 2.4f };
+
+        /// <summary>
+        /// 1 体ぶんの作り方。Name はプレハブ名で、id はその snake_case（<see cref="EnemyIdentitySetup.IdFromPrefabName"/>。GiantRat → giant_rat）。
+        /// Model は Group のフォルダの FBX のファイル名（拡張子なし）。Layer は出る層（Notion「敵一覧」の出現層）。
+        /// Hp は最大 HP（<see cref="EnemyHealth"/>）、Exp は倒したときの経験値（<see cref="EnemyExpReward"/>）、
+        /// Behaviour のダメージと合わせて 1 層での値で書き、<see cref="HpScale"/>・<see cref="DamageScale"/> で層の強さにする。
+        /// Size は背丈と当たり判定の太さの倍率（グループの <see cref="Group.Height"/>・<see cref="Group.Radius"/> に掛ける）。
+        /// </summary>
+        private sealed class Monster
+        {
+            public readonly string Name;
+            public readonly Group Group;
+            public readonly string Model;
+            public readonly int Layer;
+            public readonly int Hp;
+            public readonly int Exp;
+            public readonly float Size;
+            public readonly EnemyBehaviourSetup.Behaviour Behaviour;
+
+            public Monster(string name, Group group, string model, int layer, int hp, int exp,
+                EnemyBehaviourSetup.Behaviour behaviour, float size = 1f)
+            {
+                Name = name;
+                Group = group;
+                Model = model;
+                Layer = layer;
+                Hp = Mathf.RoundToInt(hp * HpScale[layer - 1]);
+                Exp = Mathf.RoundToInt(exp * HpScale[layer - 1]);
+                Size = size;
+                behaviour.Damage = Mathf.Max(1, Mathf.RoundToInt(behaviour.Damage * DamageScale[layer - 1]));
+                Behaviour = behaviour;
+            }
+
+            public string PrefabPath => $"{PrefabFolder}/{Name}.prefab";
+            public float Height => Group.Height * Size;
+            public float Radius => Group.Radius * Size;
+        }
+
+        /// <summary>
+        /// プレハブにするモンスター（Notion「敵一覧」の通常敵 20 体。ボスは別）。名前と見た目は揃っていなくてよい。
+        /// behaviour は敵種（Notion「敵種」の 01〜07）と、その動きの数（速さ・ダメージなど）。どれも仮の値。
+        /// 敵種によって使えるグループが決まる: 02 飛びつきは Duck・Jump_Land を流すので Big、04 自爆は Dance を流すので Blob、03・06 は Flying。
         /// 音は敵種ごとの既定に、気付いたときの声（noticeClip）などをモンスターごとに With で重ねる。
         /// </summary>
-        private static readonly (Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour)[] Monsters =
+        private static readonly Monster[] Monsters =
         {
+            // ---- 1 層 ----
             // 棍棒を振る（剣の素振り 1 は大剣を振る音）。重く当たる。
-            (Big, "Orc", 60, 12, EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")
-                .With("noticeClip", Voice + "ゴブリンの鳴き声2.mp3")
-                .With("attackClip", "Assets/ThirdParty/Sound/SoundEffect-Lab/Arms/剣の素振り1.mp3")
-                .With("hitClip", Voice + "打撃5.mp3")),
-            (Blob, "GreenBlob", 20, 3, EnemyBehaviourSetup.Melee(speed: 2.5f, damage: 6, range: 1.3f, hitRadius: 0.7f,
-                    hitColor: EnemyEffectsBuilder.FxColor.Green)
-                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
-            (Big, "Frog", 45, 10, EnemyBehaviourSetup.Leap(speed: 2.5f, damage: 15, leapRange: 6f)
-                .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")),
-            (Flying, "Ghost", 30, 6, EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 1.5f, damage: 8)
-                .With("noticeClip", Voice + "ゾンビの声1.mp3")),
-            (Blob, "PinkBlob", 15, 5, EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 3.5f)
-                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
-            (Blob, "Mushnub", 35, 8, EnemyBehaviourSetup.PoisonGas(speed: 1.5f, damage: 3, cloudRadius: 3f)
-                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
-            (Flying, "Hywirl", 25, 8, EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyEffectsBuilder.FxColor.Blue)
-                .With("noticeClip", Voice + "翼竜の鳴き声2.mp3")),
-            (Blob, "Wizard", 25, 8, EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyEffectsBuilder.FxColor.Pink)
-                .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+            new Monster("Goblin", Big, "Orc", 1, 40, 8,
+                EnemyBehaviourSetup.Melee(speed: 3f, damage: 10, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")
+                    .With("noticeClip", Voice + "ゴブリンの鳴き声2.mp3")
+                    .With("attackClip", Arms + "剣の素振り1.mp3")
+                    .With("hitClip", Voice + "打撃5.mp3")),
+            new Monster("GiantRat", Big, "Bunny", 1, 30, 7,
+                EnemyBehaviourSetup.Leap(speed: 3f, damage: 10, leapRange: 5f)
+                    .With("noticeClip", Voice + "ゴブリンの鳴き声3.mp3"), size: 0.7f),
+            new Monster("GiantBat", Flying, "Glub", 1, 25, 6,
+                EnemyBehaviourSetup.FloatingMelee(speed: 4f, hover: 1.5f, damage: 7)
+                    .With("noticeClip", Voice + "翼竜の鳴き声2.mp3")),
+            // 矢を射る。弓を引き絞って放つ音。
+            new Monster("GoblinArcher", Big, "Tribal", 1, 25, 8,
+                EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyEffectsBuilder.FxColor.Blue)
+                    .With("noticeClip", Voice + "ゴブリンの鳴き声2.mp3")
+                    .With("windupClip", Arms + "弓を引き絞る1.mp3")
+                    .With("attackClip", Arms + "弓矢を放つ.mp3")
+                    .With("hitClip", Arms + "弓矢が刺さる.mp3")),
+
+            // ---- 2 層 ----
+            new Monster("GoblinWarrior", Big, "Orc_Skull", 2, 60, 12,
+                EnemyBehaviourSetup.Melee(speed: 3f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")
+                    .With("noticeClip", Voice + "ゴブリンの鳴き声1.mp3")
+                    .With("attackClip", Arms + "剣の素振り1.mp3")
+                    .With("hitClip", Voice + "打撃5.mp3")),
+            new Monster("FangWolf", Big, "Dino", 2, 45, 10,
+                EnemyBehaviourSetup.Leap(speed: 3.5f, damage: 15, leapRange: 6f)
+                    .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")),
+            new Monster("WillOWisp", Flying, "Hywirl", 2, 25, 8,
+                EnemyBehaviourSetup.FloatingRanged(speed: 3f, hover: 1.7f, damage: 8, color: EnemyEffectsBuilder.FxColor.Blue)
+                    .With("noticeClip", Voice + "翼竜の鳴き声2.mp3")),
+            new Monster("BombMushroom", Blob, "Mushnub", 2, 15, 5,
+                EnemyBehaviourSetup.Bomber(speed: 3.5f, damage: 35, blastRadius: 3.5f)
+                    .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+
+            // ---- 3 層 ----
+            // 剣で斬る。
+            new Monster("SkeletonSwordsman", Big, "Ninja", 3, 60, 12,
+                EnemyBehaviourSetup.Melee(speed: 3.2f, damage: 12, range: 1.8f, hitRadius: 1f, attackAnimation: "Weapon")
+                    .With("noticeClip", Voice + "ゾンビの声1.mp3")
+                    .With("attackClip", Arms + "剣で斬る1.mp3")
+                    .With("hitClip", Arms + "刀で斬る5.mp3")),
+            new Monster("SkeletonMage", Blob, "Wizard", 3, 25, 8,
+                EnemyBehaviourSetup.Ranged(speed: 2.5f, damage: 8, color: EnemyEffectsBuilder.FxColor.Pink)
+                    .With("noticeClip", Voice + "ゾンビの声2.mp3")),
+            new Monster("CursedLantern", Flying, "Ghost", 3, 30, 6,
+                EnemyBehaviourSetup.FloatingMelee(speed: 3.5f, hover: 1.5f, damage: 8)
+                    .With("noticeClip", Voice + "ゾンビの声1.mp3")),
+            new Monster("PoisonSlime", Blob, "GreenBlob", 3, 35, 8,
+                EnemyBehaviourSetup.PoisonGas(speed: 1.8f, damage: 3, cloudRadius: 3f)
+                    .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+
+            // ---- 4 層 ----
+            new Monster("CaveGhoul", Big, "Monkroose", 4, 45, 10,
+                EnemyBehaviourSetup.Leap(speed: 3f, damage: 15, leapRange: 7f)
+                    .With("noticeClip", Voice + "ゾンビの声2.mp3")),
+            // 目がたくさんある。氷の弾を撃つ。
+            new Monster("StaringEye", Flying, "Glub_Evolved", 4, 25, 8,
+                EnemyBehaviourSetup.FloatingRanged(speed: 2.5f, hover: 2f, damage: 8, color: EnemyEffectsBuilder.FxColor.Pink)
+                    .With("noticeClip", Voice + "翼竜の鳴き声1.mp3")
+                    .With("attackClip", Arms + "氷魔法2.mp3")),
+            new Monster("MiasmaFrog", Big, "Frog", 4, 35, 8,
+                EnemyBehaviourSetup.PoisonGas(speed: 2f, damage: 3, cloudRadius: 3.5f)
+                    .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")),
+            new Monster("GunpowderGoblin", Blob, "Orc", 4, 15, 5,
+                EnemyBehaviourSetup.Bomber(speed: 4.5f, damage: 35, blastRadius: 4f)
+                    .With("noticeClip", Voice + "ゴブリンの鳴き声3.mp3")),
+
+            // ---- 5 層 ----
+            new Monster("Wraith", Flying, "Ghost_Skull", 5, 30, 6,
+                EnemyBehaviourSetup.FloatingMelee(speed: 4f, hover: 1.5f, damage: 8)
+                    .With("noticeClip", Voice + "ゾンビの断末魔.mp3")),
+            new Monster("LavaSlime", Blob, "PinkBlob", 5, 15, 5,
+                EnemyBehaviourSetup.Bomber(speed: 4f, damage: 35, blastRadius: 4f)
+                    .With("noticeClip", Voice + "スライムの攻撃.mp3")),
+            // 砲弾を撃つ。遅いが硬い。
+            new Monster("ArtilleryGolem", Big, "Yeti", 5, 40, 8,
+                EnemyBehaviourSetup.Ranged(speed: 2f, damage: 8, color: EnemyEffectsBuilder.FxColor.Pink)
+                    .With("noticeClip", Voice + "ドラゴンの鳴き声2.mp3")
+                    .With("attackClip", Arms + "爆発2.mp3"), size: 1.3f),
+            new Monster("RotTreant", Big, "MushroomKing", 5, 35, 8,
+                EnemyBehaviourSetup.PoisonGas(speed: 1.8f, damage: 3, cloudRadius: 4f)
+                    .With("noticeClip", Voice + "ゾンビの声2.mp3"), size: 1.15f),
         };
+
+        /// <summary>
+        /// 仮の 8 体から作り替えた敵（元のプレハブ名 → 今の名前）。名前だけ変えて GUID を保ち、シーンや草むらの表からの参照を切らない。
+        /// </summary>
+        private static readonly (string from, string to)[] Renames =
+        {
+            ("Big_Orc", "Goblin"), ("Blob_GreenBlob", "PoisonSlime"), ("Big_Frog", "MiasmaFrog"), ("Flying_Ghost", "CursedLantern"),
+            ("Blob_PinkBlob", "LavaSlime"), ("Blob_Mushnub", "BombMushroom"), ("Flying_Hywirl", "WillOWisp"), ("Blob_Wizard", "SkeletonMage"),
+        };
+
+        /// <summary>元の名前のプレハブが残っていて今の名前が無ければ、名前を変える。</summary>
+        private static void RenameLegacyPrefabs(List<string> log)
+        {
+            foreach (var (from, to) in Renames)
+            {
+                string oldPath = $"{PrefabFolder}/{from}.prefab";
+                string newPath = $"{PrefabFolder}/{to}.prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(oldPath) == null || AssetDatabase.LoadAssetAtPath<GameObject>(newPath) != null) continue;
+
+                string error = AssetDatabase.MoveAsset(oldPath, newPath);
+                log.Add(string.IsNullOrEmpty(error) ? $"名前を変えた: {from} → {to}" : $"名前を変えられなかった {from} → {to}: {error}");
+            }
+        }
 
         /// <summary>
         /// 作ってあるプレハブに、声・攻撃の音・攻撃の見た目だけを入れ直す（見た目のプレハブは作り直す。Animator も動きの数も作り直さない）。
@@ -226,10 +362,11 @@ namespace TpsDungeon.Enemies.Editor
         public static string ApplyPresentation()
         {
             var log = new List<string>();
+            RenameLegacyPrefabs(log);
             EnemyBehaviourSetup.WriteEffects(log);
-            foreach (var (group, model, _, _, behaviour) in Monsters)
+            foreach (Monster monster in Monsters)
             {
-                string path = $"{PrefabFolder}/{group.Name}_{model}.prefab";
+                string path = monster.PrefabPath;
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
                 {
                     log.Add($"飛ばした（プレハブが無い）: {path}");
@@ -239,8 +376,8 @@ namespace TpsDungeon.Enemies.Editor
                 GameObject root = PrefabUtility.LoadPrefabContents(path);
                 try
                 {
-                    WriteVoices(root, group, log);
-                    EnemyBehaviourSetup.WritePresentation(root, behaviour, log);
+                    WriteVoices(root, monster.Group, log);
+                    EnemyBehaviourSetup.WritePresentation(root, monster.Behaviour, log);
                     PrefabUtility.SaveAsPrefabAsset(root, path);
                     log.Add($"音と見た目を入れ直した: {path}");
                 }
@@ -278,6 +415,7 @@ namespace TpsDungeon.Enemies.Editor
             EnsureFolder(PrefabFolder);
 
             var log = new List<string>();
+            RenameLegacyPrefabs(log);
             var controllers = new Dictionary<Group, AnimatorController>();
             var referenceClips = new Dictionary<Group, string[]>();
             foreach (Group group in Groups)
@@ -294,18 +432,19 @@ namespace TpsDungeon.Enemies.Editor
             EnemyBehaviourSetup.WriteEffects(log);
 
 
-            foreach (var (group, model, hp, exp, behaviour) in Monsters)
+            foreach (Monster monster in Monsters)
             {
                 // 差し替えは名前で引くので、見本と同じ名前のクリップが全部そろっていないと骨組みの違う動きが残ってしまう。
-                string path = group.ModelPath(model);
+                Group group = monster.Group;
+                string path = group.ModelPath(monster.Model);
                 if (!TryLoadClips(path, referenceClips[group], out var clips, out string missing))
                 {
                     log.Add($"飛ばした {path}: {missing}");
                     continue;
                 }
-                var overrides = BuildOverride(group, model, controllers[group], clips);
-                log.Add($"プレハブ（{behaviour.Label}）: " + BuildPrefab(group, model, hp, exp, behaviour, overrides,
-                    clips[group.Locomotion[0].clip], log));
+                var overrides = BuildOverride(group, monster.Model, controllers[group], clips);
+                log.Add($"プレハブ（{monster.Layer} 層・{monster.Behaviour.Label}・HP {monster.Hp}・ダメージ {monster.Behaviour.Damage}）: " +
+                    BuildPrefab(monster, overrides, clips[group.Locomotion[0].clip], log));
             }
 
             AssetDatabase.SaveAssets();
@@ -486,18 +625,17 @@ namespace TpsDungeon.Enemies.Editor
 
         // ---- プレハブ ----
 
-        private static string BuildPrefab(Group group, string model, int hp, int exp, EnemyBehaviourSetup.Behaviour behaviour,
-            AnimatorOverrideController overrides, AnimationClip idle, List<string> log)
+        private static string BuildPrefab(Monster monster, AnimatorOverrideController overrides, AnimationClip idle, List<string> log)
         {
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(model));
-            string prefabName = $"{group.Name}_{model}";
-            string path = $"{PrefabFolder}/{prefabName}.prefab";
+            Group group = monster.Group;
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(group.ModelPath(monster.Model));
+            string path = monster.PrefabPath;
 
             // 背丈と足元は、待機の最初のポーズを取らせた使い捨ての複製で測る（プレハブに骨の上書きを残さないため）。
             Bounds pose = MeasurePose(source, idle);
-            float scale = group.Height / pose.size.y;
+            float scale = monster.Height / pose.size.y;
 
-            var root = new GameObject(prefabName);
+            var root = new GameObject(monster.Name);
             try
             {
                 var body = (GameObject)PrefabUtility.InstantiatePrefab(source, root.transform);
@@ -511,25 +649,25 @@ namespace TpsDungeon.Enemies.Editor
                 animator.applyRootMotion = false;
 
                 var capsule = root.AddComponent<CapsuleCollider>();
-                capsule.height = group.Height;
-                capsule.radius = group.Radius;
-                capsule.center = new Vector3(0f, group.Height / 2f, 0f);
+                capsule.height = monster.Height;
+                capsule.radius = monster.Radius;
+                capsule.center = new Vector3(0f, monster.Height / 2f, 0f);
 
                 var reward = new SerializedObject(root.AddComponent<EnemyExpReward>());
-                reward.FindProperty("exp").intValue = exp;
+                reward.FindProperty("exp").intValue = monster.Exp;
                 reward.ApplyModifiedPropertiesWithoutUndo();
 
                 var health = new SerializedObject(root.AddComponent<EnemyHealth>());
-                health.FindProperty("maxHp").intValue = hp;
+                health.FindProperty("maxHp").intValue = monster.Hp;
                 health.ApplyModifiedPropertiesWithoutUndo();
 
                 root.AddComponent<EnemyDamageReaction>();
-                BuildRagdoll(group, root, animator);
+                BuildRagdoll(group, root, animator, monster.Size);
                 EnemyDeathSetup.Assign(root.AddComponent<EnemyDeath>(), EnemyDeathSetup.EnsureFadeTemplate());
-                EnemyIdentitySetup.Assign(root.AddComponent<EnemyIdentity>(), EnemyIdentitySetup.IdFromPrefabName(prefabName));
+                EnemyIdentitySetup.Assign(root.AddComponent<EnemyIdentity>(), EnemyIdentitySetup.IdFromPrefabName(monster.Name));
                 root.AddComponent<EnemyWeaponDrop>();
                 WriteVoices(root, group, log);
-                EnemyBehaviourSetup.Assign(root, behaviour, group.Radius, group.Height, log);
+                EnemyBehaviourSetup.Assign(root, monster.Behaviour, monster.Radius, monster.Height, log);
 
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
@@ -540,8 +678,8 @@ namespace TpsDungeon.Enemies.Editor
             return path;
         }
 
-        /// <summary>骨に Rigidbody・コライダー・関節を付け、EnemyRagdoll に渡す。プレハブは原点・バインドポーズのまま測る。</summary>
-        private static void BuildRagdoll(Group group, GameObject root, Animator animator)
+        /// <summary>骨に Rigidbody・コライダー・関節を付け、EnemyRagdoll に渡す。プレハブは原点・バインドポーズのまま測る。size は敵の大きさの倍率。</summary>
+        private static void BuildRagdoll(Group group, GameObject root, Animator animator, float size)
         {
             var bones = animator.GetComponentsInChildren<Transform>()
                 .GroupBy(t => t.name)
@@ -549,12 +687,22 @@ namespace TpsDungeon.Enemies.Editor
             Transform Bone(string name) =>
                 bones.TryGetValue(name, out var t) ? t : throw new System.InvalidOperationException($"{group.Name}: 骨 {name} が無い");
 
+            // 同じグループでも、モデルによって骨が無いことがある（Bunny の Head_end、腕の無い Glub など）。
+            // 先の骨が無ければ自分の骨の先（名前_end）までにし、それも無ければ球にする。腰より先の骨そのものが無ければ、その骨から先を作らない。
+            Transform End(RagdollBone spec)
+            {
+                if (spec.End == null) return null;
+                if (bones.TryGetValue(spec.End, out var end)) return end;
+                return bones.TryGetValue(spec.Bone + "_end", out end) ? end : null;
+            }
+
             var bodies = new List<Rigidbody>();
             var byName = new Dictionary<string, Rigidbody>();
             foreach (RagdollBone spec in group.Ragdoll)
             {
+                if (spec.Parent != null && (!bones.ContainsKey(spec.Bone) || !byName.ContainsKey(spec.Parent))) continue;
                 Rigidbody parent = spec.Parent != null ? byName[spec.Parent] : null;
-                Rigidbody body = RagdollBaker.AddBone(Bone(spec.Bone), spec.End != null ? Bone(spec.End) : null, parent, spec.Radius, spec.Mass);
+                Rigidbody body = RagdollBaker.AddBone(Bone(spec.Bone), End(spec), parent, spec.Radius * size, spec.Mass);
                 bodies.Add(body);
                 byName[spec.Bone] = body;
             }

@@ -13,80 +13,203 @@ MonoBehaviour:
   m_Name: EnemyDropTable
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyDropTable
   enemies:
-  - enemyId: pink_blob
+  - enemyId: goblin
     rankChances:
-    - 0.06
+    - 0.07
     - 0.02
+    - 0.005
     - 0
+    - 0
+    - 0
+    uniques: []
+  - enemyId: giant_rat
+    rankChances:
+    - 0.091
+    - 0.026
+    - 0.0065
+    - 0
+    - 0
+    - 0
+    uniques: []
+  - enemyId: giant_bat
+    rankChances:
+    - 0.07
+    - 0.02
+    - 0.005
     - 0
     - 0
     - 0
     uniques:
+    - weapon: {fileID: 11400000, guid: 81d11e988339f46e9bb11c85e5162fb3, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: goblin_archer
+    rankChances:
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    - 0
+    - 0
+    uniques: []
+  - enemyId: goblin_warrior
+    rankChances:
+    - 0
+    - 0.091
+    - 0.026
+    - 0.0065
+    - 0
+    - 0
+    uniques: []
+  - enemyId: fang_wolf
+    rankChances:
+    - 0
+    - 0.091
+    - 0.026
+    - 0.0065
+    - 0
+    - 0
+    uniques: []
+  - enemyId: will_o_wisp
+    rankChances:
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    - 0
+    uniques:
+    - weapon: {fileID: 11400000, guid: fdead3b434fa540aa96e3d4b05ab7c9a, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: bomb_mushroom
+    rankChances:
+    - 0
+    - 0.049
+    - 0.014
+    - 0.0035
+    - 0
+    - 0
+    uniques: []
+  - enemyId: skeleton_swordsman
+    rankChances:
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    uniques:
+    - weapon: {fileID: 11400000, guid: 7d27d42ab1fa64dab966a6221d8dee44, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: skeleton_mage
+    rankChances:
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    uniques: []
+  - enemyId: cursed_lantern
+    rankChances:
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    uniques: []
+  - enemyId: poison_slime
+    rankChances:
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    - 0
+    uniques: []
+  - enemyId: cave_ghoul
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0.091
+    - 0.026
+    - 0.0065
+    uniques: []
+  - enemyId: staring_eye
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    uniques:
+    - weapon: {fileID: 11400000, guid: 13781802c9c3c4bcb97ad793b19e8ad9, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: miasma_frog
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0.07
+    - 0.02
+    - 0.005
+    uniques: []
+  - enemyId: gunpowder_goblin
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0.049
+    - 0.014
+    - 0.0035
+    uniques: []
+  - enemyId: wraith
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.08
+    - 0.02
+    uniques:
+    - weapon: {fileID: 11400000, guid: fc732e9d2885e4573a655a997f861d61, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: lava_slime
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.056
+    - 0.014
+    uniques:
     - weapon: {fileID: 11400000, guid: 2fe0862d885e449d98ee7e06ebc2ea32, type: 2}
       chance: 0.01
       pity: 600
-  - enemyId: green_blob
+  - enemyId: artillery_golem
     rankChances:
+    - 0
+    - 0
+    - 0
+    - 0
     - 0.08
-    - 0.03
-    - 0.01
-    - 0
-    - 0
-    - 0
-    uniques: []
-  - enemyId: hywirl
-    rankChances:
-    - 0.08
-    - 0.04
-    - 0.015
-    - 0.005
-    - 0
-    - 0
-    uniques: []
-  - enemyId: wizard
-    rankChances:
-    - 0.08
-    - 0.04
-    - 0.015
-    - 0.005
-    - 0
-    - 0
-    uniques: []
-  - enemyId: ghost
-    rankChances:
-    - 0.08
-    - 0.04
-    - 0.015
-    - 0.005
-    - 0
-    - 0
-    uniques: []
-  - enemyId: mushnub
-    rankChances:
-    - 0.09
-    - 0.05
     - 0.02
-    - 0.007
-    - 0
-    - 0
     uniques: []
-  - enemyId: frog
+  - enemyId: rot_treant
     rankChances:
-    - 0.1
-    - 0.06
-    - 0.03
-    - 0.01
-    - 0.003
     - 0
-    uniques: []
-  - enemyId: orc
-    rankChances:
-    - 0.1
-    - 0.06
-    - 0.03
-    - 0.015
-    - 0.005
-    - 0.001
+    - 0
+    - 0
+    - 0
+    - 0.08
+    - 0.02
     uniques: []
   droppableWeapons:
   - {fileID: 11400000, guid: bf1199cee85bb4369bde7a0ce10b706d, type: 2}

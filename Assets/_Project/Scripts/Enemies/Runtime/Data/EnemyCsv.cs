@@ -10,7 +10,7 @@ namespace TpsDungeon.Enemies
     ///   id     … 敵の id（EnemyIdentity の id。小文字の英字・数字・_）
     ///   cost   … 部屋に出すときの 1 体あたりのコスト（部屋の予算からこの分を使う）。layers が空なら空でよい
     ///   layers … 部屋に出る層。<c>1-5</c>・<c>1;3</c>・<c>2-3;5</c> の形。空なら部屋には出ない
-    /// 例: <c>pink_blob,1,1-5</c>
+    /// 例: <c>goblin,2,1</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class EnemyCsv
