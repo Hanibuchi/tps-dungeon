@@ -86,6 +86,66 @@ namespace TpsDungeon.Enemies.Tests
             StringAssert.Contains("layers", errors[0]);
         }
 
+        [Test]
+        public void 強さの列を読み_空欄はnullにする()
+        {
+            const string text =
+                "id,cost,layers,hp,damage,move_speed,attack_interval,windup,attack_range,area_radius,detect_range,exp\n" +
+                "goblin,2,1,40,10,3,1.4,0.5,1.8,,14,8\n" +
+                "lava_slime,1,5,147,84,4,,3,2.2,4,14,49\n";
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse(text, errors);
+
+            Assert.IsEmpty(errors);
+            EnemyCsv.Stats goblin = rows[0].Stats;
+            Assert.AreEqual(40, goblin.Hp);
+            Assert.AreEqual(10, goblin.Damage);
+            Assert.AreEqual(3f, goblin.MoveSpeed);
+            Assert.AreEqual(1.4f, goblin.AttackInterval);
+            Assert.AreEqual(0.5f, goblin.Windup);
+            Assert.AreEqual(1.8f, goblin.AttackRange);
+            Assert.IsNull(goblin.AreaRadius);
+            Assert.AreEqual(14f, goblin.DetectRange);
+            Assert.AreEqual(8, goblin.Exp);
+
+            EnemyCsv.Stats slime = rows[1].Stats;
+            Assert.IsNull(slime.AttackInterval);
+            Assert.AreEqual(4f, slime.AreaRadius);
+        }
+
+        [Test]
+        public void 強さの列が無ければ全部null()
+        {
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse("id,cost,layers\ngoblin,2,1\n", errors);
+
+            Assert.IsEmpty(errors);
+            Assert.IsNull(rows[0].Stats.Hp);
+            Assert.IsNull(rows[0].Stats.MoveSpeed);
+            Assert.IsNull(rows[0].Stats.Exp);
+        }
+
+        [Test]
+        public void 強さが読めない行はエラーに積んで飛ばす()
+        {
+            const string text =
+                "id,cost,layers,hp,damage,move_speed,exp\n" +
+                "ok,1,1,40,10,3,8\n" +
+                "a,1,1,0,10,3,8\n" +     // hp は 1 以上
+                "b,1,1,40,-1,3,8\n" +    // ダメージが負
+                "c,1,1,40,10,abc,8\n" +  // 数でない
+                "d,1,1,40.5,10,3,8\n" +  // hp は整数
+                "e,1,1,40,10,0,8\n";     // 速さが 0
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse(text, errors);
+
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual("ok", rows[0].Id);
+            Assert.AreEqual(5, errors.Count, string.Join("\n", errors));
+            StringAssert.StartsWith("3 行目: a の hp", errors[0]);
+            StringAssert.Contains("move_speed", errors[2]);
+        }
+
         [TestCase("", new int[0])]
         [TestCase("2", new[] { 2 })]
         [TestCase("1-3", new[] { 1, 2, 3 })]

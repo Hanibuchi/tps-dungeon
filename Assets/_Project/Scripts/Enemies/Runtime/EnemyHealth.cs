@@ -8,7 +8,7 @@ namespace TpsDungeon.Enemies
     /// 敵の体力。ダメージを受けて減らし、受けたことと倒れたことを知らせるだけ。
     /// ひるみ・気絶は EnemyDamageReaction、倒れたあとの始末は EnemyDeath が受け持つ。
     /// 有効な間だけ <see cref="All"/> に載る（狙う相手を探すときに、当たり判定を集めずに引けるように）。
-    /// 敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
+    /// 敵のプレハブのルートに付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Health")]
@@ -16,7 +16,7 @@ namespace TpsDungeon.Enemies
     {
         private static readonly List<EnemyHealth> all = new List<EnemyHealth>();
 
-        [SerializeField, Min(1), Tooltip("最大 HP。値は仮。")]
+        [SerializeField, Min(1), Tooltip("最大 HP。敵は Enemies.csv の hp 列から入る。")]
         private int maxHp = 30;
 
         [SerializeField, Tooltip("デバッグ用。倒れず、HP が尽きる一撃を受けたら満タンに戻る。スタン・気絶・ノックバックを好きな最大 HP で試すときに使う。")]

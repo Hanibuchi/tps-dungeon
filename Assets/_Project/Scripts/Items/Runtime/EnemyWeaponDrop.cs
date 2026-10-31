@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// 倒れた敵が武器を落とす。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
+    /// 倒れた敵が武器を落とす。敵のプレハブのルートに付ける。
     /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の、敵の id（<see cref="EnemyIdentity"/>）の行で決める（<see cref="WeaponDropRoller"/>）。
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）と、魂の強化のドロップ率（ユニークはユニークの分も）が掛かる。

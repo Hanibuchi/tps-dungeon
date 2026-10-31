@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TpsDungeon.Enemies
 {
     /// <summary>
-    /// 敵の id（lava_slime など）。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
+    /// 敵の id（lava_slime など）。敵のプレハブのルートに付ける。
     /// 敵の台帳（Enemies.csv）・武器のドロップ表（EnemyWeaponDrops.csv など）は、どれもこの id で敵を書く。
     /// </summary>
     [DisallowMultipleComponent]

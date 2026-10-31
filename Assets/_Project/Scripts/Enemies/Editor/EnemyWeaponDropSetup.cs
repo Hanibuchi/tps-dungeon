@@ -6,7 +6,7 @@ namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
     /// 敵のプレハブに武器のドロップ（EnemyWeaponDrop）と、ドロップ表で引く id（EnemyIdentity）を付ける。何度実行しても同じ結果になる。
-    /// MonsterBuilder で作り直したプレハブには MonsterBuilder が付けるので、既存のプレハブを直すときだけ使う。
+    /// 敵のプレハブを足したときに使う。
     /// </summary>
     public static class EnemyWeaponDropSetup
     {

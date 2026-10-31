@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
-    /// 骨に Rigidbody・カプセル・関節を付ける（<see cref="EnemyRagdoll"/> が倒れ込みに使う）。敵（MonsterBuilder）とパーティーのキャラ（PartySetup）で使う。
+    /// 骨に Rigidbody・カプセル・関節を付ける（<see cref="EnemyRagdoll"/> が倒れ込みに使う）。パーティーのキャラ（PartySetup）で使う（敵のプレハブには焼き込み済み）。
     /// 普段は kinematic でコライダーも切っておき、倒れるときに EnemyRagdoll が物理へ切り替える。
     /// プレハブは原点・バインドポーズのまま測る。
     /// </summary>

@@ -11,7 +11,7 @@ namespace TpsDungeon.Enemies
     ///   近すぎる → 相手から離れる向きへ下がる（見えていれば撃つ）
     /// 弾（<see cref="EnemyProjectile"/>）は溜め終わりの相手の胸へまっすぐ撃つ。先読みはしないので、動いていれば避けられる。
     /// 溜めの間のスタン・気絶で取り消す。
-    /// MonsterBuilder がプレハブのルートに付ける。
+    /// 敵のプレハブのルートに付ける。強さの値は Enemies.csv から入る（EnemyStatsWriter）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Ranged)")]

@@ -6,7 +6,7 @@ namespace TpsDungeon.Enemies
     /// <summary>
     /// 気絶したときに体を物理に任せて倒れ込ませ、起き上がるときにアニメーションへ戻す。
     ///
-    /// 骨の Rigidbody・コライダー・CharacterJoint は MonsterBuilder がプレハブに焼き込む（<see cref="bodies"/> の先頭が腰）。
+    /// 骨の Rigidbody・コライダー・CharacterJoint はプレハブに焼き込んである（<see cref="bodies"/> の先頭が腰）。
     /// 普段は全部 kinematic でコライダーも切っておき、当たり判定はルートの CapsuleCollider が受け持つ。
     ///
     /// 起き上がりは、腰の真下の床へルートを移してから Animator を戻し、
@@ -66,7 +66,7 @@ namespace TpsDungeon.Enemies
 
         public IReadOnlyList<Rigidbody> Bodies => bodies;
 
-        /// <summary>MonsterBuilder から骨を渡す。</summary>
+        /// <summary>骨を焼き込むときに渡す。</summary>
         public void Configure(Animator animator, Rigidbody[] bodies, Transform[] followers, Transform[] followTargets)
         {
             this.animator = animator;

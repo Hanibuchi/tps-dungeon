@@ -21,7 +21,7 @@ namespace TpsDungeon.Enemies
     [RequireComponent(typeof(EnemyHealth))]
     public abstract class EnemyBrain : MonoBehaviour
     {
-        // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
+        // 敵の Animator（Animation/Enemy の *Monster.controller）のパラメータ名。コントローラを変えたらここも揃えること。
         protected const string AttackParam = "Attack";
 
         /// <summary>気付いたときの鳴き声を、続けて鳴らさない間（秒）。</summary>

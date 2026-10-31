@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TpsDungeon.Progression
 {
     /// <summary>
-    /// 倒したときにパーティがもらえる経験値。敵のプレハブのルートに付ける（MonsterBuilder が付ける）。
+    /// 倒したときにパーティがもらえる経験値。敵のプレハブのルートに付ける。
     /// 倒れたときに EnemyDeath が <see cref="Grant()"/> を呼ぶ。
     /// 経験値倍率は PartyProgression 側で掛かる。
     /// </summary>
@@ -11,7 +11,7 @@ namespace TpsDungeon.Progression
     [AddComponentMenu("TPS Dungeon/Enemy Exp Reward")]
     public sealed class EnemyExpReward : MonoBehaviour
     {
-        [SerializeField, Min(0), Tooltip("倒したときの経験値（倍率を掛ける前）。値は仮。")]
+        [SerializeField, Min(0), Tooltip("倒したときの経験値（倍率を掛ける前）。敵は Enemies.csv の exp 列から入る。")]
         private int exp = 5;
 
         private bool granted;

@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies
     /// 浮く敵（03）は追う間ずっと高く飛んでいて、間合いに入って殴れるときだけ降りてきて（<see cref="EnemyMotor.Descend"/>）、降りきってから溜める。
     /// 降りる間に相手が間合いから離れたら、殴るのをやめてまた上がる。殴り終えて隙が明けたら上がる。降りている間が反撃の機会。
     /// スタン・気絶で溜めは取り消す。
-    /// MonsterBuilder がプレハブのルートに付ける。
+    /// 敵のプレハブのルートに付ける。強さの値は Enemies.csv から入る（EnemyStatsWriter）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Melee)")]

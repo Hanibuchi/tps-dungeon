@@ -6,7 +6,7 @@ namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
     /// 敵のプレハブに id（EnemyIdentity）を付ける。id はプレハブ名の snake_case（LavaSlime → lava_slime）。
-    /// 何度実行しても同じ結果になる。MonsterBuilder で作り直したプレハブには MonsterBuilder が付けるので、既存のプレハブを直すときだけ使う。
+    /// 何度実行しても同じ結果になる。敵のプレハブを足したときに使う。
     /// </summary>
     public static class EnemyIdentitySetup
     {

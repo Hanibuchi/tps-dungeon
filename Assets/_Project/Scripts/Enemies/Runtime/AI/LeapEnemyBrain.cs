@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies
     ///   → 飛んでいる間に体が触れた相手に 1 回ずつ当てる → 着地して <see cref="landRecovery"/> 秒の隙
     /// 飛ぶ先は溜め始めに決めるので、溜めを見て横へ動けば避けられる。着地の隙が反撃の機会。
     /// 溜めの間のスタン・気絶で取り消す。飛んでいる間にスタンしても止まらず落ちてくる（当たりは無くなる）。気絶なら倒れ込む。
-    /// MonsterBuilder がプレハブのルートに付ける。
+    /// 敵のプレハブのルートに付ける。強さの値は Enemies.csv から入る（EnemyStatsWriter）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Leap)")]
