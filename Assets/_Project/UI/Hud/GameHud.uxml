@@ -6,6 +6,16 @@
             <kit:OrnateFrame class="hud-frame" />
             <ui:Label name="floor-value" text="L1 F1" class="floor__value rpg-deco-bold" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="saving" class="saving" picking-mode="Ignore">
+            <kit:OrnateFrame class="hud-frame" />
+            <ui:VisualElement name="saving-gem" class="saving__gem" picking-mode="Ignore" />
+            <ui:Label name="saving-label" text="セーブ中" class="saving__label rpg-deco-bold" picking-mode="Ignore" />
+            <ui:VisualElement class="saving__dots" picking-mode="Ignore">
+                <ui:VisualElement class="saving__dot" picking-mode="Ignore" />
+                <ui:VisualElement class="saving__dot" picking-mode="Ignore" />
+                <ui:VisualElement class="saving__dot" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="hp" class="hp" picking-mode="Ignore">
             <kit:OrnateFrame class="hud-frame" />
             <ui:VisualElement name="level" class="level" picking-mode="Ignore">

@@ -47,6 +47,77 @@
     -unity-text-align: middle-center;
 }
 
+/* ---- 右上: オートセーブの「セーブ中」（SaveIndicator） ---- */
+
+.saving {
+    position: absolute;
+    right: 28px;
+    top: 28px;
+    flex-direction: row;
+    align-items: center;
+    padding: 7px 16px 7px 14px;
+    background-color: rgba(20, 17, 15, 0.84);
+    opacity: 0;
+    translate: 24px 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.3s, 0.3s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.saving.is-shown {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* 回る金の菱形。回すのは SaveIndicator（rotate を毎フレーム書く）。 */
+.saving__gem {
+    width: 9px;
+    height: 9px;
+    margin-right: 10px;
+    background-color: var(--gold);
+    rotate: 45deg;
+    transition-property: scale, background-color;
+    transition-duration: 0.18s, 0.18s;
+    transition-timing-function: ease-out-back, ease-out-cubic;
+}
+
+.saving__label {
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    -unity-text-align: middle-left;
+}
+
+.saving__dots {
+    flex-direction: row;
+    align-items: flex-end;
+    height: 16px;
+    margin-left: 3px;
+}
+
+.saving__dot {
+    width: 3px;
+    height: 3px;
+    margin: 0 0 2px 3px;
+    background-color: var(--gold-bright);
+    opacity: 0.15;
+    transition-property: opacity;
+    transition-duration: 0.12s;
+}
+
+.saving__dot.saving__dot--on {
+    opacity: 1;
+}
+
+/* 書き終わった：菱形が明るく膨らんで光る。 */
+.saving--done .saving__gem {
+    scale: 1.6 1.6;
+    background-color: var(--gold-bright);
+}
+
 /* ---- 左下: HP ---- */
 
 .hp {

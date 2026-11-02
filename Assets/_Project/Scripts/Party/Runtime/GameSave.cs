@@ -29,6 +29,15 @@ namespace TpsDungeon.Party
         private bool dirty;
 
         /// <summary>
+        /// オートセーブで書いたとき（HUD の「セーブ中」の表示用）。終了・中断・フォーカスを失ったときの保存では出さない。
+        /// </summary>
+        public static event System.Action AutoSaved;
+
+        // ドメインリロードを切っているので、再生のたびに前回の購読を捨てる。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AutoSaved = null;
+
+        /// <summary>
         /// 書いてよいか。起動時にセーブを戻し終えるまでは偽（戻す前の初期状態で上書きしないように。
         /// エディタが背面のまま Play に入ると、フォーカスを失った知らせが戻すより先に来る）。GameFlow が立てる。
         /// </summary>
@@ -74,16 +83,16 @@ namespace TpsDungeon.Party
             SaveNow();
         }
 
-        private void OnApplicationQuit() => SaveNow();
+        private void OnApplicationQuit() => SaveNow(false);
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) SaveNow();
+            if (paused) SaveNow(false);
         }
 
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused) SaveNow();
+            if (!focused) SaveNow(false);
         }
 
         /// <summary>今居るのが地上か死後の場所か（持ち物が変わるたびに書く所）。</summary>
@@ -142,27 +151,31 @@ namespace TpsDungeon.Party
         // ---- 書く ------------------------------------------------------------
 
         /// <summary>今の状態を書く。今のシーンを居場所にする（階なら今の階）。移っている途中・止めてあるときは何もしない。</summary>
-        public void SaveNow()
+        public void SaveNow() => SaveNow(true);
+
+        /// <param name="notify">オートセーブとして知らせるか（<see cref="AutoSaved"/>）。終了・中断のときは知らせない。</param>
+        private void SaveNow(bool notify)
         {
             if (!CanSave) return;
             string scene = SceneManager.GetActiveScene().name;
-            Write(scene, IsFloorScene(scene) ? DungeonProgress.Current : null);
+            Write(scene, IsFloorScene(scene) ? DungeonProgress.Current : null, notify);
         }
 
         /// <summary>居場所を直に決めて書く（全滅でソウルに変えた直後に、移っている途中でも死後の場所として書くため）。</summary>
         public void SaveAt(string scene, DungeonFloor? floor = null)
         {
             if (!Ready || !isActiveAndEnabled || party == null) return;
-            Write(scene, floor);
+            Write(scene, floor, true);
         }
 
-        private void Write(string scene, DungeonFloor? floor)
+        private void Write(string scene, DungeonFloor? floor, bool notify)
         {
             dirty = false;
             WatchInventories();
             RunSaveStore.Save(Capture(scene, floor));
             PartyProgression.Current?.Save();
             UniqueDropPityStore.Save();
+            if (notify) AutoSaved?.Invoke();
         }
 
         private static bool IsFloorScene(string scene) =>

@@ -127,6 +127,7 @@ namespace TpsDungeon.Hud
 
         // 見出しを退かせる予約。続けて出したら前の予約は捨てる。
         private IVisualElementScheduledItem bannerHide;
+        private SaveIndicator saveIndicator;
 
         // 今出している残りの敵の数。出していなければ -1。
         private int shownRemaining = -1;
@@ -224,6 +225,8 @@ namespace TpsDungeon.Hud
             WipeSequence.Started += OnWipeStarted;
             WipeSequence.Ended += OnWipeEnded;
             SoulUpgradeWorld.FloorClearBonusGranted += OnFloorClearBonus;
+            saveIndicator = new SaveIndicator(root);
+            GameSave.AutoSaved += OnAutoSaved;
             RefreshCharacter();
             RefreshMapOverlay();
         }
@@ -240,6 +243,9 @@ namespace TpsDungeon.Hud
             WipeSequence.Started -= OnWipeStarted;
             WipeSequence.Ended -= OnWipeEnded;
             SoulUpgradeWorld.FloorClearBonusGranted -= OnFloorClearBonus;
+            GameSave.AutoSaved -= OnAutoSaved;
+            saveIndicator?.Stop();
+            saveIndicator = null;
             UnbindFloor();
         }
 
@@ -694,6 +700,9 @@ namespace TpsDungeon.Hud
                 UiTransitions.Hide(monsterHouseBanner);
             }).StartingIn(durationMs);
         }
+
+        /// <summary>オートセーブで書いた。右上に「セーブ中」を出す。</summary>
+        private void OnAutoSaved() => saveIndicator?.Saved();
 
         /// <summary>閉じ込められている間だけ、残りの敵の数を出す。減ったときだけ小さく弾ませる。</summary>
         private void RefreshMonsterHouseCount()
