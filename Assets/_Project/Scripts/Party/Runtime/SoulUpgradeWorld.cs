@@ -273,6 +273,33 @@ namespace TpsDungeon.Party
             return gained;
         }
 
+        /// <summary>
+        /// 転生で全員を Lv1・経験値 0・HP 満タンに戻す。名簿と並びの全員を、無効な者（階で倒れて置いていかれた・並びの数で隠れている）も含めて。
+        /// 全滅のとき（<see cref="Harvest"/>）にも戻しているが、そこでは有効なメンバーしか戻らず、無効な者は前のレベルのまま戻ってきていた。
+        /// レベルを先に戻してから（最大 HP が決まってから）、倒れていても満タンで起こす。
+        /// 無効な者は魂の最大 HP の上乗せが外れた状態で満たされるが、並びに戻ったときに増えた分が足されるので満タンのまま。
+        /// </summary>
+        public void ResetForRebirth()
+        {
+            PartyProgression.Current?.ResetForNewRun();
+
+            var members = new List<PartyMember>(roster);
+            if (party != null)
+            {
+                foreach (PartyMember member in party.Members)
+                {
+                    if (!members.Contains(member)) members.Add(member);
+                }
+            }
+
+            foreach (PartyMember member in members)
+            {
+                if (member == null) continue;
+                member.Progression?.ResetProgress();
+                member.Revive();
+            }
+        }
+
         /// <summary>転生で持ち物を手放す。keep に入っている物だけ元の場所に残し、全員の手持ちと共有のバッグからほかを消す。</summary>
         public void DiscardItems(ICollection<ItemInstance> keep)
         {
