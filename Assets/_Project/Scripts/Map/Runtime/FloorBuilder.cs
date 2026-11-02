@@ -492,9 +492,9 @@ namespace TpsDungeon.Map.Runtime
         /// </summary>
         private void BuildFeatures(FloorLayout layout, FloorConfig config, Transform parent, Dictionary<int, GameObject> roomObjects)
         {
-            EntranceStair = Spawn(layout.EntranceRoom, config.stairDownPrefab, "StairDown");
-            ExitStair = Spawn(layout.ExitRoom, config.stairUpPrefab, "StairUp");
-            Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop");
+            EntranceStair = Spawn(layout.EntranceRoom, config.stairDownPrefab, "StairDown", true);
+            ExitStair = Spawn(layout.ExitRoom, config.stairUpPrefab, "StairUp", true);
+            Spawn(layout.ShopRoom, config.shopMarkerPrefab, "Shop", false);
             if (layout.ShortcutCell.HasValue && config.shortcutMarkerPrefab != null)
             {
                 var cell = layout.ShortcutCell.Value;
@@ -521,7 +521,7 @@ namespace TpsDungeon.Map.Runtime
             }
             PlaceSpawnPoint(layout, parent);
 
-            GameObject Spawn(int roomIndex, GameObject prefab, string label)
+            GameObject Spawn(int roomIndex, GameObject prefab, string label, bool isStair)
             {
                 if (roomIndex < 0 || prefab == null) return null;
 
@@ -530,8 +530,18 @@ namespace TpsDungeon.Map.Runtime
 
                 var marker = Instantiate(prefab, parent);
                 marker.name = $"{label}_Room{roomIndex}";
-                // 部屋と同じだけ回す。階段は部屋の Prefab のドアの向き（南）を前提に作ってあるので、回した部屋のドアと向きが合う。
-                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.Euler(0f, 90f * room.Rotation, 0f));
+                // 階段は回転 0 で南のドアから登る（下りる）形に作ってあるので、実際に開いているドアの方へ登り口を向ける。
+                // 階段の部屋（南にドア 1 枚）なら部屋の回転と同じ。食い違うのは普通の部屋で代用したときで、そのときは後で追えるよう知らせる。
+                int rotation = room.Rotation;
+                if (isStair)
+                {
+                    rotation = room.StairRotation();
+                    if (rotation != room.Rotation)
+                    {
+                        Debug.LogWarning($"{label}: {room} の階段を部屋の回転 {room.Rotation} でなくドアの向き {rotation} に合わせた（seed {layout.Seed}）", this);
+                    }
+                }
+                marker.transform.SetLocalPositionAndRotation(CellCenter(room.FeatureCell), Quaternion.Euler(0f, 90f * rotation, 0f));
 
                 if (marker.TryGetComponent(out FloorFeature feature))
                 {

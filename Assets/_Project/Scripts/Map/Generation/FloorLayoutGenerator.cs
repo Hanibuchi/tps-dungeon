@@ -21,13 +21,24 @@ namespace TpsDungeon.Map.Generation
             var rng = new Random(seed);
 
             // 成長がフロアの隅に突っ込んで早々に行き場を失うシードがあるので、部屋数が
-            // 下限に届かなければ作り直す。rng は使い回すため、シードが同じなら結果も同じ。
+            // 下限に届かないか、階段の部屋が 2 つ揃わなければ作り直す。rng は使い回すため、シードが同じなら結果も同じ。
+            // 階段の部屋が足りないと普通の部屋で代用することになるので、部屋数より階段の部屋が揃っていることを優先する。
+            bool hasStairTemplate = HasStairTemplate(parameters);
             var packer = new RoomGrowthPacker(parameters, rng);
             var best = packer.Run();
-            for (int attempt = 1; attempt < parameters.MaxPackAttempts && best.Rooms.Count < parameters.MinRoomCount; attempt++)
+            for (int attempt = 1; attempt < parameters.MaxPackAttempts && !IsGoodEnough(best); attempt++)
             {
                 var retry = packer.Run();
-                if (retry.Rooms.Count > best.Rooms.Count) best = retry;
+                if (IsBetter(retry, best)) best = retry;
+            }
+
+            bool HasEnoughStairs(PackResult result) => !hasStairTemplate || CountStairRooms(result) >= 2;
+            bool IsGoodEnough(PackResult result) => result.Rooms.Count >= parameters.MinRoomCount && HasEnoughStairs(result);
+            bool IsBetter(PackResult a, PackResult b)
+            {
+                bool aStairs = HasEnoughStairs(a), bStairs = HasEnoughStairs(b);
+                if (aStairs != bStairs) return aStairs;
+                return a.Rooms.Count > b.Rooms.Count;
             }
 
             if (best.Rooms.Count == 0)
@@ -110,6 +121,26 @@ namespace TpsDungeon.Map.Generation
 
         /// <summary>階段やショップのマーカーを置くセル。ドアの正面を塞がないよう中心を使う。</summary>
         private static GridPos PickFeatureCell(RoomInstance room) => room.Bounds.Center;
+
+        /// <summary>階段の部屋のテンプレートが抽選に入っているか。無ければ階段の部屋の数で作り直さない。</summary>
+        private static bool HasStairTemplate(FloorGenerationParams parameters)
+        {
+            foreach (var template in parameters.Templates)
+            {
+                if (template.Weight > 0f && (template.Tags & RoomTag.Stair) != 0) return true;
+            }
+            return false;
+        }
+
+        private static int CountStairRooms(PackResult result)
+        {
+            int count = 0;
+            foreach (var room in result.Rooms)
+            {
+                if ((room.Template.Tags & RoomTag.Stair) != 0) count++;
+            }
+            return count;
+        }
 
         private static int CountTrue(bool[] flags)
         {

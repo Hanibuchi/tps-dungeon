@@ -304,6 +304,69 @@ namespace TpsDungeon.Map.Tests
         }
 
         /// <summary>
+        /// 第2層のように細長い部屋ばかりの層でも、階段は階段の部屋に載り、登り口がその部屋のドアを向く。
+        /// 強制した場所に階段の部屋が収まらないまま成長が終わると、普通の部屋（ショップなど）で代用して
+        /// 階段の裏がドアを塞いでいた（seed 356・398 など）。
+        /// </summary>
+        [Test]
+        public void NarrowRoomLineup_StairsStillLandOnStairRoomsFacingTheirDoor()
+        {
+            var parameters = FloorGenerationFixture.Params();
+            parameters.MinRoomCount = 7;
+            parameters.MaxRoomCount = 14;
+            parameters.ShopChance = 0.5f;
+            parameters.ShortcutChance = 0.5f;
+            parameters.Templates = new List<RoomTemplateData>
+            {
+                FloorGenerationFixture.Template("Room_1x2", 1, 2, RoomTag.Normal, true, 8f, 2),
+                FloorGenerationFixture.Template("Room_2x4", 2, 4, RoomTag.Normal, true, 2f, 6),
+                FloorGenerationFixture.Template("Room_4x8", 4, 8, RoomTag.Normal, true, 0.25f, 8),
+                FloorGenerationFixture.Template("Room_Shop", 1, 1, RoomTag.Shop, true, 0.2f),
+                new RoomTemplateData("Room_Stair", 1, 1, RoomTag.Stair, true, 0.2f,
+                    RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.South)),
+                new RoomTemplateData("Room_Shortcut", 1, 1, RoomTag.Shortcut, true, 0.2f,
+                    RoomTemplateFactory.CreateSocketsOnSide(1, 1, Direction.West)),
+            };
+
+            foreach (int seed in FloorGenerationFixture.Seeds(1000))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+                foreach (int index in new[] { layout.EntranceRoom, layout.ExitRoom })
+                {
+                    var room = layout.RoomAt(index);
+                    Assert.AreNotEqual(RoomTag.None, room.Template.Tags & RoomTag.Stair, $"seed {seed}: 階段が {room} に載っている");
+                    var front = Direction.South.RotateCw(room.StairRotation());
+                    foreach (var socket in room.UsedSockets())
+                    {
+                        Assert.AreEqual(front, socket.Facing, $"seed {seed}: {room} のドアが階段の登り口の側に無い");
+                    }
+                }
+            }
+        }
+
+        /// <summary>普通の部屋で代用したときも、階段は FeatureCell に一番近いドアの方へ登り口を向ける。</summary>
+        [Test]
+        public void StairRotation_FacesTheNearestUsedDoor()
+        {
+            var parameters = FloorGenerationFixture.Params();
+            parameters.Templates = parameters.Templates.Where(t => (t.Tags & RoomTag.Stair) == 0).ToList();
+
+            foreach (int seed in FloorGenerationFixture.Seeds(SeedSweepCount))
+            {
+                var layout = FloorLayoutGenerator.Generate(parameters, seed);
+                foreach (int index in new[] { layout.EntranceRoom, layout.ExitRoom })
+                {
+                    var room = layout.RoomAt(index);
+                    var front = Direction.South.RotateCw(room.StairRotation());
+                    var nearest = room.UsedSockets()
+                        .OrderBy(s => System.Math.Abs(s.Cell.X - room.FeatureCell.X) + System.Math.Abs(s.Cell.Y - room.FeatureCell.Y))
+                        .First();
+                    Assert.AreEqual(nearest.Facing, front, $"seed {seed}: {room} の階段が一番近いドアを向いていない");
+                }
+            }
+        }
+
+        /// <summary>
         /// 専用テンプレートが無い層でも、役割は必ず別々の部屋に割り当たる。
         /// 階段はマーカーを部屋の中心に置くだけなので、普通の部屋で代用できる。
         /// </summary>

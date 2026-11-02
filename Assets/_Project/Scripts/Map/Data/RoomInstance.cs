@@ -70,6 +70,27 @@ namespace TpsDungeon.Map.Data
             }
         }
 
+        /// <summary>
+        /// FeatureCell に置く階段の回転（時計回りの 90 度ステップ）。階段は回転 0 で南のドアから登る（下りる）形に作ってあるので、
+        /// 実際に開いているドアのうち FeatureCell に一番近いものの方へ登り口を向ける。階段の部屋（南にドア 1 枚）なら部屋の回転と同じになる。
+        /// ドアが 1 枚も無ければ部屋の回転のまま。
+        /// </summary>
+        public int StairRotation()
+        {
+            PlacedSocket best = null;
+            int bestDistance = int.MaxValue;
+            foreach (var socket in Sockets)
+            {
+                if (!socket.IsUsed) continue;
+                int distance = System.Math.Abs(socket.Cell.X - FeatureCell.X) + System.Math.Abs(socket.Cell.Y - FeatureCell.Y);
+                if (distance >= bestDistance) continue;
+                best = socket;
+                bestDistance = distance;
+            }
+            if (best == null) return Rotation;
+            return ((int)best.Facing - (int)Direction.South + 4) % 4;
+        }
+
         public override string ToString() => $"Room{Index}({Template.Id} r{Rotation} {Bounds} {Role})";
     }
 }
