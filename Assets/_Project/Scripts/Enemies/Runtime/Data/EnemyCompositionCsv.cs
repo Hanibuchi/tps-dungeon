@@ -10,7 +10,7 @@ namespace TpsDungeon.Enemies
     ///   name   … 見分けるための名前（混成・主役＋脇役など）
     ///   layers … この編成を使う層。Enemies.csv と同じ書き方（<c>1-5</c>・<c>1;3</c>）
     ///   weight … 部屋ごとにこの編成が選ばれる重み（0 以上）
-    ///   shares … 種類ごとの予算の比率。<c>orc:0.6;green_blob:0.4</c> のように id:比率 を ; で区切る。
+    ///   shares … 種類ごとの予算の比率。<c>goblin:0.6;giant_rat:0.4</c> のように id:比率 を ; で区切る。
     ///            比率を省くと 1（<c>orc</c> は <c>orc:1</c>）。<c>*</c> だけなら、その層に出る敵全部を同じ比率で（混成）
     /// 単種（1 種だけの編成）は書かなくてよい。層に出る敵ごとに取り込みで作る（重みは EnemySpawnLayers.csv の single_weight）。
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
@@ -123,7 +123,7 @@ namespace TpsDungeon.Enemies
         }
 
         /// <summary>
-        /// 「orc:0.6;green_blob:0.4」「orc」「*」のような比率の書き方を読む。
+        /// 「goblin:0.6;giant_rat:0.4」「goblin」「*」のような比率の書き方を読む。
         /// * なら all が真で shares は空。空・読めない比率・負の比率・同じ id が 2 回・* と id を混ぜたものは偽。
         /// </summary>
         public static bool TryParseShares(string text, out bool all, out Share[] shares, out string error)

@@ -25,13 +25,13 @@ namespace TpsDungeon.Enemies.Editor
         private const string SpawnSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/ジャンプ.mp3";
         private const string EnemyFolder = "Assets/_Project/Prefabs/Enemies/";
 
-        // 草むらから出てきそうな、小さめの敵。合計 12%。
+        // 草むらから出てきそうな、1 層の敵。合計 12%。
         private static readonly (string enemy, float chance)[] DefaultSpawns =
         {
-            ("Blob_GreenBlob", 0.05f),
-            ("Blob_Mushnub", 0.04f),
-            ("Blob_PinkBlob", 0.02f),
-            ("Big_Frog", 0.01f),
+            ("GiantRat", 0.05f),
+            ("Goblin", 0.04f),
+            ("GiantBat", 0.02f),
+            ("GoblinArcher", 0.01f),
         };
 
         // 壊せる草花（素材のプレハブ名にこれを含む物）。茂み（bush）は大きいので含めない。

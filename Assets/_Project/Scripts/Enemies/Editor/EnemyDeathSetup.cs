@@ -7,7 +7,7 @@ namespace TpsDungeon.Enemies.Editor
     /// 敵が死んで透明になって消えるための準備。
     /// 半透明の URP Lit 材質（雛形）を作り、敵のプレハブの EnemyDeath に入れる。
     /// 雛形をプレハブから参照しておくと、ビルドにも半透明の変種が入る。何度実行しても同じ結果になる。
-    /// MonsterBuilder で作り直したプレハブには MonsterBuilder が入れるので、既存のプレハブを直すときだけ使う。
+    /// 敵のプレハブを足したり直したりしたときに使う。
     /// </summary>
     public static class EnemyDeathSetup
     {

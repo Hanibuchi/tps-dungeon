@@ -11,7 +11,7 @@ namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
     /// 部屋の敵の CSV 3 つを、道順（DungeonRoute）の層ごとの表（EnemySpawnTable）に書き込む。
-    ///   Enemies.csv             … 敵の台帳。id・コスト・出る層（今後 hp などの列を足す）
+    ///   Enemies.csv             … 敵の台帳。id・コスト・出る層と、強さ（hp など。<see cref="EnemyStatsWriter"/> が敵のプレハブに書く）
     ///   EnemySpawnLayers.csv    … 層ごとのセル 1 つあたりの予算・モンスターハウスの確率と倍率・単種の重み
     ///   EnemyCompositions.csv   … 編成タイプ（混成・主役＋脇役など）。単種は書かず、層に出る敵ごとにここで作る
     /// 表の敵の一覧・予算・確率・倍率・編成タイプを差し替える。音は表のまま（Inspector で直す）。
@@ -37,10 +37,16 @@ namespace TpsDungeon.Enemies.Editor
             List<EnemySpawnLayerCsv.Row> layerRows = Read(LayersCsvPath, EnemySpawnLayerCsv.Parse, errors);
             List<EnemyCompositionCsv.Row> compositionRows = Read(CompositionsCsvPath, EnemyCompositionCsv.Parse, errors);
 
+            // 強さの列はプレハブへ（道順や表が無くても書く）。
+            Dictionary<string, GameObject> prefabs = EnemyPrefabs(warnings);
+            int statsChanged = EnemyStatsWriter.Write(enemyRows, prefabs, EnemiesCsvPath, errors, warnings);
+
             var route = AssetDatabase.LoadAssetAtPath<DungeonRoute>(PlaceholderMapAssetGenerator.RoutePath);
             if (route == null)
             {
-                Debug.LogError($"{PlaceholderMapAssetGenerator.RoutePath} が無いので、部屋の敵の CSV を取り込めない。先に「ダンジョンの道順を作る」を回すこと。");
+                foreach (string warning in warnings) Debug.LogWarning($"部屋の敵の CSV: {warning}");
+                foreach (string error in errors) Debug.LogError($"部屋の敵の CSV の {error}");
+                Debug.LogError($"{PlaceholderMapAssetGenerator.RoutePath} が無いので、部屋の敵の表は書き換えない（敵のプレハブ {statsChanged} つの強さは書き換えた）。先に「ダンジョンの道順を作る」を回すこと。");
                 return;
             }
 
@@ -48,7 +54,6 @@ namespace TpsDungeon.Enemies.Editor
             foreach (DungeonRoute.Layer layer in route.Layers) missingTable |= layer.enemySpawns == null;
             if (missingTable) PlaceholderMapAssetGenerator.GenerateEnemySpawnTables();
 
-            Dictionary<string, GameObject> prefabs = EnemyPrefabs(warnings);
             var usable = new List<EnemyCsv.Row>();
             var listed = new HashSet<string>(StringComparer.Ordinal);
             foreach (EnemyCsv.Row row in enemyRows)
@@ -122,7 +127,7 @@ namespace TpsDungeon.Enemies.Editor
             foreach (string warning in warnings) Debug.LogWarning($"部屋の敵の CSV: {warning}");
             foreach (string error in errors) Debug.LogError($"部屋の敵の CSV の {error}");
             Debug.Log($"部屋の敵の CSV を取り込んだ: 敵 {usable.Count} 種、編成 {compositionRows.Count} 行、" +
-                      $"層 {route.Layers.Count} つのうち {changed} つの表を書き換えた");
+                      $"層 {route.Layers.Count} つのうち {changed} つの表と、敵のプレハブ {statsChanged} つの強さを書き換えた");
         }
 
         /// <summary>

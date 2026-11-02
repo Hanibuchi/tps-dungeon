@@ -5,8 +5,8 @@ using UnityEngine;
 namespace TpsDungeon.Enemies.Editor
 {
     /// <summary>
-    /// 敵のプレハブに id（EnemyIdentity）を付ける。id はプレハブ名のモデルの部分の snake_case（Blob_PinkBlob → pink_blob）。
-    /// 何度実行しても同じ結果になる。MonsterBuilder で作り直したプレハブには MonsterBuilder が付けるので、既存のプレハブを直すときだけ使う。
+    /// 敵のプレハブに id（EnemyIdentity）を付ける。id はプレハブ名の snake_case（LavaSlime → lava_slime）。
+    /// 何度実行しても同じ結果になる。敵のプレハブを足したときに使う。
     /// </summary>
     public static class EnemyIdentitySetup
     {
@@ -51,14 +51,14 @@ namespace TpsDungeon.Enemies.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>「グループ_モデル」のプレハブ名から id を作る。Blob_PinkBlob → pink_blob、Big_Orc → orc。</summary>
+        /// <summary>プレハブ名から id を作る。LavaSlime → lava_slime。古い「グループ_モデル」の名前なら _ より後ろだけ使う（Big_Orc → orc）。</summary>
         public static string IdFromPrefabName(string prefabName)
         {
             int underscore = prefabName.IndexOf('_');
             return ToSnakeCase(underscore >= 0 ? prefabName.Substring(underscore + 1) : prefabName);
         }
 
-        /// <summary>PinkBlob → pink_blob。</summary>
+        /// <summary>LavaSlime → lava_slime。</summary>
         public static string ToSnakeCase(string name)
         {
             var builder = new StringBuilder(name.Length + 4);

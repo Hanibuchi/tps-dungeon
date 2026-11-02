@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies
     ///   → 自分は消える（経験値は出さない。倒れる演出も無し）
     /// 導火を始める前に倒されたら爆発しない。導火を始めたらスタン・気絶でも止まらない（気絶なら倒れた所で爆発する）。
     /// 導火の途中で倒されたら爆発しない（倒したご褒美として経験値は出る）。
-    /// MonsterBuilder がプレハブのルートに付ける。
+    /// 敵のプレハブのルートに付ける。強さの値は Enemies.csv から入る（EnemyStatsWriter）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Bomber)")]

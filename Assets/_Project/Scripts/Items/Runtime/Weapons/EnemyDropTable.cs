@@ -28,7 +28,7 @@ namespace TpsDungeon.Items
         [Serializable]
         public sealed class EnemyEntry
         {
-            [Tooltip("敵の id（EnemyIdentity の id。pink_blob など）。")]
+            [Tooltip("敵の id（EnemyIdentity の id。lava_slime など）。")]
             public string enemyId;
 
             [Tooltip("E〜S を落とす確率（0〜1）。残りは何も落とさない。")]

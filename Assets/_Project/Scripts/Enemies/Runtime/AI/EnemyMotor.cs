@@ -14,14 +14,14 @@ namespace TpsDungeon.Enemies
     /// 飛びつきなどで Brain が自分で動かしている間（<see cref="Suspend"/>）は agent に位置を書かせない。
     /// 動けるようになったら今の位置へ agent を合わせ直す。倒れたら agent を切る。
     /// NavMesh はフロアの生成の後に焼くので、それまでは agent を止めて待つ。
-    /// 敵のルート（NavMeshAgent と同じ GameObject）に付ける。MonsterBuilder がプレハブに焼き込む。
+    /// 敵のルート（NavMeshAgent と同じ GameObject）に付ける。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NavMeshAgent))]
     [AddComponentMenu("TPS Dungeon/Enemy Motor")]
     public sealed class EnemyMotor : MonoBehaviour
     {
-        // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
+        // 敵の Animator（Animation/Enemy の *Monster.controller）のパラメータ名。コントローラを変えたらここも揃えること。
         private const string SpeedParam = "Speed";
 
         [SerializeField, Min(0.1f), Tooltip("移動の速さ（m/秒）。")]

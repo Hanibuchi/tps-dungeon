@@ -23,7 +23,7 @@ namespace TpsDungeon.Enemies
     [AddComponentMenu("TPS Dungeon/Enemy Death")]
     public sealed class EnemyDeath : MonoBehaviour
     {
-        // MonsterBuilder（エディタ専用アセンブリ）が焼き込んだ Animator のパラメータ名。向こうを変えたらここも揃えること。
+        // 敵の Animator（Animation/Enemy の *Monster.controller）のパラメータ名。コントローラを変えたらここも揃えること。
         private const string DeadParam = "Dead";
 
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");

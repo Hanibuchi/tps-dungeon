@@ -9,7 +9,7 @@ namespace TpsDungeon.Enemies
     ///   → 足元に毒霧（<see cref="PoisonCloud"/>）を出す → <see cref="cooldown"/> 秒は出さずに追い続ける
     /// 霧はその場に残るので、本体を追って霧の中へ入ると削られる。霧の 1 刻みのダメージは <see cref="EnemyBrain.damage"/>。
     /// 溜めの間のスタン・気絶で取り消す。
-    /// MonsterBuilder がプレハブのルートに付ける。
+    /// 敵のプレハブのルートに付ける。強さの値は Enemies.csv から入る（EnemyStatsWriter）。
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("TPS Dungeon/Enemy Brain (Poison Gas)")]

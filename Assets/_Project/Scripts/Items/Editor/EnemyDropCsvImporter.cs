@@ -12,7 +12,7 @@ namespace TpsDungeon.Items.Editor
     ///   EnemyWeaponDrops.csv … 敵ごとのランク E〜S の確率
     ///   EnemyUniqueDrops.csv … 敵 × ユニーク武器ごとの確率と天井
     /// どちらかの CSV を保存すると自動で取り込む。メニューからも呼べる。
-    /// 敵は id（EnemyIdentity の id。pink_blob など）で、武器は id（"Weapon_FallenStarHammer" など）で引く。
+    /// 敵は id（EnemyIdentity の id。lava_slime など）で、武器は id（"Weapon_FallenStarHammer" など）で引く。
     /// ランクで落とす武器の候補も、このとき全部の武器（素手とユニークを除く）から作り直す。
     /// 読めない行は飛ばし、行番号付きでコンソールに出す。
     /// </summary>

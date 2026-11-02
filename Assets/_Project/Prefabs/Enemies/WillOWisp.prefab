@@ -15,13 +15,13 @@ GameObject:
   - component: {fileID: 7835231501533324242}
   - component: {fileID: 8551013206454179525}
   - component: {fileID: 5655961882722594803}
+  - component: {fileID: 1879157923689998285}
+  - component: {fileID: 8184738049475428838}
   - component: {fileID: 1025224706504830284}
   - component: {fileID: 8103712130992994613}
   - component: {fileID: 3249693108051686536}
-  - component: {fileID: 8184738049475428838}
-  - component: {fileID: 1879157923689998285}
   m_Layer: 0
-  m_Name: Flying_Hywirl
+  m_Name: WillOWisp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 8
+  exp: 18
 --- !u!114 &9130102176415041548
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 25
+  maxHp: 58
   immortal: 0
   prop: 0
 --- !u!114 &7835231501533324242
@@ -165,6 +165,33 @@ MonoBehaviour:
   corpseDelay: 2
   fadeDuration: 1.5
   fadeTemplate: {fileID: 2100000, guid: 5908f5acdfb3d42dbb8a216f5aea1d12, type: 2}
+--- !u!114 &1879157923689998285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8378275289127162891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
+  id: will_o_wisp
+--- !u!114 &8184738049475428838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8378275289127162891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
+  scatter: 0.3
+  spawnLift: 0.3
 --- !u!195 &1025224706504830284
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -223,7 +250,8 @@ MonoBehaviour:
   loseRadius: 22
   memoryTime: 5
   scanInterval: 0.2
-  damage: 8
+  retargetInterval: 1
+  damage: 10
   cooldown: 2
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 2a56dd835ba274e62a77257cbf08ea19, type: 3}
@@ -245,35 +273,6 @@ MonoBehaviour:
   impactEffect: {fileID: 7105975018429309799, guid: a1e8e892f5d57498ea7d1ae5a6904e2b, type: 3}
   impactEffectScale: 1
   muzzleForward: 0.5
---- !u!114 &8184738049475428838
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8378275289127162891}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8a1899993dfc4cf08e4577a75686305, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyWeaponDrop
-  scatter: 0.3
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!114 &1879157923689998285
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8378275289127162891}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8951fae51fff4ef9857d869cdc7f6be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyIdentity
-  id: hywirl
 --- !u!1001 &6411993167701820121
 PrefabInstance:
   m_ObjectHideFlags: 0
