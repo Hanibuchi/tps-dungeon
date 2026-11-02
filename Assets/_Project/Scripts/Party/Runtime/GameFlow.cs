@@ -245,6 +245,8 @@ namespace TpsDungeon.Party
             {
                 yield return rebirth.Leave();
                 yield return LeaveItemsBehind();
+                // 生まれ直す。仲間も全員 Lv1・HP 満タンから（置いていかれていた・隠れていた仲間も）。
+                if (soulUpgrades != null) soulUpgrades.ResetForRebirth();
                 if (fade != null) yield return fade.FadeTo(1f, 0f);
             }
             else

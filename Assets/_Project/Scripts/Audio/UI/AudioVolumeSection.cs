@@ -18,7 +18,7 @@ namespace TpsDungeon.Audio.UI
         private readonly Label[] values = new Label[3];
         private readonly AudioClip previewClip;
         private AudioVolumeController subscribed;
-        private float nextPreviewTime;
+        private readonly float[] nextPreviewTime = new float[3];
 
         public AudioVolumeSection(VisualElement root, AudioClip previewClip)
         {
@@ -80,7 +80,7 @@ namespace TpsDungeon.Audio.UI
                 GameAudio.Instance?.Volumes?.SetVolume(channel, evt.newValue);
                 Show(channel, evt.newValue);
                 UiTransitions.Flash(values[(int)channel], "is-flash", 90);
-                if (channel == AudioChannel.Se) PlayPreview();
+                PlayPreview(channel);
             });
         }
 
@@ -102,13 +102,14 @@ namespace TpsDungeon.Audio.UI
             if (label != null) label.text = Mathf.RoundToInt(value * 100f).ToString();
         }
 
-        /// <summary>SE を触っている間、音量が分かるように短い音を鳴らす。鳴らしすぎないよう間引く。</summary>
-        private void PlayPreview()
+        /// <summary>スライダーを触っている間、その音量が分かるように短い音を鳴らす。鳴らしすぎないよう間引く。</summary>
+        private void PlayPreview(AudioChannel channel)
         {
-            if (previewClip == null || Time.unscaledTime < nextPreviewTime) return;
+            int index = (int)channel;
+            if (previewClip == null || Time.unscaledTime < nextPreviewTime[index]) return;
 
-            nextPreviewTime = Time.unscaledTime + 0.12f;
-            GameAudio.Instance?.PlaySe(previewClip);
+            nextPreviewTime[index] = Time.unscaledTime + 0.12f;
+            GameAudio.Instance?.PlayVolumePreview(channel, previewClip);
         }
     }
 }

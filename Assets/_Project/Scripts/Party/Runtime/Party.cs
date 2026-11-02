@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TpsDungeon.Enemies;
 using TpsDungeon.Items;
 using TpsDungeon.Map.Runtime;
 using TpsDungeon.Player;
@@ -434,7 +435,7 @@ namespace TpsDungeon.Party
         }
 
         /// <summary>
-        /// カメラの壁よけの寄り・戻りの時間を入れる。カメラは Starter Assets のプレハブ（どちらも 0）をそのまま使うので、ここで上書きする。
+        /// カメラの壁よけの寄り・戻りの時間と、よけるレイヤー（敵は外す）を入れる。カメラは Starter Assets のプレハブ（どちらも 0）をそのまま使うので、ここで上書きする。
         /// </summary>
         private void ApplyCameraDamping()
         {
@@ -443,6 +444,8 @@ namespace TpsDungeon.Party
 
             follow.AvoidObstacles.DampingIntoCollision = cameraDampingIntoCollision;
             follow.AvoidObstacles.DampingFromCollision = cameraDampingFromCollision;
+            // 敵が前を横切るたびにカメラが寄らないよう、敵の体（EnemyLayer）はよけない。
+            follow.AvoidObstacles.CollisionFilter &= ~EnemyLayer.Mask;
         }
 
         // Brain がカメラを動かした直後。開いた扉板がカメラと先頭の間に入っていたら半透明にする（当たり判定が無いのでカメラがよけない）。

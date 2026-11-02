@@ -119,6 +119,7 @@ namespace TpsDungeon.Map.Generation
                 TryGrow(entry.RoomIndex, socket, target);
             }
 
+            PlaceRemainingQuota();
             AddLoopDoors();
             return Snapshot();
         }
@@ -393,6 +394,46 @@ namespace TpsDungeon.Map.Generation
             {
                 int j = rng.Next(i + 1);
                 (list[i], list[j]) = (list[j], list[i]);
+            }
+        }
+
+        /// <summary>
+        /// 成長が終わっても置けていない必須タグの部屋（強制した場所に収まらず普通の部屋で埋めたときなど）を、
+        /// 空いているドア候補に足す。目標の部屋数はその分だけ超えてよい。
+        /// 階段の部屋が足りないと普通の部屋で代用することになり、階段の登り口がドアと合わなくなる。
+        /// </summary>
+        private void PlaceRemainingQuota()
+        {
+            if (quota.Count == 0) return;
+
+            var open = new List<(int room, int socket)>();
+            foreach (var room in rooms)
+            {
+                for (int i = 0; i < room.Sockets.Count; i++)
+                {
+                    if (!room.Sockets[i].IsUsed) open.Add((room.Index, i));
+                }
+            }
+            Shuffle(open);
+
+            foreach (var (roomIndex, socketIndex) in open)
+            {
+                if (quota.Count == 0) return;
+
+                var socket = rooms[roomIndex].Sockets[socketIndex];
+                if (socket.IsUsed || IsFull(roomIndex)) continue;
+                var targetCell = socket.ExitCell;
+                if (!InsideGrid(targetCell) || roomGrid[Index(targetCell)] != Vacant) continue;
+
+                for (int q = 0; q < quota.Count; q++)
+                {
+                    if (CollectCandidates(targetCell, socket.Facing.Opposite(), quota[q]) == 0) continue;
+
+                    var chosen = PickWeighted();
+                    var room = PlaceRoom(chosen.TemplateIndex, chosen.Rotation, chosen.Bounds);
+                    Connect(roomIndex, socket, room, chosen.SocketIndex);
+                    break;
+                }
             }
         }
 

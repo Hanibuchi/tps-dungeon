@@ -48,6 +48,14 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0.05f), Tooltip("目的地を付け直す間隔（秒）。")]
         private float repathInterval = 0.2f;
 
+        [SerializeField, Min(0.05f), Tooltip("ほかの敵・仲間をよける円の半径（m）の上限。プレハブの agent の半径がこれより大きければ縮める。" +
+            "通れる道の幅は NavMesh を焼いた半径で決まるので、縮めても壁にはめり込まない。大きいと幅 1.5 m のドアで敵どうしが譲り合えず止まる。")]
+        private float avoidanceRadius = 0.3f;
+
+        [SerializeField, Tooltip("よけるときの優先度（agent の avoidancePriority、小さいほど優先）を、敵ごとにこの範囲から引く。" +
+            "全員同じだとドアで向かい合ったときにどちらも譲らず止まる。")]
+        private Vector2Int avoidancePriorityRange = new Vector2Int(30, 70);
+
         private NavMeshAgent agent;
         private Animator animator;
         private EnemyHealth health;
@@ -101,6 +109,12 @@ namespace TpsDungeon.Enemies
             ragdoll = GetComponent<EnemyRagdoll>();
             speedHash = Animator.StringToHash(SpeedParam);
             bobPhase = Random.value * Mathf.PI * 2f;
+
+            // ドアで敵どうしが詰まらないように、よける円を小さくし、譲る順を敵ごとにばらす。
+            agent.radius = Mathf.Min(agent.radius, avoidanceRadius);
+            int low = Mathf.Clamp(Mathf.Min(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+            int high = Mathf.Clamp(Mathf.Max(avoidancePriorityRange.x, avoidancePriorityRange.y), 0, 99);
+            agent.avoidancePriority = Random.Range(low, high + 1);
         }
 
         private void OnEnable()

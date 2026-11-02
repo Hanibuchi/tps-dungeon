@@ -14,7 +14,8 @@ namespace TpsDungeon.Party
     /// 書くとき:
     /// - シーンに着いたとき（GameFlow から <see cref="SaveNow"/>）。階なら、上り階段で前の階を抜けて着いたところ。
     /// - 階の部屋を全部攻略したとき。
-    /// - 地上・死後の場所で、持ち物・並び・魂の強化が変わったとき（続けて変わるので、1 フレームに 1 回にまとめる）。
+    /// - 地上・死後の場所で、魂の強化を買ったとき（並びの数などで名簿が変わるので。続けて買っても 1 フレームに 1 回にまとめる）。
+    ///   持ち物や並びを変えただけでは書かない（終了・中断のときか、次に移ったときに書く）。
     /// - 終了・中断（アプリが裏へ回る・フォーカスを失う）のとき。
     /// 階の中では持ち物が変わっても書かない（再開はその階の入口から）。シーンを移っている途中は書かない。
     /// レベル・経験値・HP は PartyProgression（progress.json）に、書くたびに同じ時点で書かせる。
@@ -25,8 +26,16 @@ namespace TpsDungeon.Party
         private GameFlow flow;
         private Party party;
         private SoulUpgradeWorld upgrades;
-        private readonly List<PlayerInventory> watched = new List<PlayerInventory>();
         private bool dirty;
+
+        /// <summary>
+        /// オートセーブで書いたとき（HUD の「セーブ中」の表示用）。終了・中断・フォーカスを失ったときの保存では出さない。
+        /// </summary>
+        public static event System.Action AutoSaved;
+
+        // ドメインリロードを切っているので、再生のたびに前回の購読を捨てる。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AutoSaved = null;
 
         /// <summary>
         /// 書いてよいか。起動時にセーブを戻し終えるまでは偽（戻す前の初期状態で上書きしないように。
@@ -39,34 +48,22 @@ namespace TpsDungeon.Party
 
         public void Initialize(GameFlow owner, Party target, SoulUpgradeWorld world)
         {
-            // AddComponent した時点（OnEnable）ではまだパーティーを知らないので、ここで購読する。
-            if (party != null) party.Changed -= OnPartyChanged;
             flow = owner;
             party = target;
             upgrades = world;
-            if (party != null && isActiveAndEnabled) party.Changed += OnPartyChanged;
         }
 
         private void OnEnable()
         {
             RoomEnemySpawner.AnyAllRoomsCleared += OnAllRoomsCleared;
             MetaUpgrades.Changed += MarkDirty;
-            if (party != null) party.Changed += OnPartyChanged;
         }
 
         private void OnDisable()
         {
             RoomEnemySpawner.AnyAllRoomsCleared -= OnAllRoomsCleared;
             MetaUpgrades.Changed -= MarkDirty;
-            if (party != null) party.Changed -= OnPartyChanged;
-            foreach (PlayerInventory inventory in watched)
-            {
-                if (inventory != null) inventory.Changed -= OnInventoryChanged;
-            }
-            watched.Clear();
         }
-
-        private void Start() => WatchInventories();
 
         private void Update()
         {
@@ -74,16 +71,16 @@ namespace TpsDungeon.Party
             SaveNow();
         }
 
-        private void OnApplicationQuit() => SaveNow();
+        private void OnApplicationQuit() => SaveNow(false);
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) SaveNow();
+            if (paused) SaveNow(false);
         }
 
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused) SaveNow();
+            if (!focused) SaveNow(false);
         }
 
         /// <summary>今居るのが地上か死後の場所か（持ち物が変わるたびに書く所）。</summary>
@@ -100,23 +97,7 @@ namespace TpsDungeon.Party
 
         private void MarkDirty() => dirty = true;
 
-        private void OnPartyChanged(Party _) => MarkDirty();
-
-        private void OnInventoryChanged(PlayerInventory _) => MarkDirty();
-
         private void OnAllRoomsCleared(RoomEnemySpawner _) => SaveNow();
-
-        /// <summary>手持ちの変化を見る。パーティーから外れて隠れている仲間の分も（並びに戻ったとき持ち物を持っているので）。</summary>
-        private void WatchInventories()
-        {
-            foreach (PartyMember member in Members())
-            {
-                PlayerInventory inventory = member.Inventory;
-                if (inventory == null || watched.Contains(inventory)) continue;
-                inventory.Changed += OnInventoryChanged;
-                watched.Add(inventory);
-            }
-        }
 
         /// <summary>最初に居た仲間と、今の並び（重ねずに）。</summary>
         private List<PartyMember> Members()
@@ -142,27 +123,30 @@ namespace TpsDungeon.Party
         // ---- 書く ------------------------------------------------------------
 
         /// <summary>今の状態を書く。今のシーンを居場所にする（階なら今の階）。移っている途中・止めてあるときは何もしない。</summary>
-        public void SaveNow()
+        public void SaveNow() => SaveNow(true);
+
+        /// <param name="notify">オートセーブとして知らせるか（<see cref="AutoSaved"/>）。終了・中断のときは知らせない。</param>
+        private void SaveNow(bool notify)
         {
             if (!CanSave) return;
             string scene = SceneManager.GetActiveScene().name;
-            Write(scene, IsFloorScene(scene) ? DungeonProgress.Current : null);
+            Write(scene, IsFloorScene(scene) ? DungeonProgress.Current : null, notify);
         }
 
         /// <summary>居場所を直に決めて書く（全滅でソウルに変えた直後に、移っている途中でも死後の場所として書くため）。</summary>
         public void SaveAt(string scene, DungeonFloor? floor = null)
         {
             if (!Ready || !isActiveAndEnabled || party == null) return;
-            Write(scene, floor);
+            Write(scene, floor, true);
         }
 
-        private void Write(string scene, DungeonFloor? floor)
+        private void Write(string scene, DungeonFloor? floor, bool notify)
         {
             dirty = false;
-            WatchInventories();
             RunSaveStore.Save(Capture(scene, floor));
             PartyProgression.Current?.Save();
             UniqueDropPityStore.Save();
+            if (notify) AutoSaved?.Invoke();
         }
 
         private static bool IsFloorScene(string scene) =>
@@ -216,7 +200,6 @@ namespace TpsDungeon.Party
             }
 
             ItemSaveData.RestoreSlots(party.Bag, data.bag, catalog);
-            WatchInventories();
             dirty = false;
         }
     }

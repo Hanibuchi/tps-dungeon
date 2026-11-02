@@ -20,6 +20,7 @@ namespace TpsDungeon.Menu.UI
 
         private SoulUpgradeEffect effect;
         private Kind kind = Kind.Flame;
+        private Color drawnColor;
 
         public SoulGlyph()
         {
@@ -27,6 +28,12 @@ namespace TpsDungeon.Menu.UI
             pickingMode = PickingMode.Ignore;
             generateVisualContent += Draw;
             RegisterCallback<CustomStyleResolvedEvent>(_ => MarkDirtyRepaint());
+            // color が変わっても（買った・買えるようになった、0.3 秒の色の移り変わりの途中も）描き直しは自動では起きないので、
+            // 描いた色と今の色を比べて違えば描き直す。パネルから外れている間は schedule も止まる。
+            schedule.Execute(() =>
+            {
+                if (resolvedStyle.color != drawnColor) MarkDirtyRepaint();
+            }).Every(16);
         }
 
         /// <summary>効果の印にする。</summary>
@@ -46,6 +53,7 @@ namespace TpsDungeon.Menu.UI
 
         private void Draw(MeshGenerationContext context)
         {
+            drawnColor = resolvedStyle.color;
             Rect r = contentRect;
             float s = Mathf.Min(r.width, r.height);
             if (s <= 0f) return;
