@@ -61,6 +61,11 @@ namespace TpsDungeon.Enemies
         private void Awake()
         {
             currentHp = MaxHp;
+
+            // 生きている敵の体を敵のレイヤーへ移す。カメラの壁よけが敵で寄らないように（EnemyLayer）。
+            // プレハブは Default のまま。壊せる置物と、ほかのレイヤーに置いたものは触らない。
+            int enemyLayer = EnemyLayer.Index;
+            if (!prop && enemyLayer >= 0 && gameObject.layer == 0) gameObject.layer = enemyLayer;
         }
 
         private void OnEnable() => all.Add(this);

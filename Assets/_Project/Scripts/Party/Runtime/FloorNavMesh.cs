@@ -45,8 +45,8 @@ namespace TpsDungeon.Party
 
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-            // 味方と、すり抜けられる壊せる草花（Breakable）は焼かない。
-            surface.layerMask = BreakableLayer.Exclude(AllyLayer.Exclude(layers));
+            // 味方と、すり抜けられる壊せる草花（Breakable）と、敵の体（Enemy）は焼かない。
+            surface.layerMask = EnemyLayer.Exclude(BreakableLayer.Exclude(AllyLayer.Exclude(layers)));
             surface.buildHeightMesh = true;
         }
 
