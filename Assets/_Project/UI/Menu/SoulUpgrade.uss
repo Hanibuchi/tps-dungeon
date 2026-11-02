@@ -207,7 +207,8 @@
 }
 
 .soul-node--locked .soul-node__glyph {
-    color: rgb(72, 86, 104);
+    /* 買えない（魂が足りない）：暗い水色。 */
+    color: var(--soul-dim);
 }
 
 .soul-node--locked .soul-node__cost {
@@ -221,7 +222,8 @@
 }
 
 .soul-node--available .soul-node__glyph {
-    color: var(--soul-bright);
+    /* 買える：水色。買ったもの（金）・買えないもの（暗い水色）と見分ける。 */
+    color: var(--soul);
 }
 
 /* 買える強化はいつも淡く光り、明滅でさらに強く光る。 */
