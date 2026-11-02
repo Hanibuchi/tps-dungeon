@@ -37,6 +37,8 @@ namespace TpsDungeon.Audio.Runtime
         private AudioSource[] footstepSources;
         private int nextFootstepIndex;
         private AudioSource[] uiSources;
+        // 音量の BGM のスライダーを動かしたときの試し音。BGM のグループへ流し、BGM の音量で聞こえる。
+        private AudioSource bgmPreviewSource;
         private int nextUiIndex;
         private readonly float[] lastUiPlayed = new float[System.Enum.GetValues(typeof(UiSound)).Length];
         private Coroutine bgmFade;
@@ -263,6 +265,20 @@ namespace TpsDungeon.Audio.Runtime
             source.PlayOneShot(entry.clip, Mathf.Clamp01(entry.volume));
         }
 
+        /// <summary>
+        /// 音量のスライダーを動かしたときの試し音。そのスライダーの音量が効くグループで鳴らす。
+        /// 全体・SE は UI のグループ（ポーズ中もこもらず、全体と SE の音量に従う）、BGM は BGM のグループ。
+        /// </summary>
+        public void PlayVolumePreview(AudioChannel channel, AudioClip clip, float volumeScale = 1f)
+        {
+            if (clip == null) return;
+
+            AudioSource source = channel == AudioChannel.Bgm ? bgmPreviewSource
+                : uiSources != null ? Take(uiSources, ref nextUiIndex) : null;
+            if (source == null) return;
+            source.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
+        }
+
         // ---- スナップショット -----------------------------------------------
 
         /// <summary>ミキサーの状態を切り替える。ポーズやフロア移動の演出用。</summary>
@@ -321,6 +337,11 @@ namespace TpsDungeon.Audio.Runtime
                 footstepSources[i].rolloffMode = AudioRolloffMode.Linear;
                 footstepSources[i].maxDistance = 30f;
             }
+
+            bgmPreviewSource = CreateSource("BGM Preview", config.BgmGroup);
+            bgmPreviewSource.loop = false;
+            bgmPreviewSource.volume = 1f;
+            bgmPreviewSource.spatialBlend = 0f;
 
             uiSources = new AudioSource[Mathf.Max(1, uiVoiceCount)];
             for (int i = 0; i < uiSources.Length; i++)
