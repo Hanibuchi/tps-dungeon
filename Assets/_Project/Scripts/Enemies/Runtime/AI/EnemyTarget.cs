@@ -126,7 +126,11 @@ namespace TpsDungeon.Enemies
         {
             results.Clear();
 
-            int count = Physics.OverlapSphereNonAlloc(center, radius, overlap, ~0, QueryTriggerInteraction.Ignore);
+            // メンバーの体（Ally レイヤー）だけを集める。全部のレイヤーで集めると、壁・床・家具・敵で入れ物（32 個）が埋まって
+            // メンバーが漏れることがある。置物は下で DecoyTarget.All から拾う。Ally レイヤーが無ければ全部から。
+            int mask = AllyLayer.Mask;
+            if (mask == 0) mask = ~0;
+            int count = Physics.OverlapSphereNonAlloc(center, radius, overlap, mask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 if (EnemyTarget.TryFrom(overlap[i], out EnemyTarget target)) AddOnce(results, target);
