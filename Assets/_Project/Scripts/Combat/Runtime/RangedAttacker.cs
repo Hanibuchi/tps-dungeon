@@ -951,26 +951,44 @@ namespace TpsDungeon.Combat
         }
 
         /// <summary>
-        /// 雷の最初の的。杖の先から aimMaxDistance 以内で、狙いの線からの角度が chainAimAngle 以内、杖の先から見通せる生きた敵のうち、
-        /// 角度がいちばん小さい敵（同じなら近い方）。point はその体の真ん中。
+        /// 雷の最初の的。まず照準の線をそのまま撃ち、最初に当たった物が敵か壊せる置物ならそれ（照準を合わせた物には必ず当たる）。
+        /// 当たらなければ、杖の先から aimMaxDistance 以内で、狙いの線から体の一番近い所までの角度が chainAimAngle 以内、
+        /// 杖の先から見通せる生きた敵のうち、角度がいちばん小さい敵（同じなら近い方）。置物はこちらでは選ばない。point はその体の真ん中。
+        /// 敵は EnemyHealth.All から引く（当たり判定を集めると、階の壁や床だけで入れ物が溢れて敵が漏れる）。
         /// </summary>
         private EnemyHealth AimedEnemy(WeaponTypeDefinition type, Ray aim, Vector3 from, out Vector3 point)
         {
             point = default;
+            float reach = type.AimMaxDistance + Vector3.Distance(aim.origin, from);
+            if (Raycast(aim, reach, false, out RaycastHit direct))
+            {
+                EnemyHealth hitEnemy = direct.collider.GetComponentInParent<EnemyHealth>();
+                if (hitEnemy != null && !hitEnemy.IsDead && Vector3.Distance(from, direct.point) <= type.AimMaxDistance)
+                {
+                    point = hitEnemy.IsProp ? direct.point : BodyCenter(hitEnemy, direct.collider);
+                    return hitEnemy;
+                }
+            }
+
             EnemyHealth best = null;
             float bestAngle = float.MaxValue;
             float bestDistance = float.MaxValue;
-            int count = Physics.OverlapSphereNonAlloc(from, type.AimMaxDistance, wideOverlap, hitMask, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
+            foreach (EnemyHealth enemy in EnemyHealth.All)
             {
-                EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
                 if (enemy == null || enemy.IsDead || enemy.IsProp) continue;
+                Collider body = BodyOf(enemy);
+                if (body == null) continue;
 
-                Vector3 center = wideOverlap[i].bounds.center;
-                Vector3 toCenter = center - aim.origin;
-                float angle = Vector3.Angle(aim.direction, toCenter);
+                Bounds bounds = body.bounds;
+                Vector3 center = bounds.center;
                 float distance = Vector3.Distance(from, center);
-                if (angle > type.ChainAimAngle || distance > type.AimMaxDistance) continue;
+                if (distance > type.AimMaxDistance) continue;
+
+                // 狙いの線上で体に一番近い点から、体の一番近い所へ。大きい敵や近い敵の端を狙っても入るように。
+                float along = Mathf.Max(0f, Vector3.Dot(center - aim.origin, aim.direction));
+                Vector3 nearest = bounds.ClosestPoint(aim.origin + aim.direction * along);
+                float angle = Vector3.Angle(aim.direction, nearest - aim.origin);
+                if (angle > type.ChainAimAngle) continue;
                 if (angle > bestAngle + 0.01f || (Mathf.Abs(angle - bestAngle) <= 0.01f && distance >= bestDistance)) continue;
                 if (!InSight(from, center)) continue;
 
@@ -983,19 +1001,19 @@ namespace TpsDungeon.Combat
             return best;
         }
 
-        /// <summary>from から range 以内で、いちばん近い、exclude に無い、見通せる生きた敵。point はその体の真ん中。</summary>
+        /// <summary>from から range 以内で、いちばん近い、exclude に無い、見通せる生きた敵（置物は除く）。point はその体の真ん中。</summary>
         private EnemyHealth NearestEnemy(Vector3 from, float range, HashSet<EnemyHealth> exclude, out Vector3 point)
         {
             point = default;
             EnemyHealth best = null;
             float bestDistance = float.MaxValue;
-            int count = Physics.OverlapSphereNonAlloc(from, range, wideOverlap, hitMask, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
+            foreach (EnemyHealth enemy in EnemyHealth.All)
             {
-                EnemyHealth enemy = wideOverlap[i].GetComponentInParent<EnemyHealth>();
                 if (enemy == null || enemy.IsDead || enemy.IsProp || exclude.Contains(enemy)) continue;
+                Collider body = BodyOf(enemy);
+                if (body == null) continue;
 
-                Vector3 center = wideOverlap[i].bounds.center;
+                Vector3 center = body.bounds.center;
                 float distance = Vector3.Distance(from, center);
                 if (distance > range || distance >= bestDistance || !InSight(from, center)) continue;
 
@@ -1005,6 +1023,23 @@ namespace TpsDungeon.Combat
             }
 
             return best;
+        }
+
+        /// <summary>敵の体の当たり判定（ルートの、トリガーでない有効なもの）。無ければ子から探す。</summary>
+        private static Collider BodyOf(EnemyHealth enemy)
+        {
+            if (enemy.TryGetComponent(out Collider own) && own.enabled && !own.isTrigger) return own;
+            foreach (Collider child in enemy.GetComponentsInChildren<Collider>())
+            {
+                if (child.enabled && !child.isTrigger) return child;
+            }
+            return null;
+        }
+
+        private static Vector3 BodyCenter(EnemyHealth enemy, Collider fallback)
+        {
+            Collider body = BodyOf(enemy);
+            return (body != null ? body : fallback).bounds.center;
         }
 
         /// <summary>a から b の手前まで、壁や床（敵と撃った本人は除く）に遮られていないか。</summary>
