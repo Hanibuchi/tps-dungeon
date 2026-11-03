@@ -16,10 +16,20 @@ namespace TpsDungeon.Enemies.Editor
     ///   windup       … 近距離・遠距離・毒霧は windup、飛びつきは crouchTime、自爆は fuseTime
     ///   attack_range … 近距離 attackRange、飛びつき leapRange、自爆 fuseRange、毒霧 emitRange、遠距離 maxRange
     ///   area_radius  … 自爆 blastRadius、毒霧 cloudRadius
+    /// kind 列があれば、付いている EnemyBrain の型と同じかを確かめ、違えばエラーを出す（強さの書き込みは続ける）。
     /// その敵種に無い列に値があれば警告を出して飛ばす。欄の下限（Min）より小さい値は下限にして警告を出す。
     /// </summary>
     public static class EnemyStatsWriter
     {
+        private static readonly Dictionary<Type, EnemyKind> Kinds = new Dictionary<Type, EnemyKind>
+        {
+            { typeof(MeleeEnemyBrain), EnemyKind.Melee },
+            { typeof(RangedEnemyBrain), EnemyKind.Ranged },
+            { typeof(LeapEnemyBrain), EnemyKind.Leap },
+            { typeof(BomberEnemyBrain), EnemyKind.Bomber },
+            { typeof(PoisonGasEnemyBrain), EnemyKind.PoisonGas },
+        };
+
         private static readonly Dictionary<Type, string> WindupFields = new Dictionary<Type, string>
         {
             { typeof(MeleeEnemyBrain), "windup" },
@@ -59,6 +69,8 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
 
+                CheckKind(row, prefab, where, errors);
+
                 var changes = new List<string>();
                 var writer = new PrefabWriter(prefab, where, changes, errors, warnings);
                 writer.Apply(row.Stats);
@@ -70,6 +82,26 @@ namespace TpsDungeon.Enemies.Editor
             }
 
             return changedPrefabs;
+        }
+
+        /// <summary>kind 列とプレハブの EnemyBrain の型が食い違えばエラーを積む。kind が空欄なら何もしない。</summary>
+        private static void CheckKind(EnemyCsv.Row row, GameObject prefab, string where, List<string> errors)
+        {
+            if (row.Kind == EnemyKind.Unknown) return;
+
+            string expected = EnemyCsv.KindName(row.Kind);
+            var brain = prefab.GetComponent<EnemyBrain>();
+            if (brain == null)
+            {
+                errors.Add($"{where} の kind は {expected} だが、プレハブ {prefab.name} に EnemyBrain が無い");
+                return;
+            }
+
+            Type type = brain.GetType();
+            if (Kinds.TryGetValue(type, out EnemyKind actual) && actual == row.Kind) return;
+
+            string actualText = Kinds.TryGetValue(type, out actual) ? $"{EnemyCsv.KindName(actual)}（{type.Name}）" : type.Name;
+            errors.Add($"{where} の kind は {expected} だが、プレハブ {prefab.name} の頭脳は {actualText}");
         }
 
         private static bool HasAny(EnemyCsv.Stats s) =>

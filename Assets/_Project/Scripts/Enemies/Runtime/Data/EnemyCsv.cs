@@ -8,6 +8,9 @@ namespace TpsDungeon.Enemies
     /// 敵の台帳（Enemies.csv）を読む。UnityEngine に依存しない。
     /// 1 行 = 敵 1 種。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
     ///   id     … 敵の id（EnemyIdentity の id。小文字の英字・数字・_）
+    ///   kind   … 攻撃の型。melee（近距離）・ranged（遠距離）・leap（飛びつき）・bomber（自爆）・poison_gas（毒霧）。
+    ///            型はプレハブに付いている EnemyBrain で決まり、この列は表で見えるようにするためと確かめのためにある
+    ///            （食い違えば取り込みでエラー）。空欄なら確かめない
     ///   cost   … 部屋に出すときの 1 体あたりのコスト（部屋の予算からこの分を使う）。layers が空なら空でよい
     ///   layers … 部屋に出る層。<c>1-5</c>・<c>1;3</c>・<c>2-3;5</c> の形。空なら部屋には出ない
     /// 強さの列（<see cref="Stats"/>）。どれも省いてよく、空欄ならプレハブの値をそのまま使う。値は層の倍率などを掛けない、そのままの値:
@@ -20,12 +23,24 @@ namespace TpsDungeon.Enemies
     ///   area_radius     … 爆発・毒霧の半径（m）。自爆と毒霧の敵だけ
     ///   detect_range    … 相手に気付く距離（m）
     ///   exp             … 倒したときの経験値（パーティの経験値倍率を掛ける前）
-    /// 例: <c>goblin,2,1,40,10,3,1.4,0.5,1.8,,14,8</c>
+    /// 例: <c>goblin,melee,2,1,40,10,3,1.4,0.5,1.8,,14,8</c>
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
+    /// <summary>敵の攻撃の型（Enemies.csv の kind 列）。Unknown は空欄（確かめない）。</summary>
+    public enum EnemyKind
+    {
+        Unknown,
+        Melee,
+        Ranged,
+        Leap,
+        Bomber,
+        PoisonGas,
+    }
+
     public static class EnemyCsv
     {
         public const string IdColumn = "id";
+        public const string KindColumn = "kind";
         public const string CostColumn = "cost";
         public const string LayersColumn = "layers";
         public const string HpColumn = "hp";
@@ -70,6 +85,10 @@ namespace TpsDungeon.Enemies
         {
             public readonly int Line;
             public readonly string Id;
+
+            /// <summary>攻撃の型。空欄なら Unknown。</summary>
+            public readonly EnemyKind Kind;
+
             public readonly float Cost;
 
             /// <summary>部屋に出る層（1 始まり、小さい順、重複なし）。</summary>
@@ -77,10 +96,11 @@ namespace TpsDungeon.Enemies
 
             public readonly Stats Stats;
 
-            public Row(int line, string id, float cost, int[] layers, Stats stats)
+            public Row(int line, string id, EnemyKind kind, float cost, int[] layers, Stats stats)
             {
                 Line = line;
                 Id = id;
+                Kind = kind;
                 Cost = cost;
                 Layers = layers;
                 Stats = stats;
@@ -119,6 +139,12 @@ namespace TpsDungeon.Enemies
                     errors?.Add(id.Length == 0
                         ? $"{line} 行目: 敵の id が空"
                         : $"{line} 行目: 敵の id「{id}」は小文字の英字・数字・_ で書く");
+                    continue;
+                }
+
+                if (!TryParseKind(Cell(KindColumn), out EnemyKind kind))
+                {
+                    errors?.Add($"{line} 行目: {id} の kind「{Cell(KindColumn)}」は {KindNames} のどれか（空欄なら確かめない）");
                     continue;
                 }
 
@@ -168,7 +194,7 @@ namespace TpsDungeon.Enemies
                     continue;
                 }
 
-                rows.Add(new Row(line, id, cost, layers, stats));
+                rows.Add(new Row(line, id, kind, cost, layers, stats));
             }
 
             return rows;
@@ -211,6 +237,43 @@ namespace TpsDungeon.Enemies
                 !float.IsNaN(value) && !float.IsInfinity(value) && value >= min) return value;
             errors.Add($"{column} は {min.ToString(CultureInfo.InvariantCulture)} 以上の数「{cell}」");
             return null;
+        }
+
+        private static readonly (EnemyKind Kind, string Name)[] Kinds =
+        {
+            (EnemyKind.Melee, "melee"),
+            (EnemyKind.Ranged, "ranged"),
+            (EnemyKind.Leap, "leap"),
+            (EnemyKind.Bomber, "bomber"),
+            (EnemyKind.PoisonGas, "poison_gas"),
+        };
+
+        private const string KindNames = "melee・ranged・leap・bomber・poison_gas";
+
+        /// <summary>kind 列の書き方（melee など）。Unknown は空文字。</summary>
+        public static string KindName(EnemyKind kind)
+        {
+            foreach (var (k, name) in Kinds)
+            {
+                if (k == kind) return name;
+            }
+            return "";
+        }
+
+        /// <summary>kind 列を読む。空なら Unknown で true。大文字小文字は問わない。知らない値なら false。</summary>
+        public static bool TryParseKind(string text, out EnemyKind kind)
+        {
+            kind = EnemyKind.Unknown;
+            if (string.IsNullOrWhiteSpace(text)) return true;
+
+            string trimmed = text.Trim();
+            foreach (var (k, name) in Kinds)
+            {
+                if (!string.Equals(name, trimmed, StringComparison.OrdinalIgnoreCase)) continue;
+                kind = k;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>小文字の英字・数字・_ だけで、空でない。</summary>
