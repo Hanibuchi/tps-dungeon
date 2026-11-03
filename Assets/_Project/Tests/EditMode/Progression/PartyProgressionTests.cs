@@ -78,10 +78,10 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void CompanionGrowsByItsOwnProfile()
         {
-            party.GrantExp(2930); // Lv10
+            party.GrantExp(2380); // Lv10
             Assert.AreEqual(10, player.Level);
             Assert.AreEqual(10, companion.Level);
-            Assert.AreEqual(129, player.MaxHp);
+            Assert.AreEqual(190, player.MaxHp);
             Assert.AreEqual(80 + 5 * 9, companion.MaxHp);
         }
 

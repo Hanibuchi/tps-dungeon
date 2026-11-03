@@ -12,20 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d4d49c5bf4324bb59d04628763c1585, type: 3}
   m_Name: EnemySpawnTable_L4
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.EnemySpawnTable
-  budgetPerCell: 6
+  budgetPerCell: 8
   budgetBasis: 0
   monsterHouseChance: 0.2
   monsterHouseBudgetMultiplier: 2
   enemies:
   - id: cave_ghoul
     prefab: {fileID: 894847831165485452, guid: 1187a9bee2b114d598cbfa4ef2788153, type: 3}
-    cost: 3
+    cost: 8
   - id: staring_eye
     prefab: {fileID: 5848560689614447625, guid: 50b5d7a3f928246f3ae1739e1f00b4c5, type: 3}
-    cost: 2
+    cost: 1
   - id: miasma_frog
     prefab: {fileID: 7061645022734581897, guid: 43f5e78b6402f4abab0cdf9d7365552b, type: 3}
-    cost: 2
+    cost: 4
   - id: gunpowder_goblin
     prefab: {fileID: 3026998076869202291, guid: 97482fbe9af624200aac884dba35f78b, type: 3}
     cost: 1

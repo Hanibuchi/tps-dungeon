@@ -230,7 +230,7 @@ namespace TpsDungeon.Progression.Tests
                 new SoulHarvestMember { id = "player", name = "主人公", level = 10 },
                 new SoulHarvestMember { id = "member_1", name = "仲間", level = 1 },
             });
-            Assert.AreEqual(100_000L + 10L, gained, "Lv10 の 10 × 10⁴ と Lv1 の 10");
+            Assert.AreEqual(300L + 10L, gained, "Lv10 の 300（累計 3,030 ÷ 10）と Lv1 の 10");
             Assert.AreEqual(gained, MetaUpgrades.Souls);
             Assert.IsTrue(MetaUpgrades.HasHarvest);
             Assert.AreEqual(2, MetaUpgrades.PendingHarvest.members.Count);

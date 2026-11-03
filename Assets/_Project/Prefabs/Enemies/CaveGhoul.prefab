@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 69
+  exp: 855
 --- !u!114 &1543553239765038719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 310
+  maxHp: 8784
   immortal: 0
   prop: 0
 --- !u!114 &545426039330023696
@@ -242,6 +242,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &1837301206678384877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,8 +261,8 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 30
-  cooldown: 2.2
+  damage: 120
+  cooldown: 2
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 60c3b72860c2446db826ed29ab70b4d3, type: 3}
   windupClip: {fileID: 0}
@@ -269,8 +271,8 @@ MonoBehaviour:
   volume: 1
   windupEffect: {fileID: 7063366685381866213, guid: 32956b3de14a64e65ad17558c4423bcb, type: 3}
   hitEffect: {fileID: 8531300159004226574, guid: 8730eb415e0b948a095c354149c03adc, type: 3}
-  leapRange: 7
-  crouchTime: 0.6
+  leapRange: 6
+  crouchTime: 0.5
   leapSpeed: 9
   leapApex: 1.4
   leapTime: {x: 0.35, y: 0.8}

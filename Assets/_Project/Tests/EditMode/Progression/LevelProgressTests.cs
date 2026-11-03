@@ -44,20 +44,21 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void OneBigGain_LevelsUpSeveralTimesAndNotifiesOnce()
         {
-            // Lv1→5 は 100+110+130+160 = 500。
-            Assert.AreEqual(4, progress.AddExp(505));
+            // Lv1→5 は 100+120+150+190 = 560。
+            Assert.AreEqual(4, progress.AddExp(565));
             Assert.AreEqual(5, progress.Level);
             Assert.AreEqual(5, progress.Exp);
             Assert.AreEqual(1, levelUps, "何レベル上がっても 1 回");
             Assert.AreEqual(1, lastFrom);
             Assert.AreEqual(5, lastTo);
-            Assert.AreEqual(505, progress.TotalExp);
+            Assert.AreEqual(565, progress.TotalExp);
         }
 
         [Test]
         public void ReachingMaxLevel_DropsRemainderAndIgnoresFurtherGains()
         {
-            progress.AddExp(int.MaxValue);
+            // Lv82 あたりから 1 レベルに int.MaxValue 近く要るので、何度かに分けて足す。
+            for (int i = 0; i < 200 && !progress.IsMaxLevel; i++) progress.AddExp(int.MaxValue);
             Assert.AreEqual(LevelBalance.MaxLevel, progress.Level);
             Assert.AreEqual(0, progress.Exp, "上限に着いたら余りは捨てる");
             Assert.IsTrue(progress.IsMaxLevel);
@@ -95,7 +96,7 @@ namespace TpsDungeon.Progression.Tests
 
             progress.Restore(3, 500);
             Assert.AreEqual(3, progress.Level);
-            Assert.AreEqual(129, progress.Exp, "次に届く手前（130-1）まで");
+            Assert.AreEqual(149, progress.Exp, "次に届く手前（150-1）まで");
 
             progress.Restore(-2, -10);
             Assert.AreEqual(1, progress.Level);

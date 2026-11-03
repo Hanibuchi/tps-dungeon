@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 25
+  maxHp: 77
   immortal: 0
   prop: 0
 --- !u!114 &3918154922073017545
@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0789c297628e34e1c993a76b1df86857, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
-  moveSpeed: 2.5
+  moveSpeed: 2
   turnSpeed: 540
   hoverHeight: 0
   hoverBob: 0
@@ -242,6 +242,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &1165850085452460998
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,7 +273,7 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   minRange: 4
   maxRange: 12
-  windup: 0.7
+  windup: 0.5
   retreatStep: 3
   projectileSpeed: 12
   projectileRadius: 0.25

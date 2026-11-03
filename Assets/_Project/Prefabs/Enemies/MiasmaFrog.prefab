@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 55
+  exp: 427
 --- !u!114 &2977947551273322403
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 242
+  maxHp: 4392
   immortal: 0
   prop: 0
 --- !u!114 &2772452794682970886
@@ -242,6 +242,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &5816640616963967937
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,7 +261,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 6
+  damage: 60
   cooldown: 6
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
@@ -269,9 +271,9 @@ MonoBehaviour:
   volume: 1
   windupEffect: {fileID: 0}
   hitEffect: {fileID: 0}
-  emitRange: 2.5
-  windup: 0.6
-  cloudRadius: 3.5
+  emitRange: 3
+  windup: 0.5
+  cloudRadius: 3
   cloudHeight: 2.2
   cloudDuration: 5
   tickInterval: 0.5

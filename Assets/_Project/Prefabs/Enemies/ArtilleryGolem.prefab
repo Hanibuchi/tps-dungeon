@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 78
+  exp: 2550
 --- !u!114 &409950808363095122
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 392
+  maxHp: 12064
   immortal: 0
   prop: 0
 --- !u!114 &7426083717169985371
@@ -242,6 +242,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &9094266712702782390
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,7 +261,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 19
+  damage: 150
   cooldown: 2
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
@@ -271,7 +273,7 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   minRange: 4
   maxRange: 12
-  windup: 0.7
+  windup: 0.5
   retreatStep: 3
   projectileSpeed: 12
   projectileRadius: 0.25
