@@ -18,6 +18,9 @@ namespace TpsDungeon.Party.Tests
         private static FollowerWeaponOption Ranged(float readyAt = 0f, float range = 20f) =>
             new FollowerWeaponOption { IsRanged = true, Range = range, ReadyAt = readyAt, Usable = true };
 
+        private static FollowerWeaponOption Heal(float readyAt = 0f, bool usable = true) =>
+            new FollowerWeaponOption { IsRanged = true, IsHeal = true, Range = 15f, ReadyAt = readyAt, Usable = usable };
+
         private static readonly FollowerWeaponOption Empty = default;
 
         private static int Pick(float distance, int current, params FollowerWeaponOption[] options) =>
@@ -105,6 +108,39 @@ namespace TpsDungeon.Party.Tests
             FollowerWeaponOption heal = Ranged();
             heal.Usable = false;
             Assert.AreEqual(0, Pick(10f, 1, heal, Empty, Empty, Empty));
+        }
+
+        [Test]
+        public void 回復できる相手が居れば回復の武器を先に選ぶ()
+        {
+            Assert.AreEqual(2, Pick(2f, 0, Melee(), Ranged(), Heal(), Empty), "敵が近くても回復が先");
+        }
+
+        [Test]
+        public void 回復の武器が待ち中なら攻撃の武器で戦う()
+        {
+            Assert.AreEqual(0, Pick(2f, 2, Melee(), Ranged(), Heal(readyAt: Now + 1f), Empty));
+        }
+
+        [Test]
+        public void 回復できる相手が居なければ回復の武器は選ばない()
+        {
+            Assert.AreEqual(0, Pick(2f, 2, Melee(), Empty, Heal(usable: false), Empty));
+        }
+
+        [Test]
+        public void 敵が居ないときは待ち中でも一番早く使える回復の武器を持って待つ()
+        {
+            var options = new List<FollowerWeaponOption> { Melee(), Heal(readyAt: Now + 2f), Heal(readyAt: Now + 1f), Empty };
+            Assert.AreEqual(2, FollowerWeaponPicker.PickHeal(options, Now, 0, readyOnly: false));
+            Assert.AreEqual(-1, FollowerWeaponPicker.PickHeal(options, Now, 0, readyOnly: true));
+        }
+
+        [Test]
+        public void 同じ早さの回復の武器なら今持っている枠のまま()
+        {
+            var options = new List<FollowerWeaponOption> { Heal(), Heal(), Empty, Empty };
+            Assert.AreEqual(1, FollowerWeaponPicker.PickHeal(options, Now, 1, readyOnly: true));
         }
     }
 }

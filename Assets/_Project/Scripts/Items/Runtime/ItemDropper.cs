@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TpsDungeon.Items
 {
     /// <summary>
-    /// 落とし物（倒れた敵・壊した箱から出た武器）を床に出す。
+    /// 落とし物（倒れた敵・壊した箱から出た武器・足元に捨てた物）を床に出す。
     /// 拾う物のプレハブは照準用のトリガーしか持たないので、同じ大きさの物理の箱を死体・落とし物のレイヤー（<see cref="DebrisLayer"/>）で足し、
     /// Rigidbody で床まで落とす（<see cref="DroppedItemSettle"/> が止まったら固める）。このレイヤーは床や壁とだけ当たるので、パーティーの邪魔にならない。
     /// </summary>

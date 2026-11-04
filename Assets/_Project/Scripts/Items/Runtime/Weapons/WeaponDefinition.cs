@@ -134,6 +134,8 @@ namespace TpsDungeon.Items
                 FireInterval = weaponType != null ? weaponType.FireInterval : 0f,
                 RainDuration = weaponType != null ? weaponType.RainDuration : 0f,
                 RainTickInterval = weaponType != null ? weaponType.RainTickInterval : 0f,
+                ChainHits = weaponType != null && weaponType.RangedKind == RangedAttackKind.Chain ? weaponType.ChainJumpsFor(0) + 1 : 0,
+                ChainHitsPerCount = weaponType != null ? weaponType.ChainJumpsFor(1) - weaponType.ChainJumpsFor(0) : 0,
                 FlameDuration = weaponType != null ? weaponType.FlameDuration : 0f,
                 FlameTickInterval = weaponType != null ? weaponType.FlameTickInterval : 0f,
                 HealDuration = weaponType != null ? weaponType.HealDuration : 0f,

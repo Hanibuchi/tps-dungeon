@@ -635,7 +635,8 @@ namespace TpsDungeon.Map.Editor
         /// <summary>
         /// 窓付きの壁。壁と同じ実寸で、左右の柱・腰壁・上の壁を組んで真ん中を開ける。
         /// 開口のまわりには扉板と同じ木の枠（子の Frame。両面へ少し出す、下は窓台）を付ける。枠に当たりは付けない。
-        /// 開口には見えない当たりを張り、外へ出られないようにする。
+        /// 開口には当たりを張らない（矢や魔法が窓を抜ける。張ると開口の宙に矢が刺さった）。
+        /// 窓台は壁の高さの WindowSill（5 m の壁で 3 m）にあり、ジャンプ（1.2 m）では届かないので外へは出られない。
         /// </summary>
         private static GameObject BuildWindowPrefab(string path, FloorTheme theme, float width, float height)
         {
@@ -655,11 +656,6 @@ namespace TpsDungeon.Map.Editor
                 new Vector3(0f, sill * 0.5f, 0f), new Vector3(openW, sill, WallThickness), true);
             Box(root.transform, "Lintel", material,
                 new Vector3(0f, (height + top) * 0.5f, 0f), new Vector3(openW, height - top, WallThickness), true);
-
-            var blocker = new GameObject("Blocker");
-            blocker.transform.SetParent(root.transform, false);
-            blocker.transform.localPosition = new Vector3(0f, (sill + top) * 0.5f, 0f);
-            blocker.AddComponent<BoxCollider>().size = new Vector3(openW, top - sill, WallThickness);
 
             var frame = new GameObject("Frame").transform;
             frame.SetParent(root.transform, false);

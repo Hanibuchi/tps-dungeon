@@ -384,8 +384,17 @@ namespace TpsDungeon.Items
         [SerializeField, Tooltip("状態異常耐性の膜の見た目（任意）。")]
         private GameObject ailmentResistanceEffect;
 
-        [SerializeField, Min(0.01f), Tooltip("膜の見た目の大きさの倍率。")]
+        [SerializeField, Min(0.01f), Tooltip("膜の見た目の大きさの倍率。種類ごとの倍率と掛け合わせる。")]
         private float blessingEffectScale = 1f;
+
+        [SerializeField, Min(0.01f), Tooltip("ダメージ軽減の膜の大きさの倍率。3 種類が同時に付いても足元の円が重ならないよう、種類ごとに違う大きさにする。")]
+        private float damageReductionEffectScale = 1f;
+
+        [SerializeField, Min(0.01f), Tooltip("クリティカル倍率の膜の大きさの倍率。")]
+        private float critMultiplierEffectScale = 0.8f;
+
+        [SerializeField, Min(0.01f), Tooltip("状態異常耐性の膜の大きさの倍率。")]
+        private float ailmentResistanceEffectScale = 0.6f;
 
         [SerializeField, Tooltip("掛けた瞬間に相手の足元に 1 回出す見た目（任意）。")]
         private GameObject supportHitEffect;
@@ -594,6 +603,15 @@ namespace TpsDungeon.Items
         public float BlessingDuration => IsBuff ? supportDuration : 0f;
 
         public float BlessingEffectScale => blessingEffectScale;
+
+        /// <summary>その種類の膜の大きさ（全体の倍率 × 種類ごとの倍率）。</summary>
+        public float BlessingEffectScaleFor(BlessingKind kind) => blessingEffectScale * (kind switch
+        {
+            BlessingKind.DamageReduction => damageReductionEffectScale,
+            BlessingKind.CritMultiplier => critMultiplierEffectScale,
+            BlessingKind.AilmentResistance => ailmentResistanceEffectScale,
+            _ => 1f,
+        });
 
         /// <summary>その種類の加護の値 ＝ 強さ × この値。ダメージ軽減でなければ 0。</summary>
         public float BlessingPerStrength(BlessingKind kind)

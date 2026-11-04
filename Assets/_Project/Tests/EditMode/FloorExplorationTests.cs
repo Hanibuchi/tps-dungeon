@@ -75,5 +75,35 @@ namespace TpsDungeon.Map.Tests
             Assert.AreEqual(room.Index, exploration.CurrentRoom, "壁の外や境界の上では直前の部屋のまま");
             Assert.AreEqual(-1, exploration.RoomAt(new GridPos(-5, -5)));
         }
+
+        [Test]
+        public void Reveal_ShowsRoomOnce_WithoutEnteringIt()
+        {
+            var layout = FloorLayoutGenerator.Generate(FloorGenerationFixture.Params(), 1);
+            var exploration = new FloorExploration(layout);
+            var here = layout.Rooms[0];
+            var beyond = layout.Rooms[1];
+
+            exploration.Visit(here.Bounds.Center);
+
+            Assert.IsTrue(exploration.Reveal(beyond.Index), "ドアの向こうの部屋が新しく地図に出る");
+            Assert.IsFalse(exploration.Reveal(beyond.Index), "2 度目は増えない");
+            Assert.IsFalse(exploration.Reveal(here.Index), "入った部屋は出ている");
+            Assert.IsTrue(exploration.IsVisited(beyond.Index));
+            Assert.AreEqual(2, exploration.VisitedCount);
+            Assert.AreEqual(here.Index, exploration.CurrentRoom, "見えただけでは今居る部屋は変わらない");
+            Assert.IsFalse(exploration.Visit(beyond.Bounds.Center), "あとで入っても新しくはならない");
+        }
+
+        [Test]
+        public void Reveal_OutOfRange_DoesNothing()
+        {
+            var layout = FloorLayoutGenerator.Generate(FloorGenerationFixture.Params(), 1);
+            var exploration = new FloorExploration(layout);
+
+            Assert.IsFalse(exploration.Reveal(-1));
+            Assert.IsFalse(exploration.Reveal(layout.Rooms.Count));
+            Assert.AreEqual(0, exploration.VisitedCount);
+        }
     }
 }

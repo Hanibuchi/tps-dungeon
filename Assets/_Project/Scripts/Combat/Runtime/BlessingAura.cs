@@ -10,6 +10,9 @@ namespace TpsDungeon.Combat
     /// 素材の球は 1 周（4 秒）に粒を 1 つ出し、すぐ大きくなって、終わりに薄れて消える作りなので、ループさせると 1 周ごとに消えては出直す。
     /// そこで、粒が 1 周ずっと生きる系（球・地面の円）は、大きくなりきった所（<see cref="HoldTime"/>）で止めて、そのまま見せ続ける。
     /// 寿命の短いきらめき（Trails）はループのまま流す。加護が外れたら、放出を止めて薄くして消す（<see cref="EffectFadeOut"/>）。
+    /// 体を包む球（メッシュの粒）と、胸の高さでカメラへ向く大きな光の円盤は、止めた所から <see cref="VeilFadeTime"/> 秒で薄くして消す。
+    /// 出し続けると、肩越しのカメラからは操作キャラの周りが膜越しにしか見えず、敵や照準が見づらかった。
+    /// 掛けた直後の膨らむ様子は見せ、そのあとは足元の円ときらめきだけで加護が付いていることを示す。
     /// 掛ける側（RangedAttacker）が <see cref="Ensure"/> で付ける。シーンに置く物ではない。
     /// </summary>
     [AddComponentMenu("")]
@@ -24,6 +27,17 @@ namespace TpsDungeon.Combat
         /// </summary>
         private const float HoldTime = 1.5f;
 
+        /// <summary>
+        /// 膜を足元からこれだけ浮かせて出す（m）。足元の円は地面と同じ高さの板なので、そのままだと床の凹凸や段に一部が埋まって欠けて見えた。
+        /// </summary>
+        private const float GroundLift = 0.1f;
+
+        /// <summary>球と光の円盤を、止めてから消しきるまでの秒数。</summary>
+        private const float VeilFadeTime = 0.6f;
+
+        /// <summary>カメラへ向く板の粒が、この大きさ（m、膜の倍率の後）以上なら視界をふさぐ膜とみなす。きらめき（0.06 m）は残す。</summary>
+        private const float VeilBillboardSize = 1f;
+
         /// <summary>粒の寿命が 1 周のこの割合以上ある系を、止めて見せ続ける系とみなす。</summary>
         private const float HoldLifetimeRatio = 0.8f;
 
@@ -33,6 +47,7 @@ namespace TpsDungeon.Combat
         private readonly List<ParticleSystem> holds = new List<ParticleSystem>();
         private float elapsed;
         private bool held;
+        private float effectScale = 1f;
 
         /// <summary>buffs のキャラに kind の膜を出す（もう出ていればそのまま）。prefab が無ければ何もしない。</summary>
         public static void Ensure(CharacterBuffs buffs, BlessingKind kind, GameObject prefab, float scale)
@@ -71,6 +86,25 @@ namespace TpsDungeon.Combat
             held = true;
             foreach (ParticleSystem particles in holds)
                 if (particles != null) particles.Pause(false);
+
+            // 視界をふさぐ球と光の円盤を薄くして消す（消し終えたら EffectFadeOut がその子ごと消す）。足元の円（根元の系）は残す。
+            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>())
+            {
+                if (particles.gameObject == effect || !IsVeil(particles, effectScale)) continue;
+                holds.Remove(particles);
+                EffectFadeOut.Attach(particles.gameObject, 0f, VeilFadeTime);
+            }
+        }
+
+        /// <summary>体を包む球（メッシュの粒）か、カメラへ向く大きな板の粒か。</summary>
+        internal static bool IsVeil(ParticleSystem particles, float scale)
+        {
+            var renderer = particles.GetComponent<ParticleSystemRenderer>();
+            if (renderer == null) return false;
+            if (renderer.renderMode == ParticleSystemRenderMode.Mesh) return true;
+            if (renderer.renderMode != ParticleSystemRenderMode.Billboard) return false;
+            if (renderer.alignment != ParticleSystemRenderSpace.View && renderer.alignment != ParticleSystemRenderSpace.Facing) return false;
+            return particles.main.startSize.constantMax * scale >= VeilBillboardSize;
         }
 
         private void OnChanged(CharacterBuffs changed, BlessingKind changedKind)
@@ -86,8 +120,10 @@ namespace TpsDungeon.Combat
         private void Spawn(GameObject prefab, float scale)
         {
             effect = Instantiate(prefab, transform);
-            // 膜の素材（Magic shield）は地面に置く作りで、球は根元から 1 m 上に出る。足元に置けば体を包む。
-            effect.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            // 膜の素材（Magic shield）は地面に置く作りで、球は根元から 1 m 上に出る。足元（から少し上）に置けば体を包む。
+            // 大きさは種類ごとに違う（WeaponTypeDefinition.BlessingEffectScaleFor）ので、3 種類が付いても足元の円が重ならない。
+            effect.transform.SetLocalPositionAndRotation(Vector3.up * GroundLift, Quaternion.identity);
+            effectScale = scale;
             bool scaled = !Mathf.Approximately(scale, 1f);
             if (scaled) effect.transform.localScale *= scale;
 

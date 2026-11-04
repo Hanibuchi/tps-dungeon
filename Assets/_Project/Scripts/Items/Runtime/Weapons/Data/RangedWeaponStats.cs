@@ -26,6 +26,12 @@ namespace TpsDungeon.Items
         /// <summary>矢の雨がダメージを与える間隔（秒）。</summary>
         public float RainTickInterval;
 
+        /// <summary>雷が 1 回で当たる敵の数（最初の 1 体 ＋ 飛び移る回数。数の補正前）。雷でない武器種では 0。</summary>
+        public int ChainHits;
+
+        /// <summary>「数」のエンチャント 1 つで増える、雷の当たる敵の数（飛び移る回数）。</summary>
+        public int ChainHitsPerCount;
+
         /// <summary>炎を吐き続けられる時間（秒、持続時間の補正前）。炎を吐かない武器種では 0。</summary>
         public float FlameDuration;
 
@@ -76,6 +82,10 @@ namespace TpsDungeon.Items
     /// 撃つ間隔は速射の補正前で配るので、速射は間隔だけ縮めて DPS を上げる（近接の 1 周と同じ考え方）。
     /// 数で増える矢・多重の一斉射・爆発は 1 発と同じ（爆発は割合）ダメージを別に当てる。どれもここの DPS には含めない。
     ///
+    /// 雷（電撃）は、1 回で当たる敵の数（最初の 1 体 ＋ 飛び移る回数、数の補正前）で割って 1 体ずつに与える。
+    /// 全部に当たったときの合計が 1 発になるので、群れに撃っても DPS がおよそ強さになる（1 体だけなら 強さ ÷ 当たる数）。
+    /// 数のエンチャントは 1 体ぶんはそのままで飛び移る回数を増やす（合計が増える）。
+    ///
     /// 矢の雨（持続弓）は、範囲にずっと居た 1 体が受ける合計が 1 発になるように、補正前の刻みの数で割って毎刻み与える。
     /// 持続時間のエンチャントは 1 刻みの量はそのままで刻みを増やす（合計が増える）。
     ///
@@ -98,9 +108,11 @@ namespace TpsDungeon.Items
         private readonly int baseRainTicks;
         private readonly double rawFlameTick;
         private readonly double rawHealTick;
+        private readonly int baseChainHits;
 
-        private RangedWeaponStats(double rawShot, int baseRainTicks, double rawFlameTick, double rawHealTick)
+        private RangedWeaponStats(double rawShot, int baseRainTicks, double rawFlameTick, double rawHealTick, int baseChainHits)
         {
+            this.baseChainHits = baseChainHits;
             this.rawShot = rawShot;
             this.baseRainTicks = baseRainTicks;
             this.rawFlameTick = rawFlameTick;
@@ -113,8 +125,11 @@ namespace TpsDungeon.Items
         /// <summary>撃つ間隔（秒、速射の補正後）。</summary>
         public float FireInterval { get; private set; }
 
-        /// <summary>1 発のダメージ（クリティカル前）。四捨五入、最低 1。</summary>
-        public int ShotDamage => Math.Max(1, RoundToInt(rawShot));
+        /// <summary>1 発のダメージ（クリティカル前）。四捨五入、最低 1。雷は 1 体ぶん（1 発 ÷ 当たる数）。</summary>
+        public int ShotDamage => Math.Max(1, RoundToInt(baseChainHits > 0 ? rawShot / baseChainHits : rawShot));
+
+        /// <summary>雷が 1 回で当たる敵の数（最初の 1 体 ＋ 飛び移る回数、数の補正後）。雷でない武器種では 0。</summary>
+        public int ChainHitCount { get; private set; }
 
         public float CritChance { get; private set; }
         public float CritMultiplier { get; private set; } = 1f;
@@ -212,6 +227,7 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// クリティカル込みの平均 DPS（1 体に 1 本ずつ当たるとして。数・多重・爆発は含めない）。表示用。
+        /// 雷は補正前の数の敵に全部当たったときの合計（1 体だけなら この値 ÷ 当たる数）。
         /// 炎は吐き続けて待つ 1 周の平均（持続時間の延びは含めない）。
         /// </summary>
         public float AverageDps
@@ -230,21 +246,24 @@ namespace TpsDungeon.Items
 
                 if (FireInterval <= 0f) return 0f;
                 float critFactor = 1f + CritChance * (CritMultiplier - 1f);
-                int perShot = baseRainTicks > 0 ? RainTickDamage * baseRainTicks : ShotDamage;
+                int perShot = baseRainTicks > 0 ? RainTickDamage * baseRainTicks
+                    : baseChainHits > 0 ? ShotDamage * baseChainHits
+                    : ShotDamage;
                 return perShot * critFactor / FireInterval;
             }
         }
 
         /// <summary>
         /// 鑑定で出す実効 DPS。<see cref="AverageDps"/> に、数で増える分・多重の一斉射・爆発を、全部 1 体に当たるとして掛ける
-        /// （雷の飛び移りも 1 本と数える）。敵を傷つけない武器種では 0。
+        /// （雷は数で増えた飛び移りの先にも全部当たるとして）。敵を傷つけない武器種では 0。
         /// </summary>
         public float EffectiveDps
         {
             get
             {
                 float explosion = ExplosionRadius > 0f ? ExplosionRatio : 0f;
-                return AverageDps * (1 + ExtraProjectiles) * (1 + MultishotCount) * (1f + explosion);
+                float count = baseChainHits > 0 ? (float)ChainHitCount / baseChainHits : 1 + ExtraProjectiles;
+                return AverageDps * count * (1 + MultishotCount) * (1f + explosion);
             }
         }
 
@@ -323,8 +342,11 @@ namespace TpsDungeon.Items
             }
 
             float sizeScale = Math.Max(0.1f, 1f + enchant.Amount(EnchantmentKind.Size));
-            return new RangedWeaponStats(shot, baseTicks, flameTick, healTick)
+            int extraProjectiles = FloorCount(enchant.Amount(EnchantmentKind.ProjectileCount));
+            int baseChainHits = Math.Max(0, inputs.ChainHits);
+            return new RangedWeaponStats(shot, baseTicks, flameTick, healTick, baseChainHits)
             {
+                ChainHitCount = baseChainHits > 0 ? baseChainHits + extraProjectiles * Math.Max(0, inputs.ChainHitsPerCount) : 0,
                 AttackSpeed = speed,
                 FireInterval = baseInterval / speed,
                 CritChance = Clamp01(critChance),
@@ -334,7 +356,7 @@ namespace TpsDungeon.Items
                 ExplosionRatio = Math.Max(0f, enchant.Amount(EnchantmentKind.Explosion)),
                 ExplosionRadius = Math.Max(0f, enchant.Secondary(EnchantmentKind.Explosion)) * sizeScale,
                 DropRateBonus = Math.Max(0f, enchant.Amount(EnchantmentKind.DropUp)),
-                ExtraProjectiles = FloorCount(enchant.Amount(EnchantmentKind.ProjectileCount)),
+                ExtraProjectiles = extraProjectiles,
                 MultishotCount = FloorCount(enchant.Amount(EnchantmentKind.Multishot)),
                 PierceCount = FloorCount(enchant.Amount(EnchantmentKind.Pierce)),
                 Homing = enchant.Has(EnchantmentKind.Homing),
