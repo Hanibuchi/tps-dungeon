@@ -11,6 +11,7 @@ namespace TpsDungeon.Items
     /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の、敵の id（<see cref="EnemyIdentity"/>）の行で決める（<see cref="WeaponDropRoller"/>）。
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）と、魂の強化のドロップ率（ユニークはユニークの分も）が掛かる。
+    /// ただしボス（必ず落とす本数のある敵）のユニークには掛けず、1 回の討伐につき表の確率どおりに振る。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
     /// 落とした物は敵の居た所（浮く敵なら宙）に出し、床まで落とす（<see cref="ItemDropper"/>）。
     /// </summary>
@@ -68,7 +69,7 @@ namespace TpsDungeon.Items
         /// <summary>
         /// 落とす物を決める（ユニークの天井の数えも進める）。
         /// 普通の敵は多くて 1 本。必ず落とす本数（<see cref="EnemyDropTable.EnemyEntry.guaranteedCount"/>）のある敵（ボス）は、
-        /// ユニークを確率と天井で振ったうえで、ランクの比率で決めた武器をその本数だけ落とす。
+        /// ユニークを確率と天井で振ったうえで（倍率は掛けず、表の確率どおり）、ランクの比率で決めた武器をその本数だけ落とす。
         /// </summary>
         public List<ItemInstance> RollDrops()
         {
@@ -88,9 +89,11 @@ namespace TpsDungeon.Items
 
             bool guaranteed = entry.guaranteedCount > 0;
             float multiplier = DropMultiplier();
-            // 必ず落とす敵は、ここではユニークだけを振る（ランクの分は下で本数だけ振る）。
+            // 必ず落とす敵（ボス）は、ここではユニークだけを振る（ランクの分は下で本数だけ振る）。
+            // ボスのユニークは 1 回の討伐につき表の確率どおりに振る（ドロップ増加・魂の強化の倍率は掛けない。天井はそのまま）。
+            float uniqueMultiplier = guaranteed ? 1f : multiplier * UniqueDropMultiplier();
             WeaponDropRoller.Result result = WeaponDropRoller.Roll(guaranteed ? null : entry.rankChances, uniques, misses, multiplier,
-                multiplier * UniqueDropMultiplier(), Rng);
+                uniqueMultiplier, Rng);
 
             bool changed = false;
             for (int i = 0; i < entry.uniques.Count; i++)

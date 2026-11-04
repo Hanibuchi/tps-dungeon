@@ -11,8 +11,8 @@ namespace TpsDungeon.Hud
     /// 上中央のボスの名前と HP（GameHud.uxml の #boss）。ボス戦（<see cref="BossEncounter.Current"/>）の間だけ出す。
     ///   ・肩書き（「第 N 層の主」）と名前、HP のバー（削れ跡は本体より遅れて追いつく）
     ///   ・段階の境目（BossPhases の phase2_hp・phase3_hp）に目盛りの菱形を置き、越えた目盛りは灯す
-    ///   ・バーの下の 3 つの菱形で今の段階を示す。段階が上がると枠の角と紋章を光らせ、段階 3 ではバーが脈打つ
-    ///   ・倒したら肩書きを「討伐」にして名前を沈め、少し見せてから消す。死んで階ごと消えたら（ボスも消える）すぐ消す
+    ///   ・段階が上がると枠の角と紋章を光らせ、段階 3 ではバーが脈打つ
+    ///   ・倒したら名前を沈め、少し見せてから消す。死んで階ごと消えたら（ボスも消える）すぐ消す
     /// </summary>
     public sealed class BossBar
     {
@@ -21,7 +21,6 @@ namespace TpsDungeon.Hud
         private const string RoarClass = "boss--roar";
         private const string BeatClass = "boss--beat";
         private const string DefeatedClass = "boss--defeated";
-        private const string StageOnClass = "boss__stage--on";
         private const string TickPassedClass = "boss__tick--passed";
 
         /// <summary>倒してからバーを消すまで（ミリ秒）。</summary>
@@ -37,7 +36,6 @@ namespace TpsDungeon.Hud
         private readonly VisualElement trail;
         private readonly VisualElement tick2;
         private readonly VisualElement tick3;
-        private readonly VisualElement[] stagePips;
 
         private EnemyHealth shownBoss;
         private BossPhases shownPhases;
@@ -55,8 +53,6 @@ namespace TpsDungeon.Hud
             trail = root.Q<VisualElement>("boss-trail");
             tick2 = root.Q<VisualElement>("boss-tick-2");
             tick3 = root.Q<VisualElement>("boss-tick-3");
-            stagePips = new VisualElement[BossPhaseRules.MaxStage];
-            for (int i = 0; i < stagePips.Length; i++) stagePips[i] = root.Q<VisualElement>($"boss-stage-{i + 1}");
             UiTransitions.HideImmediately(root);
         }
 
@@ -125,7 +121,6 @@ namespace TpsDungeon.Hud
             }
 
             SetFraction(0f);
-            titleLabel.text = "討伐";
             root.AddToClassList(DefeatedClass);
             UiTransitions.Flash(root, RoarClass, 600);
             hide?.Pause();
@@ -146,7 +141,6 @@ namespace TpsDungeon.Hud
         private void SetStage(int stage, bool announce)
         {
             for (int i = 1; i <= BossPhaseRules.MaxStage; i++) root.EnableInClassList(StageClassPrefix + i, i == stage);
-            for (int i = 0; i < stagePips.Length; i++) stagePips[i]?.EnableInClassList(StageOnClass, i < stage);
             tick2?.EnableInClassList(TickPassedClass, stage >= 2);
             tick3?.EnableInClassList(TickPassedClass, stage >= 3);
 

@@ -727,7 +727,7 @@
     left: 50%;
     width: 640px;
     margin-left: -320px;
-    padding: 10px 26px 10px 26px;
+    padding: 10px 26px 16px 26px;
     background-color: rgba(14, 11, 10, 0.88);
     align-items: stretch;
     opacity: 0;
@@ -862,32 +862,6 @@
     scale: 1.2 1.2;
 }
 
-/* バーの下の 3 つの菱形が、今の段階を示す。 */
-.boss__stages {
-    flex-direction: row;
-    justify-content: center;
-    margin-top: 8px;
-}
-
-.boss__stage {
-    width: 8px;
-    height: 8px;
-    margin: 0 7px;
-    rotate: 45deg;
-    background-color: rgb(34, 28, 22);
-    border-width: 1px;
-    border-color: var(--brass);
-    transition-property: background-color, scale;
-    transition-duration: 0.35s;
-    transition-timing-function: ease-out-back;
-}
-
-.boss__stage.boss__stage--on {
-    background-color: var(--ember);
-    border-color: var(--gold-bright);
-    scale: 1.25 1.25;
-}
-
 .boss--stage2 .boss__fill {
     background-color: rgb(186, 52, 40);
 }
@@ -930,8 +904,4 @@
 /* 倒したとき: 名前を沈め、しばらく見せてから消す。 */
 .boss.boss--defeated .boss__name {
     color: var(--ink-faint);
-}
-
-.boss.boss--defeated .boss__title {
-    color: var(--gold);
 }

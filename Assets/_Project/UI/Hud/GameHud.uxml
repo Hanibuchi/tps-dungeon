@@ -70,11 +70,6 @@
                     <ui:VisualElement class="boss__tick-gem" picking-mode="Ignore" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement class="boss__stages" picking-mode="Ignore">
-                <ui:VisualElement name="boss-stage-1" class="boss__stage" picking-mode="Ignore" />
-                <ui:VisualElement name="boss-stage-2" class="boss__stage" picking-mode="Ignore" />
-                <ui:VisualElement name="boss-stage-3" class="boss__stage" picking-mode="Ignore" />
-            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="monster-house" class="monster-house" picking-mode="Ignore">
             <ui:VisualElement name="monster-house-banner" class="monster-house__banner" picking-mode="Ignore">
