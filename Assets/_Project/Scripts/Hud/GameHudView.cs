@@ -551,6 +551,7 @@ namespace TpsDungeon.Hud
             floorBootstrap = bootstrap;
 
             floorBuilder.Built += OnFloorBuilt;
+            floorBuilder.DoorOpened += OnDoorOpened;
             if (floorBuilder.CurrentLayout != null) OnFloorBuilt(floorBuilder.CurrentLayout);
 
             enemySpawner = bootstrap.GetComponent<RoomEnemySpawner>();
@@ -563,7 +564,11 @@ namespace TpsDungeon.Hud
 
         private void UnbindFloor()
         {
-            if (floorBuilder != null) floorBuilder.Built -= OnFloorBuilt;
+            if (floorBuilder != null)
+            {
+                floorBuilder.Built -= OnFloorBuilt;
+                floorBuilder.DoorOpened -= OnDoorOpened;
+            }
             floorBuilder = null;
             floorBootstrap = null;
             if (enemySpawner != null)
@@ -583,6 +588,17 @@ namespace TpsDungeon.Hud
             exploration = layout != null ? new FloorExploration(layout) : null;
             if (maps == null) return;
             foreach (var m in maps) m.SetExploration(exploration);
+        }
+
+        /// <summary>ドアを開けたら、入らなくても両側の部屋を地図に出す。</summary>
+        private void OnDoorOpened(Door door, RoomEdge edge)
+        {
+            if (exploration == null || edge == null) return;
+            bool revealed = exploration.Reveal(edge.RoomA) | exploration.Reveal(edge.RoomB);
+            if (revealed && maps != null)
+            {
+                foreach (var m in maps) m.Repaint();
+            }
         }
 
         /// <summary>

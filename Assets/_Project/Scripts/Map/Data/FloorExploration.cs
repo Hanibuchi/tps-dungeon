@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace TpsDungeon.Map.Data
 {
     /// <summary>
-    /// 1 フロアのうちプレイヤーが足を踏み入れた部屋の記録。
-    /// ドアを開けるまで中が見えない前提なので、地図には入った部屋だけを描く。
+    /// 1 フロアのうちプレイヤーが知っている部屋の記録。
+    /// ドアを開けるまで中が見えない前提なので、地図には入った部屋と、開けたドアの向こうの部屋（<see cref="Reveal"/>）だけを描く。
     /// </summary>
     public sealed class FloorExploration
     {
@@ -37,6 +37,19 @@ namespace TpsDungeon.Map.Data
 
             CurrentRoom = room;
             if (visited[room]) return false;
+
+            visited[room] = true;
+            VisitedCount++;
+            return true;
+        }
+
+        /// <summary>
+        /// 部屋を地図に出す（ドアを開けて中が見えた）。入ったことにはしないので、今居る部屋は変えない。
+        /// 初めて出した部屋なら true を返す。番号が範囲の外なら何もしない。
+        /// </summary>
+        public bool Reveal(int room)
+        {
+            if (room < 0 || room >= visited.Length || visited[room]) return false;
 
             visited[room] = true;
             VisitedCount++;
