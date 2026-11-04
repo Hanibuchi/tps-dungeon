@@ -169,15 +169,7 @@ namespace TpsDungeon.Party
         {
             if (party == null || roster.Count == 0) return;
 
-            int allowed = Mathf.Clamp(AllowedMembers, 1, roster.Count);
-            PartyMember leader = party.Leader;
-            var keep = new HashSet<PartyMember>();
-            if (leader != null) keep.Add(leader);
-            foreach (PartyMember member in roster)
-            {
-                if (keep.Count >= allowed) break;
-                keep.Add(member);
-            }
+            HashSet<PartyMember> keep = MembersToKeep();
 
             foreach (PartyMember member in roster)
             {
@@ -199,6 +191,24 @@ namespace TpsDungeon.Party
                     member.gameObject.SetActive(false);
                 }
             }
+        }
+
+        /// <summary>連れて行ける人数に合わせたときに残る仲間。先頭と、最初の並びの順に人数まで。</summary>
+        private HashSet<PartyMember> MembersToKeep()
+        {
+            var keep = new HashSet<PartyMember>();
+            if (party == null) return keep;
+
+            int allowed = Mathf.Clamp(AllowedMembers, 1, Mathf.Max(1, roster.Count));
+            PartyMember leader = party.Leader;
+            if (leader != null) keep.Add(leader);
+            foreach (PartyMember member in roster)
+            {
+                if (keep.Count >= allowed) break;
+                if (member != null) keep.Add(member);
+            }
+
+            return keep;
         }
 
         /// <summary>最初に居た仲間（パーティーから外した人も）。セーブの手持ちを人ごとに当てるのに使う。</summary>
@@ -300,8 +310,18 @@ namespace TpsDungeon.Party
             }
         }
 
-        /// <summary>転生で持ち物を手放す。keep に入っている物だけ元の場所に残し、全員の手持ちと共有のバッグからほかを消す。</summary>
+        /// <summary>
+        /// 転生で持ち物を手放す。keep に入っている物だけ元の場所に残し、全員の手持ちと共有のバッグからほかを消す。
+        /// 残した物のうち、転生のあと連れて行けない仲間（<see cref="MembersToKeep"/> に入らない）の手にある物は、先頭の手持ちか共有のバッグへ移す。
+        /// そのままだと、隠れた仲間の手に残って持ち越せていないように見えた（転生して着いたとき ApplyPartySize で外れる）。
+        /// </summary>
         public void DiscardItems(ICollection<ItemInstance> keep)
+        {
+            DiscardOnly(keep);
+            MoveKeptItemsFromLeavingMembers();
+        }
+
+        private void DiscardOnly(ICollection<ItemInstance> keep)
         {
             var seen = new HashSet<Inventory>();
             var members = new List<PartyMember>(roster);
@@ -317,6 +337,37 @@ namespace TpsDungeon.Party
             foreach (PartyMember member in members)
             {
                 if (member != null && member.Inventory != null) Discard(member.Inventory.Inventory, keep, seen);
+            }
+        }
+
+        private void MoveKeptItemsFromLeavingMembers()
+        {
+            if (party == null) return;
+            PlayerInventory leader = party.Leader != null ? party.Leader.Inventory : null;
+            if (leader == null) return;
+
+            HashSet<PartyMember> staying = MembersToKeep();
+            var members = new List<PartyMember>(roster);
+            foreach (PartyMember member in party.Members)
+            {
+                if (!members.Contains(member)) members.Add(member);
+            }
+
+            foreach (PartyMember member in members)
+            {
+                if (member == null || staying.Contains(member) || member.Inventory == null) continue;
+                Inventory hand = member.Inventory.Inventory;
+                for (int i = 0; i < hand.Count; i++)
+                {
+                    ItemInstance item = hand[i];
+                    if (item == null) continue;
+                    hand.RemoveAt(i);
+                    if (leader.TryAdd(item)) continue;
+
+                    // 先頭の手持ちもバッグも埋まっていたら、元の手に戻す（消さない）。
+                    hand.TryAdd(item);
+                    Debug.LogWarning($"持ち越した {item.DisplayName} を先頭へ移せなかった（手持ちもバッグも埋まっている）。{member.DisplayName} の手に残す", this);
+                }
             }
         }
 
