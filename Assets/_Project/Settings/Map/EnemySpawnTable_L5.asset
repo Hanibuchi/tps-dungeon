@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d4d49c5bf4324bb59d04628763c1585, type: 3}
   m_Name: EnemySpawnTable_L5
   m_EditorClassIdentifier: TpsDungeon.Map::TpsDungeon.Map.Authoring.EnemySpawnTable
-  budgetPerCell: 6
+  budgetPerCell: 8
   budgetBasis: 0
   monsterHouseChance: 0.2
   monsterHouseBudgetMultiplier: 2
   enemies:
   - id: wraith
     prefab: {fileID: 2755816026748207779, guid: 284ec33f53a3543b0a516fe3d9f7fe51, type: 3}
-    cost: 2
+    cost: 1
   - id: lava_slime
     prefab: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
     cost: 1
   - id: artillery_golem
     prefab: {fileID: 6789413913602102952, guid: 679924acc6bda4d36b505e670e18483c, type: 3}
-    cost: 2
+    cost: 8
   - id: rot_treant
     prefab: {fileID: 3861111510383041326, guid: 98285a5e60c294288a6ad3dbc91f85cd, type: 3}
-    cost: 2
+    cost: 4
   trappedSound: {fileID: 8300000, guid: 8d0257c08dcc24aa7b43f9a2791c7496, type: 3}
   releasedSound: {fileID: 8300000, guid: fe55cadb6d3ce4b6a9313c4b682882a6, type: 3}
   soundVolume: 1

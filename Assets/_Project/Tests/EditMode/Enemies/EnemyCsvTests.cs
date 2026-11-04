@@ -156,5 +156,58 @@ namespace TpsDungeon.Enemies.Tests
             Assert.IsTrue(EnemyCsv.TryParseLayers(text, out int[] layers, out string error), error);
             CollectionAssert.AreEqual(expected, layers);
         }
+
+        [Test]
+        public void kind_を読み_空欄は_Unknown_大文字小文字は問わない()
+        {
+            const string text =
+                "id,kind,cost,layers\n" +
+                "a,melee,1,1\n" +
+                "b,Ranged,1,1\n" +
+                "c, poison_gas ,1,1\n" +
+                "d,,1,1\n";
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse(text, errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(4, rows.Count);
+            Assert.AreEqual(EnemyKind.Melee, rows[0].Kind);
+            Assert.AreEqual(EnemyKind.Ranged, rows[1].Kind);
+            Assert.AreEqual(EnemyKind.PoisonGas, rows[2].Kind);
+            Assert.AreEqual(EnemyKind.Unknown, rows[3].Kind);
+        }
+
+        [Test]
+        public void kind_の列が無ければ_Unknown()
+        {
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse("id,cost,layers\na,1,1\n", errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(EnemyKind.Unknown, rows[0].Kind);
+        }
+
+        [Test]
+        public void 知らない_kind_はエラーに積んで飛ばす()
+        {
+            var errors = new List<string>();
+            List<EnemyCsv.Row> rows = EnemyCsv.Parse("id,kind,cost,layers\na,melee,1,1\nb,sniper,1,1\n", errors);
+
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual("a", rows[0].Id);
+            Assert.AreEqual(1, errors.Count);
+            StringAssert.Contains("3 行目", errors[0]);
+            StringAssert.Contains("sniper", errors[0]);
+        }
+
+        [Test]
+        public void kind_の名前は読み書きで往復する()
+        {
+            foreach (EnemyKind kind in new[] { EnemyKind.Melee, EnemyKind.Ranged, EnemyKind.Leap, EnemyKind.Bomber, EnemyKind.PoisonGas })
+            {
+                Assert.IsTrue(EnemyCsv.TryParseKind(EnemyCsv.KindName(kind), out EnemyKind parsed));
+                Assert.AreEqual(kind, parsed);
+            }
+        }
     }
 }

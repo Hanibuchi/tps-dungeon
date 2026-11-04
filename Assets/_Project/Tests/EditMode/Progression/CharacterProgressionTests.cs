@@ -48,15 +48,15 @@ namespace TpsDungeon.Progression.Tests
             health.Changed += _ => healthChanges++;
             character.MaxHpChanged += (_, from, to) => { maxFrom = from; maxTo = to; };
 
-            character.AddExp(2930); // 1 回で Lv1→10
+            character.AddExp(2380); // 1 回で Lv1→10
 
             Assert.AreEqual(10, character.Level);
-            Assert.AreEqual(129, health.MaxHp);
-            Assert.AreEqual(70 + 29, health.CurrentHp, "増えた 29 だけ足す");
+            Assert.AreEqual(190, health.MaxHp);
+            Assert.AreEqual(70 + 90, health.CurrentHp, "増えた 90 だけ足す");
             Assert.AreEqual(100, maxFrom);
-            Assert.AreEqual(129, maxTo);
+            Assert.AreEqual(190, maxTo);
             Assert.AreEqual(38f, character.BaseAttack, 0.001f);
-            Assert.AreEqual("99 / 129", GameHudView.HpText(health.CurrentHp, health.MaxHp), "HUD の表示は新しい最大を指す");
+            Assert.AreEqual("160 / 190", GameHudView.HpText(health.CurrentHp, health.MaxHp), "HUD の表示は新しい最大を指す");
             Assert.Greater(healthChanges, 0, "HUD が購読している Changed が飛ぶ");
         }
 
@@ -79,7 +79,7 @@ namespace TpsDungeon.Progression.Tests
             int count = 0, from = 0, to = 0;
             character.LeveledUp += (_, f, t) => { count++; from = f; to = t; };
 
-            character.AddExp(505);
+            character.AddExp(565);
 
             Assert.AreEqual(1, count);
             Assert.AreEqual(1, from);
@@ -170,7 +170,7 @@ namespace TpsDungeon.Progression.Tests
         [Test]
         public void CaptureAndRestore_RoundTrip()
         {
-            character.AddExp(555); // Lv5 + 55
+            character.AddExp(615); // Lv5 + 55
             health.Damage(40);
             var data = character.Capture();
 

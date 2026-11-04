@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 34
+  maxHp: 181
   immortal: 0
   prop: 0
 --- !u!114 &7557528038855932747
@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0789c297628e34e1c993a76b1df86857, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
-  moveSpeed: 3.5
+  moveSpeed: 4
   turnSpeed: 540
   hoverHeight: 0
   hoverBob: 0
@@ -229,6 +229,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &3692251294075240384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,7 +248,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 46
+  damage: 60
   cooldown: 0
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
@@ -256,10 +258,10 @@ MonoBehaviour:
   volume: 1
   windupEffect: {fileID: 0}
   hitEffect: {fileID: 0}
-  fuseRange: 2.2
+  fuseRange: 3
   fuseTime: 3
   fuseSpeedScale: 0.4
-  blastRadius: 3.5
+  blastRadius: 4
   edgeDamageScale: 0.3
   explosionEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
   explosionEffectScale: 0.5

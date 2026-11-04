@@ -4,14 +4,16 @@ namespace TpsDungeon.Progression
 {
     /// <summary>
     /// レベル・ソウル・経験値の倍率のバランスの式と定数を 1 か所にまとめたもの。UnityEngine に依存しない。
+    /// 値はスプレッドシート「バランス」のレベルシートに揃えてある。
     ///
-    ///   元の値 base(L)           = ExpCoefficient × L³ + ExpConstant
-    ///   次までの経験値 need(L)    = base(L) を有効数字 2 桁で四捨五入（10〜99 はそのまま。最大レベルでは 0）
+    ///   次までの経験値 need(L)    = ExpFirst × ExpRatioPerLayer^((L − 1) / LevelsPerLayer) を有効数字 2 桁で四捨五入（最大レベルでは 0）
+    ///                              1 層（LevelsPerLayer レベル）進むごとに ExpRatioPerLayer 倍になる
     ///   累計経験値(L)            = need(1) + … + need(L)
-    ///   全滅したときのソウル soul(L) = SoulCoefficient × L^SoulExponent（到達したレベルの 1 回分）
+    ///   全滅したときのソウル soul(L) = 累計経験値(L) ÷ SoulExpDivisor を有効数字 2 桁で四捨五入（到達したレベルの 1 回分）
     ///   経験値の倍率             = ExpMultiplierPerUnlock ^ 解放数（経験値増加の強化。1 つごとに ×2）
     ///
-    /// 丸めは整数で計算する（浮動小数点の誤差で .5 の四捨五入がずれないように）。ソウルは 64bit で持つ（Lv100 で 10 億）。
+    /// need(L) は Lv82 あたりから int に収まらないので、<see cref="RequiredExp"/> は int.MaxValue で頭打ちにする
+    /// （累計とソウルは 64bit で頭打ちにせずに足す）。
     /// </summary>
     public static class LevelBalance
     {
@@ -20,39 +22,44 @@ namespace TpsDungeon.Progression
         /// <summary>最大レベル。</summary>
         public const int MaxLevel = 100;
 
-        /// <summary>必要経験値の元の値の L³ に掛ける係数。</summary>
-        public const long ExpCoefficient = 1;
+        /// <summary>need(1)（Lv1 から Lv2 に要る経験値）。</summary>
+        public const double ExpFirst = 100;
 
-        /// <summary>必要経験値の元の値に足す固定値。</summary>
-        public const long ExpConstant = 100;
+        /// <summary>1 層進むごとに必要経験値が何倍になるか。</summary>
+        public const double ExpRatioPerLayer = 8;
+
+        /// <summary>1 層あたりのレベル数（1 階あたり 2 レベル × 1 層 5 階）。</summary>
+        public const int LevelsPerLayer = 10;
 
         /// <summary>必要経験値を丸めるときに残す有効数字の桁数。</summary>
         public const int ExpSignificantDigits = 2;
 
-        /// <summary>ソウルの係数。</summary>
-        public const long SoulCoefficient = 10;
+        /// <summary>ソウル ＝ 累計経験値 ÷ この値。</summary>
+        public const long SoulExpDivisor = 10;
 
-        /// <summary>ソウルの指数（レベルの何乗か）。</summary>
-        public const int SoulExponent = 4;
+        /// <summary>ソウルを丸めるときに残す有効数字の桁数。</summary>
+        public const int SoulSignificantDigits = 2;
 
         /// <summary>経験値増加の強化を 1 つ解放するごとに倍率に掛ける量。</summary>
         public const float ExpMultiplierPerUnlock = 2f;
 
         public static int ClampLevel(int level) => Math.Min(Math.Max(level, MinLevel), MaxLevel);
 
-        /// <summary>丸める前の必要経験値 base(L)。</summary>
-        public static long BaseExp(int level)
+        /// <summary>丸める前の必要経験値。</summary>
+        public static double BaseExp(int level)
         {
-            long l = ClampLevel(level);
-            return ExpCoefficient * l * l * l + ExpConstant;
+            int l = ClampLevel(level);
+            return ExpFirst * Math.Pow(ExpRatioPerLayer, (l - 1) / (double)LevelsPerLayer);
         }
 
         /// <summary>level から level+1 に上がるのに要る経験値 need(L)（丸めたあと。判定にも表示にもこれを使う）。最大レベルでは 0。</summary>
-        public static int RequiredExp(int level)
+        public static int RequiredExp(int level) => (int)Math.Min(int.MaxValue, RequiredExpLong(level));
+
+        /// <summary>need(L) を頭打ちにせずに返す。最大レベルでは 0。</summary>
+        public static long RequiredExpLong(int level)
         {
             if (ClampLevel(level) >= MaxLevel) return 0;
-            long need = RoundToSignificant(BaseExp(level), ExpSignificantDigits);
-            return (int)Math.Min(int.MaxValue, Math.Max(1, need));
+            return Math.Max(1, RoundToSignificant(BaseExp(level), ExpSignificantDigits));
         }
 
         /// <summary>need(1) から need(level) までの合計。</summary>
@@ -60,7 +67,7 @@ namespace TpsDungeon.Progression
         {
             level = ClampLevel(level);
             long total = 0;
-            for (int l = MinLevel; l <= level; l++) total += RequiredExp(l);
+            for (int l = MinLevel; l <= level; l++) total += RequiredExpLong(l);
             return total;
         }
 
@@ -71,9 +78,8 @@ namespace TpsDungeon.Progression
         public static long SoulReward(int level)
         {
             if (level < MinLevel) return 0;
-            long souls = SoulCoefficient;
-            for (int i = 0; i < SoulExponent; i++) souls *= ClampLevel(level);
-            return souls;
+            // 10 で割ってから有効数字で丸めても、丸めてから割っても同じ（累計は 100 以上なので割り切れる）。
+            return RoundToSignificant(CumulativeExp(level), SoulSignificantDigits) / SoulExpDivisor;
         }
 
         /// <summary>経験値増加の強化を unlockCount 個解放したときの、経験値の倍率。</summary>
@@ -93,6 +99,22 @@ namespace TpsDungeon.Progression
             long unit = 1;
             while (value / unit >= limit) unit *= 10;
             return (value + unit / 2) / unit * unit;
+        }
+
+        /// <summary>
+        /// 実数を有効数字 digits 桁に四捨五入して整数にする（ちょうど .5 は 0 から遠い側へ。スプレッドシートの ROUND と同じ）。
+        /// 例（2 桁）: 123.1 → 120、229.7 → 230。
+        /// </summary>
+        public static long RoundToSignificant(double value, int digits)
+        {
+            if (value < 0) return -RoundToSignificant(-value, digits);
+            if (value <= 0 || double.IsNaN(value)) return 0;
+            int exponent = (int)Math.Floor(Math.Log10(value)) - (digits - 1);
+            double unit = Math.Pow(10, exponent);
+            // 割り算の誤差で 2.4999999 のようになって切り捨てられないよう、少しだけ持ち上げてから丸める。
+            double scaled = value / unit;
+            double rounded = Math.Floor(scaled + 0.5 + 1e-9);
+            return exponent >= 0 ? (long)Math.Round(rounded * unit) : (long)Math.Round(rounded * unit, MidpointRounding.AwayFromZero);
         }
     }
 }

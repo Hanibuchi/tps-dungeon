@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 34
+  exp: 107
 --- !u!114 &1515151340169423680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 104
+  maxHp: 549
   immortal: 0
   prop: 0
 --- !u!114 &8142087636126591277
@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0789c297628e34e1c993a76b1df86857, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyMotor
-  moveSpeed: 4.5
+  moveSpeed: 4
   turnSpeed: 540
   hoverHeight: 0
   hoverBob: 0
@@ -229,6 +229,8 @@ MonoBehaviour:
   evadeHeight: 0.7
   climbSpeed: 3.5
   repathInterval: 0.2
+  avoidanceRadius: 0.3
+  avoidancePriorityRange: {x: 30, y: 70}
 --- !u!114 &7057272065769893964
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,7 +248,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 70
+  damage: 120
   cooldown: 0
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 5af49e438b6d94a23976b94e6777bd93, type: 3}
@@ -256,7 +258,7 @@ MonoBehaviour:
   volume: 1
   windupEffect: {fileID: 0}
   hitEffect: {fileID: 0}
-  fuseRange: 2.2
+  fuseRange: 3
   fuseTime: 3
   fuseSpeedScale: 0.4
   blastRadius: 4

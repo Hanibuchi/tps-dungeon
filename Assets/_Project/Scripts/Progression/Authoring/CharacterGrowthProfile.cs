@@ -4,7 +4,7 @@ namespace TpsDungeon.Progression
 {
     /// <summary>
     /// キャラ 1 人分の成長パラメータ。主人公用と仲間ごとに別のアセットを作って CharacterProgression に割り当てる。
-    /// 式は <see cref="GrowthCurve"/> を参照。既定値は仮の値で、GrowthCurve.Default と揃えてある。
+    /// 式は <see cref="GrowthCurve"/> を参照。既定値はスプレッドシート「バランス」の値で、GrowthCurve.Default と揃えてある。
     /// 必要経験値と最大レベルは全員共通で、<see cref="LevelBalance"/> にある。
     /// </summary>
     [CreateAssetMenu(fileName = "CharacterGrowth", menuName = "TPS Dungeon/Character Growth")]
@@ -15,10 +15,10 @@ namespace TpsDungeon.Progression
         private float hpBase = 100f;
 
         [SerializeField, Min(0f), Tooltip("レベルごとの伸びの係数（C_hp）。")]
-        private float hpCoefficient = 2.6f;
+        private float hpCoefficient = 10f;
 
         [SerializeField, Min(0f), Tooltip("伸びの指数（p）。1 で直線、大きいほど後半に伸びる。")]
-        private float hpExponent = 1.1f;
+        private float hpExponent = 1f;
 
         [Header("基礎攻撃力 = ATK_base + C_atk × (L−1)^p_atk（スプレッドシート「バランス」の攻撃力シート B 列）")]
         [SerializeField, Min(0f), Tooltip("Lv1 の基礎攻撃力（ATK_base）。")]

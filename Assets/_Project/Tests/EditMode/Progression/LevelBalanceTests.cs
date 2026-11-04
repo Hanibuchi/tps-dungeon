@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace TpsDungeon.Progression.Tests
 {
-    /// <summary>レベル・ソウル・経験値の倍率の式（LevelBalance）が、バランスの表の参考値と合うか。</summary>
+    /// <summary>レベル・ソウル・経験値の倍率の式（LevelBalance）が、スプレッドシート「バランス」のレベルシートの値と合うか。</summary>
     public sealed class LevelBalanceTests
     {
         [TestCase(101L, 100L)]
@@ -26,18 +26,37 @@ namespace TpsDungeon.Progression.Tests
             for (long value = 10; value <= 99; value++) Assert.AreEqual(value, LevelBalance.RoundToSignificant(value, 2));
         }
 
-        [TestCase(1, 101L, 100, 100L)]
-        [TestCase(2, 108L, 110, 210L)]
-        [TestCase(5, 225L, 230, 730L)]
-        [TestCase(10, 1_100L, 1_100, 4_030L)]
-        [TestCase(20, 8_100L, 8_100, 46_030L)]
-        [TestCase(30, 27_100L, 27_000, 219_430L)]
-        [TestCase(50, 125_100L, 130_000, 1_632_430L)]
-        public void RequiredExp_MatchesTheTable(int level, long baseExp, int need, long cumulative)
+        [TestCase(1, 100.0, 100, 100L)]
+        [TestCase(2, 123.114, 120, 220L)]
+        [TestCase(5, 229.740, 230, 790L)]
+        [TestCase(10, 649.802, 650, 3_030L)]
+        [TestCase(11, 800.000, 800, 3_830L, Description = "1 層（10 レベル）で 8 倍")]
+        [TestCase(20, 5_198.415, 5_200, 27_210L)]
+        [TestCase(30, 41_587.323, 42_000, 221_210L)]
+        [TestCase(50, 2_661_588.652, 2_700_000, 14_299_210L)]
+        public void RequiredExp_MatchesTheTable(int level, double baseExp, int need, long cumulative)
         {
-            Assert.AreEqual(baseExp, LevelBalance.BaseExp(level));
+            Assert.AreEqual(baseExp, LevelBalance.BaseExp(level), 0.001);
             Assert.AreEqual(need, LevelBalance.RequiredExp(level));
             Assert.AreEqual(cumulative, LevelBalance.CumulativeExp(level));
+        }
+
+        [TestCase(123.1, 120L)]
+        [TestCase(229.7, 230L)]
+        [TestCase(1_450.0, 1_500L, Description = "ちょうど .5 は切り上げ")]
+        [TestCase(1_449.99, 1_400L)]
+        [TestCase(25.0, 25L, Description = "2 桁以下はそのまま")]
+        public void RoundToSignificant_RoundsRealValues(double value, long expected)
+        {
+            Assert.AreEqual(expected, LevelBalance.RoundToSignificant(value, 2));
+        }
+
+        [Test]
+        public void RequiredExp_IsCappedToIntButCumulativeIsNot()
+        {
+            Assert.AreEqual(int.MaxValue, LevelBalance.RequiredExp(99), "Lv99 の need は 710 億で int に収まらない");
+            Assert.AreEqual(71_000_000_000L, LevelBalance.RequiredExpLong(99));
+            Assert.AreEqual(378_184_499_210L, LevelBalance.CumulativeExp(99), "表の Lv99 の累計（int で頭打ちにせずに足す）");
         }
 
         [Test]
@@ -57,13 +76,15 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [TestCase(1, 10L)]
-        [TestCase(2, 160L)]
-        [TestCase(5, 6_250L)]
-        [TestCase(10, 100_000L)]
-        [TestCase(20, 1_600_000L)]
-        [TestCase(30, 8_100_000L)]
-        [TestCase(50, 62_500_000L)]
-        [TestCase(100, 1_000_000_000L)]
+        [TestCase(2, 22L)]
+        [TestCase(5, 79L)]
+        [TestCase(10, 300L)]
+        [TestCase(14, 750L)]
+        [TestCase(20, 2_700L)]
+        [TestCase(30, 22_000L)]
+        [TestCase(44, 410_000L)]
+        [TestCase(50, 1_400_000L)]
+        [TestCase(99, 38_000_000_000L)]
         public void SoulReward_MatchesTheTable(int level, long expected)
         {
             Assert.AreEqual(expected, LevelBalance.SoulReward(level));
@@ -88,14 +109,14 @@ namespace TpsDungeon.Progression.Tests
         }
 
         /// <summary>
-        /// 想定している 1 階あたりの基本経験値（n 層目の終わりに Lv10n。1 層 5 階、n 層目の解放数は n−1）:
+        /// 想定している 1 階あたりの基本経験値（n 層目の終わりに Lv10n。1 層 5 階、n 層目の解放数は n−1。経験値ボーナスは入れない）:
         /// 基本(n) = (累計(10n) / 倍率(n) − 累計(10(n−1)) / 倍率(n−1)) / 5
         /// </summary>
-        [TestCase(1, 806L)]
-        [TestCase(2, 3_797L)]
-        [TestCase(3, 6_369L)]
-        [TestCase(4, 5_939L)]
-        [TestCase(5, 3_495L)]
+        [TestCase(1, 606L)]
+        [TestCase(2, 2_115L)]
+        [TestCase(3, 8_340L)]
+        [TestCase(4, 33_170L)]
+        [TestCase(5, 134_510L)]
         public void BaseExpPerFloor_MatchesTheDesign(int layer, long expected)
         {
             double current = LevelBalance.CumulativeExp(10 * layer) / (double)LevelBalance.ExpMultiplier(layer - 1);

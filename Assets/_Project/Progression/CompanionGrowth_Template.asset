@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: CompanionGrowth_Template
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.CharacterGrowthProfile
   hpBase: 100
-  hpCoefficient: 2.6
-  hpExponent: 1.1
+  hpCoefficient: 10
+  hpExponent: 1
   attackBase: 20
   attackCoefficient: 2
   attackExponent: 1
