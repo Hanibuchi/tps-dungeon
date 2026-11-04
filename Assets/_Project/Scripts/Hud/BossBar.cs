@@ -46,8 +46,10 @@ namespace TpsDungeon.Hud
             if (root == null) return;
 
             BossEncounter encounter = BossEncounter.Current;
-            EnemyHealth boss = encounter != null ? encounter.Boss : null;
-            if (boss != shownBoss) Bind(encounter, boss);
+            EnemyHealth boss = encounter != null && encounter.Boss != null ? encounter.Boss : null;
+            // 死んで階のシーンが消えるとボスも消える。Unity の == は消えた物を null と同じに扱うので、
+            // そのままだと「出しているボス（消えた）」と「今のボス（無し）」が等しく見えてバーが残る。参照で比べる。
+            if (!ReferenceEquals(boss, shownBoss)) Bind(encounter, boss);
             if (boss == null) return;
 
             int hp = boss.CurrentHp;
