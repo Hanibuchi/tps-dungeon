@@ -181,13 +181,15 @@ namespace TpsDungeon.Progression
         public static long SoulsFor(int level) => LevelBalance.SoulReward(level);
 
         /// <summary>
-        /// 死んだ。members の各人のレベルをソウルに変えて足し、内訳を残す（前の内訳をまだ見せていなければ後ろに足す）。
+        /// 死んだ。members の各人のレベルをソウルに変えて足し、内訳を残す。
+        /// 内訳はこの死の分だけにする（前の内訳をまだ見せていなくても捨てる。そのソウルは前の死のときに足してある）。
+        /// 足すと続けて死んだとき札が何枚も並び、回収が 1 人ではなく見えた。
         /// レベルを戻すのは呼ぶ側（PartyProgression.ResetForNewRun）。足したソウルを返す。
         /// </summary>
         public static long Harvest(IEnumerable<SoulHarvestMember> members)
         {
             MetaProgressSaveData data = Load();
-            if (!data.hasHarvest) data.harvest.members.Clear();
+            data.harvest.members.Clear();
 
             long gained = 0;
             if (members != null)

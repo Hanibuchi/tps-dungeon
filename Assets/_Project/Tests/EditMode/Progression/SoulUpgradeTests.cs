@@ -245,6 +245,18 @@ namespace TpsDungeon.Progression.Tests
         }
 
         [Test]
+        public void MetaUpgrades_Harvest_KeepsOnlyTheLatestDeathInTheBreakdown()
+        {
+            long first = MetaUpgrades.Harvest(new[] { new SoulHarvestMember { id = "player", name = "主人公", level = 10 } });
+            long second = MetaUpgrades.Harvest(new[] { new SoulHarvestMember { id = "member_1", name = "仲間", level = 1 } });
+
+            Assert.AreEqual(first + second, MetaUpgrades.Souls, "前の死のソウルも手持ちに残る");
+            Assert.AreEqual(1, MetaUpgrades.PendingHarvest.members.Count, "見せる前に続けて死んでも札は今回の 1 人だけ");
+            Assert.AreEqual("member_1", MetaUpgrades.PendingHarvest.members[0].id);
+            Assert.AreEqual(second, MetaUpgrades.PendingHarvest.Total);
+        }
+
+        [Test]
         public void MetaUpgrades_AppliesModifiers()
         {
             MetaUpgrades.AddSouls(100);
