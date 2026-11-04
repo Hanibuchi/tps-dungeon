@@ -121,7 +121,9 @@ namespace TpsDungeon.Items
 
         /// <summary>
         /// source（手持ちかバッグ）の index 番目の枠のものを、このキャラの足元（少し前）に捨て、拾える物として置く。
-        /// ポーズ中（timeScale 0）でも置けるよう、物理は使わず位置を決めて置くだけにする。
+        /// 置いたあとは敵の落とし物と同じく物理で床まで落とす（<see cref="ItemDropper"/>）。足元を探す線が仲間・敵・壺に当たって
+        /// その上に置いても、落とし物のレイヤーはそれらを素通りするので床まで落ちる（宙に浮いたまま残らない）。
+        /// ポーズ中（timeScale 0）に捨てたら、その場で待って、再開してから落ちる。
         /// </summary>
         public bool Drop(Inventory source, int index)
         {
@@ -136,15 +138,12 @@ namespace TpsDungeon.Items
             }
 
             source.RemoveAt(index);
-
-            Vector3 position = DropPosition();
-            Quaternion rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
-            ItemPickup pickup = Instantiate(item.WorldPrefab, position, rotation);
-            pickup.name = item.WorldPrefab.name;
-            pickup.Instance = item;
-            pickup.PlayDropSound();
+            ItemDropper.Drop(item, DropPosition() + Vector3.up * DropLift);
             return true;
         }
+
+        /// <summary>見つけた床から少し浮かせて出す高さ（m）。床にめり込んで出ないように。</summary>
+        private const float DropLift = 0.2f;
 
         /// <summary>キャラの前方の床の上。前に壁があれば手前に寄せる。</summary>
         private Vector3 DropPosition()
