@@ -874,7 +874,7 @@ namespace TpsDungeon.Combat
             BlessingKind kind = shot.BlessingKind;
             CharacterBuffs buffs = CharacterBuffs.On(health.gameObject);
             buffs.Apply(kind, shot.BlessingAmount, shot.BlessingDuration);
-            BlessingAura.Ensure(buffs, kind, type.BlessingEffect(kind), type.BlessingEffectScale);
+            BlessingAura.Ensure(buffs, kind, type.BlessingEffect(kind), type.BlessingEffectScaleFor(kind));
             if (logHits) Debug.Log($"加護 → {health.name}: {kind} {shot.BlessingAmount:0.###}（{shot.BlessingDuration:0.#} 秒）", health);
         }
 
