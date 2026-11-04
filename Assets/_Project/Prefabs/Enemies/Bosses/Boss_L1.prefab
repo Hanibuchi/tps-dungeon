@@ -112,6 +112,7 @@ MonoBehaviour:
   stunDuration: 0.5
   faintDuration: 3
   faintPush: 2.5
+  knockbackScale: 0
   knockbackDuration: 0.2
   knockbackBlockers:
     serializedVersion: 2

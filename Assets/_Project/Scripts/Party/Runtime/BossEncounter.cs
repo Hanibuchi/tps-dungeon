@@ -30,12 +30,19 @@ namespace TpsDungeon.Party
         private FloorBootstrap bootstrap;
         private int arenaRoom = -1;
         private bool spawned;
+        private bool defeated = true;
 
         /// <summary>今戦っているボス戦（ボスが出ていて、まだ倒れていない）。無ければ null。</summary>
         public static BossEncounter Current { get; private set; }
 
         /// <summary>出したボスの体力。</summary>
         public EnemyHealth Boss { get; private set; }
+
+        /// <summary>
+        /// この階にまだ倒していないボスが居る（出る前も含む）。居る間は、部屋を全部攻略しても攻略の知らせを出さない（RoomEnemySpawner）。
+        /// ボスの居ない階、上から降りてきた階、倒したあとは偽。
+        /// </summary>
+        public bool BossPending => arenaRoom >= 0 && !defeated;
 
         /// <summary>出したボスの段階。</summary>
         public BossPhases Phases { get; private set; }
@@ -72,6 +79,7 @@ namespace TpsDungeon.Party
         {
             Release();
             spawned = false;
+            defeated = true;
             arenaRoom = -1;
 
             FloorConfig config = Config;
@@ -87,7 +95,9 @@ namespace TpsDungeon.Party
                 // ボスの居ない階や、上から降りてきたときは扉を開けておく。
                 spawned = true;
                 builder.UnlockDoors();
+                return;
             }
+            defeated = false;
         }
 
         private void OnDoorOpened(Door door, RoomEdge edge)
@@ -124,6 +134,7 @@ namespace TpsDungeon.Party
             if (Boss == null)
             {
                 Debug.LogError($"ボス {config.boss.name} に EnemyHealth が無いので倒せない。扉を開けておく", config.boss);
+                defeated = true;
                 builder.UnlockDoors();
                 return;
             }
@@ -136,6 +147,7 @@ namespace TpsDungeon.Party
 
         private void OnBossDied(EnemyHealth _)
         {
+            defeated = true;
             builder.UnlockDoors();
             Debug.Log("[Dungeon] ボスを倒した。扉が開く", this);
             AnyDefeated?.Invoke(this);

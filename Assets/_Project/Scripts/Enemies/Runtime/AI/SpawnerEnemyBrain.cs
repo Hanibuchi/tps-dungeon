@@ -7,7 +7,9 @@ namespace TpsDungeon.Enemies
     /// <summary>
     /// 手下を呼ぶ敵（08 スポナー）。5 層のボス。
     ///
-    /// 立ち位置は遠距離の敵と同じ（<see cref="EnemyAttackRules.Stance"/>）で、相手と間合いを取る。
+    /// 相手が見えていないか遠ければ寄り、間合い（<see cref="maxRange"/>）に入ったらその場に構える。下がりはしない（玉座の主は退かない）。
+    /// 相手が近すぎる（<see cref="slamRange"/>）と、呼ぶより先に溜めて（<see cref="slamWindup"/> 秒）周りを叩き潰す（<see cref="slamRadius"/>、強いダメージ）。
+    /// 溜めの間に離れれば避けられる。
     /// 相手が見えていて、呼んだ手下が上限（<see cref="maxAlive"/>）より少なければ、止まって溜め（<see cref="windup"/> 秒）、
     /// 自分の周り（<see cref="summonRadius"/>）の NavMesh の上に手下（<see cref="minions"/> から等確率）を呼ぶ → <see cref="cooldown"/> 秒は呼ばない。
     /// ボスの段階（<see cref="BossPhases"/>）が上がると、1 回に呼ぶ数と上限が増え、強い手下（<see cref="elites"/>）も混ぜ、合間に弾も撃つ。
@@ -20,14 +22,39 @@ namespace TpsDungeon.Enemies
     public sealed class SpawnerEnemyBrain : EnemyBrain
     {
         [Header("立ち位置")]
-        [SerializeField, Min(0f), Tooltip("これより近いと下がる（m）。")]
-        private float minRange = 6f;
-
         [SerializeField, Min(1f), Tooltip("これより遠いと寄る（m）。")]
         private float maxRange = 14f;
 
-        [SerializeField, Min(0.5f), Tooltip("下がるときに一度に離れる距離（m）。")]
-        private float retreatStep = 3f;
+        [Header("叩き潰し（近づきすぎた相手へ）")]
+        [SerializeField, Min(0.5f), Tooltip("相手の足元がこの距離に入ったら叩き潰す（m）。")]
+        private float slamRange = 3.5f;
+
+        [SerializeField, Min(0.5f), Tooltip("叩き潰しの届く半径（m）。中心ほど痛い。")]
+        private float slamRadius = 4.5f;
+
+        [SerializeField, Min(0f), Tooltip("叩き潰すまでの溜め（秒）。この間に離れれば避けられる。")]
+        private float slamWindup = 0.9f;
+
+        [SerializeField, Min(0f), Tooltip("叩き潰してから次に叩き潰せるまで（秒）。")]
+        private float slamCooldown = 3f;
+
+        [SerializeField, Min(0f), Tooltip("叩き潰しの中心でのダメージ（1 回の攻撃のダメージに掛ける）。")]
+        private float slamDamageScale = 4f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("叩き潰しの縁でのダメージの割合。")]
+        private float slamEdgeScale = 0.4f;
+
+        [SerializeField, Tooltip("叩き潰しの見た目（地面に出す）。")]
+        private GameObject slamEffect;
+
+        [SerializeField, Min(0.01f)]
+        private float slamEffectScale = 1.2f;
+
+        [SerializeField, Tooltip("叩き潰しの溜めの間、頭の上に出す予兆。")]
+        private GameObject slamWindupEffect;
+
+        [SerializeField, Tooltip("叩き潰しの音。")]
+        private AudioClip slamClip;
 
         [Header("呼ぶ")]
         [SerializeField, Tooltip("呼ぶ手下のプレハブ。等確率で選ぶ。")]
@@ -90,10 +117,14 @@ namespace TpsDungeon.Enemies
         private float impactEffectScale = 0.6f;
 
         private readonly List<EnemyHealth> alive = new List<EnemyHealth>();
+        private readonly List<EnemyTarget> slamHits = new List<EnemyTarget>();
         private readonly List<EnemyHealth> aliveElites = new List<EnemyHealth>();
         private bool summoning;
+        private bool slamming;
         private float timer;
         private float shotTimer;
+        private float slamReady;
+        private GameObject activeSlamWindup;
         private RangedStance stance;
 
         /// <summary>今生きている呼んだ手下の数。</summary>
@@ -110,14 +141,37 @@ namespace TpsDungeon.Enemies
         {
             base.OnEnable();
             summoning = false;
+            slamming = false;
             shotTimer = shotInterval;
         }
 
         protected override void Think(float dt)
         {
+            // 下がらない（近すぎても構えたまま。近ければ叩き潰す）。
             stance = HasTarget
-                ? EnemyAttackRules.Stance(TargetDistance, TargetVisible, minRange, maxRange)
+                ? EnemyAttackRules.Stance(TargetDistance, TargetVisible, 0f, maxRange)
                 : RangedStance.Approach;
+
+            if (slamming)
+            {
+                Motor.Destination = null;
+                if (HasTarget) Motor.LookAt = Target.Position;
+                timer -= dt;
+                if (timer <= 0f) Slam();
+                return;
+            }
+
+            // 近づきすぎた相手は、呼んでいる途中でも取りやめて叩き潰す。
+            if (HasTarget && TargetVisible && TargetDistance <= slamRange && Time.time >= slamReady)
+            {
+                if (summoning)
+                {
+                    summoning = false;
+                    StopWindupEffect();
+                }
+                StartSlam();
+                return;
+            }
 
             if (summoning)
             {
@@ -146,16 +200,8 @@ namespace TpsDungeon.Enemies
                     Motor.StopDistance = TargetVisible ? maxRange * 0.8f : 0.5f;
                     break;
 
-                case RangedStance.Hold:
+                default:
                     Motor.Destination = null;
-                    Motor.LookAt = Target.Position;
-                    break;
-
-                case RangedStance.Retreat:
-                    Vector3 away = Flat(transform.position - Target.Position);
-                    if (away.sqrMagnitude < 1e-4f) away = -transform.forward;
-                    Motor.Destination = transform.position + away.normalized * retreatStep;
-                    Motor.StopDistance = 0.3f;
                     Motor.LookAt = Target.Position;
                     break;
             }
@@ -195,6 +241,58 @@ namespace TpsDungeon.Enemies
                 if (useElite) aliveElites.Add(spawned);
             }
             PlaySound(attackClip, Center);
+        }
+
+        private void StartSlam()
+        {
+            slamming = true;
+            timer = Scaled(slamWindup);
+            Motor.Destination = null;
+            Motor.LookAt = Target.Position;
+            Play(AttackParam);
+            PlaySound(windupClip, Center);
+            if (slamWindupEffect != null)
+            {
+                activeSlamWindup = Instantiate(slamWindupEffect, HeadPoint, transform.rotation, transform);
+                EnemyEffects.Prepare(activeSlamWindup, 1.5f, true);
+            }
+        }
+
+        /// <summary>足元から周りを叩き潰す。中心ほど痛く、壁の向こうと、跳んで高い所に居る相手には当たらない。</summary>
+        private void Slam()
+        {
+            slamming = false;
+            slamReady = Time.time + Scaled(slamCooldown);
+            Motor.LookAt = null;
+            StopSlamWindup();
+
+            Vector3 ground = EnemyMotor.OnNavMesh(transform.position, 3f);
+            Vector3 origin = ground + Vector3.up * 0.5f;
+            EnemyEffects.Spawn(slamEffect, ground, Quaternion.identity, slamEffectScale, 3f);
+            PlaySound(slamClip != null ? slamClip : attackClip, ground);
+
+            int center = Mathf.RoundToInt(damage * slamDamageScale);
+            EnemyHits.Collect(origin, slamRadius + EnemyTarget.DecoyRadius, slamHits);
+            foreach (EnemyTarget target in slamHits)
+            {
+                Vector3 aim = target.AimPoint;
+                if (!EnemyHits.Clear(origin, aim, transform)) continue;
+                if (target.Position.y - ground.y > 1.5f) continue;
+                int dealt = EnemyAttackRules.ExplosionDamage(center, Vector3.Distance(origin, aim), slamRadius, slamEdgeScale);
+                if (dealt > 0)
+                {
+                    target.Damage(dealt, gameObject);
+                    PlaySound(hitClip, aim);
+                    SpawnHitEffect(aim);
+                }
+            }
+        }
+
+        private void StopSlamWindup()
+        {
+            if (activeSlamWindup == null) return;
+            EnemyEffects.Release(activeSlamWindup, 0.6f);
+            activeSlamWindup = null;
         }
 
         private EnemyHealth SpawnMinion(GameObject prefab)
@@ -243,6 +341,7 @@ namespace TpsDungeon.Enemies
         /// <summary>倒れたら、呼んだ手下もみな倒れる。</summary>
         protected override void OnDeath()
         {
+            StopSlamWindup();
             Prune();
             foreach (EnemyHealth minion in alive.ToArray())
             {
@@ -274,21 +373,30 @@ namespace TpsDungeon.Enemies
         {
             get
             {
+                if (slamming) return $"叩き潰し {timer:0.0}s";
                 if (summoning) return $"呼ぶ {timer:0.0}s";
                 if (!HasTarget) return "待つ";
-                return $"手下 {alive.Count}/{ByStage(maxAlive, 4)}" + (stance == RangedStance.Retreat ? " 下がる" : "");
+                return $"手下 {alive.Count}/{ByStage(maxAlive, 4)}";
             }
         }
 
         protected override void DrawRanges()
         {
-            Disc(transform.position, minRange, new Color(0.3f, 0.6f, 1f, 0.9f));
+            Disc(transform.position, slamRange, new Color(1f, 0.1f, 0.1f, 0.9f));
+            Disc(transform.position, slamRadius, new Color(1f, 0.5f, 0.1f, 0.6f));
             Disc(transform.position, maxRange, new Color(1f, 0.3f, 0.2f, 0.9f));
             Disc(transform.position, summonRadius, new Color(0.8f, 0.4f, 1f, 0.7f));
         }
 
         protected override void Interrupted()
         {
+            if (slamming)
+            {
+                slamming = false;
+                StopSlamWindup();
+                Motor.LookAt = null;
+                slamReady = Time.time + Scaled(slamCooldown) * 0.5f;
+            }
             if (!summoning) return;
             summoning = false;
             Motor.LookAt = null;

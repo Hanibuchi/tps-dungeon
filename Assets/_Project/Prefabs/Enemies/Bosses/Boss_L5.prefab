@@ -112,6 +112,7 @@ MonoBehaviour:
   stunDuration: 0.5
   faintDuration: 3
   faintPush: 2.5
+  knockbackScale: 0
   knockbackDuration: 0.2
   knockbackBlockers:
     serializedVersion: 2
@@ -293,9 +294,17 @@ MonoBehaviour:
   volume: 1
   windupEffect: {fileID: 87440721349199434, guid: d8f7f1c5430bd4ac28a179896e34d364, type: 3}
   hitEffect: {fileID: 0}
-  minRange: 6
   maxRange: 16
-  retreatStep: 3
+  slamRange: 3.5
+  slamRadius: 4.5
+  slamWindup: 0.9
+  slamCooldown: 3
+  slamDamageScale: 4
+  slamEdgeScale: 0.4
+  slamEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+  slamEffectScale: 1.1
+  slamWindupEffect: {fileID: 7063366685381866213, guid: 32956b3de14a64e65ad17558c4423bcb, type: 3}
+  slamClip: {fileID: 8300000, guid: f564babe8474c49ee9ffa0693f462d80, type: 3}
   minions:
   - {fileID: 2755816026748207779, guid: 284ec33f53a3543b0a516fe3d9f7fe51, type: 3}
   - {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}

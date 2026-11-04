@@ -22,7 +22,7 @@ namespace TpsDungeon.Party
     /// 2 部屋の敵を全部倒して releaseDelay 秒（既定 1 秒）経つと、閉ざしたドアを開けられるようにする。
     /// 閉じ込めたとき・鍵が開いたときに、層の表の音を鳴らす。モンスターハウスの予算の上限は表の倍率を掛けたもの。
     /// 敵の出る部屋（RoomEnemyRoller.CanHostEnemies）を全部開け、その敵（箱から出た敵も）が全部居なくなって、閉じ込めも解けてから
-    /// clearDelay 秒経つと、階の部屋を全部攻略したと 1 度だけ知らせる（<see cref="AllRoomsCleared"/>）。
+    /// clearDelay 秒経つと、階の部屋を全部攻略したと 1 度だけ知らせる（<see cref="AllRoomsCleared"/>）。ボス階ではボスを倒すまで知らせない（<see cref="BossEncounter.BossPending"/>）。
     /// 残りは倒れた知らせ（EnemyHealth.Died）では数えず、閉じ込めている間に毎フレーム数え直す。自爆する敵は Died を出さずに消え、
     /// ドアが閉まりきる前に 2 部屋の外へ出た敵は中から倒せないので、消えた・倒れた・2 部屋の外に居る敵は残りに入れない。
     /// FloorBuilder と同じ GameObject に付ける（GameFlow が FloorNavMesh と一緒に付ける）。
@@ -46,6 +46,7 @@ namespace TpsDungeon.Party
 
         private FloorBuilder builder;
         private FloorBootstrap bootstrap;
+        private BossEncounter bossEncounter;
         private EnemySpawnTable table;
         private EnemySpawnRules rules;
         private FloorLayout layout;
@@ -160,7 +161,10 @@ namespace TpsDungeon.Party
         private void UpdateAllCleared()
         {
             if (allRoomsCleared || hostRooms == 0 || layout == null) return;
-            if (traps.Count > 0 || !AllHostRoomsOpened() || AnyEnemyLeft())
+            // ボス階では、ボスを倒すまで攻略にしない（ボス部屋の手前の部屋を片付けただけでボーナスが付かないように）。
+            if (bossEncounter == null) TryGetComponent(out bossEncounter);
+            bool bossLeft = bossEncounter != null && bossEncounter.BossPending;
+            if (traps.Count > 0 || !AllHostRoomsOpened() || AnyEnemyLeft() || bossLeft)
             {
                 allClearedAt = null;
                 return;
