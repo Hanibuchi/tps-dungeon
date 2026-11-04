@@ -55,20 +55,20 @@ MonoBehaviour:
   - enemyId: goblin_warrior
     rankChances:
     - 0
+    - 0.0563
+    - 0.01408
+    - 0.003519
+    - 0.0008798
+    - 0.0002199
+    uniques: []
+  - enemyId: fang_wolf
+    rankChances:
+    - 0
     - 0.4504
     - 0.1126
     - 0.02815
     - 0.007038
     - 0.00176
-    uniques: []
-  - enemyId: fang_wolf
-    rankChances:
-    - 0
-    - 0.2252
-    - 0.0563
-    - 0.01408
-    - 0.003519
-    - 0.0008798
     uniques:
     - weapon: {fileID: 11400000, guid: fdead3b434fa540aa96e3d4b05ab7c9a, type: 2}
       chance: 0.01
@@ -76,11 +76,11 @@ MonoBehaviour:
   - enemyId: will_o_wisp
     rankChances:
     - 0
+    - 0.2252
     - 0.0563
     - 0.01408
     - 0.003519
     - 0.0008798
-    - 0.0002199
     uniques: []
   - enemyId: bomb_mushroom
     rankChances:
@@ -116,19 +116,19 @@ MonoBehaviour:
     rankChances:
     - 0
     - 0
+    - 0.2259
     - 0.05647
     - 0.01412
     - 0.003529
-    - 0.0008824
     uniques: []
   - enemyId: poison_slime
     rankChances:
     - 0
     - 0
-    - 0.2259
     - 0.05647
     - 0.01412
     - 0.003529
+    - 0.0008824
     uniques: []
   - enemyId: cave_ghoul
     rankChances:
@@ -193,8 +193,8 @@ MonoBehaviour:
     - 0
     - 0
     - 0
-    - 0.48
-    - 0.12
+    - 0.24
+    - 0.06
     uniques: []
   - enemyId: rot_treant
     rankChances:
@@ -202,8 +202,8 @@ MonoBehaviour:
     - 0
     - 0
     - 0
-    - 0.24
-    - 0.06
+    - 0.48
+    - 0.12
     uniques:
     - weapon: {fileID: 11400000, guid: fc732e9d2885e4573a655a997f861d61, type: 2}
       chance: 0.01
