@@ -68,7 +68,9 @@ namespace TpsDungeon.Items.Editor
             foreach (EnemyWeaponDropCsv.Row row in rankRows)
             {
                 if (!IsKnown(row.Enemy, RankCsvPath, row.Line)) continue;
-                EntryFor(row.Enemy).rankChances = (float[])row.Chances.Clone();
+                EnemyDropTable.EnemyEntry entry = EntryFor(row.Enemy);
+                entry.rankChances = (float[])row.Chances.Clone();
+                entry.guaranteedCount = row.Count;
             }
 
             foreach (EnemyUniqueDropCsv.Row row in uniqueRows)

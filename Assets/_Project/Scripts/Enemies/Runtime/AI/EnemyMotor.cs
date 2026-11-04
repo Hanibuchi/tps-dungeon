@@ -81,6 +81,9 @@ namespace TpsDungeon.Enemies
         /// <summary>移動の速さに掛ける倍率（導火中に遅くするなど）。</summary>
         public float SpeedScale { get; set; } = 1f;
 
+        /// <summary>ボスの段階で速くするときの倍率（BossPhases が入れる）。SpeedScale とは別に掛ける。</summary>
+        public float TempoScale { get; set; } = 1f;
+
         /// <summary>向く先。null なら進む向きを向く。</summary>
         public Vector3? LookAt { get; set; }
 
@@ -232,7 +235,7 @@ namespace TpsDungeon.Enemies
 
             if (hoverHeight > 0f) UpdateHover(Time.deltaTime);
 
-            agent.speed = moveSpeed * Mathf.Max(0f, SpeedScale);
+            agent.speed = moveSpeed * Mathf.Max(0f, SpeedScale) * Mathf.Max(0.1f, TempoScale);
             agent.angularSpeed = turnSpeed;
             agent.stoppingDistance = StopDistance;
             agent.updateRotation = !LookAt.HasValue;

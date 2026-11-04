@@ -21,6 +21,7 @@ MonoBehaviour:
     - 0.007033
     - 0.001758
     - 0.0004396
+    guaranteedCount: 0
     uniques:
     - weapon: {fileID: 11400000, guid: 81d11e988339f46e9bb11c85e5162fb3, type: 2}
       chance: 0.01
@@ -33,6 +34,7 @@ MonoBehaviour:
     - 0.003516
     - 0.0008791
     - 0.0002198
+    guaranteedCount: 0
     uniques: []
   - enemyId: giant_bat
     rankChances:
@@ -42,6 +44,7 @@ MonoBehaviour:
     - 0.0008791
     - 0.0002198
     - 0.00005495
+    guaranteedCount: 0
     uniques: []
   - enemyId: goblin_archer
     rankChances:
@@ -51,6 +54,7 @@ MonoBehaviour:
     - 0.0008791
     - 0.0002198
     - 0.00005495
+    guaranteedCount: 0
     uniques: []
   - enemyId: goblin_warrior
     rankChances:
@@ -60,6 +64,7 @@ MonoBehaviour:
     - 0.003519
     - 0.0008798
     - 0.0002199
+    guaranteedCount: 0
     uniques: []
   - enemyId: fang_wolf
     rankChances:
@@ -69,6 +74,7 @@ MonoBehaviour:
     - 0.02815
     - 0.007038
     - 0.00176
+    guaranteedCount: 0
     uniques:
     - weapon: {fileID: 11400000, guid: fdead3b434fa540aa96e3d4b05ab7c9a, type: 2}
       chance: 0.01
@@ -81,6 +87,7 @@ MonoBehaviour:
     - 0.01408
     - 0.003519
     - 0.0008798
+    guaranteedCount: 0
     uniques: []
   - enemyId: bomb_mushroom
     rankChances:
@@ -90,6 +97,7 @@ MonoBehaviour:
     - 0.003519
     - 0.0008798
     - 0.0002199
+    guaranteedCount: 0
     uniques:
     - weapon: {fileID: 11400000, guid: 7d27d42ab1fa64dab966a6221d8dee44, type: 2}
       chance: 0.01
@@ -102,6 +110,7 @@ MonoBehaviour:
     - 0.1129
     - 0.02824
     - 0.007059
+    guaranteedCount: 0
     uniques: []
   - enemyId: skeleton_mage
     rankChances:
@@ -111,6 +120,7 @@ MonoBehaviour:
     - 0.01412
     - 0.003529
     - 0.0008824
+    guaranteedCount: 0
     uniques: []
   - enemyId: cursed_lantern
     rankChances:
@@ -120,6 +130,7 @@ MonoBehaviour:
     - 0.05647
     - 0.01412
     - 0.003529
+    guaranteedCount: 0
     uniques: []
   - enemyId: poison_slime
     rankChances:
@@ -129,6 +140,7 @@ MonoBehaviour:
     - 0.01412
     - 0.003529
     - 0.0008824
+    guaranteedCount: 0
     uniques: []
   - enemyId: cave_ghoul
     rankChances:
@@ -138,6 +150,7 @@ MonoBehaviour:
     - 0.4571
     - 0.1143
     - 0.02857
+    guaranteedCount: 0
     uniques:
     - weapon: {fileID: 11400000, guid: 13781802c9c3c4bcb97ad793b19e8ad9, type: 2}
       chance: 0.01
@@ -150,6 +163,7 @@ MonoBehaviour:
     - 0.05714
     - 0.01429
     - 0.003571
+    guaranteedCount: 0
     uniques: []
   - enemyId: miasma_frog
     rankChances:
@@ -159,6 +173,7 @@ MonoBehaviour:
     - 0.2286
     - 0.05714
     - 0.01429
+    guaranteedCount: 0
     uniques: []
   - enemyId: gunpowder_goblin
     rankChances:
@@ -168,6 +183,7 @@ MonoBehaviour:
     - 0.05714
     - 0.01429
     - 0.003571
+    guaranteedCount: 0
     uniques: []
   - enemyId: wraith
     rankChances:
@@ -177,6 +193,7 @@ MonoBehaviour:
     - 0
     - 0.06
     - 0.015
+    guaranteedCount: 0
     uniques: []
   - enemyId: lava_slime
     rankChances:
@@ -186,6 +203,7 @@ MonoBehaviour:
     - 0
     - 0.06
     - 0.015
+    guaranteedCount: 0
     uniques: []
   - enemyId: artillery_golem
     rankChances:
@@ -195,6 +213,7 @@ MonoBehaviour:
     - 0
     - 0.24
     - 0.06
+    guaranteedCount: 0
     uniques: []
   - enemyId: rot_treant
     rankChances:
@@ -204,10 +223,76 @@ MonoBehaviour:
     - 0
     - 0.48
     - 0.12
+    guaranteedCount: 0
     uniques:
     - weapon: {fileID: 11400000, guid: fc732e9d2885e4573a655a997f861d61, type: 2}
       chance: 0.01
       pity: 600
+  - enemyId: boss_l1
+    rankChances:
+    - 0.7502
+    - 0.1875
+    - 0.04689
+    - 0.01172
+    - 0.00293
+    - 0.0007327
+    guaranteedCount: 3
+    uniques:
+    - weapon: {fileID: 11400000, guid: b0a1286d2c382431cb0f607ef2a38ba9, type: 2}
+      chance: 0.05
+      pity: 20
+  - enemyId: boss_l2
+    rankChances:
+    - 0
+    - 0.7507
+    - 0.1877
+    - 0.04692
+    - 0.01173
+    - 0.002934
+    guaranteedCount: 3
+    uniques:
+    - weapon: {fileID: 11400000, guid: 2fe0862d885e449d98ee7e06ebc2ea32, type: 2}
+      chance: 0.05
+      pity: 20
+  - enemyId: boss_l3
+    rankChances:
+    - 0
+    - 0
+    - 0.753
+    - 0.1882
+    - 0.04707
+    - 0.01177
+    guaranteedCount: 3
+    uniques:
+    - weapon: {fileID: 11400000, guid: 4ea2eccb879a1451aa1087a722e93fce, type: 2}
+      chance: 0.05
+      pity: 20
+  - enemyId: boss_l4
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0.7619
+    - 0.1905
+    - 0.04762
+    guaranteedCount: 3
+    uniques:
+    - weapon: {fileID: 11400000, guid: b29c82ca44e8b49c59116e795ad00c13, type: 2}
+      chance: 0.05
+      pity: 20
+  - enemyId: boss_l5
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.8
+    - 0.2
+    guaranteedCount: 3
+    uniques:
+    - weapon: {fileID: 11400000, guid: a66d6cd4f86f5417a8fdca2530ae5bf8, type: 2}
+      chance: 0.05
+      pity: 20
   droppableWeapons:
   - {fileID: 11400000, guid: bf1199cee85bb4369bde7a0ce10b706d, type: 2}
   - {fileID: 11400000, guid: 0dad7fb3229d04f8e913876545615266, type: 2}

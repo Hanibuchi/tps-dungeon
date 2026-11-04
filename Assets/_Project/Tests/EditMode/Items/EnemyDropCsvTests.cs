@@ -82,5 +82,20 @@ namespace TpsDungeon.Items.Tests
             Assert.That(errors[3], Does.StartWith("5 行目").And.Contains("落ちることがない"));
             Assert.That(errors[4], Does.StartWith("6 行目").And.Contains("重複"));
         }
+
+        [Test]
+        public void ランクの表_count_の列は必ず落とす本数で_比率の合計は1を超えてよい()
+        {
+            const string text = "enemy,E,D,C,B,A,S,count\nboss,0.8,0.3,,,,,3\nmob,0.1\nbad,0.5,,,,,,-1\nzero,,,,,,,2\n";
+            var errors = new List<string>();
+            List<EnemyWeaponDropCsv.Row> rows = EnemyWeaponDropCsv.Parse(text, errors);
+
+            Assert.AreEqual(2, rows.Count);
+            Assert.AreEqual(3, rows[0].Count);
+            Assert.AreEqual(0, rows[1].Count);
+            Assert.AreEqual(2, errors.Count);
+            Assert.That(errors[0], Does.StartWith("4 行目").And.Contains("count"));
+            Assert.That(errors[1], Does.StartWith("5 行目").And.Contains("比率"));
+        }
     }
 }

@@ -117,5 +117,20 @@ namespace TpsDungeon.Items.Tests
         {
             Assert.AreEqual(WeaponDropRoller.ResultKind.None, WeaponDropRoller.Roll(NoRanks, null, null, 3f, new FixedRandom(0.0)).Kind);
         }
+
+        [Test]
+        public void 必ず落とすときは比率で割って必ずどれかのランクになる()
+        {
+            float[] weights = Ranks(e: 0.6f, d: 0.3f, c: 0.3f);
+            Assert.AreEqual(WeaponRank.E, WeaponDropRoller.RollGuaranteedRank(weights, new FixedRandom(0.0)).Rank);
+            Assert.AreEqual(WeaponRank.D, WeaponDropRoller.RollGuaranteedRank(weights, new FixedRandom(0.6)).Rank);
+            Assert.AreEqual(WeaponRank.C, WeaponDropRoller.RollGuaranteedRank(weights, new FixedRandom(0.999)).Rank);
+        }
+
+        [Test]
+        public void 必ず落とすときに比率がどれも0なら何も落とさない()
+        {
+            Assert.AreEqual(WeaponDropRoller.ResultKind.None, WeaponDropRoller.RollGuaranteedRank(NoRanks, new FixedRandom(0.5)).Kind);
+        }
     }
 }

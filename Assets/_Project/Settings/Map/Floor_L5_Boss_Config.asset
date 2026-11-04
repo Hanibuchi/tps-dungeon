@@ -15,6 +15,7 @@ MonoBehaviour:
   layoutShape: 1
   bossBlueprint: "...X......\n.AAAAA....\n.AAAAA....\n.AAAAA....\n.AAAAAaaS.\n.AAAAAaaE.\n..HHHHbbb.\n..HHHHbbb.\n..HHHHbbb.\n..HHHH....\n\u6249:
     E-a a-b b-H a-S\n\u6575: a b H"
+  boss: {fileID: 6789413913602102952, guid: 48026c2a98a6f4244aefc764e2734093, type: 3}
   widthInCells: 16
   heightInCells: 16
   cellSize: 5

@@ -55,21 +55,71 @@ namespace TpsDungeon.Enemies
         [SerializeField, Tooltip("撃ち出す所。体の中心から前へこの距離（m）。")]
         private float muzzleForward = 0.5f;
 
+        [Header("ボスの段階（0 なら使わない）")]
+        [SerializeField, Min(0), Tooltip("この段階から、扇に広げて撃つ（spreadCount 発）。")]
+        private int spreadStage;
+
+        [SerializeField, Min(1), Tooltip("扇に広げて撃つ数。")]
+        private int spreadCount = 3;
+
+        [SerializeField, Min(0), Tooltip("この段階から、扇の数を wideSpreadCount に増やす。")]
+        private int wideSpreadStage;
+
+        [SerializeField, Min(1), Tooltip("増やした扇の数。")]
+        private int wideSpreadCount = 5;
+
+        [SerializeField, Range(1f, 45f), Tooltip("扇の隣り合う弾の間の角度（度）。")]
+        private float spreadAngle = 14f;
+
+        [SerializeField, Min(0), Tooltip("この段階から、溜めたあと続けて burstCount 回撃つ。")]
+        private int burstStage;
+
+        [SerializeField, Min(1), Tooltip("続けて撃つ回数。")]
+        private int burstCount = 3;
+
+        [SerializeField, Min(0.05f), Tooltip("続けて撃つ間（秒）。")]
+        private float burstInterval = 0.22f;
+
         /// <summary>撃ち出す所（体の中心から前へ）。</summary>
         private Vector3 Muzzle => Center + transform.forward * muzzleForward;
 
         private bool aiming;
         private float timer;
+        // 続けて撃つ残りの回数と、次まで。
+        private int burstRemaining;
+        private float burstTimer;
         private RangedStance stance;
 
         protected override void OnEnable()
         {
             base.OnEnable();
             aiming = false;
+            burstRemaining = 0;
         }
 
         protected override void Think(float dt)
         {
+            if (burstRemaining > 0)
+            {
+                if (!HasTarget || !TargetVisible)
+                {
+                    burstRemaining = 0;
+                }
+                else
+                {
+                    Motor.Destination = null;
+                    Motor.LookAt = Target.Position;
+                    burstTimer -= dt;
+                    if (burstTimer <= 0f)
+                    {
+                        burstRemaining--;
+                        burstTimer = Scaled(burstInterval);
+                        Shoot();
+                    }
+                    return;
+                }
+            }
+
             stance = HasTarget
                 ? EnemyAttackRules.Stance(TargetDistance, TargetVisible, minRange, maxRange)
                 : RangedStance.Approach;
@@ -122,7 +172,7 @@ namespace TpsDungeon.Enemies
         {
             if (CooldownRemaining > 0f) return;
             aiming = true;
-            timer = windup;
+            timer = Scaled(windup);
             PlaySound(windupClip, Center);
             StartWindupEffect(Muzzle);
         }
@@ -130,15 +180,37 @@ namespace TpsDungeon.Enemies
         private void Fire()
         {
             aiming = false;
-            CooldownRemaining = cooldown;
-            PlayAttack();
+            CooldownRemaining = Cooldown;
             StopWindupEffect();
+            Shoot();
 
+            if (StageReached(burstStage) && burstCount > 1)
+            {
+                burstRemaining = burstCount - 1;
+                burstTimer = Scaled(burstInterval);
+            }
+        }
+
+        /// <summary>今の段階の数だけ、相手の胸へ向けて扇に撃つ。</summary>
+        private void Shoot()
+        {
+            PlayAttack();
             Vector3 muzzle = Muzzle;
             Vector3 direction = Target.AimPoint - muzzle;
             if (direction.sqrMagnitude < 1e-4f) direction = transform.forward;
             EnemyEffects.Spawn(muzzleEffect, muzzle, Quaternion.LookRotation(direction, Vector3.up), 1f, 1f);
 
+            int count = StageReached(wideSpreadStage) ? wideSpreadCount : StageReached(spreadStage) ? spreadCount : 1;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = (i - (count - 1) * 0.5f) * spreadAngle;
+                Launch(muzzle, Quaternion.AngleAxis(angle, Vector3.up) * direction);
+            }
+            PlaySound(attackClip, muzzle);
+        }
+
+        private void Launch(Vector3 muzzle, Vector3 direction)
+        {
             EnemyProjectile.Launch(projectileEffect, projectileEffectScale, muzzle, direction, new EnemyProjectile.Settings
             {
                 Speed = projectileSpeed,
@@ -151,7 +223,6 @@ namespace TpsDungeon.Enemies
                 HitClip = hitClip,
                 Volume = volume,
             });
-            PlaySound(attackClip, muzzle);
         }
 
         public override string StateLabel
@@ -159,6 +230,7 @@ namespace TpsDungeon.Enemies
             get
             {
                 if (aiming) return $"狙う {timer:0.0}s";
+                if (burstRemaining > 0) return $"連射 残り {burstRemaining}";
                 if (!HasTarget) return "待つ";
                 return stance switch
                 {
@@ -177,10 +249,11 @@ namespace TpsDungeon.Enemies
 
         protected override void Interrupted()
         {
+            burstRemaining = 0;
             if (!aiming) return;
             aiming = false;
             Motor.LookAt = null;
-            CooldownRemaining = Mathf.Max(CooldownRemaining, cooldown * 0.5f);
+            CooldownRemaining = Mathf.Max(CooldownRemaining, Cooldown * 0.5f);
         }
     }
 }

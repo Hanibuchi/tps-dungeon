@@ -121,8 +121,9 @@ namespace TpsDungeon.Enemies
             AudioClip clip = DeathClip;
             if (clip != null) GameAudio.Instance?.PlaySeAt(clip, lastDamage.Point ?? transform.position, volume);
 
+            // 呼ばれた手下は経験値を落とさない（呼び続けて稼げないように）。
             var reward = GetComponent<EnemyExpReward>();
-            if (reward != null) reward.Grant();
+            if (reward != null && (health == null || !health.IsSummoned)) reward.Grant();
 
             Finished?.Invoke(this);
 

@@ -87,6 +87,35 @@ namespace TpsDungeon.Items
             return RollRank(rankChances, m, random);
         }
 
+        /// <summary>
+        /// 必ず 1 本落とすときのランク。rankWeights（E〜S）を比率として扱い（合計で割る）、1 回振る。
+        /// ボスが固定の本数を落とすときに使う。比率がどれも 0 なら None。
+        /// </summary>
+        public static Result RollGuaranteedRank(IReadOnlyList<float> rankWeights, Random random)
+        {
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            if (rankWeights == null) return Result.None;
+
+            WeaponRank[] columns = EnchantmentRankCsv.RankColumns;
+            int count = Math.Min(rankWeights.Count, columns.Length);
+            double total = 0;
+            for (int i = 0; i < count; i++) total += Math.Max(0f, rankWeights[i]);
+            if (total <= 0) return Result.None;
+
+            double roll = random.NextDouble() * total;
+            double cumulative = 0;
+            int last = -1;
+            for (int i = 0; i < count; i++)
+            {
+                double weight = Math.Max(0f, rankWeights[i]);
+                if (weight <= 0) continue;
+                last = i;
+                cumulative += weight;
+                if (roll < cumulative) return Result.OfRank(columns[i]);
+            }
+            return Result.OfRank(columns[last]);
+        }
+
         private static int RollUnique(IReadOnlyList<UniqueOption> uniques, int[] misses, double multiplier, Random random)
         {
             if (uniques == null) return -1;
