@@ -1,7 +1,6 @@
 enemy,weapon,chance,pity
-lava_slime,Weapon_PurgatoryRoar,0.01,600
-giant_bat,Weapon_ShadowRunnerBlade,0.01,600
-will_o_wisp,Weapon_UnfallingHolyShield,0.01,600
-skeleton_swordsman,Weapon_FallenStarHammer,0.01,600
-staring_eye,Weapon_GoddessTear,0.01,600
-wraith,Weapon_ThunderGodPike,0.01,600
+goblin,Weapon_ShadowRunnerBlade,0.01,600
+fang_wolf,Weapon_UnfallingHolyShield,0.01,600
+bomb_mushroom,Weapon_FallenStarHammer,0.01,600
+cave_ghoul,Weapon_GoddessTear,0.01,600
+rot_treant,Weapon_ThunderGodPike,0.01,600

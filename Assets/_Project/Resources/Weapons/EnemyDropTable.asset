@@ -21,7 +21,10 @@ MonoBehaviour:
     - 0.007033
     - 0.001758
     - 0.0004396
-    uniques: []
+    uniques:
+    - weapon: {fileID: 11400000, guid: 81d11e988339f46e9bb11c85e5162fb3, type: 2}
+      chance: 0.01
+      pity: 600
   - enemyId: giant_rat
     rankChances:
     - 0.2251
@@ -39,10 +42,7 @@ MonoBehaviour:
     - 0.0008791
     - 0.0002198
     - 0.00005495
-    uniques:
-    - weapon: {fileID: 11400000, guid: 81d11e988339f46e9bb11c85e5162fb3, type: 2}
-      chance: 0.01
-      pity: 600
+    uniques: []
   - enemyId: goblin_archer
     rankChances:
     - 0.05626
@@ -55,13 +55,25 @@ MonoBehaviour:
   - enemyId: goblin_warrior
     rankChances:
     - 0
+    - 0.0563
+    - 0.01408
+    - 0.003519
+    - 0.0008798
+    - 0.0002199
+    uniques: []
+  - enemyId: fang_wolf
+    rankChances:
+    - 0
     - 0.4504
     - 0.1126
     - 0.02815
     - 0.007038
     - 0.00176
-    uniques: []
-  - enemyId: fang_wolf
+    uniques:
+    - weapon: {fileID: 11400000, guid: fdead3b434fa540aa96e3d4b05ab7c9a, type: 2}
+      chance: 0.01
+      pity: 600
+  - enemyId: will_o_wisp
     rankChances:
     - 0
     - 0.2252
@@ -70,18 +82,6 @@ MonoBehaviour:
     - 0.003519
     - 0.0008798
     uniques: []
-  - enemyId: will_o_wisp
-    rankChances:
-    - 0
-    - 0.0563
-    - 0.01408
-    - 0.003519
-    - 0.0008798
-    - 0.0002199
-    uniques:
-    - weapon: {fileID: 11400000, guid: fdead3b434fa540aa96e3d4b05ab7c9a, type: 2}
-      chance: 0.01
-      pity: 600
   - enemyId: bomb_mushroom
     rankChances:
     - 0
@@ -90,7 +90,10 @@ MonoBehaviour:
     - 0.003519
     - 0.0008798
     - 0.0002199
-    uniques: []
+    uniques:
+    - weapon: {fileID: 11400000, guid: 7d27d42ab1fa64dab966a6221d8dee44, type: 2}
+      chance: 0.01
+      pity: 600
   - enemyId: skeleton_swordsman
     rankChances:
     - 0
@@ -99,10 +102,7 @@ MonoBehaviour:
     - 0.1129
     - 0.02824
     - 0.007059
-    uniques:
-    - weapon: {fileID: 11400000, guid: 7d27d42ab1fa64dab966a6221d8dee44, type: 2}
-      chance: 0.01
-      pity: 600
+    uniques: []
   - enemyId: skeleton_mage
     rankChances:
     - 0
@@ -116,19 +116,19 @@ MonoBehaviour:
     rankChances:
     - 0
     - 0
+    - 0.2259
     - 0.05647
     - 0.01412
     - 0.003529
-    - 0.0008824
     uniques: []
   - enemyId: poison_slime
     rankChances:
     - 0
     - 0
-    - 0.2259
     - 0.05647
     - 0.01412
     - 0.003529
+    - 0.0008824
     uniques: []
   - enemyId: cave_ghoul
     rankChances:
@@ -138,7 +138,10 @@ MonoBehaviour:
     - 0.4571
     - 0.1143
     - 0.02857
-    uniques: []
+    uniques:
+    - weapon: {fileID: 11400000, guid: 13781802c9c3c4bcb97ad793b19e8ad9, type: 2}
+      chance: 0.01
+      pity: 600
   - enemyId: staring_eye
     rankChances:
     - 0
@@ -147,10 +150,7 @@ MonoBehaviour:
     - 0.05714
     - 0.01429
     - 0.003571
-    uniques:
-    - weapon: {fileID: 11400000, guid: 13781802c9c3c4bcb97ad793b19e8ad9, type: 2}
-      chance: 0.01
-      pity: 600
+    uniques: []
   - enemyId: miasma_frog
     rankChances:
     - 0
@@ -177,10 +177,7 @@ MonoBehaviour:
     - 0
     - 0.06
     - 0.015
-    uniques:
-    - weapon: {fileID: 11400000, guid: fc732e9d2885e4573a655a997f861d61, type: 2}
-      chance: 0.01
-      pity: 600
+    uniques: []
   - enemyId: lava_slime
     rankChances:
     - 0
@@ -189,20 +186,8 @@ MonoBehaviour:
     - 0
     - 0.06
     - 0.015
-    uniques:
-    - weapon: {fileID: 11400000, guid: 2fe0862d885e449d98ee7e06ebc2ea32, type: 2}
-      chance: 0.01
-      pity: 600
-  - enemyId: artillery_golem
-    rankChances:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0.48
-    - 0.12
     uniques: []
-  - enemyId: rot_treant
+  - enemyId: artillery_golem
     rankChances:
     - 0
     - 0
@@ -211,6 +196,18 @@ MonoBehaviour:
     - 0.24
     - 0.06
     uniques: []
+  - enemyId: rot_treant
+    rankChances:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.48
+    - 0.12
+    uniques:
+    - weapon: {fileID: 11400000, guid: fc732e9d2885e4573a655a997f861d61, type: 2}
+      chance: 0.01
+      pity: 600
   droppableWeapons:
   - {fileID: 11400000, guid: bf1199cee85bb4369bde7a0ce10b706d, type: 2}
   - {fileID: 11400000, guid: 0dad7fb3229d04f8e913876545615266, type: 2}
