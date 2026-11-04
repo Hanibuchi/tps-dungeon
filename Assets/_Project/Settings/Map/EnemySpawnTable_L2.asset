@@ -19,13 +19,13 @@ MonoBehaviour:
   enemies:
   - id: goblin_warrior
     prefab: {fileID: 6074625492803261054, guid: 13102e5fd7fe641f2a0ea47eea505480, type: 3}
-    cost: 8
+    cost: 1
   - id: fang_wolf
     prefab: {fileID: 5891621824566353367, guid: 2d5eadffa7dc54a2f8ddea2bbf33ff38, type: 3}
-    cost: 4
+    cost: 8
   - id: will_o_wisp
     prefab: {fileID: 8378275289127162891, guid: 095c2ffade0a14403808290540453790, type: 3}
-    cost: 1
+    cost: 4
   - id: bomb_mushroom
     prefab: {fileID: 5095790672517539498, guid: 88594eb28a96e4c0daa222298d0fb4ed, type: 3}
     cost: 1

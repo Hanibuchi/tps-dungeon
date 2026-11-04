@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 34
+  exp: 136
 --- !u!114 &2317861320831201543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 342
+  maxHp: 2736
   immortal: 0
   prop: 0
 --- !u!114 &8095566003129583855
@@ -253,7 +253,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 23
+  damage: 34
   cooldown: 1.5
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: a037ebb461f374e5d82774212efaad53, type: 3}

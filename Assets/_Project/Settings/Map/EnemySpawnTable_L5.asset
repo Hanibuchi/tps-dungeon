@@ -25,10 +25,10 @@ MonoBehaviour:
     cost: 1
   - id: artillery_golem
     prefab: {fileID: 6789413913602102952, guid: 679924acc6bda4d36b505e670e18483c, type: 3}
-    cost: 8
+    cost: 4
   - id: rot_treant
     prefab: {fileID: 3861111510383041326, guid: 98285a5e60c294288a6ad3dbc91f85cd, type: 3}
-    cost: 4
+    cost: 8
   trappedSound: {fileID: 8300000, guid: 8d0257c08dcc24aa7b43f9a2791c7496, type: 3}
   releasedSound: {fileID: 8300000, guid: fe55cadb6d3ce4b6a9313c4b682882a6, type: 3}
   soundVolume: 1

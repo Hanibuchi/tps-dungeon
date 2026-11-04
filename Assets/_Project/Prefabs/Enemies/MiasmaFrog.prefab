@@ -261,7 +261,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 60
+  damage: 45
   cooldown: 6
   attackAnimation: Attack
   noticeClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
