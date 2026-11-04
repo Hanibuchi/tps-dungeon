@@ -25,10 +25,10 @@ MonoBehaviour:
     cost: 1
   - id: cursed_lantern
     prefab: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
-    cost: 1
+    cost: 4
   - id: poison_slime
     prefab: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
-    cost: 4
+    cost: 1
   trappedSound: {fileID: 8300000, guid: 8d0257c08dcc24aa7b43f9a2791c7496, type: 3}
   releasedSound: {fileID: 8300000, guid: fe55cadb6d3ce4b6a9313c4b682882a6, type: 3}
   soundVolume: 1

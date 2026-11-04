@@ -62,10 +62,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.45
-  m_Height: 2
+  m_Radius: 0.342
+  m_Height: 1.52
   m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 0.76, z: 0}
 --- !u!114 &3620543138250354919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2fee9f1a85b24b7585913e0f7326832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Progression::TpsDungeon.Progression.EnemyExpReward
-  exp: 94
+  exp: 12
 --- !u!114 &8166892527035928358
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9605bf19c3f47bc821a3f8d8d91a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyHealth
-  maxHp: 2896
+  maxHp: 181
   immortal: 0
   prop: 0
 --- !u!114 &8950983815657057267
@@ -209,7 +209,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 6074625492803261054}
   m_Enabled: 0
   m_AgentTypeID: 0
-  m_Radius: 0.45
+  m_Radius: 0.342
   m_Speed: 3
   m_Acceleration: 20
   avoidancePriority: 50
@@ -218,7 +218,7 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
+  m_Height: 1.52
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 2
@@ -261,7 +261,7 @@ MonoBehaviour:
   memoryTime: 5
   scanInterval: 0.2
   retargetInterval: 1
-  damage: 60
+  damage: 15
   cooldown: 1.5
   attackAnimation: Weapon
   noticeClip: {fileID: 8300000, guid: faed1f90b1f514da8a2b7eeb57022e02, type: 3}
@@ -285,15 +285,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 75980e577332f4af990d0bd770d3f471, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.6403128
+      value: 0.48663768
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 75980e577332f4af990d0bd770d3f471, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.6403128
+      value: 0.48663768
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 75980e577332f4af990d0bd770d3f471, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.6403128
+      value: 0.48663768
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 75980e577332f4af990d0bd770d3f471, type: 3}
       propertyPath: m_LocalPosition.x
