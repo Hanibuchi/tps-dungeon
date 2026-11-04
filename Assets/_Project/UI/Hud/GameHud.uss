@@ -727,7 +727,8 @@
     left: 50%;
     width: 640px;
     margin-left: -320px;
-    padding: 10px 26px 16px 26px;
+    /* 上は枠の紋章（上辺に半分かかる菱形）の下に肩書きが来るだけ空ける。 */
+    padding: 20px 26px 16px 26px;
     background-color: rgba(14, 11, 10, 0.88);
     align-items: stretch;
     opacity: 0;
