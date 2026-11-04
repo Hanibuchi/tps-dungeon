@@ -24,6 +24,9 @@ namespace TpsDungeon.Party
         /// </summary>
         public bool Usable;
 
+        /// <summary>回復の武器（治癒・治癒持続）か。使ってよく（傷ついた仲間が届く所に居る）待ちが明けていれば、ほかの武器より先に選ぶ。</summary>
+        public bool IsHeal;
+
         /// <summary>攻撃に使える武器か（お守り・盾・宝石・空き枠でない）。</summary>
         public bool IsAttack => IsMelee || IsRanged;
 
@@ -37,6 +40,7 @@ namespace TpsDungeon.Party
             {
                 IsMelee = type.IsMelee,
                 IsRanged = !type.IsMelee && type.IsRanged,
+                IsHeal = type.IsHeal || type.IsHealField,
                 Range = type.IsMelee ? MeleeReach(type) : RangedReach(type),
                 ReadyAt = readyAt,
                 Usable = true,
@@ -80,6 +84,7 @@ namespace TpsDungeon.Party
 
     /// <summary>
     /// 仲間が手持ちの 4 枠のどれで戦うかを決める規則。
+    /// 0. 回復: 使ってよい（傷ついた仲間が届く所に居る）回復の武器の待ちが明けていれば、それを選ぶ（<see cref="PickHeal"/>）。
     /// 1. 状況: 敵が近い（closeDistance 以内）なら近接、遠ければ遠距離を優先する。遠距離は届く距離の内の敵だけを狙える。
     /// 2. 使えるか: 優先する種類がどれも待ち中（か届かない）なら、もう一方の種類で使える物にする。
     ///    どちらも使えなければ、優先する種類で一番早く使える物を持って待つ。
@@ -96,6 +101,9 @@ namespace TpsDungeon.Party
             bool anyAttack = false;
             for (int i = 0; i < options.Count; i++) anyAttack |= options[i].IsAttack;
             if (!anyAttack) return Unarmed;
+
+            int heal = PickHeal(options, now, current, readyOnly: true);
+            if (heal >= 0) return heal;
 
             bool preferMelee = distance <= closeDistance;
 
@@ -119,6 +127,35 @@ namespace TpsDungeon.Party
             }
 
             return Unarmed;
+        }
+
+        /// <summary>
+        /// 使ってよい回復の武器のうち、一番早く使える物（同じなら今持っている枠 → 左の枠）。無ければ -1。
+        /// readyOnly なら待ちが明けている物だけ。敵が居ないときに回復するのにも使う。
+        /// </summary>
+        public static int PickHeal(IReadOnlyList<FollowerWeaponOption> options, float now, int current, bool readyOnly)
+        {
+            int best = -1;
+            float bestReady = float.MaxValue;
+            for (int i = 0; i < options.Count; i++)
+            {
+                FollowerWeaponOption option = options[i];
+                if (!option.IsHeal || !option.Usable) continue;
+
+                bool ready = option.ReadyAt <= now;
+                if (readyOnly && !ready) continue;
+
+                float readyAt = ready ? now : option.ReadyAt;
+                bool better = best < 0
+                              || readyAt < bestReady - 1e-4f
+                              || (readyAt <= bestReady + 1e-4f && i == current && best != current);
+                if (!better) continue;
+
+                best = i;
+                bestReady = readyAt;
+            }
+
+            return best;
         }
 
         private static int Best(IReadOnlyList<FollowerWeaponOption> options, float distance, float now, int current, bool melee, bool readyOnly)

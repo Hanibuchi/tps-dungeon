@@ -10,6 +10,7 @@ namespace TpsDungeon.Party
     /// <summary>
     /// パーティーの後ろの人の戦い。敵を見つけたら手持ちの 4 枠から武器を選び（<see cref="FollowerWeaponPicker"/>）、
     /// 近接なら列を離れて寄って振り、遠距離なら列に並んだまま撃つ。敵がいなくなるか先頭から離れすぎたら列に戻る。
+    /// 回復の武器（治癒・治癒持続）は、届く所に体力の減った仲間が居れば、戦っていても居なくても持ち替えて先に使う。
     /// 攻撃そのものは MeleeAttacker / RangedAttacker に任せ、ここは操作しているキャラの入力（PlayerMeleeInput）の代わりに押すだけ。
     /// 武器ごとの待ちは攻撃の役が覚えている（持ち替えても他の武器へは移らない）。選ぶときは武器ごとの待ちだけを見て、持ち替えの待ちは見ない
     /// （持ち替えた先を「待ち中」と見て、また別の武器へ持ち替え続けないように）。
@@ -113,7 +114,7 @@ namespace TpsDungeon.Party
 
             if (target == null || target.IsDead || !WithinLeash())
             {
-                StopAiming();
+                if (!HealOutOfCombat()) StopAiming();
                 return;
             }
 
@@ -151,7 +152,7 @@ namespace TpsDungeon.Party
             {
                 FollowerWeaponOption option = FollowerWeaponOption.From(hand[i], ReadyAt(hand[i]));
                 WeaponTypeDefinition type = hand[i]?.Weapon != null ? hand[i].Weapon.WeaponType : null;
-                if (type != null && (type.IsHealField || type.IsHeal)) option.Usable = needHeal;
+                if (type != null && (type.IsHealField || type.IsHeal)) option.Usable = needHeal && CanHealSomeone(type);
                 else if (type != null && type.IsBuff) option.Usable = SomeoneUnblessed(type.SupportRange, hand[i].Weapon.BlessingKind);
                 options.Add(option);
             }
@@ -163,6 +164,76 @@ namespace TpsDungeon.Party
 
             int pick = FollowerWeaponPicker.Pick(options, distance, closeDistance, Time.time, hotbar.SelectedIndex);
             return pick >= 0 ? pick : UnarmedSlot(hand);
+        }
+
+        /// <summary>
+        /// 敵が居ないとき、届く所に体力の減った仲間が居れば回復の武器に持ち替えて使う。使う（使うのを待つ）なら true。
+        /// 振っている途中・撃っている途中は持ち替えず、その武器が回復でなければ何もしない（false）。
+        /// </summary>
+        private bool HealOutOfCombat()
+        {
+            if (hotbar == null || inventory == null || ranged == null) return false;
+            if (melee != null && (melee.IsSwinging || melee.IsLunging)) return false;
+
+            ItemInstance held = Current();
+            WeaponTypeDefinition heldType = held?.Weapon != null ? held.Weapon.WeaponType : null;
+            bool heldHeal = heldType != null && (heldType.IsHeal || heldType.IsHealField);
+            if (ranged.IsCasting) return heldHeal;
+            if (!SomeoneHurt()) return false;
+
+            Inventory hand = inventory.Inventory;
+            options.Clear();
+            for (int i = 0; i < hand.Count; i++)
+            {
+                FollowerWeaponOption option = FollowerWeaponOption.From(hand[i], ReadyAt(hand[i]));
+                WeaponTypeDefinition type = hand[i]?.Weapon != null ? hand[i].Weapon.WeaponType : null;
+                if (option.IsHeal) option.Usable = CanHealSomeone(type);
+                options.Add(option);
+            }
+
+            int slot = FollowerWeaponPicker.PickHeal(options, Time.time, hotbar.SelectedIndex, readyOnly: false);
+            if (slot < 0) return false;
+            if (slot != hotbar.SelectedIndex) hotbar.Select(slot);
+
+            ItemInstance item = Current();
+            WeaponTypeDefinition healType = item?.Weapon != null ? item.Weapon.WeaponType : null;
+            if (healType == null) return false;
+
+            if (locomotion != null) locomotion.ChaseTarget = null;
+            Vector3 eye = transform.position + Vector3.up * eyeHeight;
+            Vector3 aimAt = healType.IsHealField ? HealFieldCenter(healType) : transform.position;
+            Vector3 direction = aimAt - eye;
+            if (direction.sqrMagnitude < 1e-4f) direction = transform.forward;
+            ranged.Aim = new Ray(eye, direction.normalized);
+            ranged.AttackHeld = false;
+
+            bool press = HeldReady();
+            if (press) ranged.PressAttack();
+            // 投げる間だけ狙いへ向く。待っている間は列について歩く向きのまま。
+            if (locomotion != null) locomotion.FaceMovement = !press && !ranged.IsCasting;
+            return true;
+        }
+
+        /// <summary>
+        /// type の回復の武器で、今回復できる仲間が届く所に居るか。治癒は掛けられる範囲（SupportRange）、
+        /// 治癒持続は投げられる距離 ＋ 場の広さ。
+        /// </summary>
+        private bool CanHealSomeone(WeaponTypeDefinition type)
+        {
+            if (type == null) return false;
+            float reach = type.IsHealField
+                ? FollowerWeaponOption.RangedReach(type) + type.HealRadius * (ranged != null && ranged.Stats != null ? ranged.Stats.SizeScale : 1f)
+                : type.SupportRange;
+
+            Party party = member != null ? member.Party : null;
+            if (party == null) return false;
+            foreach (PartyMember m in party.Members)
+            {
+                PlayerHealth health = m != null ? m.Health : null;
+                if (IsHurt(health) && Flat(health.transform.position - transform.position).magnitude <= reach) return true;
+            }
+
+            return false;
         }
 
         /// <summary>素手で殴れる枠（空きか、お守り・盾などの攻撃に使えない物）。今の枠がそうならそのまま。</summary>
