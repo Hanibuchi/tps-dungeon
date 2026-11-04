@@ -417,8 +417,8 @@ namespace TpsDungeon.Combat.Editor
             }
             else if (type.RangedKind == RangedAttackKind.Chain)
             {
-                text.AppendLine($"1 体に: {stats.ShotDamage}　撃つ間隔 {stats.FireInterval:0.00} 秒");
-                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。飛び移り・多重は含めない）");
+                text.AppendLine($"1 体に: {stats.ShotDamage}（1 発を当たる {type.ChainJumpsFor(0) + 1} 体で割った分）　撃つ間隔 {stats.FireInterval:0.00} 秒");
+                text.AppendLine($"平均 DPS: {stats.AverageDps:0.0}（クリティカル込み。補正前の {type.ChainJumpsFor(0) + 1} 体に全部当たったときの合計。数で増えた飛び移り・多重は含めない）");
                 text.AppendLine($"雷: 照準から {type.ChainAimAngle:0.#}° 以内の敵へ放ち、{type.ChainRange:0.#} m 以内の次の敵へ {type.ChainJumpsFor(stats.ExtraProjectiles)} 回飛び移る"
                                 + $" × {volleys} 回（{type.MultishotInterval:0.##} 秒ずつ遅れて）");
             }

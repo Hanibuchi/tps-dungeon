@@ -111,6 +111,22 @@ namespace TpsDungeon.Items.Tests
             });
         }
 
+        // 電撃の値: 撃つ間隔 2 秒、最初の 1 体 ＋ 飛び移り 3 回で 4 体、数 1 つで 2 体増える。
+        private static RangedWeaponStats Chain(float strength, EnchantmentTotals enchantments = null)
+        {
+            return RangedWeaponStats.Compute(new RangedWeaponInputs
+            {
+                Strength = strength,
+                CharacterAttackWeight = 1f,
+                FireInterval = 2f,
+                ChainHits = 4,
+                ChainHitsPerCount = 2,
+                Enchantments = enchantments,
+                BaseCritChance = 0f,
+                BaseCritMultiplier = 1.5f,
+            });
+        }
+
         private static EnchantmentTotals With(EnchantmentKind kind, float amount, int count = 1, float secondary = 0f)
         {
             var totals = new EnchantmentTotals();
@@ -428,6 +444,34 @@ namespace TpsDungeon.Items.Tests
             Assert.AreEqual(0f, Bow(100f).BlessingAmount);
             Assert.AreEqual(0, Bow(100f).HealAmount);
             Assert.AreEqual(0, Heal(30f).HealAmount, "治癒持続は刻みで回復するので、すぐの回復量は 0");
+        }
+
+        [Test]
+        public void 雷は1発を当たる敵の数で割って1体ずつに与える()
+        {
+            RangedWeaponStats stats = Chain(100f);
+
+            Assert.AreEqual(50, stats.ShotDamage, "100 × 2 秒 ÷ 4 体");
+            Assert.AreEqual(4, stats.ChainHitCount);
+            Assert.AreEqual(100f, stats.AverageDps, 1e-3f, "4 体に全部当たれば合計の DPS は強さ");
+            Assert.AreEqual(100f, stats.EffectiveDps, 1e-3f);
+        }
+
+        [Test]
+        public void 雷の数は1体ぶんを変えずに当たる敵を増やす()
+        {
+            RangedWeaponStats stats = Chain(100f, With(EnchantmentKind.ProjectileCount, 1f));
+
+            Assert.AreEqual(50, stats.ShotDamage, "割る数は補正前の 4 体のまま");
+            Assert.AreEqual(6, stats.ChainHitCount);
+            Assert.AreEqual(150f, stats.EffectiveDps, 1e-3f, "6 体 ÷ 4 体ぶん増える");
+        }
+
+        [Test]
+        public void 雷でない武器は割らない()
+        {
+            Assert.AreEqual(0, Bow(100f).ChainHitCount);
+            Assert.AreEqual(80, Bow(100f).ShotDamage, "100 × 0.8 秒");
         }
     }
 }
