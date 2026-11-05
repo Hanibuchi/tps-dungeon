@@ -63,10 +63,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.9
-  m_Height: 2.6
+  m_Radius: 1.215
+  m_Height: 3.51
   m_Direction: 1
-  m_Center: {x: 0, y: 1.3, z: 0}
+  m_Center: {x: 0, y: 1.755, z: 0}
 --- !u!114 &1540283654781978058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -118,9 +118,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   knockbackSkin: 0.4
-  hitClip: {fileID: 0}
-  stunClip: {fileID: 8300000, guid: 2a56dd835ba274e62a77257cbf08ea19, type: 3}
-  faintClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
+  hitClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
+  stunClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
+  faintClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
   volume: 1
 --- !u!114 &119149972539401972
 MonoBehaviour:
@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDeath
   deathPush: 3
-  deathClip: {fileID: 8300000, guid: 60c3b72860c2446db826ed29ab70b4d3, type: 3}
+  deathClip: {fileID: 8300000, guid: 00d7bb19bf6f54ffb900860deca8482c, type: 3}
   volume: 1
   corpseDelay: 2
   fadeDuration: 1.5
@@ -212,7 +212,7 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2.6
+  m_Height: 3.51
   m_BaseOffset: 2
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 2
@@ -258,12 +258,12 @@ MonoBehaviour:
   damage: 55
   cooldown: 1.6
   attackAnimation: Attack
-  noticeClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
-  windupClip: {fileID: 8300000, guid: b4298b1bd349f47f8a7dfdd94438e0b2, type: 3}
-  attackClip: {fileID: 8300000, guid: a957945d306af4d389ce7fca8da89b2b, type: 3}
-  hitClip: {fileID: 8300000, guid: 5b4eb0ce7ed684149883ef786ed23a01, type: 3}
+  noticeClip: {fileID: 8300000, guid: 00d7bb19bf6f54ffb900860deca8482c, type: 3}
+  windupClip: {fileID: 8300000, guid: e1b8fde00266844edaa772a043d99ce2, type: 3}
+  attackClip: {fileID: 8300000, guid: 2341288d205c04e2b94313d259b5cea6, type: 3}
+  hitClip: {fileID: 8300000, guid: 87fbc61de99934522917a87dc5f5ee87, type: 3}
   volume: 1
-  windupEffect: {fileID: 87440721349199434, guid: d8f7f1c5430bd4ac28a179896e34d364, type: 3}
+  windupEffect: {fileID: 2164987238788520975, guid: 303b88fd599eb46f5aa9e8fafc597347, type: 3}
   hitEffect: {fileID: 0}
   minRange: 5
   maxRange: 16
@@ -271,12 +271,12 @@ MonoBehaviour:
   retreatStep: 3
   projectileSpeed: 12
   projectileRadius: 0.25
-  projectileEffect: {fileID: 4744934630165700223, guid: 2582cc9a584cb4ae980c51ce8ff8b50f, type: 3}
-  projectileEffectScale: 1
-  muzzleEffect: {fileID: 4606938477650818595, guid: ff0350b7b7f674018a379b32bf9eedce, type: 3}
-  impactEffect: {fileID: 4693723897207509154, guid: d22e8c05187494b2e8ee835cb43dce72, type: 3}
-  impactEffectScale: 1
-  muzzleForward: 1
+  projectileEffect: {fileID: 1616343248039652697, guid: c3f5f87e36a3e42a495cab312d7ef71b, type: 3}
+  projectileEffectScale: 1.3
+  muzzleEffect: {fileID: 3789751600256312473, guid: ba7f2a7cf4a234bdea53be28c90ecd32, type: 3}
+  impactEffect: {fileID: 8531300159004226574, guid: 8730eb415e0b948a095c354149c03adc, type: 3}
+  impactEffectScale: 1.3
+  muzzleForward: 1.35
   spreadStage: 3
   spreadCount: 3
   wideSpreadStage: 0
@@ -302,7 +302,7 @@ MonoBehaviour:
   phase3Hp: 0.33
   tempo2: 1.25
   tempo3: 1.5
-  roarClip: {fileID: 8300000, guid: cbee59137365143b486a95f811d5c55a, type: 3}
+  roarClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
   roarVolume: 1
   roarEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
   roarEffectScale: 0.8
@@ -316,27 +316,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.9173316
+      value: 1.2383976
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.9173316
+      value: 1.2383976
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.9173316
+      value: 1.2383976
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.00000021870889
+      value: -0.000000295257
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.27545565
+      value: -0.37186515
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.08723259
+      value: 0.117763996
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6bea93191b08b458086bf5105df00ccb, type: 3}
       propertyPath: m_LocalRotation.w

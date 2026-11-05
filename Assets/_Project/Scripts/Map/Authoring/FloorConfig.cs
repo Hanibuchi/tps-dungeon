@@ -31,6 +31,12 @@ namespace TpsDungeon.Map.Authoring
         [Tooltip("ボス階のボス（ボス部屋に出す敵のプレハブ）。Settings/Tables/Bosses.csv を取り込むと入る。ボス階でなければ使わない。")]
         public GameObject boss;
 
+        [Tooltip("ボス部屋の扉を開けてから、ボスを倒すまで流す曲。Settings/Tables/Bosses.csv の bgm 列を取り込むと入る。空なら曲を変えない。")]
+        public AudioClip bossBgm;
+
+        [Range(0f, 1f), Tooltip("ボスの曲の音量。Settings/Tables/Bosses.csv の bgm_volume 列を取り込むと入る。")]
+        public float bossBgmVolume = 1f;
+
         [Header("グリッド")]
         [Min(16), Tooltip("フロア全体の横幅（セル数）。部屋はこの範囲からはみ出さない。余裕があるほど広がった形になる。")]
         public int widthInCells = 64;

@@ -118,7 +118,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   knockbackSkin: 0.4
-  hitClip: {fileID: 0}
+  hitClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stunClip: {fileID: 8300000, guid: faed1f90b1f514da8a2b7eeb57022e02, type: 3}
   faintClip: {fileID: 8300000, guid: 5af49e438b6d94a23976b94e6777bd93, type: 3}
   volume: 1

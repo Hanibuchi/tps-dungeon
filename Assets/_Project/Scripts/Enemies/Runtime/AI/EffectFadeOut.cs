@@ -1,12 +1,12 @@
 using UnityEngine;
 
-namespace TpsDungeon.Combat
+namespace TpsDungeon.Enemies
 {
     /// <summary>
     /// パーティクルのエフェクトを、Hold 秒見せてから Fade 秒かけて薄くして消す。
     /// ThirdParty の魔法陣などはデモで繰り返す作りで、1 周の終わりに消える動きを持たない（寿命が尽きた瞬間にぱっと消える）ので、
     /// 放出を止めたうえで、出ている粒の色（透明度と、加算の素材のために明るさも）を毎フレーム下げていく。消し終えたら自分ごと消える。
-    /// <see cref="OneShotEffect.SpawnFading"/> が付ける。
+    /// 武器（Combat の OneShotEffect.SpawnFading）と敵（召喚の魔法陣）の両方が使うので、Combat から見える Enemies に置いてある。
     /// </summary>
     [AddComponentMenu("")]
     public sealed class EffectFadeOut : MonoBehaviour
@@ -19,14 +19,21 @@ namespace TpsDungeon.Combat
         private float applied = 1f;
         private bool stopped;
 
-        public static void Attach(GameObject effect, float hold, float fade)
+        public static EffectFadeOut Attach(GameObject effect, float hold, float fade)
         {
-            if (effect == null) return;
+            if (effect == null) return null;
 
             var fader = effect.AddComponent<EffectFadeOut>();
             fader.systems = effect.GetComponentsInChildren<ParticleSystem>();
             fader.hold = Mathf.Max(0f, hold);
             fader.fade = Mathf.Max(0.01f, fade);
+            return fader;
+        }
+
+        /// <summary>見せる時間を切り上げて、今から薄くし始める（取りやめた召喚の魔法陣など）。もう薄れ始めていれば何もしない。</summary>
+        public void FadeNow()
+        {
+            if (elapsed < hold) hold = elapsed;
         }
 
         private void LateUpdate()

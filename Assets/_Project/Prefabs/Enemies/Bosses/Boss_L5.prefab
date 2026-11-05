@@ -118,8 +118,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   knockbackSkin: 0.4
-  hitClip: {fileID: 0}
-  stunClip: {fileID: 8300000, guid: faed1f90b1f514da8a2b7eeb57022e02, type: 3}
+  hitClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
+  stunClip: {fileID: 8300000, guid: 5af49e438b6d94a23976b94e6777bd93, type: 3}
   faintClip: {fileID: 8300000, guid: 5af49e438b6d94a23976b94e6777bd93, type: 3}
   volume: 1
 --- !u!114 &3750462521091193949
@@ -170,7 +170,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDeath
   deathPush: 3
-  deathClip: {fileID: 8300000, guid: 1d7d144409c5d450f83c22fca571a13c, type: 3}
+  deathClip: {fileID: 8300000, guid: 00d7bb19bf6f54ffb900860deca8482c, type: 3}
   volume: 1
   corpseDelay: 2
   fadeDuration: 1.5
@@ -288,9 +288,9 @@ MonoBehaviour:
   cooldown: 7
   attackAnimation: Wave
   noticeClip: {fileID: 8300000, guid: 7c4ece24f41de438abc6e2dfe6da18c8, type: 3}
-  windupClip: {fileID: 8300000, guid: b4298b1bd349f47f8a7dfdd94438e0b2, type: 3}
-  attackClip: {fileID: 8300000, guid: f564babe8474c49ee9ffa0693f462d80, type: 3}
-  hitClip: {fileID: 8300000, guid: 5b4eb0ce7ed684149883ef786ed23a01, type: 3}
+  windupClip: {fileID: 8300000, guid: 460e49fefcb2941f19d1536d2095e2a2, type: 3}
+  attackClip: {fileID: 8300000, guid: ec17a4032aae94e8da88251a3257d005, type: 3}
+  hitClip: {fileID: 8300000, guid: 172103b9dbca24e19b169fcde5fc8c45, type: 3}
   volume: 1
   windupEffect: {fileID: 87440721349199434, guid: d8f7f1c5430bd4ac28a179896e34d364, type: 3}
   hitEffect: {fileID: 0}
@@ -304,7 +304,10 @@ MonoBehaviour:
   slamEffect: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
   slamEffectScale: 1.1
   slamWindupEffect: {fileID: 7063366685381866213, guid: 32956b3de14a64e65ad17558c4423bcb, type: 3}
-  slamClip: {fileID: 8300000, guid: f564babe8474c49ee9ffa0693f462d80, type: 3}
+  slamClip: {fileID: 8300000, guid: fa6e0a0ceb93d48d79bfd458884bdc2d, type: 3}
+  slamWindupClip: {fileID: 8300000, guid: b4298b1bd349f47f8a7dfdd94438e0b2, type: 3}
+  slamAnimationLead: 0.45
+  slamClipLead: 0.4
   minions:
   - {fileID: 2755816026748207779, guid: 284ec33f53a3543b0a516fe3d9f7fe51, type: 3}
   - {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
@@ -314,6 +317,9 @@ MonoBehaviour:
   maxAlive: 040000000600000008000000
   summonEffect: {fileID: 2635763173150528539, guid: db5a4fb984dd94e2abcc4255b12f0d6e, type: 3}
   summonEffectScale: 1.5
+  summonCircle: {fileID: 3377181292992421420, guid: 48c5715f9603c3842a353516a8baefbb, type: 3}
+  summonCircleScale: 0.6
+  summonCircleLinger: 0.4
   eliteStage: 3
   elites:
   - {fileID: 6789413913602102952, guid: 679924acc6bda4d36b505e670e18483c, type: 3}

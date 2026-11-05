@@ -118,7 +118,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   knockbackSkin: 0.4
-  hitClip: {fileID: 0}
+  hitClip: {fileID: 8300000, guid: e4e548c14d1764f6b92388df3d3377e5, type: 3}
   stunClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
   faintClip: {fileID: 8300000, guid: 9d69ecce279ff498ca56e4f105866090, type: 3}
   volume: 1
@@ -157,7 +157,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.EnemyDeath
   deathPush: 3
-  deathClip: {fileID: 8300000, guid: 23d7f7cb96b644842ad39978bf7808be, type: 3}
+  deathClip: {fileID: 8300000, guid: 199327d0e507b42a8a9ac45e48699444, type: 3}
   volume: 1
   corpseDelay: 2
   fadeDuration: 1.5

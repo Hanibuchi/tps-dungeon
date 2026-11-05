@@ -11,13 +11,17 @@ namespace TpsDungeon.Enemies.Editor
     /// <summary>
     /// ボスの表（Settings/Tables/Bosses.csv、<see cref="BossCsv"/>）を取り込む。
     ///   ・ボスのプレハブ（Prefabs/Enemies の、id の合う EnemyIdentity）の <see cref="BossPhases"/> に名前・段階の境目・テンポを書く
-    ///   ・道順（DungeonRoute）のその層のボス階の FloorConfig の boss にプレハブを差す
+    ///   ・道順（DungeonRoute）のその層のボス階の FloorConfig の boss にプレハブを、bossBgm に bgm 列の曲を差す
+    ///     （ThirdParty は git に載らず GUID が環境ごとに違うので、曲は CSV にパスで書いておき、取り込みで差し直す）
     /// 強さ（hp など）は Enemies.csv に書く（EnemySpawnCsvImporter）。
     /// CSV を保存すると自動で取り込む。メニューからも呼べる。値が今と同じなら書き換えない。
     /// </summary>
     public sealed class BossCsvImporter : AssetPostprocessor
     {
         public const string CsvPath = EnemySpawnCsvImporter.TablesFolder + "/Bosses.csv";
+
+        /// <summary>bgm 列のパスの前に付ける所。</summary>
+        public const string SoundRoot = "Assets/ThirdParty/Sound/";
 
         [MenuItem("Tools/TPS Dungeon/CSV の取り込み/ボス", false, 108)]
         public static void Import()
@@ -66,8 +70,17 @@ namespace TpsDungeon.Enemies.Editor
                     continue;
                 }
 
-                if (config.boss == prefab) continue;
+                AudioClip bgm = null;
+                if (row.Bgm.Length > 0)
+                {
+                    bgm = AssetDatabase.LoadAssetAtPath<AudioClip>(SoundRoot + row.Bgm);
+                    if (bgm == null) errors.Add($"{where} の bgm「{row.Bgm}」が {SoundRoot} の下に無い");
+                }
+
+                if (config.boss == prefab && config.bossBgm == bgm && Mathf.Approximately(config.bossBgmVolume, row.BgmVolume)) continue;
                 config.boss = prefab;
+                config.bossBgm = bgm;
+                config.bossBgmVolume = row.BgmVolume;
                 EditorUtility.SetDirty(config);
                 changed++;
             }

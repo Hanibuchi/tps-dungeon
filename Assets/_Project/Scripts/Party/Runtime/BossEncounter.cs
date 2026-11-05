@@ -1,4 +1,5 @@
 using System;
+using TpsDungeon.Audio.Runtime;
 using TpsDungeon.Enemies;
 using TpsDungeon.Map.Authoring;
 using TpsDungeon.Map.Data;
@@ -16,6 +17,8 @@ namespace TpsDungeon.Party
     /// 階を読み込むたびに出すので、ボス階に来るたびにボスがいる。
     /// 上の階から降りてきた（出口に着いた）ときは、もう倒したものとしてボスを出さずに扉を開けておく（出口の部屋に閉じ込めないように）。
     /// HUD は <see cref="Current"/> を見て、ボスの名前と HP を出す。
+    /// ボスが出たら階の設定の曲（FloorConfig.bossBgm）に切り替え、倒したら元の曲に戻す（元が無ければフェードして止める）。
+    /// 倒さずに階を離れたとき（全滅・別の階へ移る）も、まだボスの曲が流れていれば同じように戻す。
     /// FloorBuilder と同じ GameObject に付ける（GameFlow が RoomEnemySpawner と一緒に付ける）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -26,11 +29,20 @@ namespace TpsDungeon.Party
         [SerializeField, Range(0f, 0.45f), Tooltip("ボスを出す所を、部屋の中心から開いたドアと反対の向きへ、部屋の幅のこの割合だけずらす。")]
         private float backOffset = 0.2f;
 
+        [SerializeField, Min(0f), Tooltip("ボスの曲に切り替えるフェードの秒数。")]
+        private float bgmFadeInSeconds = 1f;
+
+        [SerializeField, Min(0f), Tooltip("倒したあと、ボスの曲を止める（元の曲へ戻す）フェードの秒数。")]
+        private float bgmFadeOutSeconds = 3f;
+
         private FloorBuilder builder;
         private FloorBootstrap bootstrap;
         private int arenaRoom = -1;
         private bool spawned;
         private bool defeated = true;
+        private AudioClip playingBgm;
+        private AudioClip previousBgm;
+        private float previousBgmVolume = 1f;
 
         /// <summary>今戦っているボス戦（ボスが出ていて、まだ倒れていない）。無ければ null。</summary>
         public static BossEncounter Current { get; private set; }
@@ -141,6 +153,7 @@ namespace TpsDungeon.Party
 
             Boss.Died += OnBossDied;
             Current = this;
+            StartBgm(config.bossBgm, config.bossBgmVolume);
             Debug.Log($"[Dungeon] ボス {boss.name} が出た", this);
             AnyStarted?.Invoke(this);
         }
@@ -154,8 +167,32 @@ namespace TpsDungeon.Party
             Release();
         }
 
+        private void StartBgm(AudioClip clip, float volume)
+        {
+            GameAudio audio = GameAudio.Instance;
+            if (audio == null || clip == null) return;
+            previousBgm = audio.CurrentBgm != clip ? audio.CurrentBgm : null;
+            previousBgmVolume = audio.CurrentBgmVolume;
+            playingBgm = clip;
+            audio.PlayBgm(clip, bgmFadeInSeconds, volume);
+        }
+
+        /// <summary>ボスの曲がまだ流れていれば、元の曲に戻す（無ければ止める）。ほかの曲に替わっていれば触らない（全滅の曲など）。</summary>
+        private void EndBgm()
+        {
+            AudioClip clip = playingBgm;
+            AudioClip previous = previousBgm;
+            playingBgm = null;
+            previousBgm = null;
+            GameAudio audio = GameAudio.Instance;
+            if (audio == null || clip == null || audio.CurrentBgm != clip) return;
+            if (previous != null) audio.PlayBgm(previous, bgmFadeOutSeconds, previousBgmVolume);
+            else audio.StopBgm(bgmFadeOutSeconds);
+        }
+
         private void Release()
         {
+            EndBgm();
             if (Boss != null) Boss.Died -= OnBossDied;
             if (Current == this) Current = null;
             Boss = null;

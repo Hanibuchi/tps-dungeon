@@ -1,6 +1,6 @@
-id,layer,name,phase2_hp,phase3_hp,tempo2,tempo3
-boss_l1,1,蒼鬼の門番,0.66,0.33,1.2,1.45
-boss_l2,2,毒棘の大塊,0.66,0.33,1.2,1.4
-boss_l3,3,棘撃ちの番兵,0.66,0.33,1.2,1.4
-boss_l4,4,氷獄の飛竜,0.66,0.33,1.25,1.5
-boss_l5,5,玉座の魔王,0.66,0.33,1.2,1.4
+id,layer,name,phase2_hp,phase3_hp,tempo2,tempo3,bgm,bgm_volume
+boss_l1,1,蒼鬼の門番,0.66,0.33,1.2,1.45,DOVA-SYNDROME/ボス戦1_Demon_Shaft_Crash.mp3,0.5
+boss_l2,2,毒棘の大塊,0.66,0.33,1.2,1.4,DOVA-SYNDROME/ボス戦1_Demon_Shaft_Crash.mp3,0.5
+boss_l3,3,棘撃ちの番兵,0.66,0.33,1.2,1.4,DOVA-SYNDROME/ボス戦1_Demon_Shaft_Crash.mp3,0.5
+boss_l4,4,氷獄の飛竜,0.66,0.33,1.25,1.5,DOVA-SYNDROME/ボス戦2_False_Siren.mp3,0.5
+boss_l5,5,玉座の魔王,0.66,0.33,1.2,1.4,DOVA-SYNDROME/ボス戦2_False_Siren.mp3,0.5
