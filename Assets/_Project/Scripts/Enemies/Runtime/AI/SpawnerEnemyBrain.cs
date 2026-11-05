@@ -9,9 +9,11 @@ namespace TpsDungeon.Enemies
     ///
     /// 相手が見えていないか遠ければ寄り、間合い（<see cref="maxRange"/>）に入ったらその場に構える。下がりはしない（玉座の主は退かない）。
     /// 相手が近すぎる（<see cref="slamRange"/>）と、呼ぶより先に溜めて（<see cref="slamWindup"/> 秒）周りを叩き潰す（<see cref="slamRadius"/>、強いダメージ）。
-    /// 溜めの間に離れれば避けられる。
+    /// 溜めの間に離れれば避けられる。殴るアニメーションと叩き潰しの音は、振り下ろしと音の山が叩き潰す瞬間に来るよう、溜めの終わりから逆算して流す
+    /// （<see cref="slamAnimationLead"/>・<see cref="slamClipLead"/>）。
     /// 相手が見えていて、呼んだ手下が上限（<see cref="maxAlive"/>）より少なければ、止まって溜め（<see cref="windup"/> 秒）、
     /// 自分の周り（<see cref="summonRadius"/>）の NavMesh の上に手下（<see cref="minions"/> から等確率）を呼ぶ → <see cref="cooldown"/> 秒は呼ばない。
+    /// 溜め始めに手下の出る所を決めて、そこに魔法陣（<see cref="summonCircle"/>）を広げておき、溜め終わりにその上へ手下を出す。
     /// ボスの段階（<see cref="BossPhases"/>）が上がると、1 回に呼ぶ数と上限が増え、強い手下（<see cref="elites"/>）も混ぜ、合間に弾も撃つ。
     /// 呼んだ手下は経験値も武器も落とさない（<see cref="EnemyHealth.IsSummoned"/>。呼び続けて稼げないように）。本体が倒れたら手下も倒れる。
     /// 溜めの間のスタン・気絶で取り消す。
@@ -56,6 +58,15 @@ namespace TpsDungeon.Enemies
         [SerializeField, Tooltip("叩き潰しの音。")]
         private AudioClip slamClip;
 
+        [SerializeField, Tooltip("叩き潰しの溜めの音（溜め始めに鳴らす）。未設定なら鳴らさない（呼ぶ溜めの音は魔法陣の音なので使わない）。")]
+        private AudioClip slamWindupClip;
+
+        [SerializeField, Min(0f), Tooltip("叩き潰す何秒前に殴るアニメーション（Attack）を流すか。Punch の振り下ろし（0.38 秒目）と移りの 0.1 秒の分。")]
+        private float slamAnimationLead = 0.45f;
+
+        [SerializeField, Min(0f), Tooltip("叩き潰す何秒前に叩き潰しの音を鳴らすか。音の頭から一番大きい所までの長さ（重いキック1 は 0.4 秒）。")]
+        private float slamClipLead = 0.4f;
+
         [Header("呼ぶ")]
         [SerializeField, Tooltip("呼ぶ手下のプレハブ。等確率で選ぶ。")]
         private GameObject[] minions = new GameObject[0];
@@ -77,6 +88,15 @@ namespace TpsDungeon.Enemies
 
         [SerializeField, Min(0.01f)]
         private float summonEffectScale = 1f;
+
+        [SerializeField, Tooltip("呼ぶ溜めの間、手下の出る所の地面に広げる魔法陣。自分では消えない素材でもよい（薄くして消す）。")]
+        private GameObject summonCircle;
+
+        [SerializeField, Min(0.01f), Tooltip("魔法陣の大きさの倍率。強い手下の所は 1.5 倍。")]
+        private float summonCircleScale = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("手下が出てから魔法陣を残しておく時間（秒）。そのあと 0.6 秒で薄れて消える。")]
+        private float summonCircleLinger = 0.4f;
 
         [Header("ボスの段階（0 なら使わない）")]
         [SerializeField, Min(0), Tooltip("この段階から、呼ぶたびに強い手下を 1 体混ぜる（生きている数が eliteMax まで）。")]
@@ -119,8 +139,12 @@ namespace TpsDungeon.Enemies
         private readonly List<EnemyHealth> alive = new List<EnemyHealth>();
         private readonly List<EnemyTarget> slamHits = new List<EnemyTarget>();
         private readonly List<EnemyHealth> aliveElites = new List<EnemyHealth>();
+        private readonly List<(Vector3 at, bool elite)> pendingSpawns = new List<(Vector3, bool)>();
+        private readonly List<EffectFadeOut> circles = new List<EffectFadeOut>();
         private bool summoning;
         private bool slamming;
+        private bool slamAnimated;
+        private bool slamSounded;
         private float timer;
         private float shotTimer;
         private float slamReady;
@@ -142,6 +166,7 @@ namespace TpsDungeon.Enemies
             base.OnEnable();
             summoning = false;
             slamming = false;
+            CancelSummon();
             shotTimer = shotInterval;
         }
 
@@ -157,6 +182,7 @@ namespace TpsDungeon.Enemies
                 Motor.Destination = null;
                 if (HasTarget) Motor.LookAt = Target.Position;
                 timer -= dt;
+                SlamCues();
                 if (timer <= 0f) Slam();
                 return;
             }
@@ -168,6 +194,7 @@ namespace TpsDungeon.Enemies
                 {
                     summoning = false;
                     StopWindupEffect();
+                    CancelSummon();
                 }
                 StartSlam();
                 return;
@@ -217,6 +244,20 @@ namespace TpsDungeon.Enemies
             PlayAttack();
             PlaySound(windupClip, Center);
             StartWindupEffect(HeadPoint);
+
+            // 出る所を今決めて、溜めの間そこに魔法陣を広げておく（溜め終わりにその上へ出す）。
+            Prune();
+            int room = ByStage(maxAlive, 4) - alive.Count;
+            int count = Mathf.Min(ByStage(summonCounts, 2), room);
+            bool elite = StageReached(eliteStage) && elites.Length > 0 && aliveElites.Count < eliteMax && count > 0;
+            pendingSpawns.Clear();
+            for (int i = 0; i < count; i++)
+            {
+                bool useElite = elite && i == 0;
+                Vector3 at = SpawnPoint();
+                pendingSpawns.Add((at, useElite));
+                OpenCircle(at, useElite);
+            }
         }
 
         private void Summon()
@@ -226,21 +267,37 @@ namespace TpsDungeon.Enemies
             CooldownRemaining = Cooldown;
             StopWindupEffect();
 
-            Prune();
-            int room = ByStage(maxAlive, 4) - alive.Count;
-            int count = Mathf.Min(ByStage(summonCounts, 2), room);
-            bool elite = StageReached(eliteStage) && elites.Length > 0 && aliveElites.Count < eliteMax && count > 0;
-            for (int i = 0; i < count; i++)
+            foreach ((Vector3 at, bool useElite) in pendingSpawns)
             {
-                bool useElite = elite && i == 0;
                 GameObject prefab = Pick(useElite ? elites : minions);
                 if (prefab == null) continue;
-                EnemyHealth spawned = SpawnMinion(prefab);
+                EnemyHealth spawned = SpawnMinion(prefab, at);
                 if (spawned == null) continue;
                 alive.Add(spawned);
                 if (useElite) aliveElites.Add(spawned);
             }
+            pendingSpawns.Clear();
+            circles.Clear(); // 開いたときに付けた時間どおり、少し残ってから薄れて消える。
             PlaySound(attackClip, Center);
+        }
+
+        /// <summary>手下の出る所に魔法陣を広げる。溜めの間と、出てから少しのあいだ見せて、薄くして消す。</summary>
+        private void OpenCircle(Vector3 at, bool elite)
+        {
+            if (summonCircle == null) return;
+            GameObject circle = Instantiate(summonCircle, at + Vector3.up * 0.03f, Quaternion.Euler(0f, Random.value * 360f, 0f));
+            EnemyEffects.Prepare(circle, summonCircleScale * (elite ? 1.5f : 1f), false);
+            EffectFadeOut fader = EffectFadeOut.Attach(circle, Scaled(windup) + summonCircleLinger, 0.6f);
+            if (fader != null) circles.Add(fader);
+        }
+
+        /// <summary>呼ぶのを取りやめた（叩き潰しに切り替えた・スタンした・倒れた）。出す予定の所の魔法陣をすぐ薄くする。</summary>
+        private void CancelSummon()
+        {
+            pendingSpawns.Clear();
+            foreach (EffectFadeOut circle in circles)
+                if (circle != null) circle.FadeNow();
+            circles.Clear();
         }
 
         private void StartSlam()
@@ -249,12 +306,33 @@ namespace TpsDungeon.Enemies
             timer = Scaled(slamWindup);
             Motor.Destination = null;
             Motor.LookAt = Target.Position;
-            Play(AttackParam);
-            PlaySound(windupClip, Center);
+            // 殴るアニメーションと叩き潰しの音は、溜めの終わりに合わせて SlamCues で流す。
+            slamAnimated = false;
+            slamSounded = false;
+            PlaySound(slamWindupClip, Center);
+            SlamCues();
             if (slamWindupEffect != null)
             {
                 activeSlamWindup = Instantiate(slamWindupEffect, HeadPoint, transform.rotation, transform);
                 EnemyEffects.Prepare(activeSlamWindup, 1.5f, true);
+            }
+        }
+
+        /// <summary>
+        /// 溜めの残りが lead を切ったら、殴るアニメーションと叩き潰しの音を流す。振り下ろしと音の一番大きい所が、叩き潰す瞬間に重なる。
+        /// 段階が上がって溜めが lead より短くなったら、溜め始めにすぐ流す。
+        /// </summary>
+        private void SlamCues()
+        {
+            if (!slamAnimated && timer <= slamAnimationLead)
+            {
+                slamAnimated = true;
+                Play(AttackParam);
+            }
+            if (!slamSounded && timer <= slamClipLead)
+            {
+                slamSounded = true;
+                PlaySound(slamClip != null ? slamClip : attackClip, EnemyMotor.OnNavMesh(transform.position, 3f));
             }
         }
 
@@ -269,7 +347,7 @@ namespace TpsDungeon.Enemies
             Vector3 ground = EnemyMotor.OnNavMesh(transform.position, 3f);
             Vector3 origin = ground + Vector3.up * 0.5f;
             EnemyEffects.Spawn(slamEffect, ground, Quaternion.identity, slamEffectScale, 3f);
-            PlaySound(slamClip != null ? slamClip : attackClip, ground);
+            if (!slamSounded) PlaySound(slamClip != null ? slamClip : attackClip, ground);
 
             int center = Mathf.RoundToInt(damage * slamDamageScale);
             EnemyHits.Collect(origin, slamRadius + EnemyTarget.DecoyRadius, slamHits);
@@ -295,9 +373,9 @@ namespace TpsDungeon.Enemies
             activeSlamWindup = null;
         }
 
-        private EnemyHealth SpawnMinion(GameObject prefab)
+        /// <summary>自分の周り（summonRadius）の NavMesh の上で、壁の向こうでない所。見つからなければ自分の足元。</summary>
+        private Vector3 SpawnPoint()
         {
-            Vector3 at = transform.position;
             for (int attempt = 0; attempt < 8; attempt++)
             {
                 Vector2 offset = Random.insideUnitCircle.normalized * Random.Range(summonRadius * 0.4f, summonRadius);
@@ -305,10 +383,13 @@ namespace TpsDungeon.Enemies
                 if (!NavMesh.SamplePosition(p, out NavMeshHit hit, 1.5f, NavMesh.AllAreas)) continue;
                 // 壁の向こう（隣の部屋）には出さない。
                 if (NavMesh.Raycast(transform.position, hit.position, out _, NavMesh.AllAreas)) continue;
-                at = hit.position;
-                break;
+                return hit.position;
             }
+            return transform.position;
+        }
 
+        private EnemyHealth SpawnMinion(GameObject prefab, Vector3 at)
+        {
             Quaternion rotation = Quaternion.Euler(0f, Random.value * 360f, 0f);
             GameObject minion = Instantiate(prefab, at, rotation, transform.parent);
             minion.name = $"{prefab.name}_Summoned";
@@ -342,6 +423,7 @@ namespace TpsDungeon.Enemies
         protected override void OnDeath()
         {
             StopSlamWindup();
+            CancelSummon();
             Prune();
             foreach (EnemyHealth minion in alive.ToArray())
             {
@@ -399,6 +481,7 @@ namespace TpsDungeon.Enemies
             }
             if (!summoning) return;
             summoning = false;
+            CancelSummon();
             Motor.LookAt = null;
             CooldownRemaining = Mathf.Max(CooldownRemaining, Cooldown * 0.5f);
         }
