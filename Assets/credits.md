@@ -21,6 +21,8 @@
 | RPG Poly Pack - Lite | Gigel3d | [Unity Asset Store](https://assetstore.unity.com/packages/3d/environments/landscapes/rpg-poly-pack-lite-148410) | Standard Unity Asset Store EULA (Extension Asset) |
 | Free Low Poly Dungeon Pack | Hyron | [Unity Asset Store](https://assetstore.unity.com/packages/3d/environments/dungeons/free-low-poly-dungeon-pack-398788) | Standard Unity Asset Store EULA (Extension Asset) |
 | IBM Plex Sans JP（UI の書体） | IBM（Copyright © 2017 IBM Corp.） | [Google Fonts](https://fonts.google.com/specimen/IBM+Plex+Sans+JP) | **SIL Open Font License 1.1**（商用利用可。フォントファイル単体での販売は不可。改変版に「Plex」の名前は使えない） |
+| Demon Shaft Crash | shimtone | [OpenTracks（旧DOVA-SYNDROME）](https://opentracks.com/bgm/detail/22694) | OpenTracks利用規約に準拠（作者の条件はサイトの規約どおり）。基本的にクレジット表記は不要（作者はあれば嬉しいとのこと） |
+| False Siren | shimtone | [OpenTracks（旧DOVA-SYNDROME）](https://opentracks.com/bgm/detail/23846) | OpenTracks利用規約に準拠（作者の条件はサイトの規約どおり）。基本的にクレジット表記は不要（作者はあれば嬉しいとのこと） |
 
 # BGM
 ## 地上

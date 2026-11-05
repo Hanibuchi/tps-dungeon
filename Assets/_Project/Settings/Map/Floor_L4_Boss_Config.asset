@@ -16,6 +16,7 @@ MonoBehaviour:
   bossBlueprint: ".aaaa...dddd.\n.aaaaEXSdddd.\n...bAAAAAc...\n...bAAAAAc...\n...bAAAAAc...\n...bAAAAAc...\n...bAAAAAc...\n...bHHHHHc...\n\u6249:
     E-a a-b b-H H-c c-d d-S\n\u6575: a b c d H"
   boss: {fileID: 5848560689614447625, guid: f1bc16e5d6108470a86fa5e30a5e3112, type: 3}
+  bossBgm: {fileID: 8300000, guid: e0aaecd0fdd824b06b95bedb47df45be, type: 3}
   widthInCells: 16
   heightInCells: 16
   cellSize: 5

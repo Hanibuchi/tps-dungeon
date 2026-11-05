@@ -39,6 +39,21 @@ namespace TpsDungeon.Enemies.Tests
             Assert.AreEqual("蒼鬼の門番", rows[0].Name);
             Assert.AreEqual(0.66f, rows[0].Phase2Hp, 1e-6f);
             Assert.AreEqual(1.45f, rows[0].Tempo3, 1e-6f);
+            Assert.AreEqual("", rows[0].Bgm);
+        }
+
+        [Test]
+        public void bgm列は任意_書けばパスを読む()
+        {
+            const string text = "id,layer,name,phase2_hp,phase3_hp,tempo2,tempo3,bgm\n" +
+                                "a,1,A,0.66,0.33,1.2,1.4,DOVA-SYNDROME/ボス戦1.mp3\n" +
+                                "b,2,B,0.66,0.33,1.2,1.4,\n";
+            var errors = new List<string>();
+            List<BossCsv.Row> rows = BossCsv.Parse(text, errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual("DOVA-SYNDROME/ボス戦1.mp3", rows[0].Bgm);
+            Assert.AreEqual("", rows[1].Bgm);
         }
 
         [Test]
