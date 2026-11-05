@@ -42,9 +42,30 @@ namespace TpsDungeon.Enemies
         [SerializeField, Min(0f), Tooltip("当てたあと動き出すまで（秒）。")]
         private float recovery = 0.5f;
 
+        [Header("ボスの段階（0 なら使わない）")]
+        [SerializeField, Min(0), Tooltip("この段階から、振り下ろした所から衝撃の輪が広がる（範囲ダメージ）。")]
+        private int shockwaveStage;
+
+        [SerializeField, Min(0.5f), Tooltip("衝撃の輪の半径（m）。")]
+        private float shockwaveRadius = 4f;
+
+        [SerializeField, Range(0f, 2f), Tooltip("衝撃の輪の中心でのダメージ（1 回の攻撃のダメージに掛ける）。")]
+        private float shockwaveDamageScale = 0.6f;
+
+        [SerializeField, Tooltip("衝撃の輪の見た目。")]
+        private GameObject shockwaveEffect;
+
+        [SerializeField, Min(0.01f)]
+        private float shockwaveEffectScale = 1f;
+
+        [SerializeField, Min(0), Tooltip("この段階から、殴ったあと間を置かずにもう 1 回殴る（溜めは半分）。")]
+        private int comboStage;
+
         private readonly List<EnemyTarget> hits = new List<EnemyTarget>();
         private Phase phase;
         private float timer;
+        // 連撃の 2 発目を溜めている。
+        private bool comboSwing;
 
         protected override void OnEnable()
         {
@@ -78,7 +99,7 @@ namespace TpsDungeon.Enemies
                     if (timer <= 0f)
                     {
                         phase = Phase.Chase;
-                        CooldownRemaining = cooldown;
+                        CooldownRemaining = Cooldown;
                     }
                     break;
             }
@@ -120,10 +141,11 @@ namespace TpsDungeon.Enemies
             if (Motor.IsDown && TargetDistance <= attackRange) StartWindup();
         }
 
-        private void StartWindup()
+        private void StartWindup(bool combo = false)
         {
+            comboSwing = combo;
             phase = Phase.Windup;
-            timer = windup;
+            timer = Scaled(combo ? windup * 0.5f : windup);
             Motor.Destination = null;
             Motor.LookAt = Target.Position;
             PlayAttack();
@@ -134,7 +156,7 @@ namespace TpsDungeon.Enemies
         private void Strike()
         {
             phase = Phase.Recover;
-            timer = recovery;
+            timer = Scaled(recovery);
             Motor.LookAt = null;
             StopWindupEffect();
 
@@ -149,6 +171,36 @@ namespace TpsDungeon.Enemies
                 target.Damage(damage, gameObject);
                 PlaySound(hitClip, target.AimPoint);
                 SpawnHitEffect(target.AimPoint);
+            }
+
+            if (StageReached(shockwaveStage)) Shockwave(center);
+
+            // 連撃: 1 発目のあと、相手がまだ近ければ隙を置かずに 2 発目を溜める。
+            if (StageReached(comboStage) && !comboSwing && HasTarget && TargetVisible && TargetDistance <= attackRange * 1.5f)
+            {
+                StartWindup(true);
+                return;
+            }
+            comboSwing = false;
+        }
+
+        /// <summary>振り下ろした所の足元から衝撃の輪を広げる。中心ほど痛く、壁の向こうには届かない。</summary>
+        private void Shockwave(Vector3 strikePoint)
+        {
+            Vector3 ground = EnemyMotor.OnNavMesh(strikePoint, 3f);
+            Vector3 origin = ground + Vector3.up * 0.5f;
+            EnemyEffects.Spawn(shockwaveEffect, ground, Quaternion.identity, shockwaveEffectScale, 3f);
+
+            int center = Mathf.RoundToInt(damage * shockwaveDamageScale);
+            EnemyHits.Collect(origin, shockwaveRadius + EnemyTarget.DecoyRadius, hits);
+            foreach (EnemyTarget target in hits)
+            {
+                Vector3 aim = target.AimPoint;
+                if (!EnemyHits.Clear(origin, aim, transform)) continue;
+                // 跳べば避けられるように、足元から高い所に居る相手には当てない。
+                if (target.Position.y - ground.y > 1.2f) continue;
+                int dealt = EnemyAttackRules.ExplosionDamage(center, Vector3.Distance(origin, aim), shockwaveRadius, 0.4f);
+                if (dealt > 0) target.Damage(dealt, gameObject);
             }
         }
 
@@ -170,9 +222,10 @@ namespace TpsDungeon.Enemies
             if (phase == Phase.Chase) return;
             bool attacking = phase != Phase.Dive;
             phase = Phase.Chase;
+            comboSwing = false;
             Motor.LookAt = null;
             if (!attacking) return;
-            CooldownRemaining = Mathf.Max(CooldownRemaining, cooldown * 0.5f);
+            CooldownRemaining = Mathf.Max(CooldownRemaining, Cooldown * 0.5f);
         }
     }
 }

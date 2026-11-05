@@ -128,6 +128,7 @@ namespace TpsDungeon.Hud
         // 見出しを退かせる予約。続けて出したら前の予約は捨てる。
         private IVisualElementScheduledItem bannerHide;
         private SaveIndicator saveIndicator;
+        private BossBar bossBar;
 
         // 今出している残りの敵の数。出していなければ -1。
         private int shownRemaining = -1;
@@ -226,6 +227,7 @@ namespace TpsDungeon.Hud
             WipeSequence.Ended += OnWipeEnded;
             SoulUpgradeWorld.FloorClearBonusGranted += OnFloorClearBonus;
             saveIndicator = new SaveIndicator(root);
+            bossBar = new BossBar(root);
             GameSave.AutoSaved += OnAutoSaved;
             RefreshCharacter();
             RefreshMapOverlay();
@@ -246,6 +248,7 @@ namespace TpsDungeon.Hud
             GameSave.AutoSaved -= OnAutoSaved;
             saveIndicator?.Stop();
             saveIndicator = null;
+            bossBar = null;
             UnbindFloor();
         }
 
@@ -330,6 +333,7 @@ namespace TpsDungeon.Hud
             RefreshCooldown();
             RefreshCrosshair();
             RefreshMonsterHouseCount();
+            bossBar?.Refresh();
         }
 
         private static VisualElement[] BuildSlots(VisualElement container)

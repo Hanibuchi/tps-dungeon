@@ -34,6 +34,9 @@ namespace TpsDungeon.Items
             [Tooltip("E〜S を落とす確率（0〜1）。残りは何も落とさない。")]
             public float[] rankChances = new float[EnchantmentRankCsv.RankColumns.Length];
 
+            [Min(0), Tooltip("必ず落とす本数（ボス）。1 以上なら rankChances を比率として、1 本ごとにランクを振る。0 なら確率で多くて 1 本。")]
+            public int guaranteedCount;
+
             [Tooltip("上から順に判定する。")]
             public List<UniqueEntry> uniques = new List<UniqueEntry>();
         }

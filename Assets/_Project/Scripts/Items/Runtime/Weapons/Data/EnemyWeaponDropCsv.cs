@@ -9,12 +9,14 @@ namespace TpsDungeon.Items
     /// 1 行 = 敵 1 体。ランク E〜S の列に、倒したときそのランクの武器を落とす確率を 0〜1 の小数で書く（0.1 で 10%）。空欄は 0。
     /// 例: <c>goblin,0.08,0.03,0.01,,,</c>（ゴブリンは E を 8%、D を 3%、C を 1%。残りの 88% は何も落とさない）。
     /// 合計は 1 まで。
+    /// 8 列目 count（省いてよい）に 1 以上の数を書くと、倒したとき必ず count 本落とす（ボス用）。
+    /// このときランクの列は確率ではなく比率として扱い、1 本ごとに比率でランクを振る。
     /// 先頭の見出し行（enemy で始まる）・空行・# で始まる行は飛ばす。
     /// 読めないセルや行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class EnemyWeaponDropCsv
     {
-        public const string Header = "enemy,E,D,C,B,A,S";
+        public const string Header = "enemy,E,D,C,B,A,S,count";
 
         public readonly struct Row
         {
@@ -24,11 +26,15 @@ namespace TpsDungeon.Items
             /// <summary>E〜S（<see cref="EnchantmentRankCsv.RankColumns"/> の並び）を落とす確率。0〜1。</summary>
             public readonly float[] Chances;
 
-            public Row(int line, string enemy, float[] chances)
+            /// <summary>必ず落とす本数。0 なら確率で多くて 1 本。</summary>
+            public readonly int Count;
+
+            public Row(int line, string enemy, float[] chances, int count = 0)
             {
                 Line = line;
                 Enemy = enemy;
                 Chances = chances;
+                Count = count;
             }
         }
 
@@ -50,9 +56,9 @@ namespace TpsDungeon.Items
                 for (int c = 0; c < cells.Length; c++) cells[c] = cells[c].Trim();
                 if (cells[0].Equals("enemy", StringComparison.OrdinalIgnoreCase)) continue;
 
-                if (cells.Length > 1 + columns.Length)
+                if (cells.Length > 2 + columns.Length)
                 {
-                    errors?.Add($"{line} 行目: 列が多すぎる（敵,E,D,C,B,A,S）: {raw}");
+                    errors?.Add($"{line} 行目: 列が多すぎる（敵,E,D,C,B,A,S,count）: {raw}");
                     continue;
                 }
 
@@ -84,7 +90,23 @@ namespace TpsDungeon.Items
 
                 if (!ok) continue;
 
-                if (total > 1.0 + 1e-6)
+                int count = 0;
+                int countIndex = 1 + columns.Length;
+                if (countIndex < cells.Length && cells[countIndex].Length > 0 &&
+                    (!int.TryParse(cells[countIndex], NumberStyles.Integer, CultureInfo.InvariantCulture, out count) || count < 0))
+                {
+                    errors?.Add($"{line} 行目: count の列は 0 以上の整数「{cells[countIndex]}」");
+                    continue;
+                }
+
+                if (count > 0 && total <= 0)
+                {
+                    errors?.Add($"{line} 行目: {enemy} は count {count} 本落とすが、ランクの比率がどれも 0");
+                    continue;
+                }
+
+                // 必ず落とす行は比率なので、合計が 1 を超えてもよい。
+                if (count == 0 && total > 1.0 + 1e-6)
                 {
                     errors?.Add($"{line} 行目: {enemy} の確率の合計が 1 を超えている（{total:0.####}）");
                     continue;
@@ -96,7 +118,7 @@ namespace TpsDungeon.Items
                     continue;
                 }
 
-                rows.Add(new Row(line, enemy, chances));
+                rows.Add(new Row(line, enemy, chances, count));
             }
 
             return rows;

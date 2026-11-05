@@ -93,6 +93,24 @@ namespace TpsDungeon.Enemies
         protected EnemyHealth Health { get; private set; }
         protected EnemyDamageReaction Reaction { get; private set; }
 
+        /// <summary>ボスの段階（<see cref="BossPhases"/>）。付いていなければ null。</summary>
+        protected BossPhases Phases { get; private set; }
+
+        /// <summary>ボスの段階（1〜3）。ボスでなければ 1。</summary>
+        protected int Stage => Phases != null ? Phases.Stage : 1;
+
+        /// <summary>段階のテンポ。ボスでなければ 1。</summary>
+        protected float Tempo => Phases != null ? Phases.Tempo : 1f;
+
+        /// <summary>攻撃を終えてから次の攻撃までの間（秒）。段階のテンポで縮む。</summary>
+        protected float Cooldown => cooldown / Tempo;
+
+        /// <summary>溜めなどの時間（秒）を段階のテンポで縮める。</summary>
+        protected float Scaled(float seconds) => seconds / Tempo;
+
+        /// <summary>段階 stage から有効にする欄（0 なら無効）に、今の段階が届いているか。</summary>
+        protected bool StageReached(int stage) => stage > 0 && Stage >= stage;
+
         /// <summary>今狙っている相手。<see cref="HasTarget"/> が偽なら意味がない。</summary>
         public EnemyTarget Target { get; private set; }
         public bool HasTarget { get; private set; }
@@ -137,6 +155,7 @@ namespace TpsDungeon.Enemies
             Motor = GetComponent<EnemyMotor>();
             Health = GetComponent<EnemyHealth>();
             Reaction = GetComponent<EnemyDamageReaction>();
+            Phases = GetComponent<BossPhases>();
             body = GetComponent<Collider>();
             animator = GetComponentInChildren<Animator>();
             if (animator != null && animator.runtimeAnimatorController != null)

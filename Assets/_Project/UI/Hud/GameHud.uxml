@@ -52,6 +52,25 @@
             <ui:VisualElement class="crosshair__tick crosshair__tick--right" picking-mode="Ignore" />
             <ui:VisualElement class="crosshair__dot" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="boss" class="boss" picking-mode="Ignore">
+            <kit:OrnateFrame class="hud-frame boss__frame" crest="true" />
+            <ui:Label name="boss-title" text="第 1 層の主" class="boss__title rpg-deco" picking-mode="Ignore" />
+            <ui:Label name="boss-name" text="ボス" class="boss__name rpg-deco-bold" picking-mode="Ignore" />
+            <ui:VisualElement class="boss__track" picking-mode="Ignore">
+                <ui:VisualElement class="boss__clip" picking-mode="Ignore">
+                    <ui:VisualElement name="boss-trail" class="boss__trail" picking-mode="Ignore" />
+                    <ui:VisualElement name="boss-fill" class="boss__fill" picking-mode="Ignore">
+                        <ui:VisualElement class="boss__gloss" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="boss-tick-2" class="boss__tick" picking-mode="Ignore">
+                    <ui:VisualElement class="boss__tick-gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="boss-tick-3" class="boss__tick" picking-mode="Ignore">
+                    <ui:VisualElement class="boss__tick-gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="monster-house" class="monster-house" picking-mode="Ignore">
             <ui:VisualElement name="monster-house-banner" class="monster-house__banner" picking-mode="Ignore">
                 <ui:Label name="monster-house-title" text="モンスターハウス！" class="monster-house__title rpg-deco-bold" picking-mode="Ignore" />

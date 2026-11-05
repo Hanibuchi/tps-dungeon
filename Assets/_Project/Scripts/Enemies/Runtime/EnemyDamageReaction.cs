@@ -44,6 +44,9 @@ namespace TpsDungeon.Enemies
         private float faintPush = 2.5f;
 
         [Header("ノックバック")]
+        [SerializeField, Range(0f, 1f), Tooltip("ノックバックの効き（攻撃のノックバックに掛ける）。ボスのような重い敵は小さくする。")]
+        private float knockbackScale = 1f;
+
         [SerializeField, Min(0.01f), Tooltip("押し出されている時間（秒）。この間に速さが 0 まで落ちる。")]
         private float knockbackDuration = 0.2f;
 
@@ -155,7 +158,8 @@ namespace TpsDungeon.Enemies
         {
             if (damage.Knockback <= 0f) return;
 
-            knockbackVelocity = FlatDirection(damage) * damage.Knockback;
+            if (knockbackScale <= 0f) return;
+            knockbackVelocity = FlatDirection(damage) * (damage.Knockback * knockbackScale);
             knockbackRemaining = knockbackDuration;
         }
 

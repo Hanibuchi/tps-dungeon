@@ -8,7 +8,7 @@ namespace TpsDungeon.Enemies
     /// 敵の台帳（Enemies.csv）を読む。UnityEngine に依存しない。
     /// 1 行 = 敵 1 種。列は先頭の見出し行の名前で引くので、並びは自由で、知らない列は飛ばす。
     ///   id     … 敵の id（EnemyIdentity の id。小文字の英字・数字・_）
-    ///   kind   … 攻撃の型。melee（近距離）・ranged（遠距離）・leap（飛びつき）・bomber（自爆）・poison_gas（毒霧）。
+    ///   kind   … 攻撃の型。melee（近距離）・ranged（遠距離）・leap（飛びつき）・bomber（自爆）・poison_gas（毒霧）・spawner（手下を呼ぶ）。
     ///            型はプレハブに付いている EnemyBrain で決まり、この列は表で見えるようにするためと確かめのためにある
     ///            （食い違えば取り込みでエラー）。空欄なら確かめない
     ///   cost   … 部屋に出すときの 1 体あたりのコスト（部屋の予算からこの分を使う）。layers が空なら空でよい
@@ -35,6 +35,7 @@ namespace TpsDungeon.Enemies
         Leap,
         Bomber,
         PoisonGas,
+        Spawner,
     }
 
     public static class EnemyCsv
@@ -246,9 +247,10 @@ namespace TpsDungeon.Enemies
             (EnemyKind.Leap, "leap"),
             (EnemyKind.Bomber, "bomber"),
             (EnemyKind.PoisonGas, "poison_gas"),
+            (EnemyKind.Spawner, "spawner"),
         };
 
-        private const string KindNames = "melee・ranged・leap・bomber・poison_gas";
+        private const string KindNames = "melee・ranged・leap・bomber・poison_gas・spawner";
 
         /// <summary>kind 列の書き方（melee など）。Unknown は空文字。</summary>
         public static string KindName(EnemyKind kind)

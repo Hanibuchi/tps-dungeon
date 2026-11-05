@@ -47,8 +47,32 @@ namespace TpsDungeon.Enemies
         [SerializeField, Tooltip("煙に掛ける色。")]
         private Color cloudTint = new Color(0.45f, 1f, 0.3f, 0.85f);
 
+        [Header("ボスの段階（0 なら使わない）")]
+        [SerializeField, Min(0), Tooltip("この段階から、霧が大きく長持ちする。")]
+        private int bigCloudStage;
+
+        [SerializeField, Min(1f), Tooltip("大きな霧の半径の倍率。")]
+        private float bigCloudRadiusScale = 1.35f;
+
+        [SerializeField, Min(1f), Tooltip("大きな霧の残る時間の倍率。")]
+        private float bigCloudDurationScale = 1.5f;
+
+        [SerializeField, Min(0), Tooltip("この段階から、動いた跡に小さな霧を残す。")]
+        private int trailStage;
+
+        [SerializeField, Min(0.2f), Tooltip("跡の霧を残す間隔（秒）。")]
+        private float trailInterval = 0.8f;
+
+        [SerializeField, Min(0.3f), Tooltip("跡の霧の半径（m）。")]
+        private float trailRadius = 1.4f;
+
+        [SerializeField, Min(0.1f), Tooltip("跡の霧の残る時間（秒）。")]
+        private float trailDuration = 4f;
+
         private bool emitting;
         private float timer;
+        private float trailTimer;
+        private Vector3 lastTrail;
 
         protected override void OnEnable()
         {
@@ -58,6 +82,8 @@ namespace TpsDungeon.Enemies
 
         protected override void Think(float dt)
         {
+            if (StageReached(trailStage)) LeaveTrail(dt);
+
             if (emitting)
             {
                 if (HasTarget) Motor.LookAt = Target.Position;
@@ -73,7 +99,7 @@ namespace TpsDungeon.Enemies
             if (!HasTarget || !TargetVisible || CooldownRemaining > 0f || TargetDistance > emitRange) return;
 
             emitting = true;
-            timer = windup;
+            timer = Scaled(windup);
             Motor.Destination = null;
             if (HasParam(EmitParam)) Play(EmitParam);
             else PlayAttack();
@@ -84,14 +110,34 @@ namespace TpsDungeon.Enemies
         {
             emitting = false;
             Motor.LookAt = null;
-            CooldownRemaining = cooldown;
+            CooldownRemaining = Cooldown;
 
+            bool big = StageReached(bigCloudStage);
             Vector3 ground = EnemyMotor.OnNavMesh(transform.position);
+            SpawnCloud(ground, big ? cloudRadius * bigCloudRadiusScale : cloudRadius, big ? cloudDuration * bigCloudDurationScale : cloudDuration);
+            PlaySound(attackClip, Center);
+        }
+
+        /// <summary>動いた跡に小さな霧を残す。止まっている間は増やさない（同じ所に重ねない）。</summary>
+        private void LeaveTrail(float dt)
+        {
+            trailTimer -= dt;
+            if (trailTimer > 0f) return;
+            Vector3 here = transform.position;
+            if (Flat(here - lastTrail).magnitude < trailRadius) return;
+
+            trailTimer = trailInterval;
+            lastTrail = here;
+            SpawnCloud(EnemyMotor.OnNavMesh(here), trailRadius, trailDuration);
+        }
+
+        private void SpawnCloud(Vector3 ground, float radius, float duration)
+        {
             PoisonCloud.Spawn(ground, new PoisonCloud.Settings
             {
-                Radius = cloudRadius,
+                Radius = radius,
                 Height = cloudHeight,
-                Duration = cloudDuration,
+                Duration = duration,
                 TickInterval = tickInterval,
                 TickDamage = damage,
                 Source = gameObject,
@@ -99,7 +145,6 @@ namespace TpsDungeon.Enemies
                 EffectRadius = cloudEffectRadius,
                 Tint = cloudTint,
             });
-            PlaySound(attackClip, Center);
         }
 
         public override string StateLabel => emitting ? $"溜め {timer:0.0}s"
@@ -117,7 +162,7 @@ namespace TpsDungeon.Enemies
             if (!emitting) return;
             emitting = false;
             Motor.LookAt = null;
-            CooldownRemaining = Mathf.Max(CooldownRemaining, cooldown * 0.3f);
+            CooldownRemaining = Mathf.Max(CooldownRemaining, Cooldown * 0.3f);
         }
     }
 }

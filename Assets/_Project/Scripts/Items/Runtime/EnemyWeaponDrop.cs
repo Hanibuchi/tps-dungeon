@@ -11,6 +11,7 @@ namespace TpsDungeon.Items
     /// 何を落とすかは <see cref="EnemyDropTable.Default"/> の、敵の id（<see cref="EnemyIdentity"/>）の行で決める（<see cref="WeaponDropRoller"/>）。
     /// 表に行が無い敵は何も落とさない。
     /// 確率には操作キャラのドロップ増加（手の武器のエンチャント＋ホットバーのお守り・盾）と、魂の強化のドロップ率（ユニークはユニークの分も）が掛かる。
+    /// ただしボス（必ず落とす本数のある敵）のユニークには掛けず、1 回の討伐につき表の確率どおりに振る。
     /// ユニークの天井の数えは <see cref="UniqueDropPityStore"/> に持ち越す。
     /// 落とした物は敵の居た所（浮く敵なら宙）に出し、床まで落とす（<see cref="ItemDropper"/>）。
     /// </summary>
@@ -57,18 +58,25 @@ namespace TpsDungeon.Items
             if (health != null) health.Died -= OnDied;
         }
 
-        private void OnDied(EnemyHealth _)
+        private void OnDied(EnemyHealth dead)
         {
-            ItemInstance item = RollDrop();
-            if (item != null) Spawn(item);
+            // 呼ばれた手下は落とさない（呼び続けて稼げないように）。
+            if (dead != null && dead.IsSummoned) return;
+            List<ItemInstance> drops = RollDrops();
+            for (int i = 0; i < drops.Count; i++) Spawn(drops[i], i, drops.Count);
         }
 
-        /// <summary>落とす物を決める（ユニークの天井の数えも進める）。何も落とさなければ null。</summary>
-        public ItemInstance RollDrop()
+        /// <summary>
+        /// 落とす物を決める（ユニークの天井の数えも進める）。
+        /// 普通の敵は多くて 1 本。必ず落とす本数（<see cref="EnemyDropTable.EnemyEntry.guaranteedCount"/>）のある敵（ボス）は、
+        /// ユニークを確率と天井で振ったうえで（倍率は掛けず、表の確率どおり）、ランクの比率で決めた武器をその本数だけ落とす。
+        /// </summary>
+        public List<ItemInstance> RollDrops()
         {
+            var drops = new List<ItemInstance>();
             EnemyDropTable table = EnemyDropTable.Default;
             string enemyId = EnemyId;
-            if (table == null || string.IsNullOrEmpty(enemyId) || !table.TryGet(enemyId, out EnemyDropTable.EnemyEntry entry)) return null;
+            if (table == null || string.IsNullOrEmpty(enemyId) || !table.TryGet(enemyId, out EnemyDropTable.EnemyEntry entry)) return drops;
 
             var uniques = new List<WeaponDropRoller.UniqueOption>(entry.uniques.Count);
             var misses = new int[entry.uniques.Count];
@@ -79,8 +87,13 @@ namespace TpsDungeon.Items
                 misses[i] = u.weapon != null ? UniqueDropPityStore.Misses(enemyId, u.weapon.Id) : 0;
             }
 
+            bool guaranteed = entry.guaranteedCount > 0;
             float multiplier = DropMultiplier();
-            WeaponDropRoller.Result result = WeaponDropRoller.Roll(entry.rankChances, uniques, misses, multiplier, multiplier * UniqueDropMultiplier(), Rng);
+            // 必ず落とす敵（ボス）は、ここではユニークだけを振る（ランクの分は下で本数だけ振る）。
+            // ボスのユニークは 1 回の討伐につき表の確率どおりに振る（ドロップ増加・魂の強化の倍率は掛けない。天井はそのまま）。
+            float uniqueMultiplier = guaranteed ? 1f : multiplier * UniqueDropMultiplier();
+            WeaponDropRoller.Result result = WeaponDropRoller.Roll(guaranteed ? null : entry.rankChances, uniques, misses, multiplier,
+                uniqueMultiplier, Rng);
 
             bool changed = false;
             for (int i = 0; i < entry.uniques.Count; i++)
@@ -90,19 +103,28 @@ namespace TpsDungeon.Items
             }
             if (changed) UniqueDropPityStore.Save();
 
-            WeaponDefinition dropped = result.Kind switch
-            {
-                WeaponDropRoller.ResultKind.Unique => entry.uniques[result.UniqueIndex].weapon,
-                WeaponDropRoller.ResultKind.Rank => table.PickWeapon(result.Rank, Rng),
-                _ => null,
-            };
+            if (result.Kind == WeaponDropRoller.ResultKind.Unique) Add(drops, entry.uniques[result.UniqueIndex].weapon);
+            else if (result.Kind == WeaponDropRoller.ResultKind.Rank) AddRank(drops, table, enemyId, result.Rank);
 
-            if (dropped == null && result.Kind == WeaponDropRoller.ResultKind.Rank)
+            for (int i = 0; i < entry.guaranteedCount; i++)
             {
-                Debug.LogWarning($"{enemyId} が {result.Rank} の武器を落とすはずが、ドロップ表に {result.Rank} の武器が無い", table);
+                WeaponDropRoller.Result rank = WeaponDropRoller.RollGuaranteedRank(entry.rankChances, Rng);
+                if (rank.Kind == WeaponDropRoller.ResultKind.Rank) AddRank(drops, table, enemyId, rank.Rank);
             }
 
-            return dropped != null ? ItemInstance.Create(dropped, Rng) : null;
+            return drops;
+        }
+
+        private static void AddRank(List<ItemInstance> drops, EnemyDropTable table, string enemyId, WeaponRank rank)
+        {
+            WeaponDefinition weapon = table.PickWeapon(rank, Rng);
+            if (weapon == null) Debug.LogWarning($"{enemyId} が {rank} の武器を落とすはずが、ドロップ表に {rank} の武器が無い", table);
+            Add(drops, weapon);
+        }
+
+        private static void Add(List<ItemInstance> drops, WeaponDefinition weapon)
+        {
+            if (weapon != null) drops.Add(ItemInstance.Create(weapon, Rng));
         }
 
         /// <summary>ドロップの確率に掛ける倍率。先頭のドロップ増加（エンチャント）と、魂の強化のドロップ率。</summary>
@@ -144,9 +166,12 @@ namespace TpsDungeon.Items
             return Mathf.Max(0f, totals.Amount(EnchantmentKind.DropUp));
         }
 
-        private void Spawn(ItemInstance item)
+        private void Spawn(ItemInstance item, int index, int count)
         {
-            Vector2 offset = Random.insideUnitCircle * scatter;
+            // 何本も落とすときは、重ならないように輪に並べて広げる。
+            Vector2 offset = count > 1
+                ? new Vector2(Mathf.Cos(index * Mathf.PI * 2f / count), Mathf.Sin(index * Mathf.PI * 2f / count)) * Mathf.Max(scatter, 1.2f)
+                : Random.insideUnitCircle * scatter;
             ItemDropper.Drop(item, transform.position + new Vector3(offset.x, spawnLift, offset.y));
         }
     }

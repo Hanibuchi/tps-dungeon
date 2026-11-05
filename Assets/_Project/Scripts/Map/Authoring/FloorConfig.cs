@@ -28,6 +28,9 @@ namespace TpsDungeon.Map.Authoring
         [TextArea(6, 20)]
         public string bossBlueprint;
 
+        [Tooltip("ボス階のボス（ボス部屋に出す敵のプレハブ）。Settings/Tables/Bosses.csv を取り込むと入る。ボス階でなければ使わない。")]
+        public GameObject boss;
+
         [Header("グリッド")]
         [Min(16), Tooltip("フロア全体の横幅（セル数）。部屋はこの範囲からはみ出さない。余裕があるほど広がった形になる。")]
         public int widthInCells = 64;

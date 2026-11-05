@@ -343,7 +343,7 @@ namespace TpsDungeon.Party
             }
         }
 
-        /// <summary>階のシーンに NavMesh を焼く役と、部屋に敵を出す役（<see cref="RoomEnemySpawner"/>）が無ければ付ける。NavMesh は後ろの仲間が歩くのに要る。生成（FloorBootstrap.Start）はこのあとなので、焼き上がりで並ぶ。</summary>
+        /// <summary>階のシーンに NavMesh を焼く役と、部屋に敵を出す役（<see cref="RoomEnemySpawner"/>）、ボス戦の役（<see cref="BossEncounter"/>）が無ければ付ける。NavMesh は後ろの仲間が歩くのに要る。生成（FloorBootstrap.Start）はこのあとなので、焼き上がりで並ぶ。</summary>
         private static void EnsureFloorNavMesh(Scene scene)
         {
             foreach (GameObject root in scene.GetRootGameObjects())
@@ -352,6 +352,7 @@ namespace TpsDungeon.Party
                 {
                     if (!builder.TryGetComponent(out FloorNavMesh _)) builder.gameObject.AddComponent<FloorNavMesh>();
                     if (!builder.TryGetComponent(out RoomEnemySpawner _)) builder.gameObject.AddComponent<RoomEnemySpawner>();
+                    if (!builder.TryGetComponent(out BossEncounter _)) builder.gameObject.AddComponent<BossEncounter>();
                 }
             }
         }

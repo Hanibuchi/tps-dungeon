@@ -14,7 +14,7 @@ namespace TpsDungeon.Enemies.Editor
     ///   hp → EnemyHealth.maxHp / damage → EnemyBrain.damage / move_speed → EnemyMotor.moveSpeed /
     ///   attack_interval → EnemyBrain.cooldown / detect_range → EnemyBrain.detectRadius / exp → EnemyExpReward.exp
     ///   windup       … 近距離・遠距離・毒霧は windup、飛びつきは crouchTime、自爆は fuseTime
-    ///   attack_range … 近距離 attackRange、飛びつき leapRange、自爆 fuseRange、毒霧 emitRange、遠距離 maxRange
+    ///   attack_range … 近距離 attackRange、飛びつき leapRange、自爆 fuseRange、毒霧 emitRange、遠距離・スポナー maxRange
     ///   area_radius  … 自爆 blastRadius、毒霧 cloudRadius
     /// kind 列があれば、付いている EnemyBrain の型と同じかを確かめ、違えばエラーを出す（強さの書き込みは続ける）。
     /// その敵種に無い列に値があれば警告を出して飛ばす。欄の下限（Min）より小さい値は下限にして警告を出す。
@@ -28,6 +28,7 @@ namespace TpsDungeon.Enemies.Editor
             { typeof(LeapEnemyBrain), EnemyKind.Leap },
             { typeof(BomberEnemyBrain), EnemyKind.Bomber },
             { typeof(PoisonGasEnemyBrain), EnemyKind.PoisonGas },
+            { typeof(SpawnerEnemyBrain), EnemyKind.Spawner },
         };
 
         private static readonly Dictionary<Type, string> WindupFields = new Dictionary<Type, string>
@@ -35,6 +36,7 @@ namespace TpsDungeon.Enemies.Editor
             { typeof(MeleeEnemyBrain), "windup" },
             { typeof(RangedEnemyBrain), "windup" },
             { typeof(PoisonGasEnemyBrain), "windup" },
+            { typeof(SpawnerEnemyBrain), "windup" },
             { typeof(LeapEnemyBrain), "crouchTime" },
             { typeof(BomberEnemyBrain), "fuseTime" },
         };
@@ -46,6 +48,7 @@ namespace TpsDungeon.Enemies.Editor
             { typeof(BomberEnemyBrain), "fuseRange" },
             { typeof(PoisonGasEnemyBrain), "emitRange" },
             { typeof(RangedEnemyBrain), "maxRange" },
+            { typeof(SpawnerEnemyBrain), "maxRange" },
         };
 
         private static readonly Dictionary<Type, string> AreaRadiusFields = new Dictionary<Type, string>

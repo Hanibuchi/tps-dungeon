@@ -4,3 +4,8 @@ fang_wolf,Weapon_UnfallingHolyShield,0.01,600
 bomb_mushroom,Weapon_FallenStarHammer,0.01,600
 cave_ghoul,Weapon_GoddessTear,0.01,600
 rot_treant,Weapon_ThunderGodPike,0.01,600
+boss_l1,Weapon_UnbreakableHolyStaff,0.05,20
+boss_l2,Weapon_PurgatoryRoar,0.05,20
+boss_l3,Weapon_EndlessDownpour,0.05,20
+boss_l4,Weapon_IcePrisonScepter,0.05,20
+boss_l5,Weapon_HeroicSpiritHorn,0.05,20

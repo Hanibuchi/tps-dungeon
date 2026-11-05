@@ -100,6 +100,12 @@ namespace TpsDungeon.Enemies
             prop = value;
         }
 
+        /// <summary>ほかの敵（スポナー）に呼ばれた手下か。呼ばれた手下は経験値も武器も落とさない。</summary>
+        public bool IsSummoned { get; private set; }
+
+        /// <summary>呼ばれた手下にする（SpawnerEnemyBrain が出した直後に呼ぶ）。</summary>
+        public void MarkSummoned() => IsSummoned = true;
+
         /// <summary>死なないようにする（デバッグ用）。外すとき HP が残っていればそのまま。</summary>
         public void SetImmortal(bool value)
         {

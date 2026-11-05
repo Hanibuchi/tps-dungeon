@@ -203,7 +203,7 @@ namespace TpsDungeon.Enemies.Tests
         [Test]
         public void kind_の名前は読み書きで往復する()
         {
-            foreach (EnemyKind kind in new[] { EnemyKind.Melee, EnemyKind.Ranged, EnemyKind.Leap, EnemyKind.Bomber, EnemyKind.PoisonGas })
+            foreach (EnemyKind kind in new[] { EnemyKind.Melee, EnemyKind.Ranged, EnemyKind.Leap, EnemyKind.Bomber, EnemyKind.PoisonGas, EnemyKind.Spawner })
             {
                 Assert.IsTrue(EnemyCsv.TryParseKind(EnemyCsv.KindName(kind), out EnemyKind parsed));
                 Assert.AreEqual(kind, parsed);
