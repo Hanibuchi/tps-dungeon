@@ -42,6 +42,8 @@ namespace TpsDungeon.Audio.Runtime
         private int nextUiIndex;
         private readonly float[] lastUiPlayed = new float[System.Enum.GetValues(typeof(UiSound)).Length];
         private Coroutine bgmFade;
+        // 今流している曲の音量（0〜1）。曲ごとに大きさが違うので、流すときに渡された値まで上げる（BGM のスライダーはミキサー側で掛かる）。
+        private float bgmVolume = 1f;
 
         /// <summary>唯一のインスタンス。起動前や終了後は null。</summary>
         public static GameAudio Instance { get; private set; }
@@ -53,6 +55,9 @@ namespace TpsDungeon.Audio.Runtime
 
         /// <summary>今流れている BGM。何も流れていなければ null。</summary>
         public AudioClip CurrentBgm => bgmSources != null ? bgmSources[activeBgmIndex].clip : null;
+
+        /// <summary>今流れている BGM に渡された、その曲だけの音量（PlayBgm の volume）。</summary>
+        public float CurrentBgmVolume => bgmVolume;
 
         /// <summary>
         /// 最後に切り替えたスナップショット。設定画面が裏で切り替える分もここに入るので、
@@ -114,8 +119,11 @@ namespace TpsDungeon.Audio.Runtime
 
         // ---- BGM -----------------------------------------------------------
 
-        /// <summary>BGM を差し替える。同じ曲なら何もしない。clip が null なら止める。</summary>
-        public void PlayBgm(AudioClip clip, float fadeSeconds = -1f)
+        /// <summary>
+        /// BGM を差し替える。clip が null なら止める。volume はこの曲だけの音量（0〜1。曲ごとの大きさの違いをそろえる）。
+        /// 同じ曲が流れていれば流し直さず、音量だけ合わせる。
+        /// </summary>
+        public void PlayBgm(AudioClip clip, float fadeSeconds = -1f, float volume = 1f)
         {
             if (bgmSources == null) return;
             if (clip == null)
@@ -124,8 +132,16 @@ namespace TpsDungeon.Audio.Runtime
                 return;
             }
 
-            if (CurrentBgm == clip && bgmSources[activeBgmIndex].isPlaying) return;
+            volume = Mathf.Clamp01(volume);
+            if (CurrentBgm == clip && bgmSources[activeBgmIndex].isPlaying)
+            {
+                if (Mathf.Approximately(bgmVolume, volume)) return;
+                bgmVolume = volume;
+                StartFade(FadeSecondsOr(fadeSeconds), activeBgmIndex);
+                return;
+            }
 
+            bgmVolume = volume;
             int nextIndex = 1 - activeBgmIndex;
             AudioSource next = bgmSources[nextIndex];
             next.clip = clip;
@@ -154,7 +170,7 @@ namespace TpsDungeon.Audio.Runtime
             bgmFade = StartCoroutine(FadeBgm(seconds, targetIndex));
         }
 
-        /// <summary>targetIndex の音源を 1 へ、それ以外を 0 へ持っていく。-1 なら全部止める。</summary>
+        /// <summary>targetIndex の音源を今の曲の音量（bgmVolume）へ、それ以外を 0 へ持っていく。-1 なら全部止める。</summary>
         private IEnumerator FadeBgm(float seconds, int targetIndex)
         {
             var from = new float[bgmSources.Length];
@@ -165,7 +181,7 @@ namespace TpsDungeon.Audio.Runtime
                 float t = seconds <= 0f ? 1f : Mathf.Clamp01(elapsed / seconds);
                 for (int i = 0; i < bgmSources.Length; i++)
                 {
-                    bgmSources[i].volume = Mathf.Lerp(from[i], i == targetIndex ? 1f : 0f, t);
+                    bgmSources[i].volume = Mathf.Lerp(from[i], i == targetIndex ? bgmVolume : 0f, t);
                 }
 
                 yield return null;
@@ -173,7 +189,7 @@ namespace TpsDungeon.Audio.Runtime
 
             for (int i = 0; i < bgmSources.Length; i++)
             {
-                bgmSources[i].volume = i == targetIndex ? 1f : 0f;
+                bgmSources[i].volume = i == targetIndex ? bgmVolume : 0f;
                 if (i == targetIndex) continue;
 
                 bgmSources[i].Stop();

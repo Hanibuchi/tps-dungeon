@@ -15,6 +15,7 @@ namespace TpsDungeon.Enemies
     ///   tempo3    … 段階 3 のテンポ
     ///   bgm       … ボス部屋の扉を開けてから倒すまで流す曲。Assets/ThirdParty/Sound/ から先のパス（例 DOVA-SYNDROME/ボス戦1_Demon_Shaft_Crash.mp3）。
     ///               列が無いか空なら曲を変えない（任意の列）
+    ///   bgm_volume … その曲の音量（0〜1）。曲ごとの大きさの違いをそろえる。列が無いか空なら 1（任意の列）
     /// 空行・# で始まる行は飛ばす。読めない行は飛ばして、行番号付きでエラーに積む。
     /// </summary>
     public static class BossCsv
@@ -30,10 +31,13 @@ namespace TpsDungeon.Enemies
             public readonly float Tempo2;
             public readonly float Tempo3;
             public readonly string Bgm;
+            public readonly float BgmVolume;
 
-            public Row(int line, string id, int layer, string name, float phase2Hp, float phase3Hp, float tempo2, float tempo3, string bgm = "")
+            public Row(int line, string id, int layer, string name, float phase2Hp, float phase3Hp, float tempo2, float tempo3,
+                string bgm = "", float bgmVolume = 1f)
             {
                 Bgm = bgm ?? "";
+                BgmVolume = bgmVolume;
                 Line = line;
                 Id = id;
                 Layer = layer;
@@ -116,8 +120,16 @@ namespace TpsDungeon.Enemies
                     continue;
                 }
 
+                float bgmVolume = 1f;
+                string volumeText = Cell("bgm_volume");
+                if (volumeText.Length > 0 && (!TryFloat(volumeText, out bgmVolume) || bgmVolume < 0f || bgmVolume > 1f))
+                {
+                    errors?.Add($"{line} 行目: {id} の bgm_volume「{volumeText}」は 0〜1 の小数");
+                    continue;
+                }
+
                 string name = Cell("name");
-                rows.Add(new Row(line, id, layer, name.Length > 0 ? name : id, phase2, phase3, tempo2, tempo3, Cell("bgm")));
+                rows.Add(new Row(line, id, layer, name.Length > 0 ? name : id, phase2, phase3, tempo2, tempo3, Cell("bgm"), bgmVolume));
             }
 
             return rows;

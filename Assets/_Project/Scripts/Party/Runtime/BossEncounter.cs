@@ -42,6 +42,7 @@ namespace TpsDungeon.Party
         private bool defeated = true;
         private AudioClip playingBgm;
         private AudioClip previousBgm;
+        private float previousBgmVolume = 1f;
 
         /// <summary>今戦っているボス戦（ボスが出ていて、まだ倒れていない）。無ければ null。</summary>
         public static BossEncounter Current { get; private set; }
@@ -152,7 +153,7 @@ namespace TpsDungeon.Party
 
             Boss.Died += OnBossDied;
             Current = this;
-            StartBgm(config.bossBgm);
+            StartBgm(config.bossBgm, config.bossBgmVolume);
             Debug.Log($"[Dungeon] ボス {boss.name} が出た", this);
             AnyStarted?.Invoke(this);
         }
@@ -166,13 +167,14 @@ namespace TpsDungeon.Party
             Release();
         }
 
-        private void StartBgm(AudioClip clip)
+        private void StartBgm(AudioClip clip, float volume)
         {
             GameAudio audio = GameAudio.Instance;
             if (audio == null || clip == null) return;
             previousBgm = audio.CurrentBgm != clip ? audio.CurrentBgm : null;
+            previousBgmVolume = audio.CurrentBgmVolume;
             playingBgm = clip;
-            audio.PlayBgm(clip, bgmFadeInSeconds);
+            audio.PlayBgm(clip, bgmFadeInSeconds, volume);
         }
 
         /// <summary>ボスの曲がまだ流れていれば、元の曲に戻す（無ければ止める）。ほかの曲に替わっていれば触らない（全滅の曲など）。</summary>
@@ -184,7 +186,7 @@ namespace TpsDungeon.Party
             previousBgm = null;
             GameAudio audio = GameAudio.Instance;
             if (audio == null || clip == null || audio.CurrentBgm != clip) return;
-            if (previous != null) audio.PlayBgm(previous, bgmFadeOutSeconds);
+            if (previous != null) audio.PlayBgm(previous, bgmFadeOutSeconds, previousBgmVolume);
             else audio.StopBgm(bgmFadeOutSeconds);
         }
 

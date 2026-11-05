@@ -54,6 +54,22 @@ namespace TpsDungeon.Enemies.Tests
             Assert.IsEmpty(errors);
             Assert.AreEqual("DOVA-SYNDROME/ボス戦1.mp3", rows[0].Bgm);
             Assert.AreEqual("", rows[1].Bgm);
+            Assert.AreEqual(1f, rows[0].BgmVolume);
+        }
+
+        [Test]
+        public void bgm_volume列を読む_範囲外は飛ばしてエラー()
+        {
+            const string text = "id,layer,name,phase2_hp,phase3_hp,tempo2,tempo3,bgm,bgm_volume\n" +
+                                "a,1,A,0.66,0.33,1.2,1.4,x.mp3,0.5\n" +
+                                "b,2,B,0.66,0.33,1.2,1.4,x.mp3,1.5\n";
+            var errors = new List<string>();
+            List<BossCsv.Row> rows = BossCsv.Parse(text, errors);
+
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual(0.5f, rows[0].BgmVolume, 1e-6f);
+            Assert.AreEqual(1, errors.Count);
+            StringAssert.Contains("3 行目", errors[0]);
         }
 
         [Test]

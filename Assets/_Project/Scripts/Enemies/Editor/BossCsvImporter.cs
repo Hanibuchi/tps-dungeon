@@ -77,9 +77,10 @@ namespace TpsDungeon.Enemies.Editor
                     if (bgm == null) errors.Add($"{where} の bgm「{row.Bgm}」が {SoundRoot} の下に無い");
                 }
 
-                if (config.boss == prefab && config.bossBgm == bgm) continue;
+                if (config.boss == prefab && config.bossBgm == bgm && Mathf.Approximately(config.bossBgmVolume, row.BgmVolume)) continue;
                 config.boss = prefab;
                 config.bossBgm = bgm;
+                config.bossBgmVolume = row.BgmVolume;
                 EditorUtility.SetDirty(config);
                 changed++;
             }
