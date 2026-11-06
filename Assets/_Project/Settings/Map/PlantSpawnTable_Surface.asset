@@ -15,7 +15,7 @@ MonoBehaviour:
   entries:
   - enemy: {fileID: 6503416025420198645, guid: 8b87be2b456e3436da67b79eaaf88a50, type: 3}
     chance: 0.05
-  - enemy: {fileID: 5526345836102086532, guid: 3716f8e1373c34db2849f78f53f85711, type: 3}
+  - enemy: {fileID: 3026998076869202291, guid: d1caae8be4ca4409d8c3a99037f23eb4, type: 3}
     chance: 0.04
   - enemy: {fileID: 4431580387350474586, guid: fb0d06deb916e435f852d36508556423, type: 3}
     chance: 0.02
