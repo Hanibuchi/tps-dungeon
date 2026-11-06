@@ -12,7 +12,7 @@ namespace TpsDungeon.Enemies
     ///            型はプレハブに付いている EnemyBrain で決まり、この列は表で見えるようにするためと確かめのためにある
     ///            （食い違えば取り込みでエラー）。空欄なら確かめない
     ///   cost   … 部屋に出すときの 1 体あたりのコスト（部屋の予算からこの分を使う）。layers が空なら空でよい
-    ///   layers … 部屋に出る層。<c>1-5</c>・<c>1;3</c>・<c>2-3;5</c> の形。空なら部屋には出ない
+    ///   layers … 出る層。<c>1-5</c>・<c>1;3</c>・<c>2-3;5</c> の形。空なら部屋には出ない。0 は地上（草花から出る敵。部屋には出ない。草花の表は PlantSpawns.csv）
     /// 強さの列（<see cref="Stats"/>）。どれも省いてよく、空欄ならプレハブの値をそのまま使う。値は層の倍率などを掛けない、そのままの値:
     ///   hp              … 最大 HP
     ///   damage          … 1 回の攻撃のダメージ（毒霧は 1 刻みごと、自爆は爆心での値）
@@ -289,7 +289,7 @@ namespace TpsDungeon.Enemies
             return true;
         }
 
-        /// <summary>「1-3;5」のような層の書き方を読む。空なら空の配列。層は 1 以上。</summary>
+        /// <summary>「1-3;5」のような層の書き方を読む。空なら空の配列。層は 0 以上（0 は地上）。</summary>
         public static bool TryParseLayers(string text, out int[] layers, out string error)
         {
             var set = new SortedSet<int>();
@@ -312,9 +312,9 @@ namespace TpsDungeon.Enemies
                     return false;
                 }
 
-                if (from < 1 || to < from)
+                if (from < 0 || to < from)
                 {
-                    error = $"「{item}」の層は 1 以上で、範囲は小さい方から書く";
+                    error = $"「{item}」の層は 0 以上（0 は地上）で、範囲は小さい方から書く";
                     return false;
                 }
 

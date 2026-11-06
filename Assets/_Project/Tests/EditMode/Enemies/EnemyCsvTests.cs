@@ -59,7 +59,7 @@ namespace TpsDungeon.Enemies.Tests
                 "Pink_Blob,1,1\n" +     // 大文字
                 "a,0,1\n" +             // 出るのにコスト 0
                 "b,-1,\n" +             // 負のコスト
-                "c,1,0\n" +             // 層 0
+                "c,1,-1\n" +            // 負の層
                 "d,1,3-1\n" +           // 逆向きの範囲
                 "e,1,1,2\n" +           // , で区切った（2 は知らない列）→ 層 1 だけ
                 "f,1,x\n" +             // 数でない層
@@ -148,6 +148,8 @@ namespace TpsDungeon.Enemies.Tests
 
         [TestCase("", new int[0])]
         [TestCase("2", new[] { 2 })]
+        [TestCase("0", new[] { 0 })]
+        [TestCase("0-1", new[] { 0, 1 })]
         [TestCase("1-3", new[] { 1, 2, 3 })]
         [TestCase("5;1-2;2", new[] { 1, 2, 5 })]
         [TestCase(" 1 - 2 ; 4 ", new[] { 1, 2, 4 })]

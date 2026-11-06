@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: PlantSpawnTable_Surface
   m_EditorClassIdentifier: TpsDungeon.Enemies::TpsDungeon.Enemies.PlantSpawnTable
   entries:
-  - enemy: {fileID: 6503416025420198645, guid: 59bc8a9067cff4103b01393dc9a7ba63, type: 3}
+  - enemy: {fileID: 6503416025420198645, guid: 8b87be2b456e3436da67b79eaaf88a50, type: 3}
     chance: 0.05
-  - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
+  - enemy: {fileID: 5526345836102086532, guid: 3716f8e1373c34db2849f78f53f85711, type: 3}
     chance: 0.04
-  - enemy: {fileID: 4431580387350474586, guid: aaa7fc58fb8c34973875b0a5033742ab, type: 3}
+  - enemy: {fileID: 4431580387350474586, guid: fb0d06deb916e435f852d36508556423, type: 3}
     chance: 0.02
-  - enemy: {fileID: 8018524818078377169, guid: 2a04fa29c137b4535879808c68a44327, type: 3}
+  - enemy: {fileID: 5848560689614447625, guid: ee4cdde11390a41d1bb10fe86d5d9d09, type: 3}
     chance: 0.01

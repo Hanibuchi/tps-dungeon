@@ -13,6 +13,46 @@ MonoBehaviour:
   m_Name: EnemyDropTable
   m_EditorClassIdentifier: TpsDungeon.Items::TpsDungeon.Items.EnemyDropTable
   enemies:
+  - enemyId: thorn_cactus
+    rankChances:
+    - 0.45
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    guaranteedCount: 0
+    uniques: []
+  - enemyId: field_imp
+    rankChances:
+    - 0.225
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    guaranteedCount: 0
+    uniques: []
+  - enemyId: wild_pigeon
+    rankChances:
+    - 0.056
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    guaranteedCount: 0
+    uniques: []
+  - enemyId: needle_bee
+    rankChances:
+    - 0.056
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    guaranteedCount: 0
+    uniques: []
   - enemyId: goblin
     rankChances:
     - 0.4501
