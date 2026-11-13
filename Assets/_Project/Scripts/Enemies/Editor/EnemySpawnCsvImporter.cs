@@ -223,7 +223,7 @@ namespace TpsDungeon.Enemies.Editor
         }
 
         /// <summary>id → 敵のプレハブ（Prefabs/Enemies の EnemyIdentity）。</summary>
-        private static Dictionary<string, GameObject> EnemyPrefabs(List<string> warnings)
+        public static Dictionary<string, GameObject> EnemyPrefabs(List<string> warnings)
         {
             var prefabs = new Dictionary<string, GameObject>(StringComparer.Ordinal);
             foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { EnemyIdentitySetup.PrefabFolder }))

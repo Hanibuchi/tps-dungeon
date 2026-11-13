@@ -9,7 +9,7 @@ namespace TpsDungeon.Enemies.Editor
     /// 攻撃で壊せる置物（<see cref="BreakableProp"/>）に要る物をそろえ、草花や箱を壊せるようにする。
     /// - レイヤー Breakable（9 番）を作り、物理ではどのレイヤーとも当たらないようにする（歩いてすり抜けられる。攻撃の重なり判定には映る）。
     /// - 飛び散るかけら（Effect_PlantChips）：薄い板の粒が回りながら噴き上がって落ち、地面で跳ねて縮んで消える。色は置物ごとに BreakableProp が塗る。
-    /// - 出てくる敵の表（PlantSpawnTable_Surface）：既にあれば中身は変えない（手で直した確率を守る）。
+    /// - 出てくる敵の表（PlantSpawnTable_Surface）：無ければ作る。中身は PlantSpawns.csv から（<see cref="PlantSpawnCsvImporter"/>）。
     /// - 音：壊れる音は効果音ラボ「パンチの衣擦れ1」、敵が出る音は「ジャンプ」。ThirdParty は git に上げないので、無ければ空のまま（鳴らない）。
     /// </summary>
     public static class BreakablePlantSetup
@@ -23,16 +23,6 @@ namespace TpsDungeon.Enemies.Editor
         private const string SpawnDustPath = "Assets/_Project/Prefabs/Enemies/Effects/Dust.prefab";
         private const string BreakSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Map/パンチの衣擦れ1.mp3";
         private const string SpawnSoundPath = "Assets/ThirdParty/Sound/SoundEffect-Lab/Monster/ジャンプ.mp3";
-        private const string EnemyFolder = "Assets/_Project/Prefabs/Enemies/";
-
-        // 草むらから出てきそうな、1 層の敵。合計 12%。
-        private static readonly (string enemy, float chance)[] DefaultSpawns =
-        {
-            ("GiantRat", 0.05f),
-            ("Goblin", 0.04f),
-            ("GiantBat", 0.02f),
-            ("GoblinArcher", 0.01f),
-        };
 
         // 壊せる草花（素材のプレハブ名にこれを含む物）。茂み（bush）は大きいので含めない。
         private static readonly string[] PlantNames = { "grass_small", "flower_", "plant_" };
@@ -293,20 +283,10 @@ namespace TpsDungeon.Enemies.Editor
 
             EnsureFolder(System.IO.Path.GetDirectoryName(SpawnTablePath));
             table = ScriptableObject.CreateInstance<PlantSpawnTable>();
-            var entries = new List<PlantSpawnTable.Entry>();
-            foreach ((string enemy, float chance) in DefaultSpawns)
-            {
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyFolder + enemy + ".prefab");
-                if (prefab == null)
-                {
-                    Debug.LogWarning($"敵のプレハブが無いので表に入れなかった: {enemy}");
-                    continue;
-                }
-                entries.Add(new PlantSpawnTable.Entry { enemy = prefab, chance = chance });
-            }
-            table.SetEntries(entries);
             AssetDatabase.CreateAsset(table, SpawnTablePath);
             AssetDatabase.SaveAssets();
+            // 中身は PlantSpawns.csv から。
+            PlantSpawnCsvImporter.Import(table);
             return table;
         }
 

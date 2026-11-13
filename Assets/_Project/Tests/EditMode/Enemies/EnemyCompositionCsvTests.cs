@@ -67,7 +67,7 @@ namespace TpsDungeon.Enemies.Tests
                 "name,layers,weight,shares\n" +
                 "ok,1,1,orc\n" +
                 ",1,1,orc\n" +              // name が空
-                "a,0,1,orc\n" +             // 層 0
+                "a,-1,1,orc\n" +            // 負の層
                 "b,1,-1,orc\n" +            // 負の重み
                 "c,1,,orc\n" +              // 重みが空
                 "d,1,1,\n" +                // shares が空

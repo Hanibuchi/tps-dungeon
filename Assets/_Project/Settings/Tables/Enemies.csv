@@ -1,4 +1,8 @@
 id,kind,cost,layers,hp,damage,move_speed,attack_interval,windup,attack_range,area_radius,detect_range,exp
+thorn_cactus,melee,1,0,616,8,3,1.5,0.5,2,,14,30
+field_imp,leap,1,0,308,6,3,2,0.5,6,,14,15
+wild_pigeon,melee,1,0,38,4,3,1.5,0.5,2,,14,4
+needle_bee,ranged,1,0,38,4,2,2,0.5,12,,14,4
 goblin,melee,8,1,1232,15,3,1.5,0.5,2,,14,61
 giant_rat,leap,4,1,616,11,3,2,0.5,6,,14,30
 giant_bat,melee,1,1,77,8,3,1.5,0.5,2,,14,8
