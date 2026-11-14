@@ -44,20 +44,34 @@ MonoBehaviour:
       share: 1
     - enemy: {fileID: 3861111510383041326, guid: 98285a5e60c294288a6ad3dbc91f85cd, type: 3}
       share: 1
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u7832\u5175\u30B4\u30FC\u30EC\u30E0\u30FB\u30EC\u30A4\u30B9\uFF09"
+  - name: "\u7832\u53F0\u3068\u4EA1\u970A\uFF08\u30B4\u30FC\u30EC\u30E0\u304C\u6483\u3061\u3001\u30EC\u30A4\u30B9\u304C\u8A70\u3081\u308B\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 6789413913602102952, guid: 679924acc6bda4d36b505e670e18483c, type: 3}
       share: 0.6
     - enemy: {fileID: 2755816026748207779, guid: 284ec33f53a3543b0a516fe3d9f7fe51, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u8150\u6BD2\u30C8\u30EC\u30F3\u30C8\u30FB\u6EB6\u5CA9\u30B9\u30E9\u30A4\u30E0\uFF09"
+  - name: "\u8150\u6BD2\u306E\u68EE\uFF08\u30C8\u30EC\u30F3\u30C8\u3068\u6EB6\u5CA9\u30B9\u30E9\u30A4\u30E0\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 3861111510383041326, guid: 98285a5e60c294288a6ad3dbc91f85cd, type: 3}
       share: 0.6
     - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
       share: 0.4
+  - name: "\u8981\u585E\uFF08\u30C8\u30EC\u30F3\u30C8\u306E\u6BD2\u306E\u5965\u304B\u3089\u30B4\u30FC\u30EC\u30E0\u304C\u6483\u3064\uFF09"
+    weight: 0.75
+    shares:
+    - enemy: {fileID: 3861111510383041326, guid: 98285a5e60c294288a6ad3dbc91f85cd, type: 3}
+      share: 0.6
+    - enemy: {fileID: 6789413913602102952, guid: 679924acc6bda4d36b505e670e18483c, type: 3}
+      share: 0.4
+  - name: "\u4EA1\u8005\u306E\u884C\u9032\uFF08\u30EC\u30A4\u30B9\u3068\u6EB6\u5CA9\u30B9\u30E9\u30A4\u30E0\u304C\u62BC\u3057\u5BC4\u305B\u308B\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 2755816026748207779, guid: 284ec33f53a3543b0a516fe3d9f7fe51, type: 3}
+      share: 0.5
+    - enemy: {fileID: 762044567568048416, guid: 4663771311d344b189267cc282bd51f9, type: 3}
+      share: 0.5
   - name: "\u5358\u7A2E\uFF08wraith\uFF09"
     weight: 0.5
     shares:

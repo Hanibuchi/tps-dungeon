@@ -44,27 +44,27 @@ MonoBehaviour:
       share: 1
     - enemy: {fileID: 8018524818078377169, guid: 2a04fa29c137b4535879808c68a44327, type: 3}
       share: 1
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30B4\u30D6\u30EA\u30F3\u30FB\u5927\u30CD\u30BA\u30DF\uFF09"
-    weight: 1
+  - name: "\u30B4\u30D6\u30EA\u30F3\u306E\u968A\uFF08\u30B4\u30D6\u30EA\u30F3\u304C\u524D\u3001\u5F13\u5175\u304C\u5F8C\u308D\uFF09"
+    weight: 1.5
     shares:
     - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
-      share: 0.6
+      share: 0.8
+    - enemy: {fileID: 8018524818078377169, guid: 2a04fa29c137b4535879808c68a44327, type: 3}
+      share: 0.2
+  - name: "\u7363\u306E\u7FA4\u308C\uFF08\u5927\u30CD\u30BA\u30DF\u304C\u98DB\u3073\u3064\u304D\u3001\u5927\u30B3\u30A6\u30E2\u30EA\u304C\u7FA4\u304C\u308B\uFF09"
+    weight: 1
+    shares:
     - enemy: {fileID: 6503416025420198645, guid: 59bc8a9067cff4103b01393dc9a7ba63, type: 3}
+      share: 0.6
+    - enemy: {fileID: 4431580387350474586, guid: aaa7fc58fb8c34973875b0a5033742ab, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30B4\u30D6\u30EA\u30F3\u5F13\u5175\u30FB\u30B4\u30D6\u30EA\u30F3\uFF09"
+  - name: "\u5F13\u5175\u3068\u8B77\u885B\uFF08\u5927\u30CD\u30BA\u30DF\u304C\u5F13\u5175\u3092\u5B88\u308B\uFF09"
     weight: 1
     shares:
     - enemy: {fileID: 8018524818078377169, guid: 2a04fa29c137b4535879808c68a44327, type: 3}
-      share: 0.6
-    - enemy: {fileID: 5526345836102086532, guid: 6de85dbcbef7f4fe88e447ea435e8ace, type: 3}
-      share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u5927\u30B3\u30A6\u30E2\u30EA\u30FB\u5927\u30CD\u30BA\u30DF\uFF09"
-    weight: 1
-    shares:
-    - enemy: {fileID: 4431580387350474586, guid: aaa7fc58fb8c34973875b0a5033742ab, type: 3}
-      share: 0.6
+      share: 0.5
     - enemy: {fileID: 6503416025420198645, guid: 59bc8a9067cff4103b01393dc9a7ba63, type: 3}
-      share: 0.4
+      share: 0.5
   - name: "\u5358\u7A2E\uFF08goblin\uFF09"
     weight: 0.5
     shares:
