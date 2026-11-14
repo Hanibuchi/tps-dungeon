@@ -44,19 +44,28 @@ MonoBehaviour:
       share: 1
     - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       share: 1
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u30B9\u30B1\u30EB\u30C8\u30F3\u5263\u58EB\u30FB\u30B9\u30B1\u30EB\u30C8\u30F3\u9B54\u8853\u5E2B\uFF09"
-    weight: 1
+  - name: "\u9AB8\u9AA8\u306E\u968A\uFF08\u5263\u58EB\u304C\u524D\u3001\u9B54\u8853\u5E2B\u304C\u5F8C\u308D\uFF09"
+    weight: 1.5
     shares:
     - enemy: {fileID: 1001989659878048333, guid: 3df5063915f754cc99330f68f6075917, type: 3}
       share: 0.6
     - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
       share: 0.4
-  - name: "\u4E3B\u5F79\uFF0B\u8107\u5F79\uFF08\u6BD2\u30B9\u30E9\u30A4\u30E0\u30FB\u546A\u3044\u306E\u30E9\u30F3\u30BF\u30F3\uFF09"
+  - name: "\u5893\u6240\uFF08\u5263\u58EB\u30FB\u30E9\u30F3\u30BF\u30F3\u30FB\u9B54\u8853\u5E2B\uFF09"
     weight: 1
     shares:
-    - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
-      share: 0.6
+    - enemy: {fileID: 1001989659878048333, guid: 3df5063915f754cc99330f68f6075917, type: 3}
+      share: 0.4
     - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+      share: 0.3
+    - enemy: {fileID: 6413533938175864059, guid: 080d69dfbe13d492d9e63285f7a5757c, type: 3}
+      share: 0.3
+  - name: "\u6BD2\u6CBC\u306E\u706F\uFF08\u30E9\u30F3\u30BF\u30F3\u3068\u6BD2\u30B9\u30E9\u30A4\u30E0\uFF09"
+    weight: 1
+    shares:
+    - enemy: {fileID: 5353089085633950042, guid: 2dd6cf60b1ceb4f619d9c82ea6dc9051, type: 3}
+      share: 0.6
+    - enemy: {fileID: 6797022701480569374, guid: a9f3f340ab1ec42689d4278e3862dcf3, type: 3}
       share: 0.4
   - name: "\u5358\u7A2E\uFF08skeleton_swordsman\uFF09"
     weight: 0.5
